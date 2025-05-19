@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/Blood Donation Support/.vs
+/Blood Donation Support/bin/Debug/net8.0

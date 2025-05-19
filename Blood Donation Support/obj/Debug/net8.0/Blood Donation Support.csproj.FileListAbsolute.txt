@@ -1,0 +1,33 @@
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\appsettings.Development.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\appsettings.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Blood Donation Support.exe
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Blood Donation Support.deps.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Blood Donation Support.runtimeconfig.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Blood Donation Support.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Blood Donation Support.pdb
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Microsoft.OpenApi.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.csproj.AssemblyReference.cache
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.GeneratedMSBuildEditorConfig.editorconfig
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.AssemblyInfoInputs.cache
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.AssemblyInfo.cs
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.csproj.CoreCompileInputs.cache
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.MvcApplicationPartsAssemblyInfo.cs
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.MvcApplicationPartsAssemblyInfo.cache
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.sourcelink.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets.build.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets.development.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets\msbuild.Blood Donation Support.Microsoft.AspNetCore.StaticWebAssets.props
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets\msbuild.build.Blood Donation Support.props
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.Blood Donation Support.props
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.Blood Donation Support.props
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets.pack.json
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\scopedcss\bundle\Blood Donation Support.styles.css
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Do.A24F4930.Up2Date
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\refint\Blood Donation Support.dll
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.pdb
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.genruntimeconfig.cache
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\ref\Blood Donation Support.dll

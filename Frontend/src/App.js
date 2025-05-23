@@ -6,6 +6,9 @@ import MainLayout from './layouts/MainLayout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import Home from './pages/Home';
+import FAQ from './pages/FAQ';
+import News from './pages/News';
+import Contact from './pages/Contact';
 import { selectIsAuthenticated } from './features/auth/authSlice';
 
 const App = () => {
@@ -25,14 +28,15 @@ const App = () => {
 
       {/* Public Homepage */}
       <Route element={<MainLayout />}>
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/news" element={<News />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/home" element={<Home />} />
       </Route>
 
       {/* Protected Routes */}
       <Route element={<MainLayout />}>
-        <Route path="/" element={
-          isAuthenticated ? <Home /> : <Navigate to="/login" replace />
-        } />
+        <Route path="/" element={<Home />} />
       </Route>
 
       {/* Fallback Route */}

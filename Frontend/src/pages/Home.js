@@ -24,9 +24,10 @@ const Home = () => {
           justifyContent: 'center',
           position: 'relative',
           mb: 6,
+          px: { xs: 2, md: 0 },
         }}
       >
-        <Container maxWidth="lg" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Container maxWidth="lg" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
           <Box>
             <Typography variant="h3" color="#fff" fontWeight={700} gutterBottom>
               Hiến máu cứu người<br />
@@ -46,7 +47,7 @@ const Home = () => {
           </Box>
           <Box sx={{ display: { xs: 'none', md: 'block' } }}>
             {/* Placeholder cho ảnh banner */}
-            <img src="/assets/banner-blood.png" alt="banner" style={{ maxHeight: 300, borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }} />
+            <img src="/assets/3.jpg" alt="banner" style={{ maxHeight: 300, borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }} />
           </Box>
         </Container>
       </Box>
@@ -95,9 +96,17 @@ const Home = () => {
               </Typography>
             </Grid>
             <Grid item xs={12} md={6} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-              <Typography variant="body2">
-                © {new Date().getFullYear()} Blood Donation System. All rights reserved.
-              </Typography>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                <img
+                  src="/assets/logo.png"
+                  alt="Logo"
+                  style={{ height: 32, width: 32, borderRadius: 6, objectFit: 'cover', marginRight: 10, background: '#fff', cursor: 'pointer' }}
+                  onClick={() => window.location.reload()}
+                />
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  © {new Date().getFullYear()} Blood Donation. All rights reserved.
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </Container>

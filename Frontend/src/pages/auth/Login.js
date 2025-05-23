@@ -62,7 +62,29 @@ const Login = () => {
       justifyContent: 'center',
       zIndex: 0
     }}>
-      <Box component="form" onSubmit={formik.handleSubmit} sx={{ width: '100%', maxWidth: 400, bgcolor: 'rgba(255,255,255,0.97)', p: 5, borderRadius: 4, boxShadow: '0 8px 32px rgba(229,57,53,0.15)', zIndex: 1 }}>
+      {/* Banner logo */}
+      <Box sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: 70,
+        bgcolor: 'rgba(255,255,255,0.95)',
+        display: 'flex',
+        alignItems: 'center',
+        px: 4,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+        zIndex: 2
+      }}>
+        <Link component={RouterLink} to="/Home" underline="none" sx={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/assets/logo.png" alt="Logo" style={{ height: 48, width: 48, borderRadius: 8, objectFit: 'cover', marginRight: 16 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#e53935', letterSpacing: 1 }}>
+            Blood Donation
+          </Typography>
+        </Link>
+      </Box>
+      {/* Form đăng nhập */}
+      <Box component="form" onSubmit={formik.handleSubmit} sx={{ width: '100%', maxWidth: 400, bgcolor: 'rgba(255,255,255,0.97)', p: 5, borderRadius: 4, boxShadow: '0 8px 32px rgba(229,57,53,0.15)', zIndex: 1, mt: 10 }}>
         <Typography component="h1" variant="h5" align="center" gutterBottom>
           Sign In
         </Typography>

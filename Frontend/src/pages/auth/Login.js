@@ -44,56 +44,70 @@ const Login = () => {
   });
 
   return (
-    <Box component="form" onSubmit={formik.handleSubmit} sx={{ width: '100%' }}>
-      <Typography component="h1" variant="h5" align="center" gutterBottom>
-        Sign In
-      </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <TextField
-        fullWidth
-        id="email"
-        name="email"
-        label="Email Address"
-        value={formik.values.email}
-        onChange={formik.handleChange}
-        error={formik.touched.email && Boolean(formik.errors.email)}
-        helperText={formik.touched.email && formik.errors.email}
-        margin="normal"
-      />
-
-      <TextField
-        fullWidth
-        id="password"
-        name="password"
-        label="Password"
-        type="password"
-        value={formik.values.password}
-        onChange={formik.handleChange}
-        error={formik.touched.password && Boolean(formik.errors.password)}
-        helperText={formik.touched.password && formik.errors.password}
-        margin="normal"
-      />
-
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        sx={{ mt: 3, mb: 2 }}
-        disabled={loading}
-      >
-        {loading ? 'Signing in...' : 'Sign In'}
-      </Button>
-
-      <Box sx={{ textAlign: 'center' }}>
-        <Link component={RouterLink} to="/signup" variant="body2">
-          {"Don't have an account? Sign Up"}
-        </Link>
+    <Box sx={{
+      minHeight: '100vh',
+      minWidth: '100vw',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundImage: 'url(/assets/1.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 0
+    }}>
+      <Box component="form" onSubmit={formik.handleSubmit} sx={{ width: '100%', maxWidth: 400, bgcolor: 'rgba(255,255,255,0.97)', p: 5, borderRadius: 4, boxShadow: '0 8px 32px rgba(229,57,53,0.15)', zIndex: 1 }}>
+        <Typography component="h1" variant="h5" align="center" gutterBottom>
+          Sign In
+        </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <TextField
+          fullWidth
+          id="email"
+          name="email"
+          label="Email Address"
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          error={formik.touched.email && Boolean(formik.errors.email)}
+          helperText={formik.touched.email && formik.errors.email}
+          margin="normal"
+        />
+        <TextField
+          fullWidth
+          id="password"
+          name="password"
+          label="Password"
+          type="password"
+          value={formik.values.password}
+          onChange={formik.handleChange}
+          error={formik.touched.password && Boolean(formik.errors.password)}
+          helperText={formik.touched.password && formik.errors.password}
+          margin="normal"
+        />
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          sx={{ mt: 3, mb: 2 }}
+          disabled={loading}
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </Button>
+        <Box sx={{ textAlign: 'center' }}>
+          <Link component={RouterLink} to="/signup" variant="body2">
+            {"Don't have an account? Sign Up"}
+          </Link>
+        </Box>
       </Box>
     </Box>
   );

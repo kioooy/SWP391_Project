@@ -23,6 +23,11 @@ const App = () => {
         } />
       </Route>
 
+      {/* Public Homepage */}
+      <Route element={<MainLayout />}>
+        <Route path="/home" element={<Home />} />
+      </Route>
+
       {/* Protected Routes */}
       <Route element={<MainLayout />}>
         <Route path="/" element={

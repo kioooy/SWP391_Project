@@ -1,7 +1,8 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Container } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import Button from '@mui/material/Button';
 
 const MainContainer = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
@@ -15,6 +16,7 @@ const ContentContainer = styled(Container)(({ theme }) => ({
 }));
 
 const MainLayout = () => {
+  const navigate = useNavigate();
   return (
     <MainContainer>
       <AppBar position="static">
@@ -22,6 +24,9 @@ const MainLayout = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Blood Donation System
           </Typography>
+          <Button color="inherit" onClick={() => navigate('/login')}>
+            Đăng nhập
+          </Button>
         </Toolbar>
       </AppBar>
       <ContentContainer maxWidth="lg">

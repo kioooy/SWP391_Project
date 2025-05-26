@@ -6,6 +6,7 @@ import MainLayout from './layouts/MainLayout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import Home from './pages/Home';
+import FAQ from './pages/FAQ';
 import { selectIsAuthenticated } from './features/auth/authSlice';
 
 const App = () => {
@@ -23,11 +24,10 @@ const App = () => {
         } />
       </Route>
 
-      {/* Protected Routes */}
+      {/* Main Routes */}
       <Route element={<MainLayout />}>
-        <Route path="/" element={
-          isAuthenticated ? <Home /> : <Navigate to="/login" replace />
-        } />
+        <Route path="/" element={<Home />} />
+        <Route path="/faq" element={<FAQ />} />
       </Route>
 
       {/* Fallback Route */}

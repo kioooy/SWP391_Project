@@ -1,37 +1,53 @@
-import React from 'react';
-import { Typography, Box, Button } from '@mui/material';
-import { useDispatch } from 'react-redux';
+import React, { useState } from 'react';
+import { Typography, Box, Button, Container, TextField } from '@mui/material'; // Import TextField
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../features/auth/authSlice';
+import dayjs from 'dayjs';
 
 const Home = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate('/login');
+  const handleSearch = () => {
+    if (!fromDate || !toDate) return;
+    navigate(`/events?from=${dayjs(fromDate).format('YYYY-MM-DD')}&to=${dayjs(toDate).format('YYYY-MM-DD')}`);
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Welcome to Blood Donation System
-      </Typography>
-      <Typography variant="body1" paragraph>
-        This is a comprehensive platform for managing blood donation activities,
-        connecting donors with recipients, and ensuring efficient blood bank operations.
-      </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleLogout}
-        sx={{ mt: 2 }}
-      >
-        Logout
-      </Button>
-    </Box>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          Bạn cần đặt lịch hiến máu vào thời gian nào?
+        </Typography>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <DatePicker
+              label="Từ ngày"
+              value={fromDate}
+              onChange={setFromDate}
+              renderInput={(params) => <TextField {...params} size="small" />} // Thêm renderInput
+            />
+            <DatePicker
+              label="Đến ngày"
+              value={toDate}
+              onChange={setToDate}
+              renderInput={(params) => <TextField {...params} size="small" />} // Thêm renderInput
+            />
+            <Button
+              variant="contained"
+              onClick={handleSearch}
+              disabled={!fromDate || !toDate}
+            >
+              Tìm kiếm
+            </Button>
+          </Box>
+        </LocalizationProvider>
+      </Box>
+
+    </Container>
   );
 };
 
-export default Home; 
+export default Home;

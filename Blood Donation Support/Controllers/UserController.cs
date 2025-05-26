@@ -31,4 +31,6 @@ namespace Blood_Donation_Support.Controllers
             }
             return await _context.Users.ToListAsync();
         }
+    }
+}
 

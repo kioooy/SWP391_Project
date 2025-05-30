@@ -76,7 +76,7 @@ const Login = () => {
         boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
         zIndex: 2
       }}>
-        <Link component={RouterLink} to="/Home" underline="none" sx={{ display: 'flex', alignItems: 'center' }}>
+        <Link component={RouterLink} to="/home" underline="none" sx={{ display: 'flex', alignItems: 'center' }}>
           <img src="/assets/logo.png" alt="Logo" style={{ height: 48, width: 48, borderRadius: 8, objectFit: 'cover', marginRight: 16 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#e53935', letterSpacing: 1 }}>
             Blood Donation

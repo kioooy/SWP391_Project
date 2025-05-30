@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import AuthLayout from './layouts/AuthLayout';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -10,6 +9,8 @@ import FAQ from './pages/FAQ';
 import News from './pages/News';
 import Contact from './pages/Contact';
 import NewsDetail from './pages/NewsDetail';
+import Profile from './pages/Profile';
+import ScheduleEvents from './pages/ScheduleEvents';
 import { selectIsAuthenticated } from './features/auth/authSlice';
 
 const App = () => {
@@ -17,28 +18,22 @@ const App = () => {
 
   return (
     <Routes>
-      {/* Auth Routes */}
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={
-          !isAuthenticated ? <Login /> : <Navigate to="/" replace />
-        } />
-        <Route path="/signup" element={
-          !isAuthenticated ? <Signup /> : <Navigate to="/" replace />
-        } />
-      </Route>
+      {/* Auth Routes - Đặt riêng biệt không nằm trong MainLayout */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
 
-      {/* Public Homepage */}
+      {/* Main Layout Routes */}
       <Route element={<MainLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/news" element={<News />} />
         <Route path="/news/:id" element={<NewsDetail />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/home" element={<Home />} />
-      </Route>
-
-      {/* Protected Routes */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/schedule-events" element={<ScheduleEvents />} />
+        <Route path="/profile" element={
+          isAuthenticated ? <Profile /> : <Navigate to="/login" replace />
+        } />
       </Route>
 
       {/* Fallback Route */}

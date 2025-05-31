@@ -30,10 +30,11 @@ CREATE TABLE Users (
     UserId INT PRIMARY KEY IDENTITY(1,1),
     PasswordHash NVARCHAR(255) NOT NULL,
     FullName NVARCHAR(100) NOT NULL,
+    CitizenNumber VARCHAR(20) NOT NULL UNIQUE, 
     Email NVARCHAR(100) NOT NULL UNIQUE,
-    PhoneNumber VARCHAR(20),
+    PhoneNumber VARCHAR(20) UNIQUE,
     DateOfBirth DATE,
-    Gender VARCHAR(10) CHECK (Gender IN ('Male', 'Female', 'Other')),
+    Sex BIT NOT NULL, -- 0: Nữ, 1: Nam
     Address NVARCHAR(255),
     Role VARCHAR(20) NOT NULL CHECK (Role IN ('Admin', 'Staff', 'Member', 'Guest')), -- Vai trò: Admin (quản trị viên), Staff (nhân viên), Member (thành viên), Guest (khách)
     CreatedAt DATETIME DEFAULT GETDATE(),
@@ -57,22 +58,7 @@ CREATE TABLE Blog (
     PublishedDate DATETIME DEFAULT GETDATE(),
     UpdatedDate DATETIME,
     ImageUrl NVARCHAR(255),
-    Category NVARCHAR(50), -- can nhac
-    Tags NVARCHAR(255), --can nhac
-    ViewCount INT DEFAULT 0,-- diem so luot xem bai viet, can nhac
-    Status VARCHAR(20) NOT NULL CHECK (Status IN ('Draft', 'Published', 'Archived')),
-    FOREIGN KEY (UserId) REFERENCES Users(UserId)
-);
-
--- Create BlogComments table
--- Bảng này lưu trữ các bình luận của người dùng trên các bài viết blog , can nhac
-CREATE TABLE BlogComments (
-    CommentId INT PRIMARY KEY IDENTITY(1,1),
-    PostId INT NOT NULL,
-    UserId INT NOT NULL,
-    Content NVARCHAR(1000) NOT NULL,
-    CommentDate DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (PostId) REFERENCES Blog(PostId) ON DELETE CASCADE,
+    Status VARCHAR(20) NOT NULL CHECK (Status IN ('Draft', 'Published')),
     FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );
 
@@ -81,17 +67,12 @@ CREATE TABLE BlogComments (
 CREATE TABLE Members (
     UserId INT PRIMARY KEY,
     BloodTypeId INT,
-    CitizenNumber VARCHAR(20) UNIQUE,
-    Weight DECIMAL(5, 2),
-    Height DECIMAL(5, 2), -- Chiều cao (cm), cần để tính chỉ số BMI và đánh giá tình trạng sức khỏe
+    Weight INT, -- Câng nặng (kg),
+    Height INT, -- Chiều cao (cm),
     LastDonationDate DATE,
     RecoveryDueDate DATE,
     IsDonor BIT DEFAULT 0, -- Đánh dấu người dùng là người hiến máu
     IsRecipient BIT DEFAULT 0, -- Đánh dấu người dùng là người nhận máu
-    MedicalConditions NVARCHAR(500), -- Các tình trạng y tế, xem xét
-    Allergies NVARCHAR(255), -- Thông tin về dị ứng, xem xét
-    EmergencyContactName NVARCHAR(100), -- Tên người liên hệ khẩn cấp
-    EmergencyContactPhone VARCHAR(20), -- SĐT người liên hệ khẩn cấp
     DonationCount INT DEFAULT 0, -- Số lần hiến máu
     LastCheckupDate DATE, -- Ngày khám sức khỏe gần nhất
     FOREIGN KEY (UserId) REFERENCES Users(UserId) ON DELETE CASCADE,
@@ -106,7 +87,6 @@ CREATE TABLE BloodComponents (
     ComponentName NVARCHAR(50) NOT NULL UNIQUE,
     Description NVARCHAR(500),
     ShelfLifeDays INT NOT NULL, -- Thời hạn sử dụng tiêu chuẩn tính bằng ngày, dùng để tính ExpiryDate cho đơn vị máu
-    StorageConditions NVARCHAR(255)
 );
 
 -- Create BloodUnits table
@@ -116,11 +96,11 @@ CREATE TABLE BloodUnits (
     BloodTypeId INT NOT NULL,
     ComponentId INT NOT NULL,
     DonorId INT, -- Người hiến máu (nếu có)
-    AddDate DATETIME DEFAULT GETDATE(),
-    ExpiryDate DATETIME NOT NULL,  --Mỗi loại thành phần máu có thời hạn sử dụng tiêu chuẩn (ShelfLifeDays) riêng
+    AddDate DATE DEFAULT GETDATE(),
+    ExpiryDate DATE NOT NULL,  --Mỗi loại thành phần máu có thời hạn sử dụng tiêu chuẩn (ShelfLifeDays) riêng
     -- Ngày hết hạn (ExpiryDate) của mỗi đơn vị máu được tính bằng ngày thu thập (AddDate) cộng với thời hạn sử dụng tiêu chuẩn (ShelfLifeDays) của thành phần máu tương ứng
-    Volume DECIMAL(6, 2) NOT NULL, -- in milliliters
-    Status VARCHAR(20) NOT NULL CHECK (Status IN ('Available', 'Reserved', 'Used', 'Expired', 'Discarded')), -- Trạng thái: Available (có sẵn), Reserved (đã đặt trước), Used (đã sử dụng), Expired (hết hạn), Discarded (bỏ đi),
+    Volume INT NOT NULL, -- in milliliters
+    BloodStatus VARCHAR(20) NOT NULL CHECK (BloodStatus IN ('Available', 'Expired', 'Discarded')), -- Trạng thái: Available (có sẵn), Used (đã sử dụng), Expired (hết hạn), Discarded (bỏ đi),
     FOREIGN KEY (BloodTypeId) REFERENCES BloodTypes(BloodTypeId),
     FOREIGN KEY (ComponentId) REFERENCES BloodComponents(ComponentId),
     FOREIGN KEY (DonorId) REFERENCES Members(UserId)
@@ -132,57 +112,53 @@ CREATE TABLE BloodDonationPeriod (
     PeriodId INT PRIMARY KEY IDENTITY(1,1),
     PeriodName NVARCHAR(100) NOT NULL,
     Location NVARCHAR(255) NOT NULL,
-    Description NVARCHAR(500),
-    OrganizerId INT, -- Người tổ chức
-    Status VARCHAR(20) NOT NULL CHECK (Status IN ('Scheduled', 'Active', 'Completed', 'Cancelled')),
+    Status VARCHAR(20) NOT NULL CHECK (Status IN ('Active', 'Completed', 'Cancelled')),
     PeriodDateFrom DATETIME NOT NULL,
     PeriodDateTo DATETIME NOT NULL,
     TargetQuantity INT NOT NULL,
     CurrentQuantity INT DEFAULT 0, -- Số lượng hiện tại đã thu thập được
     ImageUrl NVARCHAR(255), -- Hình ảnh sự kiện
-    FOREIGN KEY (OrganizerId) REFERENCES Users(UserId)
 );
 
 -- Create DonationRequests table
 -- Bảng này quản lý các yêu cầu hiến máu từ các thành viên
 CREATE TABLE DonationRequests (
-    RequestId INT PRIMARY KEY IDENTITY(1,1),
+    DonationId INT PRIMARY KEY IDENTITY(1,1),
     MemberId INT NOT NULL,
     PeriodId INT NOT NULL,
     ComponentId INT NOT NULL, -- Thành phần máu muốn hiến
-    PreferredDonationDate DATETIME,
-    ActualDonationDate DATETIME, -- Ngày thực hiện hiến máu
-    ResponsibleByUserId INT,
+    PreferredDonationDate DATE, -- Ngày hiến máu mong muốn
+    ActualDonationDate DATE, -- Ngày thực hiện hiến máu
+    ResponsibleById INT, -- Người phụ trách xử lý yêu cầu (Staff)
     RequestDate DATETIME DEFAULT GETDATE(),
     ApprovalDate DATETIME,
-    HealthCheckStatus VARCHAR(20), -- Kết quả kiểm tra sức khỏe
-    DonationVolume DECIMAL(6, 2), -- Thể tích máu đã hiến (ml)
+    DonationVolume INT, -- Thể tích máu đã hiến (ml)
     Status VARCHAR(20) NOT NULL CHECK (Status IN ('Pending', 'Approved', 'Completed', 'Rejected', 'Cancelled')),
     Notes NVARCHAR(500),
+    PatientCondition NVARCHAR(500), -- Tình trạng bệnh nhân
     FOREIGN KEY (MemberId) REFERENCES Members(UserId) ON DELETE CASCADE,
     FOREIGN KEY (PeriodId) REFERENCES BloodDonationPeriod(PeriodId),
     FOREIGN KEY (ComponentId) REFERENCES BloodComponents(ComponentId),
-    FOREIGN KEY (ResponsibleByUserId) REFERENCES Users(UserId)
+    FOREIGN KEY (ResponsibleById) REFERENCES Users(UserId)
 );
 
 -- Create BloodRequests table
 -- Bảng này quản lý các yêu cầu nhận máu từ các thành viên hoặc bệnh viện
-CREATE TABLE BloodRequests (
-    BloodRequestId INT PRIMARY KEY IDENTITY(1,1),
+CREATE TABLE TransfusionRequests (
+    TransfusionId INT PRIMARY KEY IDENTITY(1,1),
     MemberId INT NOT NULL,
     BloodTypeId INT NOT NULL,
     ComponentId INT NOT NULL, -- Thành phần máu cần
     BloodUnitId INT,
-    ResponsibleById INT,
-    IsEmergency BIT DEFAULT 0, -- Đánh dấu yêu cầu máu khẩn cấp, cần ưu tiên xử lý
-    RequiredQuantity INT NOT NULL DEFAULT 1, -- Số lượng đơn vị máu cần
+    ResponsibleById INT, -- Người phụ trách xử lý yêu cầu ( Staff )
+    IsEmergency BIT DEFAULT 0, -- Đánh dấu yêu cầu máu khẩn cấp, cần ưu tiên xử lý : 0: Không khẩn cấp, 1: Khẩn cấp
+    RequiredQuantity INT NOT NULL DEFAULT 1, -- Số lượng đơn vị máu cần 
     PreferredReceiveDate DATETIME,
     RequestDate DATETIME DEFAULT GETDATE(),
     ApprovalDate DATETIME,
     CompletionDate DATETIME, -- Ngày hoàn thành yêu cầu
     Status VARCHAR(20) NOT NULL CHECK (Status IN ('Pending', 'Approved', 'Completed', 'Rejected', 'Cancelled')),
     Notes NVARCHAR(500),
-    HospitalName NVARCHAR(255), -- Tên bệnh viện nếu yêu cầu từ bệnh viện khác
     PatientCondition NVARCHAR(500), -- Tình trạng bệnh nhân
     FOREIGN KEY (MemberId) REFERENCES Members(UserId) ON DELETE CASCADE,
     FOREIGN KEY (BloodTypeId) REFERENCES BloodTypes(BloodTypeId),
@@ -197,7 +173,7 @@ CREATE TABLE DonationRequestsDetails (
     DetailsId INT PRIMARY KEY IDENTITY(1,1),
     RequestId INT NOT NULL,
     BloodUnitId INT NOT NULL,
-    Volume DECIMAL(6, 2) NOT NULL, -- in milliliters
+    Volume INT NOT NULL, -- in milliliters
     FOREIGN KEY (RequestId) REFERENCES DonationRequests(RequestId) ON DELETE CASCADE,
     FOREIGN KEY (BloodUnitId) REFERENCES BloodUnits(BloodUnitId)
 );
@@ -213,6 +189,7 @@ CREATE TABLE BloodCompatibilityRules (
     FOREIGN KEY (BloodGiveId) REFERENCES BloodTypes(BloodTypeId),
     FOREIGN KEY (BloodRecieveId) REFERENCES BloodTypes(BloodTypeId)
 );
+
 -- Create Notifications table
 -- Bảng này quản lý các thông báo gửi đến người dùng
 -- Ví dụ: Nhắc nhở hiến máu, thông báo yêu cầu khẩn cấp, cập nhật trạng thái yêu cầu
@@ -222,8 +199,7 @@ CREATE TABLE Notifications (
     Title NVARCHAR(100) NOT NULL,
     Message NVARCHAR(500) NOT NULL,
     CreatedAt DATETIME DEFAULT GETDATE(),
-    NotificationType VARCHAR(50) NOT NULL, -- DonationReminder, EmergencyRequest, RequestStatus, etc.
-    RelatedEntityId INT, -- ID của đối tượng liên quan (RequestId, etc.)
+    NotificationType VARCHAR(50) NOT NULL,
     FOREIGN KEY (UserId) REFERENCES Users(UserId) ON DELETE CASCADE
 );
 

@@ -32,7 +32,7 @@ CREATE TABLE Users (
     FullName NVARCHAR(100) NOT NULL,
     CitizenNumber VARCHAR(20) NOT NULL UNIQUE, 
     Email NVARCHAR(100) NOT NULL UNIQUE,
-    PhoneNumber VARCHAR(20) UNIQUE,
+    PhoneNumber VARCHAR(20) NOT NULL UNIQUE,
     DateOfBirth DATE,
     Sex BIT NOT NULL, -- 0: Nữ, 1: Nam
     Address NVARCHAR(255),

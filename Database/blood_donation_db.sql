@@ -315,7 +315,7 @@ INSERT INTO Users (PasswordHash, FullName, CitizenNumber, Email, PhoneNumber, Da
 -- Thêm dữ liệu ban đầu cho các thành phần máu
 -- Mỗi thành phần có thời hạn sử dụng và điều kiện bảo quản riêng
 INSERT INTO BloodComponents (ComponentName, Description, ShelfLifeDays) VALUES
-('Whole Blood', 'Máu toàn phần chứa tất cả các thành phần của máu', 35),
-('Red Blood Cells', 'Hồng cầu được tách từ máu toàn phần', 42),
-('Plasma', 'Huyết tương chứa các protein và chất điện giải', 365),
-('Platelets', 'Tiểu cầu giúp đông máu', 5);
+('Whole Blood', N'Máu toàn phần chứa tất cả các thành phần của máu', 35),
+('Red Blood Cells', N'Hồng cầu được tách từ máu toàn phần', 42),
+('Plasma', N'Huyết tương chứa các protein và chất điện giải', 365),
+('Platelets', N'Tiểu cầu giúp đông máu', 5);

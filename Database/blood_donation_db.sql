@@ -1,7 +1,7 @@
 -- Blood Donation Management System Database Schema
 -- Created: 2025-05-30
--- Cập nhật: 2025-05-30
---
+
+
 -- Cơ sở dữ liệu này quản lý hệ thống hiến máu của một cơ sở y tế, bao gồm:
 -- - Quản lý người dùng và thành viên
 -- - Quản lý các loại máu và thành phần máu
@@ -9,17 +9,32 @@
 -- - Quản lý các đơn vị máu và giai đoạn hiến máu
 -- - Quản lý blog và thông báo
 
+-- Kiểm tra và tạo cơ sở dữ liệu nếu chưa tồn tại
+IF NOT EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = 'BloodDonationDB')
+BEGIN
+    CREATE DATABASE BloodDonationDB;
+    PRINT 'Database BloodDonationDB created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'Database BloodDonationDB already exists.';
+END
+GO
+
+-- Sử dụng cơ sở dữ liệu
+USE BloodDonationDB;
+GO
+
 -- Drop existing tables if they exist (in reverse order of creation to handle dependencies)
 DROP TABLE IF EXISTS BloodCompatibilityRules;
 DROP TABLE IF EXISTS DonationRequestsDetails;
 DROP TABLE IF EXISTS Notifications;
-DROP TABLE IF EXISTS BloodRequests;
+DROP TABLE IF EXISTS TransfusionRequests;
 DROP TABLE IF EXISTS DonationRequests;
 DROP TABLE IF EXISTS BloodDonationPeriod;
 DROP TABLE IF EXISTS BloodComponents;
 DROP TABLE IF EXISTS BloodUnits;
 DROP TABLE IF EXISTS Members;
-DROP TABLE IF EXISTS BlogComments;
 DROP TABLE IF EXISTS Blog;
 DROP TABLE IF EXISTS BloodTypes;
 DROP TABLE IF EXISTS Users;
@@ -171,10 +186,10 @@ CREATE TABLE TransfusionRequests (
 -- Bảng này lưu trữ chi tiết về các đơn vị máu được hiến trong một yêu cầu hiến máu
 CREATE TABLE DonationRequestsDetails (
     DetailsId INT PRIMARY KEY IDENTITY(1,1),
-    RequestId INT NOT NULL,
+    DonationId INT NOT NULL,
     BloodUnitId INT NOT NULL,
     Volume INT NOT NULL, -- in milliliters
-    FOREIGN KEY (RequestId) REFERENCES DonationRequests(RequestId) ON DELETE CASCADE,
+    FOREIGN KEY (DonationId) REFERENCES DonationRequests(DonationId) ON DELETE CASCADE,
     FOREIGN KEY (BloodUnitId) REFERENCES BloodUnits(BloodUnitId)
 );
 
@@ -291,14 +306,16 @@ INSERT INTO BloodCompatibilityRules (BloodGiveId, BloodRecieveId, IsCompatible) 
 (5, 8, 0); -- AB+ to O-
 
 -- Insert a default admin user (password should be hashed in a real application)
-INSERT INTO Users (PasswordHash, FullName, Email, PhoneNumber, Role) 
-VALUES ('$2a$12$1234567890123456789012', 'System Administrator', 'admin@blooddonation.com', '0123456789', 'Admin');
+INSERT INTO Users (PasswordHash, FullName, CitizenNumber, Email, PhoneNumber, DateOfBirth, Sex, Role) VALUES 
+      ('1', 'System Administrator', '071234567890', 'admin@blooddonation.com', '0123456789','1995-5-7', '0', 'Admin'),
+      ('1', 'System Staff', '072234567890', 'staff@blooddonation.com', '0223456789','1999-2-4', '1', 'Staff'),
+      ('1', 'System Member', '073234567890', 'member@blooddonation.com', '0323456789','2002-1-2', '0', 'Member');
 
 -- Insert blood components
 -- Thêm dữ liệu ban đầu cho các thành phần máu
 -- Mỗi thành phần có thời hạn sử dụng và điều kiện bảo quản riêng
-INSERT INTO BloodComponents (ComponentName, Description, ShelfLifeDays, StorageConditions) VALUES
-('Whole Blood', 'Máu toàn phần chứa tất cả các thành phần của máu', 35, 'Nhiệt độ 1-6°C'),
-('Red Blood Cells', 'Hồng cầu được tách từ máu toàn phần', 42, 'Nhiệt độ 1-6°C'),
-('Plasma', 'Huyết tương chứa các protein và chất điện giải', 365, 'Đông lạnh ở nhiệt độ -18°C hoặc thấp hơn'),
-('Platelets', 'Tiểu cầu giúp đông máu', 5, 'Nhiệt độ 20-24°C với sự khuấy động liên tục');
+INSERT INTO BloodComponents (ComponentName, Description, ShelfLifeDays) VALUES
+('Whole Blood', 'Máu toàn phần chứa tất cả các thành phần của máu', 35),
+('Red Blood Cells', 'Hồng cầu được tách từ máu toàn phần', 42),
+('Plasma', 'Huyết tương chứa các protein và chất điện giải', 365),
+('Platelets', 'Tiểu cầu giúp đông máu', 5);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Container, Typography, Grid, Card, CardContent, Button, Box, Avatar, Stack } from '@mui/material';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -39,8 +39,13 @@ function useQuery() {
 
 const Events = () => {
   const query = useQuery();
+  const navigate = useNavigate();
   const from = query.get('from');
   const to = query.get('to');
+
+  const handleBooking = (locationId) => {
+    navigate('/booking');
+  };
 
   let results = [];
   if (from && to) {
@@ -97,7 +102,13 @@ const Events = () => {
                   </Stack>
                 </CardContent>
                 <Box textAlign="right" p={2} pt={0}>
-                  <Button variant="contained" color="primary">Đặt lịch</Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleBooking(loc.id)}
+                  >
+                    Đặt lịch
+                  </Button>
                 </Box>
               </Card>
             </Grid>

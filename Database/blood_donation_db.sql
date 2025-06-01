@@ -143,14 +143,13 @@ CREATE TABLE DonationRequests (
     PeriodId INT NOT NULL,
     ComponentId INT NOT NULL, -- Thành phần máu muốn hiến
     PreferredDonationDate DATE, -- Ngày hiến máu mong muốn
-    ActualDonationDate DATE, -- Ngày thực hiện hiến máu
     ResponsibleById INT, -- Người phụ trách xử lý yêu cầu (Staff)
     RequestDate DATETIME DEFAULT GETDATE(),
     ApprovalDate DATETIME,
     DonationVolume INT, -- Thể tích máu đã hiến (ml)
     Status VARCHAR(20) NOT NULL CHECK (Status IN ('Pending', 'Approved', 'Completed', 'Rejected', 'Cancelled')),
     Notes NVARCHAR(500),
-    PatientCondition NVARCHAR(500), -- Tình trạng bệnh nhân
+    PatientCondition NTEXT, -- Tình trạng bệnh nhân
     FOREIGN KEY (MemberId) REFERENCES Members(UserId) ON DELETE CASCADE,
     FOREIGN KEY (PeriodId) REFERENCES BloodDonationPeriod(PeriodId),
     FOREIGN KEY (ComponentId) REFERENCES BloodComponents(ComponentId),
@@ -167,14 +166,14 @@ CREATE TABLE TransfusionRequests (
     BloodUnitId INT,
     ResponsibleById INT, -- Người phụ trách xử lý yêu cầu ( Staff )
     IsEmergency BIT DEFAULT 0, -- Đánh dấu yêu cầu máu khẩn cấp, cần ưu tiên xử lý : 0: Không khẩn cấp, 1: Khẩn cấp
-    RequiredQuantity INT NOT NULL DEFAULT 1, -- Số lượng đơn vị máu cần 
+    TransfusionVolume INT NOT NULL DEFAULT 0, -- Số lượng đơn vị máu cần 
     PreferredReceiveDate DATETIME,
     RequestDate DATETIME DEFAULT GETDATE(),
     ApprovalDate DATETIME,
     CompletionDate DATETIME, -- Ngày hoàn thành yêu cầu
     Status VARCHAR(20) NOT NULL CHECK (Status IN ('Pending', 'Approved', 'Completed', 'Rejected', 'Cancelled')),
     Notes NVARCHAR(500),
-    PatientCondition NVARCHAR(500), -- Tình trạng bệnh nhân
+    PatientCondition NTEXT, -- Tình trạng bệnh nhân
     FOREIGN KEY (MemberId) REFERENCES Members(UserId) ON DELETE CASCADE,
     FOREIGN KEY (BloodTypeId) REFERENCES BloodTypes(BloodTypeId),
     FOREIGN KEY (ComponentId) REFERENCES BloodComponents(ComponentId),

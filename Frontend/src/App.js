@@ -8,6 +8,7 @@ import Signup from './pages/auth/Signup';
 import Home from './pages/Home';
 import FAQ from './pages/FAQ';
 import Events from './pages/Events';
+import BookingPage from './pages/BookingPage';
 import { selectIsAuthenticated } from './features/auth/authSlice';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -36,6 +37,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/booking" element={<BookingPage />} />
       </Route>
 
       {/* Fallback Route */}

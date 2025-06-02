@@ -106,20 +106,21 @@ CREATE TABLE BloodComponents (
 
 -- Create BloodUnits table
 -- Bảng này lưu trữ thông tin về các đơn vị máu có trong kho của cơ sở y tế
+-- Đã chỉnh sửa: Xóa DonorId, thêm RemainingVolume, mở rộng trạng thái BloodStatus
 CREATE TABLE BloodUnits (
     BloodUnitId INT PRIMARY KEY IDENTITY(1,1),
     BloodTypeId INT NOT NULL,
     ComponentId INT NOT NULL,
-    DonorId INT, -- Người hiến máu (nếu có)
     AddDate DATE DEFAULT GETDATE(),
-    ExpiryDate DATE NOT NULL,  --Mỗi loại thành phần máu có thời hạn sử dụng tiêu chuẩn (ShelfLifeDays) riêng
-    -- Ngày hết hạn (ExpiryDate) của mỗi đơn vị máu được tính bằng ngày thu thập (AddDate) cộng với thời hạn sử dụng tiêu chuẩn (ShelfLifeDays) của thành phần máu tương ứng
-    Volume INT NOT NULL, -- in milliliters
-    BloodStatus VARCHAR(20) NOT NULL CHECK (BloodStatus IN ('Available', 'Expired', 'Discarded')), -- Trạng thái: Available (có sẵn), Used (đã sử dụng), Expired (hết hạn), Discarded (bỏ đi),
+    ExpiryDate DATE NOT NULL,  -- Ngày hết hạn tiêu chuẩn
+    Volume INT NOT NULL, -- in milliliters (thể tích gốc)
+    RemainingVolume INT NOT NULL DEFAULT 0, -- Thể tích còn lại có thể sử dụng
+    BloodStatus VARCHAR(20) NOT NULL CHECK (BloodStatus IN ('Available', 'PartialUsed', 'Used', 'Expired', 'Discarded')),
     FOREIGN KEY (BloodTypeId) REFERENCES BloodTypes(BloodTypeId),
-    FOREIGN KEY (ComponentId) REFERENCES BloodComponents(ComponentId),
-    FOREIGN KEY (DonorId) REFERENCES Members(UserId)
+    FOREIGN KEY (ComponentId) REFERENCES BloodComponents(ComponentId)
 );
+-- Lưu ý: Đã loại bỏ DonorId và constraint liên quan
+-- Khi nhập kho, cần set RemainingVolume = Volume
 
 -- Create BloodDonationPeriod table
 -- Bảng này quản lý các giai đoạn/sự kiện hiến máu được tổ chức bởi cơ sở y tế

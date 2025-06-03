@@ -55,7 +55,12 @@ const Home = () => {
   };
 
   const handleBookNow = () => {
-    navigate('/booking');
+    const isAuthenticated = localStorage.getItem('token') !== null || localStorage.getItem('isTestUser') === 'true';
+    if (isAuthenticated) {
+      navigate('/booking');
+    } else {
+      navigate('/login');
+    }
   };
 
   // Dữ liệu quyền lợi người hiến máu

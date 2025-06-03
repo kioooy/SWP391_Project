@@ -151,6 +151,12 @@ const MainLayout = () => {
                 to={item.path}
                 isActive={location.pathname === item.path}
                 sx={{ color: 'white', fontWeight: 'bold', fontSize: 18, letterSpacing: 1 }}
+                onClick={(e) => {
+                  if (item.path === '/booking' && !isAuthenticated && !isTestUser) {
+                    e.preventDefault(); // Prevent default navigation
+                    navigate('/login');
+                  }
+                }}
               >
                 {item.label}
               </NavButton>

@@ -44,7 +44,12 @@ const Events = () => {
   const to = query.get('to');
 
   const handleBooking = (locationId) => {
-    navigate('/booking');
+    const isAuthenticated = localStorage.getItem('token') !== null || localStorage.getItem('isTestUser') === 'true';
+    if (isAuthenticated) {
+      navigate('/booking');
+    } else {
+      navigate('/login');
+    }
   };
 
   let results = [];

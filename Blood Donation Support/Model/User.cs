@@ -1,20 +1,41 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Blood_Donation_Support.Model
+namespace Blood_Donation_Support.Model;
+
+public partial class User
 {
-	public partial class User
-	{
-        public int UserId { get; set; }
-        public string? UserName { get; set; }
-        public string? PasswordHash { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string? FullName { get; set; }
-        public DateTime? DateOfBirth { get; set; }
-        public int Gender { get; set; }
-        public string? Address { get; set; }
-        public string? Role { get; set; }
-        public DateOnly? CreatedAt { get; set; }
-        public DateOnly? UpdateAt { get; set; }
-    }
+    public int UserId { get; set; }
+
+    public string PasswordHash { get; set; } = null!;
+
+    public string FullName { get; set; } = null!;
+
+    public string CitizenNumber { get; set; } = null!;
+
+    public string Email { get; set; } = null!;
+
+    public string? PhoneNumber { get; set; }
+
+    public DateOnly? DateOfBirth { get; set; }
+
+    public bool Sex { get; set; }
+
+    public string? Address { get; set; }
+
+    public string Role { get; set; } = null!;
+
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();
+
+    public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
+
+    public virtual Member? Member { get; set; }
+
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();
 }

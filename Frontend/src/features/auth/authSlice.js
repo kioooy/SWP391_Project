@@ -33,7 +33,13 @@ export const register = createAsyncThunk(
 export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
+    // Xóa tất cả thông tin liên quan đến người dùng
     localStorage.removeItem('token');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('isTestUser');
+    
+    // Xóa token khỏi header của axios
+    delete axios.defaults.headers.common['Authorization'];
   }
 );
 

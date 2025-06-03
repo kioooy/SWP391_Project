@@ -178,7 +178,7 @@ const FAQ = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom color="primary">
+        <Typography variant="h4" component="h1" gutterBottom color="primary" align="center">
           Lưu ý quan trọng
         </Typography>
 
@@ -187,13 +187,28 @@ const FAQ = () => {
             key={index}
             expanded={expanded === `panel${index}`}
             onChange={handleChange(`panel${index}`)}
+            sx={{
+              marginBottom: 2,
+              border: '1px solid red',
+            }}
           >
             <AccordionSummary
               expandIcon={<ExpandMoreIcon />}
               aria-controls={`panel${index}bh-content`}
               id={`panel${index}bh-header`}
+              sx={{
+                paddingBottom: 0,
+              }}
             >
-              <Typography>{item.question}</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 'bold',
+                  color: 'red',
+                  fontSize: '1.1rem',
+                }}
+              >
+                {item.question}
+              </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <List>

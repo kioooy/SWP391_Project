@@ -8,11 +8,14 @@ import Signup from './pages/auth/Signup';
 import Home from './pages/Home';
 import FAQ from './pages/FAQ';
 import Events from './pages/Events';
+import News from './pages/News';
+import NewsDetail from './pages/NewsDetail';
 import BookingPage from './pages/BookingPage';
 import { selectIsAuthenticated } from './features/auth/authSlice';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import Profile from './pages/Profile';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -37,7 +40,10 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/news" element={<News />} />
+        <Route path="/news/:id" element={<NewsDetail />} />
         <Route path="/booking" element={<BookingPage />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       {/* Fallback Route */}

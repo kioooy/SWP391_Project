@@ -1,15 +1,16 @@
+using Azure.Core;
+using Blood_Donation_Support.Data;
+using Blood_Donation_Support.DTO;
+using Blood_Donation_Support.Model;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Blood_Donation_Support.Model;
-using Blood_Donation_Support.Data;
-using Blood_Donation_Support.DTO;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -56,8 +57,13 @@ namespace Blood_Donation_Support.Controllers
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new InvalidOperationException("JWT key is not configured.");
+            }
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.Now.AddHours(2);
 
@@ -170,5 +176,98 @@ namespace Blood_Donation_Support.Controllers
                 role = user.Role 
             });
         }
+
+        // GET API
+
+        // Get User by CitizenNumber (Admin or for search)
+        [HttpGet("{citizenNumber}")]
+        public async Task<ActionResult<User>> GetUserByCitizenNumber(string citizenNumber)
+        {
+            if (string.IsNullOrWhiteSpace(citizenNumber))
+            {
+                return BadRequest("Citizen number is required.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber);
+            if (user == null)
+            {
+                return NotFound();
+            }
+           return user;
+        }
+
+        // PUT API for User Management
+
+
+        // ADMIN API for User Management
+
+        // Get all Users (Admin)
+        // Get: api/User/GetAllUsers
+        [HttpGet("GetAllUsers")]
+        public async Task<ActionResult<IEnumerable<User>>> GetAllUsers()
+        {
+            if (_context.Users == null)
+            {
+                return NotFound();
+            }
+            return await _context.Users.ToListAsync(); // Return all Users
+        }
+
+        // Update User Profile using DTO
+        // PUT: api/User/UpdateUser
+        [HttpPut("UpdateUser")]
+        public async Task<IActionResult> UpdateUser([FromBody] AddUser model)
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            if (userId == null)
+            {
+                return Unauthorized("User not Authenticated");
+            }
+
+            int id = int.Parse(userId);
+
+            // Uniqueness checks (exclude current user)
+            if (await _context.Users.AnyAsync(u => u.CitizenNumber == model.CitizenNumber && u.UserId != id))
+            {
+                return BadRequest(new { message = "Số CCCD/CMND đã được đăng ký" });
+            }
+            if (await _context.Users.AnyAsync(u => u.Email == model.Email && u.UserId != id))
+            {
+                return BadRequest(new { message = "Email đã được đăng ký" });
+            }
+            if (!string.IsNullOrEmpty(model.PhoneNumber) && await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id))
+            {
+                return BadRequest(new { message = "Số điện thoại đã được đăng ký" });
+            }
+
+            var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
+            if (existingUser == null)
+            {
+                return NotFound(); // Status code 404 Not Found
+            }
+
+            // Update only the fields you want to allow to be changed
+            existingUser.FullName = model.FullName;        // Full Name
+            existingUser.PhoneNumber = model.PhoneNumber;  // Phone Number
+            existingUser.FullName = model.FullName;        // Full Name
+            existingUser.DateOfBirth = model.DateOfBirth;  // Date of Birth
+            existingUser.Sex = model.Sex;                  // Gender
+            existingUser.Address = model.Address;          // Address
+            existingUser.Role = model.Role;                // Role
+            existingUser.UpdatedAt = DateTime.Now;        // UpdatedAt
+
+            try
+            {
+                await _context.SaveChangesAsync(); // Save changes to the database
+                return Ok(existingUser); // Return the updated User
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw; // Rethrow the exception if it is a concurrency issue 
+            }
+        }
+
     }
 }
+
+

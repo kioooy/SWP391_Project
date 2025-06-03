@@ -1,11 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "p+uFsp9kQ4/y994kB2ssUEcmTyNFerzYnGUHIN/43aE=",
-  "Source": "Blood Donation Support",
-  "BasePath": "_content/Blood Donation Support",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
-}
+{"Version":1,"Hash":"mSiXqq4QooUBD8ysrGBJ6sLZLD8dowGU+FH8e8873zY=","Source":"Blood Donation Support","BasePath":"_content/Blood Donation Support","Mode":"Default","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

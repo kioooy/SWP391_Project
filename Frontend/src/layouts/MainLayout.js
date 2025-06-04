@@ -95,7 +95,6 @@ const MainLayout = () => {
 
   const menuItems = [
     { path: '/', label: 'Trang Chủ', icon: <HomeIcon /> },
-    { path: '/events', label: 'Sự Kiện', icon: <HistoryIcon /> },
     { path: '/faq', label: 'Hỏi & Đáp', icon: <QuestionAnswerIcon /> },
     { path: '/news', label: 'Tin Tức', icon: <NewsIcon /> },
     { path: '/booking', label: 'Đặt Lịch', icon: <ContactIcon /> },

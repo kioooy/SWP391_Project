@@ -123,7 +123,7 @@ const MainLayout = () => {
                   startIcon={<AccountCircleIcon />}
                   onClick={handleProfile}
                 >
-                  {isTestUser ? 'Test User' : 'Profile'}
+                  {isTestUser ? 'User' : 'Profile'}
                 </Button>
               ) : (
                 <Button

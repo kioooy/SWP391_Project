@@ -64,7 +64,7 @@ const districts = {
   'Hải Phòng': ['Hồng Bàng', 'Ngô Quyền', 'Lê Chân', 'Hải An', 'Kiến An', 'Đồ Sơn'],
 };
 
-const wards = {
+/* const wards = {
   'Quận 1': ['Phường Bến Nghé', 'Phường Bến Thành', 'Phường Cầu Kho', 'Phường Cầu Ông Lãnh', 'Phường Cô Giang', 'Phường Đa Kao', 'Phường Nguyễn Cư Trinh', 'Phường Nguyễn Thái Bình', 'Phường Phạm Ngũ Lão', 'Phường Tân Định'],
   'Quận 2': ['Phường An Phú', 'Phường An Khánh', 'Phường Bình An', 'Phường Bình Khánh', 'Phường Bình Trưng Đông', 'Phường Bình Trưng Tây', 'Phường Cát Lái', 'Phường Thảo Điền', 'Phường Thạnh Mỹ Lợi', 'Phường Thu Thiêm'],
   'Quận 3': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14'],
@@ -73,7 +73,7 @@ const wards = {
   'Hoàn Kiếm': ['Phường Chương Dương', 'Phường Cửa Đông', 'Phường Đồng Xuân', 'Phường Hàng Bài', 'Phường Hàng Bồ', 'Phường Hàng Buồm', 'Phường Hàng Gai', 'Phường Hàng Mã', 'Phường Hàng Trống', 'Phường Lý Thái Tổ', 'Phường Phan Chu Trinh', 'Phường Phúc Tân', 'Phường Tràng Tiền', 'Phường Trần Hưng Đạo'],
   'Ba Đình': ['Phường Cống Vị', 'Phường Điện Biên', 'Phường Đội Cấn', 'Phường Giảng Võ', 'Phường Kim Mã', 'Phường Liễu Giai', 'Phường Ngọc Hà', 'Phường Ngọc Khánh', 'Phường Nguyễn Trung Trực', 'Phường Phúc Xá', 'Phường Quán Thánh', 'Phường Thành Công', 'Phường Trúc Bạch', 'Phường Vĩnh Phúc'],
   'Hải Châu': ['Phường Bình Hiên', 'Phường Bình Thuận', 'Phường Hải Châu I', 'Phường Hải Châu II', 'Phường Hòa Cường Bắc', 'Phường Hòa Cường Nam', 'Phường Hòa Thuận Đông', 'Phường Hòa Thuận Tây', 'Phường Nam Dương', 'Phường Phước Ninh', 'Phường Thạch Thang', 'Phường Thanh Bình', 'Phường Thuận Phước'],
-};
+}; */
 
 const occupations = [
   'Học sinh/Sinh viên',
@@ -105,8 +105,8 @@ const getValidationSchema = (activeStep) => {
     gender: Yup.string().required('Vui lòng chọn giới tính'),
     city: Yup.string().required('Vui lòng chọn tỉnh/thành phố'),
     district: Yup.string().required('Vui lòng chọn quận/huyện'),
-    ward: Yup.string().required('Vui lòng chọn phường/xã'),
-    street: Yup.string().required('Vui lòng nhập số nhà, tên đường'),
+/*     ward: Yup.string().required('Vui lòng chọn phường/xã'),
+ */    street: Yup.string().required('Vui lòng nhập số nhà, tên đường'),
   };
 
   if (activeStep >= 2) {
@@ -548,7 +548,7 @@ const Signup = () => {
                   </Grid>
 
                   {/* Phường/Xã */}
-                  <Grid item xs={12} sm={6}>
+                 {/*  <Grid item xs={12} sm={6}>
                     <FormControl fullWidth disabled={!formik.values.district}>
                       <InputLabel>Phường/Xã</InputLabel>
                       <Select
@@ -564,7 +564,7 @@ const Signup = () => {
                         ))}
                       </Select>
                     </FormControl>
-                  </Grid>
+                  </Grid> */}
 
                   {/* Số nhà, tên đường */}
                   <Grid item xs={12}>
@@ -831,21 +831,63 @@ const Signup = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, maxWidth: 900, mx: 'auto' }}>
-        <Box sx={{ mb: 4 }}>
-          <Stepper activeStep={activeStep} alternativeLabel>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
+    <Box sx={{
+      minHeight: '100vh',
+      minWidth: '100vw',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundImage: 'url(/images/Login.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      zIndex: 0,
+      overflowY: 'auto',
+    }}>
+      {/* Logo */}
+      <Box sx={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        bgcolor: '#fff',
+        px: 4,
+        height: 70,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+        zIndex: 2,
+        justifyContent: 'center',
+      }}>
+        <Link component={RouterLink} to="/home" underline="none" sx={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/images/logo.png" alt="logo" style={{ height: 40, marginRight: 8 }} />
+          <Typography variant="h5" fontWeight="bold" color="#e53935" sx={{ letterSpacing: 2 }}>
+            Hệ Thống Hỗ Trợ Hiến Máu
+          </Typography>
+        </Link>
+      </Box>
+      {/* Form đăng ký */}
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Paper elevation={3} sx={{ p: { xs: 3, md: 5 }, maxWidth: 900, mx: 'auto' }}>
+          <Box sx={{ mb: 4 }}>
+            <Stepper activeStep={activeStep} alternativeLabel>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
 
-        {renderStepContent(activeStep)}
-      </Paper>
-    </Container>
+          {renderStepContent(activeStep)}
+        </Paper>
+      </Container>
+    </Box>
   );
 };
 

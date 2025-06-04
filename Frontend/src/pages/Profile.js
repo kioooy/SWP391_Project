@@ -300,15 +300,7 @@ const Profile = () => {
                       onChange={handleInputChange}
                       fullWidth
                       size="small"
-                    />
-                    <TextField
-                      label="Email"
-                      name="email"
-                      value={editedUser.email || ''}
-                      fullWidth
-                      size="small"
-                      disabled
-                    />
+                    />  
                     <FormControl fullWidth size="small">
                       <InputLabel>Nghề nghiệp</InputLabel>
                       <Select
@@ -322,15 +314,6 @@ const Profile = () => {
                         ))}
                       </Select>
                     </FormControl>
-                    <TextField
-                      label="Nhóm máu"
-                      name="bloodType"
-                      value={editedUser.bloodType || ''}
-                      fullWidth
-                      size="small"
-                      disabled={true}
-                      sx={{ mt: 2 }}
-                    />
                   </Stack>
                 ) : (
                   <Stack spacing={2}>
@@ -388,18 +371,6 @@ const Profile = () => {
               </>
             ) : (
               <>
-                <Button
-                  variant="contained"
-                  color="info"
-                  onClick={handleNavigateToNews}
-                  startIcon={<NewspaperIcon />}
-                  sx={{
-                    px: 4,
-                    py: 1,
-                  }}
-                >
-                  Tin tức
-                </Button>
                 <Button
                   variant="outlined"
                   color="error"

@@ -1,15 +1,16 @@
+using Azure.Core;
+using Blood_Donation_Support.Data;
+using Blood_Donation_Support.DTO;
+using Blood_Donation_Support.Model;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Blood_Donation_Support.Model;
-using Blood_Donation_Support.Data;
-using Blood_Donation_Support.DTO;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -56,8 +57,13 @@ namespace Blood_Donation_Support.Controllers
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new InvalidOperationException("JWT key is not configured.");
+            }
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.Now.AddHours(2);
 
@@ -170,5 +176,109 @@ namespace Blood_Donation_Support.Controllers
                 role = user.Role 
             });
         }
+
+        // GET API
+
+        // Get User by CitizenNumber (Admin for search)
+        [HttpGet("{citizenNumber}")]
+        public async Task<IActionResult> GetUserByCitizenNumber(string citizenNumber)
+        {
+            var usercitizennumber = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber); // 
+            if (usercitizennumber == null)
+            {
+                return NotFound();
+            }
+                var user = await _context.Users.Select(v => new  
+                {
+                    v.UserId,
+                    v.FullName,
+                    v.CitizenNumber,
+                    v.Email,
+                    v.PhoneNumber,
+                    v.DateOfBirth,
+                    v.Sex,
+                    v.Address,
+                    v.Role,
+                    v.CreatedAt,
+                    v.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(user);
+        }
+
+        // ADMIN API for User Management
+
+        // Get all Users (Admin)
+        // Get: api/User/GetAllUsers
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUser()
+        {
+            var users = await _context.Users
+                .Select(v => new // 
+                {
+                    v.UserId,
+                    v.FullName,
+                    v.CitizenNumber,
+                    v.Email,
+                    v.PhoneNumber,
+                    v.DateOfBirth,
+                    v.Sex,
+                    v.Address,
+                    v.Role,
+                    v.CreatedAt,
+                    v.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+
+        // Update User Profile (admin)
+        // PUT: api/User/UpdateUser
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
+        {
+            if (!ModelState.IsValid) // validate check DTO model state
+            {
+                return BadRequest(ModelState); // Status code 400 Bad Request
+            }
+            var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
+            if (existingUser == null)
+            {
+                return NotFound(); // Status code 404 Not Found
+            }
+                        // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - model.DateOfBirth.Year;
+            if (model.DateOfBirth > today.AddYears(-age)) age--;
+            if (age < 18)
+            {
+                return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
+            }
+            // Update only the fields you want to allow to be changed
+            existingUser.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
+            existingUser.FullName = model.FullName;        // Full Name
+            existingUser.PhoneNumber = model.PhoneNumber;  // Phone Number
+            existingUser.FullName = model.FullName;        // Full Name
+            existingUser.DateOfBirth = model.DateOfBirth;  // Date of Birth
+            existingUser.Sex = model.Sex;                  // Gender
+            existingUser.Address = model.Address;          // Address
+            existingUser.Role = model.Role;                // Role
+            existingUser.UpdatedAt = DateTime.Now;        // UpdatedAt
+
+            try
+            {
+                await _context.SaveChangesAsync(); // Save changes to the database
+                return Ok(existingUser); // Return the updated User
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw; // Rethrow the exception if it is a concurrency issue 
+            }
+        }
+
     }
 }
+
+

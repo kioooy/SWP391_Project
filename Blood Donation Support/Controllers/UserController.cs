@@ -179,74 +179,85 @@ namespace Blood_Donation_Support.Controllers
 
         // GET API
 
-        // Get User by CitizenNumber (Admin or for search)
+        // Get User by CitizenNumber (Admin for search)
         [HttpGet("{citizenNumber}")]
-        public async Task<ActionResult<User>> GetUserByCitizenNumber(string citizenNumber)
+        public async Task<IActionResult> GetUserByCitizenNumber(string citizenNumber)
         {
-            if (string.IsNullOrWhiteSpace(citizenNumber))
-            {
-                return BadRequest("Citizen number is required.");
-            }
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber);
-            if (user == null)
+            var usercitizennumber = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber); // 
+            if (usercitizennumber == null)
             {
                 return NotFound();
             }
-           return user;
+                var user = await _context.Users.Select(v => new  
+                {
+                    v.UserId,
+                    v.FullName,
+                    v.CitizenNumber,
+                    v.Email,
+                    v.PhoneNumber,
+                    v.DateOfBirth,
+                    v.Sex,
+                    v.Address,
+                    v.Role,
+                    v.CreatedAt,
+                    v.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(user);
         }
-
-        // PUT API for User Management
-
 
         // ADMIN API for User Management
 
         // Get all Users (Admin)
         // Get: api/User/GetAllUsers
-        [HttpGet("GetAllUsers")]
-        public async Task<ActionResult<IEnumerable<User>>> GetAllUsers()
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUser()
         {
-            if (_context.Users == null)
-            {
-                return NotFound();
-            }
-            return await _context.Users.ToListAsync(); // Return all Users
+            var users = await _context.Users
+                .Select(v => new // 
+                {
+                    v.UserId,
+                    v.FullName,
+                    v.CitizenNumber,
+                    v.Email,
+                    v.PhoneNumber,
+                    v.DateOfBirth,
+                    v.Sex,
+                    v.Address,
+                    v.Role,
+                    v.CreatedAt,
+                    v.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(users);
         }
 
-        // Update User Profile using DTO
+        // Update User Profile (admin)
         // PUT: api/User/UpdateUser
-        [HttpPut("UpdateUser")]
-        public async Task<IActionResult> UpdateUser([FromBody] AddUser model)
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
         {
-            var userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (userId == null)
+            if (!ModelState.IsValid) // validate check DTO model state
             {
-                return Unauthorized("User not Authenticated");
+                return BadRequest(ModelState); // Status code 400 Bad Request
             }
-
-            int id = int.Parse(userId);
-
-            // Uniqueness checks (exclude current user)
-            if (await _context.Users.AnyAsync(u => u.CitizenNumber == model.CitizenNumber && u.UserId != id))
-            {
-                return BadRequest(new { message = "Số CCCD/CMND đã được đăng ký" });
-            }
-            if (await _context.Users.AnyAsync(u => u.Email == model.Email && u.UserId != id))
-            {
-                return BadRequest(new { message = "Email đã được đăng ký" });
-            }
-            if (!string.IsNullOrEmpty(model.PhoneNumber) && await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id))
-            {
-                return BadRequest(new { message = "Số điện thoại đã được đăng ký" });
-            }
-
             var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
             if (existingUser == null)
             {
                 return NotFound(); // Status code 404 Not Found
             }
-
+                        // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - model.DateOfBirth.Year;
+            if (model.DateOfBirth > today.AddYears(-age)) age--;
+            if (age < 18)
+            {
+                return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
+            }
             // Update only the fields you want to allow to be changed
+            existingUser.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
             existingUser.FullName = model.FullName;        // Full Name
             existingUser.PhoneNumber = model.PhoneNumber;  // Phone Number
             existingUser.FullName = model.FullName;        // Full Name

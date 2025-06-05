@@ -5,6 +5,83 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/DonationRequest/{id}": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/all": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/update/{id}": {
+      "put": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDonationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDonationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDonationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/User/login": {
       "post": {
         "tags": [
@@ -84,86 +161,54 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
+            "description": "Success"
           }
         }
       }
     },
-    "/api/User/GetAllUsers": {
+    "/api/User/all": {
       "get": {
         "tags": [
           "User"
         ],
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
-                }
-              }
-            }
+            "description": "Success"
           }
         }
       }
     },
-    "/api/User/UpdateUser": {
+    "/api/User/update/{id}": {
       "put": {
         "tags": [
           "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddUser"
+                "$ref": "#/components/schemas/UpdateUser"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddUser"
+                "$ref": "#/components/schemas/UpdateUser"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AddUser"
+                "$ref": "#/components/schemas/UpdateUser"
               }
             }
           }
@@ -217,347 +262,6 @@
   },
   "components": {
     "schemas": {
-      "AddUser": {
-        "required": [
-          "address",
-          "dateOfBirth",
-          "email",
-          "fullName",
-          "passwordHash",
-          "phoneNumber",
-          "role",
-          "sex"
-        ],
-        "type": "object",
-        "properties": {
-          "passwordHash": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "fullName": {
-            "maxLength": 40,
-            "minLength": 0,
-            "type": "string"
-          },
-          "citizenNumber": {
-            "maxLength": 12,
-            "minLength": 0,
-            "pattern": "^\\d{12}$",
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "minLength": 1,
-            "type": "string",
-            "format": "email"
-          },
-          "phoneNumber": {
-            "minLength": 1,
-            "pattern": "^0\\d{9}$",
-            "type": "string"
-          },
-          "dateOfBirth": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "sex": {
-            "maximum": 1,
-            "minimum": 0,
-            "type": "boolean"
-          },
-          "address": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "role": {
-            "minLength": 1,
-            "pattern": "^(Admin|Staff|Member|Guest)$",
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "Blog": {
-        "type": "object",
-        "properties": {
-          "postId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "userId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "content": {
-            "type": "string",
-            "nullable": true
-          },
-          "publishedDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "updatedDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          }
-        },
-        "additionalProperties": false
-      },
-      "BloodCompatibilityRule": {
-        "type": "object",
-        "properties": {
-          "bloodRuleId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodGiveId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodRecieveId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "isCompatible": {
-            "type": "boolean"
-          },
-          "bloodGive": {
-            "$ref": "#/components/schemas/BloodType"
-          },
-          "bloodRecieve": {
-            "$ref": "#/components/schemas/BloodType"
-          }
-        },
-        "additionalProperties": false
-      },
-      "BloodComponent": {
-        "type": "object",
-        "properties": {
-          "componentId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "componentName": {
-            "type": "string",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "shelfLifeDays": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodUnits": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BloodUnit"
-            },
-            "nullable": true
-          },
-          "donationRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DonationRequest"
-            },
-            "nullable": true
-          },
-          "transfusionRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TransfusionRequest"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "BloodDonationPeriod": {
-        "type": "object",
-        "properties": {
-          "periodId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "periodName": {
-            "type": "string",
-            "nullable": true
-          },
-          "location": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "periodDateFrom": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "periodDateTo": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "targetQuantity": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "currentQuantity": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "donationRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DonationRequest"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "BloodType": {
-        "type": "object",
-        "properties": {
-          "bloodTypeId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodTypeName": {
-            "type": "string",
-            "nullable": true
-          },
-          "bloodCompatibilityRuleBloodGives": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BloodCompatibilityRule"
-            },
-            "nullable": true
-          },
-          "bloodCompatibilityRuleBloodRecieves": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BloodCompatibilityRule"
-            },
-            "nullable": true
-          },
-          "bloodUnits": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BloodUnit"
-            },
-            "nullable": true
-          },
-          "members": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Member"
-            },
-            "nullable": true
-          },
-          "transfusionRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TransfusionRequest"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "BloodUnit": {
-        "type": "object",
-        "properties": {
-          "bloodUnitId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodTypeId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "componentId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "donorId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "addDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "expiryDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "volume": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodStatus": {
-            "type": "string",
-            "nullable": true
-          },
-          "bloodType": {
-            "$ref": "#/components/schemas/BloodType"
-          },
-          "component": {
-            "$ref": "#/components/schemas/BloodComponent"
-          },
-          "donationRequestsDetails": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DonationRequestsDetail"
-            },
-            "nullable": true
-          },
-          "donor": {
-            "$ref": "#/components/schemas/Member"
-          },
-          "transfusionRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TransfusionRequest"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "DateOnly": {
         "type": "object",
         "properties": {
@@ -602,110 +306,6 @@
         "type": "integer",
         "format": "int32"
       },
-      "DonationRequest": {
-        "type": "object",
-        "properties": {
-          "donationId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "memberId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "periodId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "componentId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "preferredDonationDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "responsibleById": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "requestDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "approvalDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "donationVolume": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "patientCondition": {
-            "type": "string",
-            "nullable": true
-          },
-          "component": {
-            "$ref": "#/components/schemas/BloodComponent"
-          },
-          "donationRequestsDetails": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DonationRequestsDetail"
-            },
-            "nullable": true
-          },
-          "member": {
-            "$ref": "#/components/schemas/Member"
-          },
-          "period": {
-            "$ref": "#/components/schemas/BloodDonationPeriod"
-          },
-          "responsibleBy": {
-            "$ref": "#/components/schemas/User"
-          }
-        },
-        "additionalProperties": false
-      },
-      "DonationRequestsDetail": {
-        "type": "object",
-        "properties": {
-          "detailsId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "donationId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodUnitId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "volume": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodUnit": {
-            "$ref": "#/components/schemas/BloodUnit"
-          },
-          "donation": {
-            "$ref": "#/components/schemas/DonationRequest"
-          }
-        },
-        "additionalProperties": false
-      },
       "LoginModel": {
         "type": "object",
         "properties": {
@@ -716,114 +316,6 @@
           "password": {
             "type": "string",
             "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "Member": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodTypeId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "weight": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "height": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "lastDonationDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "recoveryDueDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "isDonor": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "isRecipient": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "donationCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "lastCheckupDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "bloodType": {
-            "$ref": "#/components/schemas/BloodType"
-          },
-          "bloodUnits": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BloodUnit"
-            },
-            "nullable": true
-          },
-          "donationRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DonationRequest"
-            },
-            "nullable": true
-          },
-          "transfusionRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TransfusionRequest"
-            },
-            "nullable": true
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
-          }
-        },
-        "additionalProperties": false
-      },
-      "Notification": {
-        "type": "object",
-        "properties": {
-          "notificationId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "userId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "message": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "notificationType": {
-            "type": "string",
-            "nullable": true
-          },
-          "user": {
-            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
@@ -898,174 +390,89 @@
         },
         "additionalProperties": false
       },
-      "TransfusionRequest": {
+      "UpdateDonationRequest": {
+        "required": [
+          "responsibleById",
+          "status"
+        ],
         "type": "object",
         "properties": {
-          "transfusionId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "memberId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodTypeId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "componentId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "bloodUnitId": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
           "responsibleById": {
             "type": "integer",
-            "format": "int32",
-            "nullable": true
-          },
-          "isEmergency": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "transfusionVolume": {
-            "type": "integer",
             "format": "int32"
           },
-          "preferredReceiveDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "requestDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "approvalDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "completionDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
           "status": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "pattern": "Pending|Approved|Rejected",
+            "type": "string"
           },
           "notes": {
             "type": "string",
             "nullable": true
-          },
-          "patientCondition": {
-            "type": "string",
-            "nullable": true
-          },
-          "bloodType": {
-            "$ref": "#/components/schemas/BloodType"
-          },
-          "bloodUnit": {
-            "$ref": "#/components/schemas/BloodUnit"
-          },
-          "component": {
-            "$ref": "#/components/schemas/BloodComponent"
-          },
-          "member": {
-            "$ref": "#/components/schemas/Member"
-          },
-          "responsibleBy": {
-            "$ref": "#/components/schemas/User"
           }
         },
         "additionalProperties": false
       },
-      "User": {
+      "UpdateUser": {
+        "required": [
+          "address",
+          "dateOfBirth",
+          "email",
+          "fullName",
+          "passwordHash",
+          "phoneNumber",
+          "role",
+          "sex",
+          "updatedAt"
+        ],
         "type": "object",
         "properties": {
-          "userId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "passwordHash": {
-            "type": "string",
-            "nullable": true
+            "minLength": 6,
+            "type": "string"
           },
           "fullName": {
-            "type": "string",
-            "nullable": true
+            "maxLength": 40,
+            "minLength": 0,
+            "type": "string"
           },
           "citizenNumber": {
+            "maxLength": 12,
+            "minLength": 0,
+            "pattern": "^\\d{12}$",
             "type": "string",
             "nullable": true
           },
           "email": {
+            "minLength": 1,
             "type": "string",
-            "nullable": true
+            "format": "email"
           },
           "phoneNumber": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "pattern": "^0\\d{9}$",
+            "type": "string"
           },
           "dateOfBirth": {
             "$ref": "#/components/schemas/DateOnly"
           },
           "sex": {
+            "maximum": 1,
+            "minimum": 0,
             "type": "boolean"
           },
           "address": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "role": {
-            "type": "string",
-            "nullable": true
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
+            "minLength": 1,
+            "pattern": "^(Admin|Staff|Member|Guest)$",
+            "type": "string"
           },
           "updatedAt": {
             "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "blogs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Blog"
-            },
-            "nullable": true
-          },
-          "donationRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DonationRequest"
-            },
-            "nullable": true
-          },
-          "member": {
-            "$ref": "#/components/schemas/Member"
-          },
-          "notifications": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Notification"
-            },
-            "nullable": true
-          },
-          "transfusionRequests": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TransfusionRequest"
-            },
-            "nullable": true
+            "format": "date-time"
           }
         },
         "additionalProperties": false

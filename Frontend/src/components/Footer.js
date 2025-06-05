@@ -11,10 +11,10 @@ import {
   useTheme
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import FacebookIcon from '@mui/icons-material/Facebook';
+/* import FacebookIcon from '@mui/icons-material/Facebook';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import YouTubeIcon from '@mui/icons-material/YouTube';
+import YouTubeIcon from '@mui/icons-material/YouTube'; */
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -37,7 +37,7 @@ const FooterBottom = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2, 0),
 }));
 
-const SocialIconButton = styled(IconButton)(({ theme }) => ({
+/* const SocialIconButton = styled(IconButton)(({ theme }) => ({
   color: 'white',
   backgroundColor: 'rgba(255, 255, 255, 0.1)',
   margin: theme.spacing(0, 0.5),
@@ -46,7 +46,7 @@ const SocialIconButton = styled(IconButton)(({ theme }) => ({
     transform: 'translateY(-2px)',
   },
   transition: 'all 0.3s ease',
-}));
+})); */
 
 const FooterLink = styled(Link)(({ theme }) => ({
   color: 'rgba(255, 255, 255, 0.8)',
@@ -109,7 +109,7 @@ const Footer = () => {
                 </Typography>
 
                 {/* Social Media */}
-                <Typography variant="h6" sx={{ mb: 2 }}>
+                {/* <Typography variant="h6" sx={{ mb: 2 }}>
                   Kết nối với chúng tôi
                 </Typography>
                 <Stack direction="row" spacing={1}>
@@ -125,12 +125,12 @@ const Footer = () => {
                   <SocialIconButton size="small">
                     <YouTubeIcon />
                   </SocialIconButton>
-                </Stack>
+                </Stack> */}
               </Box>
             </Grid>
 
             {/* Navigation Links */}
-            <Grid item xs={12} md={2}>
+            {/*<Grid item xs={12} md={2}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
                 Điều hướng
               </Typography>
@@ -139,10 +139,10 @@ const Footer = () => {
                   {link.label}
                 </FooterLink>
               ))}
-            </Grid>
+            </Grid>*/}
 
             {/* Quick Links */}
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={4}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
                 Liên kết nhanh
               </Typography>
@@ -154,7 +154,7 @@ const Footer = () => {
             </Grid>
 
             {/* Contact Info */}
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={4}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
                 Thông tin liên hệ
               </Typography>
@@ -197,12 +197,12 @@ const Footer = () => {
         <FooterBottom>
           <Container maxWidth="lg">
             <Grid container alignItems="center" justifyContent="space-between">
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+              <Grid item xs={12}>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', textAlign: 'center', fontWeight: 'bold' }}>
                   © 2024 Hệ Thống Hiến Máu Việt Nam. Tất cả quyền được bảo lưu.
                 </Typography>
               </Grid>
-              <Grid item xs={12} md={6}>
+              {/* <Grid item xs={12} md={6}>
                 <Stack
                   direction={{ xs: 'column', md: 'row' }}
                   spacing={2}
@@ -218,7 +218,7 @@ const Footer = () => {
                     Sitemap
                   </FooterLink>
                 </Stack>
-              </Grid>
+              </Grid> */}
             </Grid>
           </Container>
         </FooterBottom>

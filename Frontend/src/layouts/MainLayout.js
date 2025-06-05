@@ -11,6 +11,11 @@ import { logout } from '../features/auth/authSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '../features/auth/authSlice';
 import Footer from '../components/Footer';
+import PersonIcon  from '@mui/icons-material/Person';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+
 
 const MainContainer = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
@@ -68,86 +73,97 @@ const MainLayout = () => {
     navigate('/signup');
   };
 
+  // Kiểm tra trạng thái đăng nhập test user
+  const isTestUser = localStorage.getItem('isTestUser') === 'true';
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  const handleLogoutAll = () => {
+    localStorage.removeItem('isTestUser');
+    handleClose();
+    handleLogout();
+  };
+
+  const handleProfile = () => {
+    navigate('/profile');
+  };
+
   const menuItems = [
     { path: '/', label: 'Trang Chủ', icon: <HomeIcon /> },
-    { path: '/appointment-history', label: 'Lịch Sử Đặt Hẹn', icon: <HistoryIcon /> },
     { path: '/faq', label: 'Hỏi & Đáp', icon: <QuestionAnswerIcon /> },
     { path: '/news', label: 'Tin Tức', icon: <NewsIcon /> },
-    { path: '/contact', label: 'Liên Hệ', icon: <ContactIcon /> },
+    { path: '/booking', label: 'Đặt Lịch', icon: <ContactIcon /> },
   ];
 
   return (
     <MainContainer>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ mr: 4 }}>
-            Hệ Thống Hiến Máu
-          </Typography>
+      {/* PHẦN TRÊN: logo, ngôn ngữ, đăng nhập */}
+      <Box sx={{ background: '#fff', py: 1 }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ width: 80 }} /> {/* giữ chỗ để logo ở giữa */}
+            {/* Logo */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <img src="/images/logo.png" alt="logo" style={{ height: 40, marginRight: 8 }} />
+              <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ letterSpacing: 2 }}>
+                Hệ Thống Hỗ Trợ Hiến Máu
+              </Typography>
+            </Box>
+            {/* Đăng nhập/Đăng ký hoặc Profile */}
+            <Box>
+              {(isAuthenticated || isTestUser) ? (
+                <Button
+                  color="primary"
+                  startIcon={<AccountCircleIcon />}
+                  onClick={handleProfile}
+                >
+                  {isTestUser ? 'User' : 'Profile'}
+                </Button>
+              ) : (
+                <Button
+                  variant="text"
+                  color="primary"
+                  onClick={handleLogin}
+                  startIcon={<PersonIcon />}
+                >
+                  Đăng nhập
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </Container>
+      </Box>
 
-          <Stack direction="row" spacing={1} sx={{ flexGrow: 1 }}>
+      {/* PHẦN DƯỚI: menu điều hướng */}
+      <AppBar position="static" sx={{ background: '#202G99', boxShadow: 'none' }}>
+        <Toolbar sx={{ justifyContent: 'center', minHeight: 0, py: 1 }}>
+          <Stack direction="row" spacing={4}>
             {menuItems.map((item) => (
               <NavButton
                 key={item.path}
                 component={StyledLink}
                 to={item.path}
-                startIcon={item.icon}
                 isActive={location.pathname === item.path}
+                sx={{ color: 'white', fontWeight: 'bold', fontSize: 18, letterSpacing: 1 }}
+                onClick={(e) => {
+                  if (item.path === '/booking' && !isAuthenticated && !isTestUser) {
+                    e.preventDefault(); // Prevent default navigation
+                    navigate('/login');
+                  }
+                }}
               >
                 {item.label}
               </NavButton>
             ))}
           </Stack>
-
-          {isAuthenticated ? (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleLogout}
-              sx={{
-                ml: 2,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                }
-              }}
-            >
-              Logout
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleLogin}
-                sx={{
-                  ml: 2,
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                  }
-                }}
-              >
-                Login
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={handleSignup}
-                sx={{
-                  ml: 1,
-                  borderColor: 'rgba(255, 255, 255, 0.5)',
-                  color: 'inherit',
-                  '&:hover': {
-                    borderColor: 'rgba(255, 255, 255, 0.8)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  }
-                }}
-              >
-                Sign Up
-              </Button>
-            </>
-          )}
         </Toolbar>
       </AppBar>
+
       <ContentContainer maxWidth="lg">
         <Outlet />
       </ContentContainer>

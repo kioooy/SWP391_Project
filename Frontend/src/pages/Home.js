@@ -55,7 +55,12 @@ const Home = () => {
   };
 
   const handleBookNow = () => {
-    navigate('/booking');
+    const isAuthenticated = localStorage.getItem('token') !== null || localStorage.getItem('isTestUser') === 'true';
+    if (isAuthenticated) {
+      navigate('/booking');
+    } else {
+      navigate('/login');
+    }
   };
 
   // Dữ liệu quyền lợi người hiến máu
@@ -207,8 +212,8 @@ const Home = () => {
       {/* Hero Section - Đặt lịch hiến máu */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 100%)',
-          color: 'white',
+          background: 'linear-gradient(135deg, #F8FBFD 0%, #F8FBFD 100%)',
+          color: '#333',
           py: 8,
           position: 'relative',
           overflow: 'hidden',
@@ -219,23 +224,23 @@ const Home = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23F8FBFD" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }
         }}
       >
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h2" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' } }}>
+            <Typography variant="h2" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '2.5rem', md: '3.5rem' }, color: '#e53e3e' }}>
               Đặt lịch hiến máu
             </Typography>
-            <Typography variant="h5" sx={{ mb: 2, opacity: 0.9, fontWeight: 300 }}>
+            <Typography variant="h5" sx={{ mb: 2, opacity: 0.9, fontWeight: 300, color: '#e53e3e' }}>
               Cùng nhau cứu sống những sinh mệnh quý giá
             </Typography>
-            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-              <Chip label="Miễn phí" color="secondary" sx={{ fontWeight: 'bold' }} />
-              <Chip label="An toàn" color="secondary" sx={{ fontWeight: 'bold' }} />
-              <Chip label="Có bồi dưỡng" color="secondary" sx={{ fontWeight: 'bold' }} />
-            </Stack>
+            {/* <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
+              <Chip label="Miễn phí" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
+              <Chip label="An toàn" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
+              <Chip label="Có bồi dưỡng" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
+            </Stack> */}
           </Box>
 
           {/* Quick Booking */}
@@ -246,16 +251,17 @@ const Home = () => {
               borderRadius: 3,
               maxWidth: 600,
               mx: 'auto',
-              background: 'rgba(255,255,255,0.95)',
+              background: '#F8FBFD',
               backdropFilter: 'blur(10px)',
+              border: '1px solid #333'
             }}
           >
             <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <VolunteerActivismIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h5" fontWeight="bold" color="text.primary" gutterBottom>
+              <VolunteerActivismIcon sx={{ fontSize: 48, color: '#e53e3e', mb: 2 }} />
+              <Typography variant="h5" fontWeight="bold" color="#e53e3e" gutterBottom>
                 Đặt lịch ngay hôm nay
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="#e53e3e">
                 Chọn thời gian phù hợp với bạn để tham gia hiến máu tình nguyện
               </Typography>
             </Box>
@@ -320,14 +326,14 @@ const Home = () => {
         <BookOnlineIcon sx={{ fontSize: 32 }} />
       </Fab>
 
-      <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Container maxWidth="lg" sx={{ py: 6, backgroundColor: '#F8FBFD' }}>
         {/* Section quyền lợi người hiến máu */}
         <Box sx={{ mb: 8 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: '#e53e3e' }}>
               Quyền lợi của người hiến máu
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ color: '#e53e3e', maxWidth: 600, mx: 'auto' }}>
               Người hiến máu tình nguyện sẽ được những quyền lợi hấp dẫn sau
             </Typography>
           </Box>
@@ -384,10 +390,10 @@ const Home = () => {
         {/* Section tiêu chuẩn tham gia hiến máu */}
         <Box sx={{ mb: 8 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: '#e53e3e' }}>
               Tiêu chuẩn tham gia hiến máu
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ color: '#e53e3e', maxWidth: 600, mx: 'auto' }}>
               Các điều kiện cần thiết để đảm bảo an toàn cho người hiến và người nhận
             </Typography>
           </Box>
@@ -407,7 +413,7 @@ const Home = () => {
                     '&:hover': {
                       transform: 'translateY(-4px)',
                       boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                      borderColor: 'primary.main'
+                      borderColor: '#e53e3e'
                     }
                   }}
                 >
@@ -426,10 +432,10 @@ const Home = () => {
         {/* Section lưu ý quan trọng */}
         <Box sx={{ mb: 8 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: '#e53e3e' }}>
               Thông tin quan trọng
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ color: '#e53e3e', maxWidth: 600, mx: 'auto' }}>
               Những điều bạn cần biết trước khi quyết định hiến máu
             </Typography>
           </Box>
@@ -452,7 +458,7 @@ const Home = () => {
                   expandIcon={<ExpandMoreIcon />}
                   sx={{ px: 3, py: 2 }}
                 >
-                  <Typography variant="h6" fontWeight="medium" color="primary.main">
+                  <Typography variant="h6" fontWeight="medium" color="#e53e3e">
                     {faq.question}
                   </Typography>
                 </AccordionSummary>
@@ -476,10 +482,10 @@ const Home = () => {
         {/* Section lời khuyên */}
         <Box sx={{ mb: 6 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+            <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ color: '#e53e3e' }}>
               Hướng dẫn hiến máu an toàn
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ color: '#e53e3e', maxWidth: 600, mx: 'auto' }}>
               Lời khuyên từ chuyên gia về cách chuẩn bị và chăm sóc sau hiến máu
             </Typography>
           </Box>

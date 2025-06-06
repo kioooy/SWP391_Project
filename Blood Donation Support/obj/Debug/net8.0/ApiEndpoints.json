@@ -132,22 +132,6 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
-    "Method": "GetUserByCitizenNumber",
-    "RelativePath": "api/User/{citizenNumber}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "citizenNumber",
-        "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
     "Method": "GetAllUser",
     "RelativePath": "api/User/all",
     "HttpMethod": "GET",
@@ -174,6 +158,22 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "GetUserProfile",
+    "RelativePath": "api/User/profile/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
     "Method": "Register",
     "RelativePath": "api/User/register",
     "HttpMethod": "POST",
@@ -183,6 +183,22 @@
       {
         "Name": "model",
         "Type": "Blood_Donation_Support.DTO.RegisterModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "GetUserByCitizenNumber",
+    "RelativePath": "api/User/search/{citizenNumber}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "citizenNumber",
+        "Type": "System.String",
         "IsRequired": true
       }
     ],

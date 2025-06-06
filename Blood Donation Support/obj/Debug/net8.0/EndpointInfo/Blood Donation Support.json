@@ -290,7 +290,29 @@
         }
       }
     },
-    "/api/User/{citizenNumber}": {
+    "/api/User/profile/{id}": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/search/{citizenNumber}": {
       "get": {
         "tags": [
           "User"

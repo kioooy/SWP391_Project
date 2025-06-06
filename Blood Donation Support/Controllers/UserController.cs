@@ -1,16 +1,14 @@
-using Azure.Core;
 using Blood_Donation_Support.Data;
 using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -27,6 +25,9 @@ namespace Blood_Donation_Support.Controllers
             _configuration = configuration;
         }
 
+        // POST API
+        // đăng nhập người dùng
+        // api/User/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel request)
         {
@@ -48,6 +49,7 @@ namespace Blood_Donation_Support.Controllers
             return Ok(new { token, userId = user.UserId, fullName = user.FullName, role = user.Role });
         }
 
+        // Hàm để tạo JWT token
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
@@ -77,7 +79,7 @@ namespace Blood_Donation_Support.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
+        // Hàm để tính toán SHA256 hash cho mật khẩu
         private static string ComputeSha256Hash(string rawData)
         {
             // Tạo SHA256 hash cho mật khẩu
@@ -92,7 +94,9 @@ namespace Blood_Donation_Support.Controllers
                 return builder.ToString();
             }
         }
-
+        // POST API
+        // Đăng ký người dùng mới
+        // api/User/register
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
@@ -178,19 +182,23 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // GET API
-
-        // Get User by CitizenNumber (Admin for search)
-        [HttpGet("{citizenNumber}")]
-        public async Task<IActionResult> GetUserByCitizenNumber(string citizenNumber)
+        // Get User Profile by UserId
+        // api/User/profile
+        [HttpGet("profile/{id}")]
+        [Authorize(Roles = "Member,Admin")] // Allow only Member and Admin to access this endpoint
+        public async Task<IActionResult> GetUserProfile()
         {
-            var usercitizennumber = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber); // 
-            if (usercitizennumber == null)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Get UserId from the token claims
+            if (userId == null)
             {
-                return NotFound();
+                return Unauthorized(); // status code 401 Unauthorized
             }
-                var user = await _context.Users.Select(v => new  
+            var user = await _context.Users
+                .Where(u => u.UserId.ToString() == userId) // filter UserID from token 
+                .Include(m => m.Member) // Include Member information
+                .ThenInclude(t => t.BloodType)
+                .Select(v => new
                 {
-                    v.UserId,
                     v.FullName,
                     v.CitizenNumber,
                     v.Email,
@@ -198,9 +206,14 @@ namespace Blood_Donation_Support.Controllers
                     v.DateOfBirth,
                     v.Sex,
                     v.Address,
-                    v.Role,
                     v.CreatedAt,
-                    v.UpdatedAt
+                    v.UpdatedAt,
+                    // Member information
+                    v.Member.BloodType.BloodTypeId,
+                    v.Member.Weight,
+                    v.Member.Height,
+                    v.Member.IsDonor,
+                    v.Member.IsRecipient,
                 })
                 .ToListAsync();
 
@@ -209,13 +222,42 @@ namespace Blood_Donation_Support.Controllers
 
         // ADMIN API for User Management
 
+        // Get User by CitizenNumber
+        [HttpGet("search/{citizenNumber}")]
+        [Authorize(Roles = "Admin")] // Allow only Admin and Staff to access this endpoint
+        public async Task<IActionResult> GetUserByCitizenNumber(string citizenNumber)
+        {
+            var usercitizennumber = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber);
+            if (usercitizennumber == null)
+            {
+                return NotFound();
+            }
+            var user = await _context.Users.Select(v => new
+            {
+                v.UserId,
+                v.FullName,
+                v.CitizenNumber,
+                v.Email,
+                v.PhoneNumber,
+                v.DateOfBirth,
+                v.Sex,
+                v.Address,
+                v.Role,
+                v.CreatedAt,
+                v.UpdatedAt
+            })
+            .ToListAsync();
+
+            return Ok(user);
+        }
         // Get all Users (Admin)
         // Get: api/User/GetAllUsers
         [HttpGet("all")]
+        [Authorize(Roles = "Admin")] // Alw only Admin and Staff to access this endpoint
         public async Task<IActionResult> GetAllUser()
         {
             var users = await _context.Users
-                .Select(v => new // 
+                .Select(v => new  
                 {
                     v.UserId,
                     v.FullName,
@@ -233,10 +275,10 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(users);
         }
-
         // Update User Profile (admin)
         // PUT: api/User/UpdateUser
         [HttpPut("update/{id}")]
+        [Authorize (Roles = "Admin")] // Allow only Admin
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
         {
             if (!ModelState.IsValid) // validate check DTO model state
@@ -248,7 +290,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 return NotFound(); // Status code 404 Not Found
             }
-                        // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
+            // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
             var today = DateOnly.FromDateTime(DateTime.Today);
             var age = today.Year - model.DateOfBirth.Year;
             if (model.DateOfBirth > today.AddYears(-age)) age--;

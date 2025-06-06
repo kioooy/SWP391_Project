@@ -40,7 +40,12 @@ import InfoIcon from '@mui/icons-material/Info';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import dayjs from 'dayjs';
 
-const steps = ['Nhập thông tin', 'Hồ sơ hiến máu'];
+const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Đặt mật khẩu'];
+
+const accountTypes = [
+  'Hiến máu',
+  'Truyền máu',
+];
 
 const idTypes = [
   'Chứng minh nhân dân',
@@ -91,41 +96,70 @@ const occupations = [
 ];
 
 const getValidationSchema = (activeStep) => {
-  const baseSchema = {
-    personalId: Yup.string()
-      .matches(/^[0-9]{12}$/, 'Số CCCD phải có 12 chữ số')
-      .required('Vui lòng nhập số CCCD'),
-    fullName: Yup.string()
-      .min(2, 'Họ tên phải có ít nhất 2 ký tự')
-      .required('Vui lòng nhập họ và tên'),
-    dateOfBirth: Yup.date()
-      .nullable()
-      .max(new Date(), 'Ngày sinh không được lớn hơn ngày hiện tại')
-      .test('age', 'Người hiến máu phải từ 16 đến 60 tuổi', function(value) {
-        if (!value) return false; // required handled by .required()
-        const today = dayjs();
-        const birthDate = dayjs(value);
-        const age = today.diff(birthDate, 'year');
-        return age >= 16 && age <= 60;
-      })
-      .required('Vui lòng chọn ngày sinh'),
-    gender: Yup.string().required('Vui lòng chọn giới tính'),
-    city: Yup.string().required('Vui lòng chọn tỉnh/thành phố'),
-    district: Yup.string().required('Vui lòng chọn quận/huyện'),
-    street: Yup.string().required('Vui lòng nhập số nhà, tên đường'),
-  };
-
-  if (activeStep >= 1) {
-    baseSchema.mobilePhone = Yup.string()
-      .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
-      .required('Vui lòng nhập số điện thoại di động');
-    baseSchema.email = Yup.string()
-      .email('Email không đúng định dạng')
-      .required('Vui lòng nhập email');
-    baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
+  switch (activeStep) {
+    case 0:
+      return Yup.object({
+        accountType: Yup.string().required('Vui lòng chọn loại tài khoản'),
+      });
+    case 1:
+      return Yup.object({
+        personalId: Yup.string()
+          .matches(/^[0-9]{12}$/, 'Số CCCD phải có 12 chữ số')
+          .required('Vui lòng nhập số CCCD'),
+        fullName: Yup.string()
+          .min(2, 'Họ tên phải có ít nhất 2 ký tự')
+          .required('Vui lòng nhập họ và tên'),
+        dateOfBirth: Yup.date()
+          .nullable()
+          .max(new Date(), 'Ngày sinh không được lớn hơn ngày hiện tại')
+          .test('age', 'Người hiến máu phải từ 16 đến 60 tuổi', function(value) {
+            if (!value) return false;
+            const today = dayjs();
+            const birthDate = dayjs(value);
+            const age = today.diff(birthDate, 'year');
+            return age >= 16 && age <= 60;
+          })
+          .required('Vui lòng chọn ngày sinh'),
+        gender: Yup.string().required('Vui lòng chọn giới tính'),
+        city: Yup.string().required('Vui lòng chọn tỉnh/thành phố'),
+        district: Yup.string().required('Vui lòng chọn quận/huyện'),
+        street: Yup.string().required('Vui lòng nhập số nhà, tên đường'),
+      });
+    case 2:
+      return Yup.object({
+        mobilePhone: Yup.string()
+          .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
+          .required('Vui lòng nhập số điện thoại di động'),
+        email: Yup.string()
+          .email('Email không đúng định dạng')
+          .required('Vui lòng nhập email'),
+        occupation: Yup.string().required('Vui lòng chọn nghề nghiệp'),
+        height: Yup.number()
+          .typeError('Chiều cao phải là số')
+          .min(100, 'Chiều cao phải từ 100cm trở lên')
+          .max(250, 'Chiều cao không được vượt quá 250cm')
+          .required('Vui lòng nhập chiều cao'),
+        weight: Yup.number()
+          .typeError('Cân nặng phải là số')
+          .min(30, 'Cân nặng phải từ 30kg trở lên')
+          .max(200, 'Cân nặng không được vượt quá 200kg')
+          .required('Vui lòng nhập cân nặng'),
+      });
+    case 3:
+      return Yup.object({
+        password: Yup.string()
+          .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+          .matches(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
+          .matches(/[a-z]/, 'Mật khẩu phải có ít nhất 1 chữ thường')
+          .matches(/[0-9]/, 'Mật khẩu phải có ít nhất 1 số')
+          .required('Vui lòng nhập mật khẩu'),
+        confirmPassword: Yup.string()
+          .oneOf([Yup.ref('password'), null], 'Mật khẩu xác nhận không khớp')
+          .required('Vui lòng xác nhận mật khẩu'),
+      });
+    default:
+      return Yup.object({});
   }
-
-  return Yup.object(baseSchema);
 };
 
 const Signup = () => {
@@ -143,6 +177,7 @@ const Signup = () => {
 
   const formik = useFormik({
     initialValues: {
+      accountType: '',
       personalId: '',
       fullName: '',
       dateOfBirth: null,
@@ -153,34 +188,60 @@ const Signup = () => {
       mobilePhone: '',
       email: '',
       occupation: '',
+      height: '',
+      weight: '',
+      password: '',
+      confirmPassword: '',
     },
     validate: (values) => {
+      console.log('Validating step', currentStepRef.current, 'with values:', values);
       try {
-        getValidationSchema(currentStepRef.current).validateSync(values, { abortEarly: false });
+        // Get schema for the current step based on the ref
+        const currentStepValidationSchema = getValidationSchema(currentStepRef.current);
+        // Only validate the fields present in the current step's schema
+        const currentStepFields = Object.keys(currentStepValidationSchema.fields);
+        const valuesToValidate = Object.keys(values)
+          .filter(key => currentStepFields.includes(key))
+          .reduce((obj, key) => {
+            obj[key] = values[key];
+            return obj;
+          }, {});
+
+        console.log('Values to validate for step', currentStepRef.current, ':', valuesToValidate);
+        currentStepValidationSchema.validateSync(valuesToValidate, { abortEarly: false });
+        console.log('Validation successful for step', currentStepRef.current);
         return {};
       } catch (error) {
+        console.log('Validation failed for step', currentStepRef.current, 'with errors:', error.inner);
         const errors = {};
         error.inner.forEach((err) => {
-          errors[err.path] = err.message;
+          // Only set errors for fields in the current step
+          if (Object.keys(getValidationSchema(currentStepRef.current).fields).includes(err.path)) {
+             errors[err.path] = err.message;
+          }
         });
         return errors;
       }
     },
     onSubmit: async (values) => {
-      if (activeStep === 0) {
-        setActiveStep(1);
-        return;
-      }
+      // formik.handleSubmit automatically triggers validate before calling onSubmit
+      // If validate passes, this function is called.
 
-      // Submit registration data on final step
-      try {
-        const registrationData = {
-          ...values,
-        };
-        await dispatch(register(registrationData)).unwrap();
-        navigate('/');
-      } catch (err) {
-        // Error is handled by the auth slice
+      // Check if it's the last step
+      if (activeStep === steps.length - 1) {
+        // Submit registration data on the final step
+        try {
+          const registrationData = {
+            ...values,
+          };
+          await dispatch(register(registrationData)).unwrap();
+          navigate('/');
+        } catch (err) {
+          // Error is handled by the auth slice
+        }
+      } else {
+        // Move to the next step if validation passed and it's not the last step
+        setActiveStep((prevActiveStep) => prevActiveStep + 1);
       }
     },
   });
@@ -191,7 +252,7 @@ const Signup = () => {
   }, [activeStep]);
 
   const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    // This function is no longer needed as onSubmit handles step progression
   };
 
   const handleBack = () => {
@@ -204,10 +265,68 @@ const Signup = () => {
         return (
           <Box component="form" onSubmit={formik.handleSubmit}>
             <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
-              Nhập thông tin giấy tờ
+              Chọn loại tài khoản
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Vui lòng nhập thông tin trên giấy tờ và bấm "xác nhận" để hoàn thành.
+              Vui lòng chọn loại tài khoản bạn muốn đăng ký
+            </Typography>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <FormControl fullWidth error={formik.touched.accountType && Boolean(formik.errors.accountType)}>
+                  <InputLabel>Loại tài khoản (*)</InputLabel>
+                  <Select
+                    name="accountType"
+                    value={formik.values.accountType}
+                    onChange={formik.handleChange}
+                    // error prop is now on FormControl
+                  >
+                    {accountTypes.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formik.touched.accountType && formik.errors.accountType && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.accountType}
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+              {activeStep > 0 && (
+                <Button onClick={handleBack} sx={{ mr: 1 }}>
+                  Quay lại
+                </Button>
+              )}
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={loading}
+              >
+                Tiếp tục
+              </Button>
+            </Box>
+          </Box>
+        );
+
+      case 1:
+        return (
+          <Box component="form" onSubmit={formik.handleSubmit}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
+              Nhập thông tin
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              Vui lòng nhập thông tin cá nhân của bạn
             </Typography>
 
             {error && (
@@ -385,9 +504,11 @@ const Signup = () => {
             </Grid>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              <Button onClick={handleBack} sx={{ mr: 1 }}>
-                Quay lại
-              </Button>
+              {activeStep > 0 && (
+                <Button onClick={handleBack} sx={{ mr: 1 }}>
+                  Quay lại
+                </Button>
+              )}
               <Button
                 type="submit"
                 variant="contained"
@@ -399,7 +520,7 @@ const Signup = () => {
           </Box>
         );
 
-      case 1:
+      case 2:
         return (
           <Box component="form" onSubmit={formik.handleSubmit}>
             <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
@@ -481,12 +602,145 @@ const Signup = () => {
                   )}
                 </FormControl>
               </Grid>
+
+              {/* Chiều cao */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="height"
+                  label="Chiều cao (cm) (*)"
+                  type="number"
+                  placeholder="VD: 170"
+                  value={formik.values.height}
+                  onChange={formik.handleChange}
+                  error={formik.touched.height && Boolean(formik.errors.height)}
+                  helperText={formik.touched.height && formik.errors.height}
+                  InputProps={{
+                    inputProps: { min: 100, max: 250 },
+                    sx: {
+                      'input[type=number]': {
+                        '-moz-appearance': 'textfield',
+                      },
+                      'input[type=number]::-webkit-outer-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                      'input[type=number]::-webkit-inner-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                    },
+                  }}
+                />
+              </Grid>
+
+              {/* Cân nặng */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  name="weight"
+                  label="Cân nặng (kg) (*)"
+                  type="number"
+                  placeholder="VD: 65"
+                  value={formik.values.weight}
+                  onChange={formik.handleChange}
+                  error={formik.touched.weight && Boolean(formik.errors.weight)}
+                  helperText={formik.touched.weight && formik.errors.weight}
+                  InputProps={{
+                    inputProps: { min: 30, max: 200 },
+                    sx: {
+                      'input[type=number]': {
+                        '-moz-appearance': 'textfield',
+                      },
+                      'input[type=number]::-webkit-outer-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                      'input[type=number]::-webkit-inner-spin-button': {
+                        '-webkit-appearance': 'none',
+                        margin: 0,
+                      },
+                    },
+                  }}
+                />
+              </Grid>
             </Grid>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              <Button onClick={handleBack} sx={{ mr: 1 }}>
-                Quay lại
+              {activeStep > 0 && (
+                <Button onClick={handleBack} sx={{ mr: 1 }}>
+                  Quay lại
+                </Button>
+              )}
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={loading}
+              >
+                Tiếp tục
               </Button>
+            </Box>
+          </Box>
+        );
+
+      case 3:
+        return (
+          <Box component="form" onSubmit={formik.handleSubmit}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
+              Đặt mật khẩu
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              Vui lòng đặt mật khẩu cho tài khoản của bạn
+            </Typography>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+
+            <Grid container spacing={3}>
+              {/* Mật khẩu */}
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                  <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số
+                  </Typography>
+                </Box>
+                <TextField
+                  fullWidth
+                  name="password"
+                  label="Mật khẩu (*)"
+                  type="password"
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  error={formik.touched.password && Boolean(formik.errors.password)}
+                  helperText={formik.touched.password && formik.errors.password}
+                />
+              </Grid>
+
+              {/* Xác nhận mật khẩu */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  name="confirmPassword"
+                  label="Xác nhận mật khẩu (*)"
+                  type="password"
+                  value={formik.values.confirmPassword}
+                  onChange={formik.handleChange}
+                  error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
+                  helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+                />
+              </Grid>
+            </Grid>
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+              {activeStep > 0 && (
+                <Button onClick={handleBack} sx={{ mr: 1 }}>
+                  Quay lại
+                </Button>
+              )}
               <Button
                 type="submit"
                 variant="contained"

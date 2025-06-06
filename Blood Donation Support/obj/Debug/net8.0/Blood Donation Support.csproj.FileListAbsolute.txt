@@ -146,3 +146,4 @@ I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\runtimes
 I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets.build.json.cache
 I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets.build.endpoints.json
 I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+I:\Swp391_Group5\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

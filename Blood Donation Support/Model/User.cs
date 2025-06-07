@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Blood_Donation_Support.Model;
 
 public partial class User
 {
+    [Key]
     public int UserId { get; set; }
 
     public string PasswordHash { get; set; } = null!;
@@ -28,6 +30,8 @@ public partial class User
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public bool IsActive { get; set; } = true;
 
     public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();
 

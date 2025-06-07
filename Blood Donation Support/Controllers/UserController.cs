@@ -278,6 +278,27 @@ namespace Blood_Donation_Support.Controllers
             }
         }
 
+        [HttpPatch("soft-delete")]
+        public async Task<IActionResult> SoftDeleteUser([FromBody] SoftDeleteUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var user = await _context.Users.FindAsync(request.UserId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            if (!user.IsActive)
+            {
+                return BadRequest(new { message = "User already deleted" });
+            }
+            user.IsActive = false;
+            user.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "User soft deleted successfully" });
+        }
     }
 }
 

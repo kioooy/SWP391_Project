@@ -105,6 +105,29 @@ namespace Blood_Donation_Support.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        // GET: api/BloodDonationPeriod/progress/{id}
+        [HttpGet("progress/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetDonationPeriodProgress(int id)
+        {
+            var period = await _context.BloodDonationPeriods.FindAsync(id);
+            if (period == null)
+            {
+                return NotFound(new { message = "Donation period not found" });
+            }
+            var progress = new BloodDonationPeriodProgressDto
+            {
+                PeriodId = period.PeriodId,
+                PeriodName = period.PeriodName,
+                TargetQuantity = period.TargetQuantity,
+                CurrentQuantity = period.CurrentQuantity ?? 0,
+                ProgressPercent = period.TargetQuantity > 0 ? (int)(period.CurrentQuantity ?? 0) * 100 / period.TargetQuantity : 0,
+                Status = period.Status,
+                PeriodDateFrom = period.PeriodDateFrom,
+                PeriodDateTo = period.PeriodDateTo
+            };
+            return Ok(progress);
+        }
     }
 }
 

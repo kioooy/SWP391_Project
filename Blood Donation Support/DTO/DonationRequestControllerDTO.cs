@@ -22,6 +22,8 @@ namespace Blood_Donation_Support.DTO
     public class UpdateDonationRequest
     {
         [Required]
+        public int MemberId { get; set; }
+        [Required]
         public required int ResponsibleById { get; set; }
         [Required]
         [RegularExpression("Pending|Approved|Rejected", 

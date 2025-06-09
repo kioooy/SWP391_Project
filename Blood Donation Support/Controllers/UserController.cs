@@ -31,7 +31,9 @@ namespace Blood_Donation_Support.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == request.CitizenNumber);
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.CitizenNumber == request.CitizenNumber);
             if (user == null)
             {
                 return Unauthorized(new { message = "Invalid citizen number or password" });
@@ -46,7 +48,12 @@ namespace Blood_Donation_Support.Controllers
 
             // Tạo JWT token
             var token = GenerateJwtToken(user);
-            return Ok(new { token, userId = user.UserId, fullName = user.FullName, role = user.Role });
+            return Ok(new { 
+                token, 
+                userId = user.UserId, 
+                fullName = user.FullName, 
+                roleId = user.RoleId.ToString(),
+            }); 
         }
 
         // Hàm để tạo JWT token
@@ -56,7 +63,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.Role, user.RoleId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             };
             
@@ -94,7 +101,6 @@ namespace Blood_Donation_Support.Controllers
                 return builder.ToString();
             }
         }
-        // POST API
         // Đăng ký người dùng mới
         // api/User/register
         [HttpPost("register")]
@@ -135,17 +141,18 @@ namespace Blood_Donation_Support.Controllers
             // Tạo user mới
             var user = new User
             {
-                FullName = model.FullName,
-                CitizenNumber = model.CitizenNumber,
-                PasswordHash = ComputeSha256Hash(model.Password),
-                Email = model.Email,
-                PhoneNumber = model.PhoneNumber,
-                DateOfBirth = model.DateOfBirth,
-                Sex = model.Sex,
-                Address = model.Address,
-                Role = "Member", // Mặc định là Member
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                FullName = model.FullName,  // Họ và tên đầy đủ
+                CitizenNumber = model.CitizenNumber,  // số CCCD
+                PasswordHash = ComputeSha256Hash(model.Password), // Mật khẩu
+                Email = model.Email, // email
+                PhoneNumber = model.PhoneNumber, // số điện thoại
+                DateOfBirth = model.DateOfBirth, // ngày tháng năm sinh
+                Sex = model.Sex, // giới tính
+                Address = model.Address, // địa chỉ
+                RoleId = '3', // Mặc định là Member (RoleId = 3)
+                CreatedAt = DateTime.Now, // 
+                UpdatedAt = DateTime.Now, // 
+                IsActive = true // Mặc định là hoạt động
             };
 
             _context.Users.Add(user);
@@ -154,16 +161,16 @@ namespace Blood_Donation_Support.Controllers
             // Tạo Member record liên kết với User
             var member = new Member
             {
-                UserId = user.UserId,
-                BloodTypeId = model.BloodTypeId,
-                Weight = model.Weight,
-                Height = model.Height,
-                IsDonor = model.IsDonor,
-                IsRecipient = model.IsRecipient,
-                DonationCount = 0,
-                LastDonationDate = null,
-                RecoveryDueDate = null,
-                LastCheckupDate = null
+                UserId = user.UserId, // Liên kết với User mới tạo
+                BloodTypeId = model.BloodTypeId, // Loại máu 
+                Weight = model.Weight, // Cân nặng
+                Height = model.Height, // Chiều cao
+                IsDonor = model.IsDonor, // Mặc định là người hiến máu
+                IsRecipient = model.IsRecipient, // Mặc định người nhận máu
+                DonationCount = 0, // Số lần hiến máu (mặc định là 0)
+                LastDonationDate = null, // Ngày hiến máu gần nhất (mặc định là null)
+                RecoveryDueDate = null, // Ngày hồi phục (mặc định là null)
+                LastCheckupDate = null // Ngày cập nhật sức khỏe gần nhất (mặc định là null)
             };
 
             _context.Members.Add(member);
@@ -177,54 +184,45 @@ namespace Blood_Donation_Support.Controllers
                 token, 
                 userId = user.UserId, 
                 fullName = user.FullName, 
-                role = user.Role 
+                roleId = user.RoleId.ToString() 
             });
         }
-
-        // GET API
         // Get User Profile by UserId
         // api/User/profile
-        [HttpGet("profile/{id}")]
-        [Authorize(Roles = "Member,Admin")] // Allow only Member and Admin to access this endpoint
+        [HttpGet("profile")]
+        [Authorize(Roles = "Member,Admin,Staff")]
         public async Task<IActionResult> GetUserProfile()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Get UserId from the token claims
-            if (userId == null)
-            {
-                return Unauthorized(); // status code 401 Unauthorized
-            }
             var user = await _context.Users
-                .Where(u => u.UserId.ToString() == userId) // filter UserID from token 
+                .Where(u => u.UserId == u.UserId) // Filter UserID from token 
                 .Include(m => m.Member) // Include Member information
                 .ThenInclude(t => t.BloodType)
                 .Select(v => new
                 {
-                    v.FullName,
-                    v.CitizenNumber,
-                    v.Email,
-                    v.PhoneNumber,
-                    v.DateOfBirth,
-                    v.Sex,
-                    v.Address,
-                    v.CreatedAt,
-                    v.UpdatedAt,
+                    v.FullName, // 
+                    v.CitizenNumber, 
+                    v.Email, 
+                    v.PhoneNumber, 
+                    v.DateOfBirth, 
+                    v.Sex, 
+                    v.Address, 
+                    v.CreatedAt, 
+                    v.UpdatedAt, 
                     // Member information
-                    v.Member.BloodType.BloodTypeId,
-                    v.Member.Weight,
-                    v.Member.Height,
-                    v.Member.IsDonor,
-                    v.Member.IsRecipient,
+                    v.Member.BloodType.BloodTypeName,
+                    v.Member.Weight, 
+                    v.Member.Height, 
+                    v.Member.IsDonor, 
+                    v.Member.IsRecipient, 
                 })
                 .ToListAsync();
 
             return Ok(user);
         }
-
-        // ADMIN API for User Management
-
         // Get User by CitizenNumber
+        // GET: api/User/search/{citizenNumber}
         [HttpGet("search/{citizenNumber}")]
-        [Authorize(Roles = "Admin")] // Allow only Admin and Staff to access this endpoint
+        [Authorize(Roles = "Admin,Staff")] // Allow only Admin and Staff to access this endpoint
         public async Task<IActionResult> GetUserByCitizenNumber(string citizenNumber)
         {
             var usercitizennumber = await _context.Users.FirstOrDefaultAsync(u => u.CitizenNumber == citizenNumber);
@@ -232,7 +230,10 @@ namespace Blood_Donation_Support.Controllers
             {
                 return NotFound();
             }
-            var user = await _context.Users.Select(v => new
+            var user = await _context.Users
+                .Where(u => u.IsActive == true) // Filter active users only
+                .Include(r => r.Role) // Include Role information
+                .Select(v => new
             {
                 v.UserId,
                 v.FullName,
@@ -242,7 +243,7 @@ namespace Blood_Donation_Support.Controllers
                 v.DateOfBirth,
                 v.Sex,
                 v.Address,
-                v.Role,
+                v.Role.Name,
                 v.CreatedAt,
                 v.UpdatedAt
             })
@@ -253,11 +254,12 @@ namespace Blood_Donation_Support.Controllers
         // Get all Users (Admin)
         // Get: api/User/GetAllUsers
         [HttpGet("all")]
-        [Authorize(Roles = "Admin")] // Alw only Admin and Staff to access this endpoint
+        [Authorize(Roles = "Admin")] // Allow only Admin and Staff to access this endpoint
         public async Task<IActionResult> GetAllUser()
         {
             var users = await _context.Users
-                .Select(v => new  
+                .Include(r => r.Role) // Include Role information
+                .Select(v => new
                 {
                     v.UserId,
                     v.FullName,
@@ -267,7 +269,7 @@ namespace Blood_Donation_Support.Controllers
                     v.DateOfBirth,
                     v.Sex,
                     v.Address,
-                    v.Role,
+                    v.Role.Name,
                     v.CreatedAt,
                     v.UpdatedAt
                 })
@@ -276,7 +278,7 @@ namespace Blood_Donation_Support.Controllers
             return Ok(users);
         }
         // Update User Profile (admin)
-        // PUT: api/User/UpdateUser
+        // PUT: api/User/update/{id}
         [HttpPut("update/{id}")]
         [Authorize (Roles = "Admin")] // Allow only Admin
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
@@ -306,8 +308,8 @@ namespace Blood_Donation_Support.Controllers
             existingUser.DateOfBirth = model.DateOfBirth;  // Date of Birth
             existingUser.Sex = model.Sex;                  // Gender
             existingUser.Address = model.Address;          // Address
-            existingUser.Role = model.Role;                // Role
-            existingUser.UpdatedAt = DateTime.Now;        // UpdatedAt
+            existingUser.RoleId = model.RoleId;            // Role ID
+            existingUser.UpdatedAt = DateTime.Now;         // UpdatedAt
 
             try
             {
@@ -319,8 +321,10 @@ namespace Blood_Donation_Support.Controllers
                 throw; // Rethrow the exception if it is a concurrency issue 
             }
         }
-
+        // Delete User (soft delete)
+        // PATCH: api/User/soft-delete
         [HttpPatch("soft-delete")]
+        [Authorize(Roles = "Admin")] // Allow only Admin
         public async Task<IActionResult> SoftDeleteUser([FromBody] SoftDeleteUserRequest request)
         {
             if (!ModelState.IsValid)

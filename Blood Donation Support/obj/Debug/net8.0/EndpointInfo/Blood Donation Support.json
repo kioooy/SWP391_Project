@@ -151,6 +151,29 @@
         }
       }
     },
+    "/api/BloodDonationPeriod/progress/{id}": {
+      "get": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/DonationRequest/{id}": {
       "get": {
         "tags": [
@@ -290,20 +313,10 @@
         }
       }
     },
-    "/api/User/profile/{id}": {
+    "/api/User/profile": {
       "get": {
         "tags": [
           "User"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -377,6 +390,37 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/soft-delete": {
+      "patch": {
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftDeleteUserRequest"
               }
             }
           }
@@ -542,6 +586,7 @@
           "fullName",
           "password",
           "phoneNumber",
+          "roleId",
           "sex"
         ],
         "type": "object",
@@ -579,6 +624,10 @@
             "minLength": 1,
             "type": "string"
           },
+          "roleId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "bloodTypeId": {
             "type": "integer",
             "format": "int32",
@@ -599,6 +648,19 @@
           },
           "isRecipient": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SoftDeleteUserRequest": {
+        "required": [
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -650,11 +712,16 @@
       },
       "UpdateDonationRequest": {
         "required": [
+          "memberId",
           "responsibleById",
           "status"
         ],
         "type": "object",
         "properties": {
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "responsibleById": {
             "type": "integer",
             "format": "int32"
@@ -680,6 +747,7 @@
           "passwordHash",
           "phoneNumber",
           "role",
+          "roleId",
           "sex",
           "updatedAt"
         ],
@@ -722,6 +790,10 @@
           "address": {
             "minLength": 1,
             "type": "string"
+          },
+          "roleId": {
+            "type": "integer",
+            "format": "int32"
           },
           "role": {
             "minLength": 1,

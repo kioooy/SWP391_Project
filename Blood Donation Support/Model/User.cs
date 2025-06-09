@@ -25,7 +25,7 @@ public partial class User
 
     public string? Address { get; set; }
 
-    public string Role { get; set; } = null!;
+    public int RoleId { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
@@ -38,7 +38,7 @@ public partial class User
     public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
 
     public virtual Member? Member { get; set; }
-
+    public virtual Role? Role { get; set; }
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();

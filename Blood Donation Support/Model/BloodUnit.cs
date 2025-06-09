@@ -11,8 +11,6 @@ public partial class BloodUnit
 
     public int ComponentId { get; set; }
 
-    public int? DonorId { get; set; }
-
     public DateOnly? AddDate { get; set; }
 
     public DateOnly ExpiryDate { get; set; }
@@ -20,7 +18,7 @@ public partial class BloodUnit
     public int Volume { get; set; }
 
     public string BloodStatus { get; set; } = null!;
-
+    public int RemainingVolume { get; set; }
     public virtual BloodType BloodType { get; set; } = null!;
 
     public virtual BloodComponent Component { get; set; } = null!;

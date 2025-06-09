@@ -37,6 +37,9 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "Địa chỉ là bắt buộc")]
         public string Address { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Vai trò là bắt buộc")]
+        public int RoleId { get; set; }
+
         // Thông tin thêm cho Member (không bắt buộc)
         public int? BloodTypeId { get; set; }
         public int? Weight { get; set; }
@@ -76,6 +79,8 @@ namespace Blood_Donation_Support.DTO
 
         [Required]
         public string? Address { get; set; }
+        [Required(ErrorMessage = "Vai trò là bắt buộc")]
+        public int RoleId { get; set; } 
 
         [Required]
         [RegularExpression("^(Admin|Staff|Member|Guest)$")]

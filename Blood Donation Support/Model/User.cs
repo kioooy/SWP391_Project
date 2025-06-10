@@ -13,10 +13,13 @@ public partial class User
 
     public string FullName { get; set; } = null!;
 
+    [StringLength(20)]
     public string CitizenNumber { get; set; } = null!;
 
+    [StringLength(100)]
     public string Email { get; set; } = null!;
 
+    [StringLength(20)]
     public string? PhoneNumber { get; set; }
 
     public DateOnly? DateOfBirth { get; set; }
@@ -25,7 +28,9 @@ public partial class User
 
     public string? Address { get; set; }
 
-    public string Role { get; set; } = null!;
+    public int RoleId { get; set; }
+
+    public virtual Role Role { get; set; } = null!;
 
     public DateTime? CreatedAt { get; set; }
 

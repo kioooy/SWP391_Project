@@ -209,21 +209,72 @@
         }
       }
     },
-    "/api/DonationRequest/update/{id}": {
-      "put": {
+    "/api/DonationRequest/register": {
+      "post": {
         "tags": [
           "DonationRequest"
         ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DonationRequestControllerDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DonationRequestControllerDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DonationRequestControllerDTO"
+              }
             }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/updateStatus": {
+      "patch": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/updateRequest": {
+      "patch": {
+        "tags": [
+          "DonationRequest"
         ],
         "requestBody": {
           "content": {
@@ -313,6 +364,47 @@
         }
       }
     },
+    "/api/User/profile/update": {
+      "patch": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/User/profile": {
       "get": {
         "tags": [
@@ -360,7 +452,7 @@
       }
     },
     "/api/User/update/{id}": {
-      "put": {
+      "patch": {
         "tags": [
           "User"
         ],
@@ -563,6 +655,70 @@
         "type": "integer",
         "format": "int32"
       },
+      "DonationRequestControllerDTO": {
+        "required": [
+          "componentId",
+          "donationId",
+          "donationVolume",
+          "memberId",
+          "patientCondition",
+          "periodId",
+          "requestDate",
+          "responsibleById"
+        ],
+        "type": "object",
+        "properties": {
+          "donationId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "periodId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "preferredDonationDate": {
+            "$ref": "#/components/schemas/DateOnly"
+          },
+          "responsibleById": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvalDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "donationVolume": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "patientCondition": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginModel": {
         "type": "object",
         "properties": {
@@ -712,12 +868,94 @@
       },
       "UpdateDonationRequest": {
         "required": [
+          "donationId",
           "memberId",
           "responsibleById",
           "status"
         ],
         "type": "object",
         "properties": {
+          "donationId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "responsibleById": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "minLength": 1,
+            "pattern": "Completed",
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateProfile": {
+        "required": [
+          "address",
+          "dateOfBirth",
+          "email",
+          "height",
+          "phoneNumber",
+          "updatedAt",
+          "weight"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "phoneNumber": {
+            "minLength": 1,
+            "pattern": "^0\\d{9}$",
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "$ref": "#/components/schemas/DateOnly"
+          },
+          "address": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "weight": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateStatusDonationRequest": {
+        "required": [
+          "donationId",
+          "memberId",
+          "responsibleById",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "donationId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "memberId": {
             "type": "integer",
             "format": "int32"
@@ -741,15 +979,21 @@
       "UpdateUser": {
         "required": [
           "address",
+          "bloodTypeId",
+          "citizenNumber",
           "dateOfBirth",
           "email",
           "fullName",
+          "height",
+          "isDonor",
+          "isRecipient",
           "passwordHash",
           "phoneNumber",
           "role",
           "roleId",
           "sex",
-          "updatedAt"
+          "updatedAt",
+          "weight"
         ],
         "type": "object",
         "properties": {
@@ -766,8 +1010,7 @@
             "maxLength": 12,
             "minLength": 0,
             "pattern": "^\\d{12}$",
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "email": {
             "minLength": 1,
@@ -803,6 +1046,24 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "bloodTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "weight": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isDonor": {
+            "type": "boolean"
+          },
+          "isRecipient": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

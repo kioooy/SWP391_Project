@@ -127,20 +127,47 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "UpdateDonationRequest",
-    "RelativePath": "api/DonationRequest/update/{id}",
-    "HttpMethod": "PUT",
+    "Method": "RegisterDonationRequests",
+    "RelativePath": "api/DonationRequest/register",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
-        "Type": "System.Int32",
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.DonationRequestControllerDTO",
         "IsRequired": true
-      },
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "UpdateDonationRequest",
+    "RelativePath": "api/DonationRequest/updateRequest",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
       {
         "Name": "model",
         "Type": "Blood_Donation_Support.DTO.UpdateDonationRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "UpdateDonationRequestStatus",
+    "RelativePath": "api/DonationRequest/updateStatus",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.UpdateStatusDonationRequest",
         "IsRequired": true
       }
     ],
@@ -180,6 +207,27 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "UpdateUser",
+    "RelativePath": "api/User/profile/update",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.UpdateProfile",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -234,7 +282,7 @@
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
     "Method": "UpdateUser",
     "RelativePath": "api/User/update/{id}",
-    "HttpMethod": "PUT",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [

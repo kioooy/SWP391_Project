@@ -48,7 +48,7 @@ namespace Blood_Donation_Support.DTO
         public bool IsRecipient { get; set; } = false; // Mặc định không phải người nhận máu
     }
 
-    public class UpdateUser // Add User for Admin to create new user
+    public class UpdateUser // Update user data
     {
         [Required]
         [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
@@ -58,6 +58,7 @@ namespace Blood_Donation_Support.DTO
         [StringLength(40)]
         public required string FullName { get; set; }
 
+        [Required]
         [StringLength(12)]
         [RegularExpression(@"^\d{12}$", ErrorMessage = "Số CCCD/CMND không hợp lệ")]
         public required string CitizenNumber { get; set; }
@@ -68,7 +69,7 @@ namespace Blood_Donation_Support.DTO
 
         [Required]
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
-        public required string? PhoneNumber { get; set; }
+        public required string PhoneNumber { get; set; }
 
         [Required]
         public DateOnly DateOfBirth { get; set; }
@@ -78,15 +79,54 @@ namespace Blood_Donation_Support.DTO
         public bool Sex { get; set; }
 
         [Required]
-        public string? Address { get; set; }
+        public required string Address { get; set; }
         [Required(ErrorMessage = "Vai trò là bắt buộc")]
-        public int RoleId { get; set; } 
+        public int RoleId { get; set; }
 
         [Required]
         [RegularExpression("^(Admin|Staff|Member|Guest)$")]
         public required string Role { get; set; }
+
         [Required]
         public DateTime? UpdatedAt { get; set; }
+
+        // Thông tin thêm cho Member (không bắt buộc)
+        [Required]
+        public int? BloodTypeId { get; set; }
+        [Required]
+        public int? Weight { get; set; }
+        [Required]
+        public int? Height { get; set; }
+        [Required]
+        public bool IsDonor { get; set; } = true; // Mặc định là người hiến máu
+        [Required]
+        public bool IsRecipient { get; set; } = false; // Mặc định không phải người nhận máu
+    }
+    public class UpdateProfile // Update user profile data
+    {
+        [Required]
+        [EmailAddress]
+        public required string Email { get; set; }
+
+        [Required]
+        [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
+        public required string PhoneNumber { get; set; }
+
+        [Required]
+        public DateOnly DateOfBirth { get; set; }
+
+        [Required]
+        public required string Address { get; set; }
+
+        [Required]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Member Information
+        [Required]
+        public int? Weight { get; set; }
+        [Required]
+        public int? Height { get; set; }
+
     }
 }
 

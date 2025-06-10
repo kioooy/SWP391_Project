@@ -48,12 +48,13 @@ namespace Blood_Donation_Support.Controllers
 
             // Tạo JWT token
             var token = GenerateJwtToken(user);
-            return Ok(new { 
-                token, 
-                userId = user.UserId, 
-                fullName = user.FullName, 
-                roleId = user.RoleId.ToString(),
-            }); 
+            return Ok(new
+            {
+                token,
+                userId = user.UserId,
+                fullName = user.FullName,
+                role = user.Role.Name,
+            });
         }
 
         // Hàm để tạo JWT token
@@ -62,11 +63,12 @@ namespace Blood_Donation_Support.Controllers
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()), 
                 new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, user.RoleId.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.Name),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email)
             };
-            
+
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
             {
@@ -178,14 +180,70 @@ namespace Blood_Donation_Support.Controllers
 
             // Tạo JWT token và trả về
             var token = GenerateJwtToken(user);
-            return Ok(new 
-            { 
+            return Ok(new
+            {
                 message = "Đăng ký thành công",
-                token, 
-                userId = user.UserId, 
-                fullName = user.FullName, 
-                roleId = user.RoleId.ToString() 
+                token,
+                userId = user.UserId,
+                fullName = user.FullName,
+                role = user.Role.Name,
             });
+        }
+
+
+        // Member Management
+
+        // Update User Profile 
+        // PATCH: api/User/update/{id}
+        [HttpPatch("profile/update")]
+        [Authorize(Roles = "Member,Admin")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateProfile model)
+        {
+            if (!ModelState.IsValid) // check model state
+                return BadRequest(ModelState); // Status code 400 Bad Request 
+
+            var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
+            if (existingUser == null) // check if User or Member exists
+                return NotFound(); // Status code 404 Not Found 
+
+            // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - model.DateOfBirth.Year;
+            if (model.DateOfBirth > today.AddYears(-age)) age--;// Calculate age (subtracting years)
+            if (age < 18)
+                return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
+
+            // Update only the fields on User
+            existingUser.Email = model.Email;             // Email  
+            existingUser.PhoneNumber = model.PhoneNumber; // Phone Number
+            existingUser.DateOfBirth = model.DateOfBirth; // Date of Birth
+            existingUser.Address = model.Address;         // Address
+            existingUser.UpdatedAt = DateTime.Now;        // UpdatedAt            // Update only the fields on Member 
+            var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
+            if (existingMember != null)
+            {
+                existingMember.Weight = model.Weight;      // Weight
+                existingMember.Height = model.Height;      // Height
+            }
+
+            // Add handle commit code ( Use Transaction For multiple update tabledatabase )
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                if (existingMember != null)
+                {
+                    _context.Members.Update(existingMember); // Update Member information
+                }
+
+                await _context.SaveChangesAsync(); // Save changes to the database
+                await transaction.CommitAsync(); // Commit the transaction  
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction 
+                throw;
+            }
+            return NoContent(); // Return 204 No Content if successful
         }
         // Get User Profile by UserId
         // api/User/profile
@@ -193,32 +251,41 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Member,Admin,Staff")]
         public async Task<IActionResult> GetUserProfile()
         {
+            // Extract the current user ID from the JWT token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value.ToString();
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId) )
+                return Unauthorized(); // Status code 401 Unauthorized
+
             var user = await _context.Users
-                .Where(u => u.UserId == u.UserId) // Filter UserID from token 
-                .Include(m => m.Member) // Include Member information
-                .ThenInclude(t => t.BloodType)
+                .Include(m => m.Member)           // Include Member information
+                .ThenInclude(t => t.BloodType)    // Include BloodType information 
+                .Where(u => u.UserId == userId)   // Filter UserID from token 
                 .Select(v => new
                 {
-                    v.FullName, // 
-                    v.CitizenNumber, 
-                    v.Email, 
-                    v.PhoneNumber, 
-                    v.DateOfBirth, 
-                    v.Sex, 
-                    v.Address, 
-                    v.CreatedAt, 
-                    v.UpdatedAt, 
+                    v.FullName,
+                    v.CitizenNumber,
+                    v.Email,
+                    v.PhoneNumber,
+                    v.DateOfBirth,
+                    v.Sex,
+                    v.Address,
+                    v.CreatedAt,
+                    v.UpdatedAt,
                     // Member information
                     v.Member.BloodType.BloodTypeName,
-                    v.Member.Weight, 
-                    v.Member.Height, 
-                    v.Member.IsDonor, 
-                    v.Member.IsRecipient, 
+                    v.Member.Weight,
+                    v.Member.Height,
+                    v.Member.IsDonor,
+                    v.Member.IsRecipient,
                 })
                 .ToListAsync();
 
             return Ok(user);
         }
+
+
+        // Staff Management
+
         // Get User by CitizenNumber
         // GET: api/User/search/{citizenNumber}
         [HttpGet("search/{citizenNumber}")]
@@ -232,27 +299,31 @@ namespace Blood_Donation_Support.Controllers
             }
             var user = await _context.Users
                 .Where(u => u.IsActive == true) // Filter active users only
-                .Include(r => r.Role) // Include Role information
+                .Include(r => r.Role)           // Include Role information
                 .Select(v => new
-            {
-                v.UserId,
-                v.FullName,
-                v.CitizenNumber,
-                v.Email,
-                v.PhoneNumber,
-                v.DateOfBirth,
-                v.Sex,
-                v.Address,
-                v.Role.Name,
-                v.CreatedAt,
-                v.UpdatedAt
-            })
+                {
+                    v.UserId,
+                    v.FullName,
+                    v.CitizenNumber,
+                    v.Email,
+                    v.PhoneNumber,
+                    v.DateOfBirth,
+                    v.Sex,
+                    v.Address,
+                    v.Role.Name,
+                    v.CreatedAt,
+                    v.UpdatedAt
+                })
             .ToListAsync();
 
             return Ok(user);
         }
+
+
+        // Admin Management
+
         // Get all Users (Admin)
-        // Get: api/User/GetAllUsers
+        // GET: api/User/all 
         [HttpGet("all")]
         [Authorize(Roles = "Admin")] // Allow only Admin and Staff to access this endpoint
         public async Task<IActionResult> GetAllUser()
@@ -278,9 +349,9 @@ namespace Blood_Donation_Support.Controllers
             return Ok(users);
         }
         // Update User Profile (admin)
-        // PUT: api/User/update/{id}
-        [HttpPut("update/{id}")]
-        [Authorize (Roles = "Admin")] // Allow only Admin
+        // Patch: api/User/update/{id}
+        [HttpPatch("update/{id}")]
+        [Authorize(Roles = "Admin")] // Allow only Admin
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
         {
             if (!ModelState.IsValid) // validate check DTO model state
@@ -297,9 +368,8 @@ namespace Blood_Donation_Support.Controllers
             var age = today.Year - model.DateOfBirth.Year;
             if (model.DateOfBirth > today.AddYears(-age)) age--;
             if (age < 18)
-            {
                 return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
-            }
+
             // Update only the fields you want to allow to be changed
             existingUser.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
             existingUser.FullName = model.FullName;        // Full Name
@@ -311,16 +381,35 @@ namespace Blood_Donation_Support.Controllers
             existingUser.RoleId = model.RoleId;            // Role ID
             existingUser.UpdatedAt = DateTime.Now;         // UpdatedAt
 
+            var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
+            if (existingMember != null)
+            {
+                // Update Member information if it exists
+                existingMember.BloodTypeId = model.BloodTypeId; // Blood Type ID
+                existingMember.Weight = model.Weight;           // Weight
+                existingMember.Height = model.Height;           // Height
+                existingMember.IsDonor = model.IsDonor;         // Is Donor
+                existingMember.IsRecipient = model.IsRecipient; // Is Recipient
+            }
+            // Add handle commit code ( Use Transaction For multiple update table database )
+            var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                if (existingMember != null)
+                {
+                    _context.Members.Update(existingMember); // Update Member information
+                }
                 await _context.SaveChangesAsync(); // Save changes to the database
-                return Ok(existingUser); // Return the updated User
+                await transaction.CommitAsync(); // Commit the transaction
             }
             catch (DbUpdateConcurrencyException)
             {
+                await transaction.RollbackAsync(); // Rollback the transaction 
                 throw; // Rethrow the exception if it is a concurrency issue 
             }
+            return NoContent(); // Return 204 No Content if successful
         }
+
         // Delete User (soft delete)
         // PATCH: api/User/soft-delete
         [HttpPatch("soft-delete")]

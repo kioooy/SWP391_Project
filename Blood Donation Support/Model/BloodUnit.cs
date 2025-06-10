@@ -25,7 +25,5 @@ public partial class BloodUnit
 
     public virtual ICollection<DonationRequestsDetail> DonationRequestsDetails { get; set; } = new List<DonationRequestsDetail>();
 
-    public virtual Member? Donor { get; set; }
-
     public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();
 }

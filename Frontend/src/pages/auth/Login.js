@@ -11,7 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { login } from '../../features/auth/authSlice';
+import { login as loginThunk } from '../../features/auth/authSlice';
 
 const validationSchema = Yup.object({
   citizenId: Yup.string()
@@ -59,7 +59,7 @@ const Login = () => {
       }
       // Existing login logic for real users
       try {
-        await dispatch(login(values)).unwrap();
+        await dispatch(loginThunk(values)).unwrap();
         navigate('/');
       } catch (err) {
         // Error is handled by the auth slice
@@ -161,9 +161,32 @@ const Login = () => {
         >
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
         </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          sx={{ mt: 2, width: '100%' }}
+          onClick={async () => {
+            const fakeStaff = {
+              user: {
+                fullName: 'Nguyễn Văn Staff',
+                citizenId: '123456789012',
+                email: 'staff@example.com',
+                role: 'staff',
+              },
+              token: 'fake-staff-token',
+            };
+            localStorage.setItem('token', fakeStaff.token);
+            localStorage.setItem('userProfile', JSON.stringify(fakeStaff.user));
+            // Cập nhật Redux store
+            await dispatch({ type: 'auth/login/fulfilled', payload: fakeStaff });
+            window.location.href = '/transfusion-request';
+          }}
+        >
+          Đăng nhập staff 
+        </Button>
         <Box sx={{ textAlign: 'center' }}>
           <Link component={RouterLink} to="/signup" variant="body2">
-            {"Chưa có tìa khoản? Đăng Ký"}
+            {"Chưa có tài khoản? Đăng Ký"}
           </Link>
         </Box>
       </Box>

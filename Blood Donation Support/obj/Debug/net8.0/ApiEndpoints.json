@@ -117,6 +117,58 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "UpdateDonationRequest",
+    "RelativePath": "api/DonationRequest/{Id}/updateRequest",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "donationId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.UpdateDonationRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "Id",
+        "Type": "",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "UpdateDonationRequestStatus",
+    "RelativePath": "api/DonationRequest/{Id}/updateStatus",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "donationId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.UpdateStatusDonationRequest",
+        "IsRequired": true
+      },
+      {
+        "Name": "Id",
+        "Type": "",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
     "Method": "GetAllDonationRequests",
     "RelativePath": "api/DonationRequest/all",
     "HttpMethod": "GET",
@@ -142,32 +194,31 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "UpdateDonationRequest",
-    "RelativePath": "api/DonationRequest/updateRequest",
-    "HttpMethod": "PATCH",
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "GetAllUser",
+    "RelativePath": "api/User",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [
-      {
-        "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateDonationRequest",
-        "IsRequired": true
-      }
-    ],
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "UpdateDonationRequestStatus",
-    "RelativePath": "api/DonationRequest/updateStatus",
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "UpdateUser",
+    "RelativePath": "api/User/{id}",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateStatusDonationRequest",
+        "Type": "Blood_Donation_Support.DTO.UpdateUser",
         "IsRequired": true
       }
     ],
@@ -175,12 +226,44 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
-    "Method": "GetAllUser",
-    "RelativePath": "api/User/all",
-    "HttpMethod": "GET",
+    "Method": "UpdateProfile",
+    "RelativePath": "api/User/{Id}/profile",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.UpdateProfile",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "SoftDeleteUser",
+    "RelativePath": "api/User/{id}/soft-delete",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Blood_Donation_Support.DTO.SoftDeleteUserRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -211,27 +294,6 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
-    "Method": "UpdateUser",
-    "RelativePath": "api/User/profile/update",
-    "HttpMethod": "PATCH",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateProfile",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
     "Method": "Register",
     "RelativePath": "api/User/register",
     "HttpMethod": "POST",
@@ -257,43 +319,6 @@
       {
         "Name": "citizenNumber",
         "Type": "System.String",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
-    "Method": "SoftDeleteUser",
-    "RelativePath": "api/User/soft-delete",
-    "HttpMethod": "PATCH",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "Blood_Donation_Support.DTO.SoftDeleteUserRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
-    "Method": "UpdateUser",
-    "RelativePath": "api/User/update/{id}",
-    "HttpMethod": "PATCH",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateUser",
         "IsRequired": true
       }
     ],

@@ -25,7 +25,6 @@ namespace Blood_Donation_Support.Controllers
             _configuration = configuration;
         }
 
-        // POST API
         // đăng nhập người dùng
         // api/User/login
         [HttpPost("login")]
@@ -103,6 +102,7 @@ namespace Blood_Donation_Support.Controllers
                 return builder.ToString();
             }
         }
+
         // Đăng ký người dùng mới
         // api/User/register
         [HttpPost("register")]
@@ -190,14 +190,11 @@ namespace Blood_Donation_Support.Controllers
             });
         }
 
-
-        // Member Management
-
         // Update User Profile 
-        // PATCH: api/User/update/{id}
-        [HttpPatch("profile/update")]
+        // PATCH: api/User/{Id}/profile
+        [HttpPatch("{id}/profile")]
         [Authorize(Roles = "Member,Admin")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateProfile model)
+        public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateProfile model)
         {
             if (!ModelState.IsValid) // check model state
                 return BadRequest(ModelState); // Status code 400 Bad Request 
@@ -282,10 +279,6 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(user);
         }
-
-
-        // Staff Management
-
         // Get User by CitizenNumber
         // GET: api/User/search/{citizenNumber}
         [HttpGet("search/{citizenNumber}")]
@@ -318,13 +311,9 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(user);
         }
-
-
-        // Admin Management
-
         // Get all Users (Admin)
-        // GET: api/User/all 
-        [HttpGet("all")]
+        // GET: api/User
+        [HttpGet]
         [Authorize(Roles = "Admin")] // Allow only Admin and Staff to access this endpoint
         public async Task<IActionResult> GetAllUser()
         {
@@ -349,8 +338,8 @@ namespace Blood_Donation_Support.Controllers
             return Ok(users);
         }
         // Update User Profile (admin)
-        // Patch: api/User/update/{id}
-        [HttpPatch("update/{id}")]
+        // PATCH: api/User/{id}
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")] // Allow only Admin
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
         {

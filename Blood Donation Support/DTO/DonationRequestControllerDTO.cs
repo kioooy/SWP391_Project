@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Blood_Donation_Support.DTO
 {
@@ -28,8 +29,6 @@ namespace Blood_Donation_Support.DTO
     public class UpdateStatusDonationRequest
     {
         [Required]
-        public int DonationId { get; set; }
-        [Required]
         public int MemberId { get; set; }
         [Required]
         public required int ResponsibleById { get; set; }
@@ -42,8 +41,6 @@ namespace Blood_Donation_Support.DTO
 
     public class UpdateDonationRequest
     {
-        [Required]
-        public int DonationId { get; set; }
         [Required]
         public int MemberId { get; set; }
         [Required]

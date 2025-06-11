@@ -36,7 +36,7 @@ namespace Blood_Donation_Support.Controllers
 
         // get all donation requests (Custom View)
         // GET: api/DonationRequest/all
-        [HttpGet("all")]
+        [HttpGet]
         [Authorize(Roles = "Staff,Admin")] // Staff and Admin roles can view all donation requests
         public async Task<IActionResult> GetAllDonationRequests()
         {
@@ -46,8 +46,8 @@ namespace Blood_Donation_Support.Controllers
                 .Select(dr => new
                 {
                     dr.DonationId,
-                    dr.Member.User.CitizenNumber, // Include CitizenNumber from User instead of UserId
-                    dr.Member.BloodType.BloodTypeName, // Include BloodTypeName from BloodType
+                    dr.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
+                    dr.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
                     dr.PeriodId,
                     dr.ComponentId,
                     dr.PreferredDonationDate,
@@ -62,13 +62,14 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(donationRequests);
         }
+
         // add donation request
         // POST: api/DonationRequest/register
-        [HttpPost("register")]
+        [HttpPost]
         [Authorize(Roles = "Staff,Admin")] // Staff and Admin roles can view all donation requests
         public async Task<IActionResult> RegisterDonationRequests([FromBody] DonationRequestControllerDTO model)
         {
-            if (!ModelState.IsValid) // Validate the model state
+            if (!ModelState.IsValid) 
                 return BadRequest(ModelState); // Return 400 Bad Request if model state is invalid
 
             // Check if the user is authenticated and has the required role
@@ -102,7 +103,7 @@ namespace Blood_Donation_Support.Controllers
             }
             return Ok(new
             {
-                donationRequest.DonationId,
+                donationRequest.DonationId, 
                 donationRequest.MemberId,
                 donationRequest.PeriodId,
                 donationRequest.ComponentId,
@@ -119,19 +120,19 @@ namespace Blood_Donation_Support.Controllers
 
         // update donation request status by id
         // PATCH: api/DonationRequest/updateStatus/{id}
-        [HttpPatch("updateStatus")]
+        [HttpPatch("{id}/update-status")]
         [Authorize(Roles = "Staff,Admin")] // Only Staff and Admin can update donation requests
-        public async Task<IActionResult> UpdateDonationRequestStatus( [FromBody] UpdateStatusDonationRequest model)
+        public async Task<IActionResult> UpdateDonationRequestStatus(int id, [FromBody] UpdateStatusDonationRequest model)
         {
             // check existing request by DonationId
-            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == model.DonationId );
+            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id);
             if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {model.DonationId}."); // Return 404 Not Found 
-            // check existing request by DonationId
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+            // check existing member by MemberId
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
             if (member == null)
                 return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
-            // check existing request by DonationId
+            // check existing staff by ResponsibleById
             var staff = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.ResponsibleById);
             if (staff == null || staff.RoleId != 2)
                 return NotFound($"Not Found StaffId: {model.ResponsibleById}."); // Return 404 Not Found 
@@ -151,23 +152,22 @@ namespace Blood_Donation_Support.Controllers
                 await _context.SaveChangesAsync(); // Save changes to the database
                 await transaction.CommitAsync(); // Commit the transaction
 
-                return Ok(new { message = $"Donation Requests Id {model.DonationId} updated successfully" });
-
+                return Ok(new { message = $"Donation Requests Id {id} updated successfully" });
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw; // Rethrow the exception if it is a concurrency issue 
+                throw;  
             }
         }
 
         // update donation request by id
         // PATCH: api/DonationRequest/updateRequest
-        [HttpPatch("updateRequest")]
+        [HttpPatch("{id}/update-request")]
         [Authorize(Roles = "Staff,Admin")] // Only Staff and Admin can update donation requests
-        public async Task<IActionResult> UpdateDonationRequest([FromBody] UpdateDonationRequest model)
+        public async Task<IActionResult> UpdateDonationRequest(int id, [FromBody] UpdateDonationRequest model)
         {
-            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == model.DonationId);
+            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id);
             if (existingRequest == null)
                 return NotFound(); // Return 404 Not Found 
 
@@ -184,33 +184,9 @@ namespace Blood_Donation_Support.Controllers
             member.DonationCount = (member.DonationCount ?? 0) + 1;        // Increment the donation count (+1)
             _context.Entry(member).State = EntityState.Modified;           // Mark the member entity as modified
 
-            // Add blood unit from member's donation request
-
-            // Handle shelf life days
-            var shelfLifeDays = _context.BloodComponents
-                    .Where(bc => bc.ComponentId == existingRequest.ComponentId)
-                    .Select(bc => bc.ShelfLifeDays)
-                    .FirstOrDefault();
-            if (shelfLifeDays <= 0)
-                return BadRequest("Invalid ShelfLifeDays for the blood component.");
-            // Add blood unit from member's donation request    
-            var bloodUnit = new BloodUnit
-            {
-                BloodTypeId = member.BloodTypeId ?? 0,                 // BloodTypeId is required, (default to 0 if null or error)
-                ComponentId = existingRequest.ComponentId,             // Blood Component ID from the request 
-                AddDate = DateOnly.FromDateTime(DateTime.Now),         // Date add blood unit (current date)
-                ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)), // Expiry date 
-                Volume = existingRequest.DonationVolume ?? 0,          // Volume of the blood unit (default to 0 if null or error)
-                BloodStatus = "Available",                             // Blood status (Default "Available" )
-                RemainingVolume = existingRequest.DonationVolume ?? 0, // Remaining volume = donation volume
-            };
-            _context.Entry(bloodUnit).State = EntityState.Modified;    // Mark the member entity as modified
-
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
-            try // Attempt to update the existing request
+            try 
             {
-                await _context.BloodUnits.AddAsync(bloodUnit); // Add the new blood unit to the database
-
                 await _context.SaveChangesAsync(); // Save changes to the database
 
                 await transaction.CommitAsync(); // Commit the transaction
@@ -218,7 +194,7 @@ namespace Blood_Donation_Support.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw; // Rethrow the exception if it is a concurrency issue 
+                throw;  
             }
             return NoContent(); // Return 204 No Content to update success
         }

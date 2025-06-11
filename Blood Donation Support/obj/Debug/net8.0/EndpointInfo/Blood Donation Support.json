@@ -240,10 +240,28 @@
         }
       }
     },
-    "/api/DonationRequest/updateStatus": {
+    "/api/DonationRequest/{Id}/updateStatus": {
       "patch": {
         "tags": [
           "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "donationId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "content": {
@@ -271,10 +289,28 @@
         }
       }
     },
-    "/api/DonationRequest/updateRequest": {
+    "/api/DonationRequest/{Id}/updateRequest": {
       "patch": {
         "tags": [
           "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "donationId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "content": {
@@ -364,7 +400,7 @@
         }
       }
     },
-    "/api/User/profile/update": {
+    "/api/User/{Id}/profile": {
       "patch": {
         "tags": [
           "User"
@@ -372,7 +408,8 @@
         "parameters": [
           {
             "name": "id",
-            "in": "query",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -439,7 +476,7 @@
         }
       }
     },
-    "/api/User/all": {
+    "/api/User": {
       "get": {
         "tags": [
           "User"
@@ -451,7 +488,7 @@
         }
       }
     },
-    "/api/User/update/{id}": {
+    "/api/User/{id}": {
       "patch": {
         "tags": [
           "User"
@@ -493,10 +530,21 @@
         }
       }
     },
-    "/api/User/soft-delete": {
+    "/api/User/{id}/soft-delete": {
       "patch": {
         "tags": [
           "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "requestBody": {
           "content": {
@@ -868,17 +916,12 @@
       },
       "UpdateDonationRequest": {
         "required": [
-          "donationId",
           "memberId",
           "responsibleById",
           "status"
         ],
         "type": "object",
         "properties": {
-          "donationId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "memberId": {
             "type": "integer",
             "format": "int32"
@@ -945,17 +988,12 @@
       },
       "UpdateStatusDonationRequest": {
         "required": [
-          "donationId",
           "memberId",
           "responsibleById",
           "status"
         ],
         "type": "object",
         "properties": {
-          "donationId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "memberId": {
             "type": "integer",
             "format": "int32"

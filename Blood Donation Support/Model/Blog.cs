@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Blood_Donation_Support.Model;
@@ -21,5 +21,6 @@ public partial class Blog
 
     public string Status { get; set; } = null!;
 
+    public bool IsActive { get; set; }
     public virtual User User { get; set; } = null!;
 }

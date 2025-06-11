@@ -22,7 +22,7 @@ import NewsIcon from "@mui/icons-material/Article";
 import ContactIcon from "@mui/icons-material/ContactMail";
 import { logout } from "../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { selectIsAuthenticated } from "../features/auth/authSlice";
+import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
 import Footer from "../components/Footer";
 import PersonIcon from "@mui/icons-material/Person";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
@@ -71,6 +71,7 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectUser);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -105,13 +106,18 @@ const MainLayout = () => {
     navigate("/profile");
   };
 
-  const menuItems = [
+  let menuItems = [
     { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
     { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
     { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
     { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
     { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
   ];
+  if (user && user.role === 'staff') {
+    menuItems = [
+      { path: "/transfusion-request", label: "Quản lý yêu cầu truyền máu", icon: <HistoryIcon /> },
+    ];
+  }
 
   return (
     <MainContainer>

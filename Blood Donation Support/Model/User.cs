@@ -13,10 +13,13 @@ public partial class User
 
     public string FullName { get; set; } = null!;
 
+    [StringLength(20)]
     public string CitizenNumber { get; set; } = null!;
 
+    [StringLength(100)]
     public string Email { get; set; } = null!;
 
+    [StringLength(20)]
     public string? PhoneNumber { get; set; }
 
     public DateOnly? DateOfBirth { get; set; }
@@ -38,7 +41,9 @@ public partial class User
     public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
 
     public virtual Member? Member { get; set; }
+  
     public virtual Role? Role { get; set; }
+  
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();

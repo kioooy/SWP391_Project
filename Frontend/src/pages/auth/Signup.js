@@ -12,7 +12,6 @@ import {
   Grid,
   MenuItem,
   Paper,
-  Avatar,
   Card,
   CardContent,
   IconButton,
@@ -25,9 +24,8 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Divider,
-  Chip,
   Container,
+  InputAdornment,
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -38,20 +36,20 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoIcon from '@mui/icons-material/Info';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import BloodtypeIcon from '@mui/icons-material/Bloodtype';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import LockIcon from '@mui/icons-material/Lock';
 import dayjs from 'dayjs';
 
-const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Đặt mật khẩu'];
+const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Tạo mật khẩu'];
 
-const accountTypes = [
-  'Hiến máu',
-  'Truyền máu',
-];
-
-const idTypes = [
-  'Chứng minh nhân dân',
-  'Căn cước công dân',
-  'Hộ chiếu',
-];
+// const idTypes = [
+//   'Chứng minh nhân dân',
+//   'Căn cước công dân',
+//   'Hộ chiếu',
+// ];
 
 const cities = [
   'Hồ Chí Minh',
@@ -69,17 +67,6 @@ const districts = {
   'Hải Phòng': ['Hồng Bàng', 'Ngô Quyền', 'Lê Chân', 'Hải An', 'Kiến An', 'Đồ Sơn'],
 };
 
-/* const wards = {
-  'Quận 1': ['Phường Bến Nghé', 'Phường Bến Thành', 'Phường Cầu Kho', 'Phường Cầu Ông Lãnh', 'Phường Cô Giang', 'Phường Đa Kao', 'Phường Nguyễn Cư Trinh', 'Phường Nguyễn Thái Bình', 'Phường Phạm Ngũ Lão', 'Phường Tân Định'],
-  'Quận 2': ['Phường An Phú', 'Phường An Khánh', 'Phường Bình An', 'Phường Bình Khánh', 'Phường Bình Trưng Đông', 'Phường Bình Trưng Tây', 'Phường Cát Lái', 'Phường Thảo Điền', 'Phường Thạnh Mỹ Lợi', 'Phường Thu Thiêm'],
-  'Quận 3': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14'],
-  'Quận 4': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 6', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15', 'Phường 16', 'Phường 18'],
-  'Quận 5': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15'],
-  'Hoàn Kiếm': ['Phường Chương Dương', 'Phường Cửa Đông', 'Phường Đồng Xuân', 'Phường Hàng Bài', 'Phường Hàng Bồ', 'Phường Hàng Buồm', 'Phường Hàng Gai', 'Phường Hàng Mã', 'Phường Hàng Trống', 'Phường Lý Thái Tổ', 'Phường Phan Chu Trinh', 'Phường Phúc Tân', 'Phường Tràng Tiền', 'Phường Trần Hưng Đạo'],
-  'Ba Đình': ['Phường Cống Vị', 'Phường Điện Biên', 'Phường Đội Cấn', 'Phường Giảng Võ', 'Phường Kim Mã', 'Phường Liễu Giai', 'Phường Ngọc Hà', 'Phường Ngọc Khánh', 'Phường Nguyễn Trung Trực', 'Phường Phúc Xá', 'Phường Quán Thánh', 'Phường Thành Công', 'Phường Trúc Bạch', 'Phường Vĩnh Phúc'],
-  'Hải Châu': ['Phường Bình Hiên', 'Phường Bình Thuận', 'Phường Hải Châu I', 'Phường Hải Châu II', 'Phường Hòa Cường Bắc', 'Phường Hòa Cường Nam', 'Phường Hòa Thuận Đông', 'Phường Hòa Thuận Tây', 'Phường Nam Dương', 'Phường Phước Ninh', 'Phường Thạch Thang', 'Phường Thanh Bình', 'Phường Thuận Phước'],
-}; */
-
 const occupations = [
   'Học sinh/Sinh viên',
   'Giáo viên',
@@ -96,70 +83,66 @@ const occupations = [
 ];
 
 const getValidationSchema = (activeStep) => {
-  switch (activeStep) {
-    case 0:
-      return Yup.object({
-        accountType: Yup.string().required('Vui lòng chọn loại tài khoản'),
-      });
-    case 1:
-      return Yup.object({
-        personalId: Yup.string()
-          .matches(/^[0-9]{12}$/, 'Số CCCD phải có 12 chữ số')
-          .required('Vui lòng nhập số CCCD'),
-        fullName: Yup.string()
-          .min(2, 'Họ tên phải có ít nhất 2 ký tự')
-          .required('Vui lòng nhập họ và tên'),
-        dateOfBirth: Yup.date()
-          .nullable()
-          .max(new Date(), 'Ngày sinh không được lớn hơn ngày hiện tại')
-          .test('age', 'Người hiến máu phải từ 16 đến 60 tuổi', function(value) {
-            if (!value) return false;
-            const today = dayjs();
-            const birthDate = dayjs(value);
-            const age = today.diff(birthDate, 'year');
-            return age >= 16 && age <= 60;
-          })
-          .required('Vui lòng chọn ngày sinh'),
-        gender: Yup.string().required('Vui lòng chọn giới tính'),
-        city: Yup.string().required('Vui lòng chọn tỉnh/thành phố'),
-        district: Yup.string().required('Vui lòng chọn quận/huyện'),
-        street: Yup.string().required('Vui lòng nhập số nhà, tên đường'),
-      });
-    case 2:
-      return Yup.object({
-        mobilePhone: Yup.string()
-          .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
-          .required('Vui lòng nhập số điện thoại di động'),
-        email: Yup.string()
-          .email('Email không đúng định dạng')
-          .required('Vui lòng nhập email'),
-        occupation: Yup.string().required('Vui lòng chọn nghề nghiệp'),
-        height: Yup.number()
-          .typeError('Chiều cao phải là số')
-          .min(100, 'Chiều cao phải từ 100cm trở lên')
-          .max(250, 'Chiều cao không được vượt quá 250cm')
-          .required('Vui lòng nhập chiều cao'),
-        weight: Yup.number()
-          .typeError('Cân nặng phải là số')
-          .min(30, 'Cân nặng phải từ 30kg trở lên')
-          .max(200, 'Cân nặng không được vượt quá 200kg')
-          .required('Vui lòng nhập cân nặng'),
-      });
-    case 3:
-      return Yup.object({
-        password: Yup.string()
-          .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-          .matches(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
-          .matches(/[a-z]/, 'Mật khẩu phải có ít nhất 1 chữ thường')
-          .matches(/[0-9]/, 'Mật khẩu phải có ít nhất 1 số')
-          .required('Vui lòng nhập mật khẩu'),
-        confirmPassword: Yup.string()
-          .oneOf([Yup.ref('password'), null], 'Mật khẩu xác nhận không khớp')
-          .required('Vui lòng xác nhận mật khẩu'),
-      });
-    default:
-      return Yup.object({});
+  const baseSchema = {};
+
+  if (activeStep >= 0) {
+    baseSchema.accountType = Yup.string().required('Vui lòng chọn loại tài khoản');
   }
+
+  if (activeStep >= 1) {
+    baseSchema.personalId = Yup.string()
+      .matches(/^[0-9]{12}$/, 'Số CCCD phải có 12 chữ số')
+      .required('Vui lòng nhập số CCCD');
+    baseSchema.fullName = Yup.string()
+      .min(2, 'Họ tên phải có ít nhất 2 ký tự')
+      .required('Vui lòng nhập họ và tên');
+    baseSchema.dateOfBirth = Yup.date()
+      .nullable()
+      .max(new Date(), 'Ngày sinh không được lớn hơn ngày hiện tại')
+      .test('age', 'Người hiến máu phải từ 16 đến 60 tuổi', function (value) {
+        if (!value) return false;
+        const today = dayjs();
+        const birthDate = dayjs(value);
+        const age = today.diff(birthDate, 'year');
+        return age >= 16 && age <= 60;
+      })
+      .required('Vui lòng chọn ngày sinh');
+    baseSchema.gender = Yup.string().required('Vui lòng chọn giới tính');
+    baseSchema.city = Yup.string().required('Vui lòng chọn tỉnh/thành phố');
+    baseSchema.district = Yup.string().required('Vui lòng chọn quận/huyện');
+    baseSchema.street = Yup.string().required('Vui lòng nhập số nhà, tên đường');
+  }
+
+  if (activeStep >= 2) {
+    baseSchema.mobilePhone = Yup.string()
+      .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
+      .required('Vui lòng nhập số điện thoại di động');
+    baseSchema.email = Yup.string()
+      .email('Email không đúng định dạng')
+      .required('Vui lòng nhập email');
+    baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
+    baseSchema.weight = Yup.number()
+      .positive('Cân nặng phải là số dương')
+      .required('Vui lòng nhập cân nặng');
+    baseSchema.height = Yup.number()
+      .positive('Chiều cao phải là số dương') 
+      .required('Vui lòng nhập chiều cao');
+  }
+
+  if (activeStep >= 3) {
+    baseSchema.password = Yup.string()
+      .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
+      )
+      .required('Vui lòng nhập mật khẩu');
+    baseSchema.confirmPassword = Yup.string()
+      .oneOf([Yup.ref('password'), null], 'Xác nhận mật khẩu không khớp')
+      .required('Vui lòng xác nhận mật khẩu');
+  }
+
+  return Yup.object(baseSchema);
 };
 
 const Signup = () => {
@@ -168,6 +151,8 @@ const Signup = () => {
   const { error, loading } = useSelector((state) => state.auth);
 
   const [activeStep, setActiveStep] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const currentStepRef = React.useRef(0);
 
   // Update ref when activeStep changes
@@ -186,62 +171,40 @@ const Signup = () => {
       district: '',
       street: '',
       mobilePhone: '',
+      weight: '',
+      height: '',
       email: '',
       occupation: '',
-      height: '',
-      weight: '',
       password: '',
       confirmPassword: '',
     },
     validate: (values) => {
-      console.log('Validating step', currentStepRef.current, 'with values:', values);
       try {
-        // Get schema for the current step based on the ref
-        const currentStepValidationSchema = getValidationSchema(currentStepRef.current);
-        // Only validate the fields present in the current step's schema
-        const currentStepFields = Object.keys(currentStepValidationSchema.fields);
-        const valuesToValidate = Object.keys(values)
-          .filter(key => currentStepFields.includes(key))
-          .reduce((obj, key) => {
-            obj[key] = values[key];
-            return obj;
-          }, {});
-
-        console.log('Values to validate for step', currentStepRef.current, ':', valuesToValidate);
-        currentStepValidationSchema.validateSync(valuesToValidate, { abortEarly: false });
-        console.log('Validation successful for step', currentStepRef.current);
+        getValidationSchema(currentStepRef.current).validateSync(values, { abortEarly: false });
         return {};
       } catch (error) {
-        console.log('Validation failed for step', currentStepRef.current, 'with errors:', error.inner);
         const errors = {};
         error.inner.forEach((err) => {
-          // Only set errors for fields in the current step
-          if (Object.keys(getValidationSchema(currentStepRef.current).fields).includes(err.path)) {
-             errors[err.path] = err.message;
-          }
+          errors[err.path] = err.message;
         });
         return errors;
       }
     },
     onSubmit: async (values) => {
-      // formik.handleSubmit automatically triggers validate before calling onSubmit
-      // If validate passes, this function is called.
+      if (activeStep < 3) {
+        setActiveStep(activeStep + 1);
+        return;
+      }
 
-      // Check if it's the last step
-      if (activeStep === steps.length - 1) {
-        // Submit registration data on the final step
-        try {
-          const registrationData = {
-            ...values,
-          };
-          await dispatch(register(registrationData)).unwrap();
-          navigate('/');
-        } catch (err) {
-          // Error is handled by the auth slice
-        }
-      } else {
-        // Move to the next step if validation passed and it's not the last step
-        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+      // Submit registration data on final step
+      try {
+        const registrationData = {
+          ...values,
+        };
+        await dispatch(register(registrationData)).unwrap();
+        navigate('/');
+      } catch (err) {
+        // Error is handled by the auth slice
       }
     },
   });
@@ -252,7 +215,7 @@ const Signup = () => {
   }, [activeStep]);
 
   const handleNext = () => {
-    // This function is no longer needed as onSubmit handles step progression
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const handleBack = () => {
@@ -268,7 +231,7 @@ const Signup = () => {
               Chọn loại tài khoản
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Vui lòng chọn loại tài khoản bạn muốn đăng ký
+              Vui lòng chọn loại tài khoản phù hợp với nhu cầu của bạn.
             </Typography>
 
             {error && (
@@ -277,41 +240,90 @@ const Signup = () => {
               </Alert>
             )}
 
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <FormControl fullWidth error={formik.touched.accountType && Boolean(formik.errors.accountType)}>
-                  <InputLabel>Loại tài khoản (*)</InputLabel>
-                  <Select
-                    name="accountType"
-                    value={formik.values.accountType}
-                    onChange={formik.handleChange}
-                    // error prop is now on FormControl
-                  >
-                    {accountTypes.map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {type}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {formik.touched.accountType && formik.errors.accountType && (
-                    <Typography variant="caption" color="error">
-                      {formik.errors.accountType}
+            <Grid container spacing={3} justifyContent="center">
+              <Grid item xs={12} sm={6}>
+                <Card
+                  sx={{
+                    border: formik.values.accountType === 'donor' ? '2px solid #e53935' : '1px solid #e0e0e0',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: 3,
+                      transform: 'translateY(-2px)',
+                    },
+                    backgroundColor: formik.values.accountType === 'donor' ? '#ffebee' : 'white',
+                  }}
+                  onClick={() => formik.setFieldValue('accountType', 'donor')}
+                >
+                  <CardContent sx={{ textAlign: 'center', p: 4 }}>
+                    <BloodtypeIcon sx={{ fontSize: 64, color: '#e53935', mb: 2 }} />
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Tài khoản hiến máu
                     </Typography>
-                  )}
-                </FormControl>
+                    <Typography variant="body2" color="text.secondary">
+                      Dành cho những người muốn hiến máu, tham gia các hoạt động hiến máu nhân đạo
+                    </Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Radio
+                        checked={formik.values.accountType === 'donor'}
+                        onChange={() => formik.setFieldValue('accountType', 'donor')}
+                        value="donor"
+                        name="accountType"
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Card
+                  sx={{
+                    border: formik.values.accountType === 'recipient' ? '2px solid #e53935' : '1px solid #e0e0e0',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: 3,
+                      transform: 'translateY(-2px)',
+                    },
+                    backgroundColor: formik.values.accountType === 'recipient' ? '#ffebee' : 'white',
+                  }}
+                  onClick={() => formik.setFieldValue('accountType', 'recipient')}
+                >
+                  <CardContent sx={{ textAlign: 'center', p: 4 }}>
+                    <LocalHospitalIcon sx={{ fontSize: 64, color: '#e53935', mb: 2 }} />
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Tài khoản truyền máu
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Dành cho bệnh nhân, người cần truyền máu hoặc tìm kiếm người hiến máu
+                    </Typography>
+                    <Box sx={{ mt: 2 }}>
+                      <Radio
+                        checked={formik.values.accountType === 'recipient'}
+                        onChange={() => formik.setFieldValue('accountType', 'recipient')}
+                        value="recipient"
+                        name="accountType"
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
               </Grid>
             </Grid>
 
+            {formik.touched.accountType && formik.errors.accountType && (
+              <Typography variant="caption" color="error" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
+                {formik.errors.accountType}
+              </Typography>
+            )}
+
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              {activeStep > 0 && (
-                <Button onClick={handleBack} sx={{ mr: 1 }}>
-                  Quay lại
-                </Button>
-              )}
+              <Button onClick={handleBack} disabled>
+                Quay lại
+              </Button>
               <Button
                 type="submit"
                 variant="contained"
-                disabled={loading}
+                disabled={!formik.values.accountType}
               >
                 Tiếp tục
               </Button>
@@ -323,10 +335,10 @@ const Signup = () => {
         return (
           <Box component="form" onSubmit={formik.handleSubmit}>
             <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
-              Nhập thông tin
+              Nhập thông tin giấy tờ
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Vui lòng nhập thông tin cá nhân của bạn
+              Vui lòng nhập thông tin trên giấy tờ và bấm "xác nhận" để hoàn thành.
             </Typography>
 
             {error && (
@@ -504,11 +516,9 @@ const Signup = () => {
             </Grid>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              {activeStep > 0 && (
-                <Button onClick={handleBack} sx={{ mr: 1 }}>
-                  Quay lại
-                </Button>
-              )}
+              <Button onClick={handleBack} sx={{ mr: 1 }}>
+                Quay lại
+              </Button>
               <Button
                 type="submit"
                 variant="contained"
@@ -603,75 +613,53 @@ const Signup = () => {
                 </FormControl>
               </Grid>
 
-              {/* Chiều cao */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  name="height"
-                  label="Chiều cao (cm) (*)"
-                  type="number"
-                  placeholder="VD: 170"
-                  value={formik.values.height}
-                  onChange={formik.handleChange}
-                  error={formik.touched.height && Boolean(formik.errors.height)}
-                  helperText={formik.touched.height && formik.errors.height}
-                  InputProps={{
-                    inputProps: { min: 100, max: 250 },
-                    sx: {
-                      'input[type=number]': {
-                        '-moz-appearance': 'textfield',
-                      },
-                      'input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                      'input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                    },
-                  }}
-                />
-              </Grid>
-
-              {/* Cân nặng */}
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                  <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Vui lòng cung cấp cân nặng của bạn để chúng tôi có thể xác định khả năng hiến máu. Cân nặng phải là số dương.
+                  </Typography>
+                </Box>
                 <TextField
                   fullWidth
                   name="weight"
-                  label="Cân nặng (kg) (*)"
                   type="number"
-                  placeholder="VD: 65"
+                  label="Cân nặng (*)"
+                  placeholder="Vui lòng nhập cân nặng"
                   value={formik.values.weight}
                   onChange={formik.handleChange}
                   error={formik.touched.weight && Boolean(formik.errors.weight)}
                   helperText={formik.touched.weight && formik.errors.weight}
-                  InputProps={{
-                    inputProps: { min: 30, max: 200 },
-                    sx: {
-                      'input[type=number]': {
-                        '-moz-appearance': 'textfield',
-                      },
-                      'input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                      'input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
-                        margin: 0,
-                      },
-                    },
-                  }}
+                  inputProps={{ maxLength: 10 }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                  <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Vui lòng cung cấp chiêu cao của bạn để chúng tôi có thể xác định khả năng hiến máu. Chiều cao phải là số dương.
+                  </Typography>
+                </Box>
+                <TextField
+                  fullWidth
+                  name="height"
+                  label="Chiều cao (*)"
+                  placeholder="Vui lòng nhập chiều cao"
+                  type="number"
+                  value={formik.values.height}
+                  onChange={formik.handleChange}
+                  error={formik.touched.height && Boolean(formik.errors.height)}
+                  helperText={formik.touched.height && formik.errors.height}
+                  inputProps={{ maxLength: 10 }}
                 />
               </Grid>
             </Grid>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              {activeStep > 0 && (
-                <Button onClick={handleBack} sx={{ mr: 1 }}>
-                  Quay lại
-                </Button>
-              )}
+              <Button onClick={handleBack} sx={{ mr: 1 }}>
+                Quay lại
+              </Button>
               <Button
                 type="submit"
                 variant="contained"
@@ -687,10 +675,10 @@ const Signup = () => {
         return (
           <Box component="form" onSubmit={formik.handleSubmit}>
             <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
-              Đặt mật khẩu
+              Tạo mật khẩu
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Vui lòng đặt mật khẩu cho tài khoản của bạn
+              Tạo mật khẩu bảo mật cho tài khoản của bạn để hoàn tất quá trình đăng ký.
             </Typography>
 
             {error && (
@@ -700,23 +688,46 @@ const Signup = () => {
             )}
 
             <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <LockIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+                  <Typography variant="h6" color="primary.main">
+                    Thông tin bảo mật
+                  </Typography>
+                </Box>
+              </Grid>
+
               {/* Mật khẩu */}
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                   <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
                   <Typography variant="caption" color="text.secondary">
-                    Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số
+                    Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
                   </Typography>
                 </Box>
                 <TextField
                   fullWidth
                   name="password"
                   label="Mật khẩu (*)"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Nhập mật khẩu"
                   value={formik.values.password}
                   onChange={formik.handleChange}
                   error={formik.touched.password && Boolean(formik.errors.password)}
                   helperText={formik.touched.password && formik.errors.password}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
 
@@ -726,34 +737,46 @@ const Signup = () => {
                   fullWidth
                   name="confirmPassword"
                   label="Xác nhận mật khẩu (*)"
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Nhập lại mật khẩu"
                   value={formik.values.confirmPassword}
                   onChange={formik.handleChange}
                   error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
                   helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
             </Grid>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              {activeStep > 0 && (
-                <Button onClick={handleBack} sx={{ mr: 1 }}>
-                  Quay lại
-                </Button>
-              )}
+              <Button onClick={handleBack} sx={{ mr: 1 }}>
+                Quay lại
+              </Button>
               <Button
                 type="submit"
                 variant="contained"
                 disabled={loading}
               >
-                {loading ? 'Đang xử lý...' : 'Xác nhận'}
+                Hoàn thành đăng ký
               </Button>
             </Box>
           </Box>
         );
 
       default:
-        return 'Unknown step';
+        return null;
     }
   };
 
@@ -818,4 +841,4 @@ const Signup = () => {
   );
 };
 
-export default Signup; 
+export default Signup;

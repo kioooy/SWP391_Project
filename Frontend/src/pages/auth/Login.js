@@ -11,15 +11,13 @@ import {
   Alert,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { login } from '../../features/auth/authSlice';
+import { login as loginThunk } from '../../features/auth/authSlice';
 
 const validationSchema = Yup.object({
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
-  password: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
+  citizenId: Yup.string()
+    .matches(/^\d{12}$/, 'CCCD phải gồm 12 số')
+    .required('Số CCCD là bắt buộc'),
+  password: Yup.string(),
 });
 
 const Login = () => {
@@ -29,42 +27,39 @@ const Login = () => {
 
   const formik = useFormik({
     initialValues: {
-      email: '',
+      citizenId: '',
       password: '',
     },
     validationSchema,
     onSubmit: async (values) => {
       // Test user login
-      if (values.email === 'user@gmail.com' && values.password === '123456') {
+      if (values.citizenId === '123456789012' && values.password === '123456') {
         const testUser = {
           email: 'user@gmail.com',
-          // Mock detailed signup data
           idType: 'Căn cước công dân',
           citizenId: '123456789012',
-          firstName: 'Test', // Split from full name
-          lastName: 'User', // Split from full name
-          dateOfBirth: '1990-01-15', // YYYY-MM-DD
+          firstName: 'Test',
+          lastName: 'User',
+          dateOfBirth: '1990-01-15',
           gender: 'Nam',
           city: 'Hà Nội',
           district: 'Đống Đa',
           ward: 'Phường Trung Liệt',
-          address: 'Số 123, Đường ABC, Phường Trung Liệt, Quận Đống Đa, Hà Nội', // Combined address
+          address: 'Số 123, Đường ABC, Phường Trung Liệt, Quận Đống Đa, Hà Nội',
           phoneNumber: '0987654321',
           occupation: 'Kỹ sư',
           landlinePhone: '02438512345',
-          bloodType: 'A+', // Adding blood type as a common profile field
-          // image: null, // If image is part of profile
+          bloodType: 'A+',
         };
         localStorage.setItem('userProfile', JSON.stringify(testUser));
-        localStorage.setItem('isAuthenticated', 'true'); // Assuming you use this flag
-        localStorage.setItem('isTestUser', 'true'); // Flag for test user
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('isTestUser', 'true');
         navigate('/');
         return;
       }
-
       // Existing login logic for real users
       try {
-        await dispatch(login(values)).unwrap();
+        await dispatch(loginThunk(values)).unwrap();
         navigate('/');
       } catch (err) {
         // Error is handled by the auth slice
@@ -136,13 +131,13 @@ const Login = () => {
         )}
         <TextField
           fullWidth
-          id="email"
-          name="email"
-          label="Tài Khoản"
-          value={formik.values.email}
+          id="citizenId"
+          name="citizenId"
+          label="Số CCCD"
+          value={formik.values.citizenId}
           onChange={formik.handleChange}
-          error={formik.touched.email && Boolean(formik.errors.email)}
-          helperText={formik.touched.email && formik.errors.email}
+          error={formik.touched.citizenId && Boolean(formik.errors.citizenId)}
+          helperText={formik.touched.citizenId && formik.errors.citizenId}
           margin="normal"
         />
         <TextField
@@ -166,9 +161,32 @@ const Login = () => {
         >
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
         </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          sx={{ mt: 2, width: '100%' }}
+          onClick={async () => {
+            const fakeStaff = {
+              user: {
+                fullName: 'Nguyễn Văn Staff',
+                citizenId: '123456789012',
+                email: 'staff@example.com',
+                role: 'staff',
+              },
+              token: 'fake-staff-token',
+            };
+            localStorage.setItem('token', fakeStaff.token);
+            localStorage.setItem('userProfile', JSON.stringify(fakeStaff.user));
+            // Cập nhật Redux store
+            await dispatch({ type: 'auth/login/fulfilled', payload: fakeStaff });
+            window.location.href = '/transfusion-request';
+          }}
+        >
+          Đăng nhập staff 
+        </Button>
         <Box sx={{ textAlign: 'center' }}>
           <Link component={RouterLink} to="/signup" variant="body2">
-            {"Chưa có tìa khoản? Đăng Ký"}
+            {"Chưa có tài khoản? Đăng Ký"}
           </Link>
         </Box>
       </Box>

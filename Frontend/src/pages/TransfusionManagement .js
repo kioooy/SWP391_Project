@@ -33,6 +33,8 @@ import {
 } from "@mui/icons-material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { useSelector } from 'react-redux';
+import { selectUser } from '../features/auth/authSlice';
 
 // Mock Redux store data and actions
 const useTransfusionStore = () => {
@@ -181,8 +183,8 @@ const useTransfusionStore = () => {
 };
 
 const TransfusionManagement = () => {
-  const { transfusions, loading, error, updateTransfusion, clearError } =
-    useTransfusionStore();
+  const user = useSelector(selectUser);
+  const { transfusions, loading, error, updateTransfusion, clearError } = useTransfusionStore();
   const [editDialog, setEditDialog] = useState({
     open: false,
     transfusion: null,

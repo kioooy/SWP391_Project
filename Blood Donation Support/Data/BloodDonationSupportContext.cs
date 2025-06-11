@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Blood_Donation_Support.Model;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +37,8 @@ public partial class BloodDonationSupportContext : DbContext
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
+
+    public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -237,6 +239,19 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasConstraintName("FK__Notificat__UserI__6C190EBB");
         });
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1B0F2A3C4D");
+
+            entity.ToTable("Role");
+
+            entity.HasIndex(e => e.Name, "UQ__Role__737584F6A0B1D3C2").IsUnique();
+
+            entity.Property(e => e.RoleId).ValueGeneratedNever();
+
+            entity.Property(e => e.Name).HasMaxLength(10);
+        });
+
         modelBuilder.Entity<TransfusionRequest>(entity =>
         {
             entity.HasKey(e => e.TransfusionId).HasName("PK__Transfus__36A644FEFE95DAC4");
@@ -309,6 +324,8 @@ public partial class BloodDonationSupportContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true);
         });
 
         OnModelCreatingPartial(modelBuilder);

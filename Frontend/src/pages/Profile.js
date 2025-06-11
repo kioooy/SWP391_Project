@@ -96,21 +96,6 @@ const Profile = () => {
     if (!editedUser.address?.trim()) {
       newErrors.address = 'Vui lòng nhập địa chỉ';
     }
-
-    // Validate Height
-    if (!editedUser.height) {
-      newErrors.height = 'Vui lòng nhập chiều cao';
-    } else if (isNaN(editedUser.height) || editedUser.height < 100 || editedUser.height > 250) {
-        newErrors.height = 'Chiều cao không hợp lệ (100-250 cm)';
-    }
-
-    // Validate Weight
-    if (!editedUser.weight) {
-        newErrors.weight = 'Vui lòng nhập cân nặng';
-    } else if (isNaN(editedUser.weight) || editedUser.weight < 30 || editedUser.weight > 200) {
-        newErrors.weight = 'Cân nặng không hợp lệ (30-200 kg)';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -147,7 +132,7 @@ const Profile = () => {
     try {
       // Lưu thông tin vào localStorage
       localStorage.setItem('userProfile', JSON.stringify(editedUser));
-      
+
       setSnackbar({
         open: true,
         message: 'Cập nhật thông tin thành công',
@@ -180,10 +165,10 @@ const Profile = () => {
       localStorage.removeItem('userProfile');
       localStorage.removeItem('token');
       localStorage.removeItem('isTestUser');
-      
+
       // Dispatch action logout
       await dispatch(logout());
-      
+
       // Chuyển hướng về trang chủ
       navigate('/');
     } catch (error) {
@@ -213,65 +198,133 @@ const Profile = () => {
           Thông tin cá nhân
         </Typography>
         <Paper sx={{ p: 4, borderRadius: 2 }}>
-          {!isEditing ? (
-            // Display mode
-            <Grid container spacing={4}>
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 3, height: '100%', borderRadius: 2 }}>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: '100%', borderRadius: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                  Thông tin cá nhân
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Avatar
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      bgcolor: '#e53935',
+                      fontSize: '2rem',
+                      mr: 2,
+                    }}
+                  >
+                    {displayUser?.firstName?.charAt(0).toUpperCase() || displayUser?.lastName?.charAt(0).toUpperCase() || displayUser?.email?.charAt(0).toUpperCase() || ''}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" gutterBottom>{displayUser?.firstName} {displayUser?.lastName}</Typography>
+                    <Typography variant="body2" color="text.secondary">{displayUser?.email}</Typography>
+                  </Box>
+                </Box>
+
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Số CMND</Typography>
+                    <Typography variant="body1">{displayUser?.personalId || '-'}</Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Ngày sinh</Typography>
+                    <Typography variant="body1">{displayUser?.dateOfBirth ? dayjs(displayUser.dateOfBirth).format('DD/MM/YYYY') : '-'}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Giới tính</Typography>
+                    <Typography variant="body1">{displayUser?.gender || '-'}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary">Nhóm máu</Typography>
+                    <Typography variant="body1">{displayUser?.bloodType || '-'}</Typography>
+                  </Box>
+                </Stack>
+
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, height: '100%', borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                    Thông tin cá nhân
+                    Thông tin liên hệ
                   </Typography>
-                  <Divider sx={{ mb: 2 }} />
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Avatar
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        bgcolor: '#e53935',
-                        fontSize: '2rem',
-                        mr: 2,
-                      }}
+                  {!isEditing && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={handleEdit}
+                      startIcon={<EditIcon />}
                     >
-                      {displayUser?.firstName?.charAt(0).toUpperCase() || displayUser?.lastName?.charAt(0).toUpperCase() || displayUser?.email?.charAt(0).toUpperCase() || ''}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" gutterBottom>{displayUser?.firstName} {displayUser?.lastName}</Typography>
-                      <Typography variant="body2" color="text.secondary">{displayUser?.email}</Typography>
-                    </Box>
-                  </Box>
+                      Chỉnh sửa
+                    </Button>
+                  )}
+                </Box>
+                <Divider sx={{ mb: 2 }} />
 
+                {isEditing ? (
                   <Stack spacing={2}>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Số CCCD</Typography>
-                      <Typography variant="body1">{displayUser?.citizenId || '-'}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Ngày sinh</Typography>
-                      <Typography variant="body1">{displayUser?.dateOfBirth ? dayjs(displayUser.dateOfBirth).format('DD/MM/YYYY') : '-'}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Giới tính</Typography>
-                      <Typography variant="body1">{displayUser?.gender || '-'}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Nhóm máu</Typography>
-                      <Typography variant="body1">{displayUser?.bloodType || '-'}</Typography>
-                    </Box>
+                    <TextField
+                      label="Địa chỉ liên hệ"
+                      name="address"
+                      value={editedUser.address || ''}
+                      onChange={handleInputChange}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      size="small"
+                    />
+                    <TextField
+                      label="Điện thoại di động"
+                      name="phoneNumber"
+                      value={editedUser.phoneNumber || ''}
+                      onChange={handleInputChange}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="Điện thoại bàn"
+                      name="landlinePhone"
+                      value={editedUser.landlinePhone || ''}
+                      onChange={handleInputChange}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="Cân năng"
+                      name="weight"
+                      value={editedUser.weight || ''}
+                      onChange={handleInputChange}
+                      fullWidth
+                      size="small"
+                    />
+                    <TextField
+                      label="Chiều cao"
+                      name="height"
+                      value={editedUser.height || ''}
+                      onChange={handleInputChange}
+                      fullWidth
+                      size="small"
+                    />
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Nghề nghiệp</InputLabel>
+                      <Select
+                        name="occupation"
+                        value={editedUser.occupation || ''}
+                        label="Nghề nghiệp"
+                        onChange={handleInputChange}
+                      >
+                        {occupations.map((occupation) => (
+                          <MenuItem key={occupation} value={occupation}>{occupation}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                   </Stack>
-
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 3, height: '100%', borderRadius: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                      Thông tin liên hệ
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ mb: 2 }} />
-
+                ) : (
                   <Stack spacing={2}>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Địa chỉ liên hệ</Typography>
@@ -290,144 +343,25 @@ const Profile = () => {
                       <Typography variant="body1">{displayUser?.email || '-'}</Typography>
                     </Box>
                     <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Cân nặng</Typography>
+                      <Typography variant="body1">{displayUser?.weight || '-'}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary">Chiều cao</Typography>
+                      <Typography variant="body1">{displayUser?.height || '-'}</Typography>
+                    </Box>
+                    <Box>
                       <Typography variant="subtitle2" color="text.secondary">Nghề nghiệp</Typography>
                       <Typography variant="body1">{displayUser?.occupation || '-'}</Typography>
                     </Box>
-                     <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Chiều cao</Typography>
-                      <Typography variant="body1">{displayUser?.height ? `${displayUser.height} cm` : '-'}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">Cân nặng</Typography>
-                      <Typography variant="body1">{displayUser?.weight ? `${displayUser.weight} kg` : '-'}</Typography>
-                    </Box>
                   </Stack>
-                </Paper>
-              </Grid>
+                )}
+              </Paper>
             </Grid>
-          ) : (
-            // Editing form
-            <Box>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                Chỉnh sửa thông tin
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Stack spacing={2}>
-                 <TextField
-                    label="Địa chỉ liên hệ"
-                    name="address"
-                    value={editedUser.address || ''}
-                    onChange={handleInputChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    size="small"
-                     error={!!errors.address}
-                    helperText={errors.address}
-                  />
-                  <TextField
-                    label="Điện thoại di động"
-                    name="phoneNumber"
-                    value={editedUser.phoneNumber || ''}
-                    onChange={handleInputChange}
-                    fullWidth
-                    size="small"
-                    error={!!errors.phoneNumber}
-                    helperText={errors.phoneNumber}
-                  />
-                  <TextField
-                    label="Điện thoại bàn"
-                    name="landlinePhone"
-                    value={editedUser.landlinePhone || ''}
-                    onChange={handleInputChange}
-                    fullWidth
-                    size="small"
-                  />
-                   {/* Add Email TextField for editing */}
-                  <TextField
-                    label="Email"
-                    name="email"
-                    value={editedUser.email || ''}
-                    onChange={handleInputChange}
-                    fullWidth
-                    size="small"
-                    error={!!errors.email}
-                    helperText={errors.email}
-                  />
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Nghề nghiệp</InputLabel>
-                    <Select
-                      name="occupation"
-                      value={editedUser.occupation || ''}
-                      label="Nghề nghiệp"
-                      onChange={handleInputChange}
-                    >
-                      {occupations.map((occupation) => (
-                        <MenuItem key={occupation} value={occupation}>{occupation}</MenuItem>
-                      ))}
-                    </Select>
-                     {errors.occupation && <Typography variant="caption" color="error">{errors.occupation}</Typography>}
-                  </FormControl>
-                   <TextField
-                      label="Chiều cao (cm)"
-                      name="height"
-                      value={editedUser.height || ''}
-                      onChange={handleInputChange}
-                      fullWidth
-                      type="number"
-                      size="small"
-                      error={!!errors.height}
-                      helperText={errors.height}
-                    />
-                    <TextField
-                      label="Cân nặng (kg)"
-                      name="weight"
-                      value={editedUser.weight || ''}
-                      onChange={handleInputChange}
-                      fullWidth
-                      type="number"
-                      size="small"
-                      error={!!errors.weight}
-                      helperText={errors.weight}
-                    />
-              </Stack>
-            </Box>
-          )}
+          </Grid>
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 2 }}>
-            {!isEditing ? (
-              <>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleEdit}
-                  startIcon={<EditIcon />}
-                  sx={{
-                    px: 4,
-                    py: 1,
-                  }}
-                >
-                  Chỉnh sửa
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleLogout}
-                  sx={{
-                    px: 4,
-                    py: 1,
-                    borderColor: '#e53935',
-                    color: '#e53935',
-                    '&:hover': {
-                      borderColor: '#e53935',
-                      bgcolor: 'rgba(229,57,53,0.04)'
-                    }
-                  }}
-                >
-                  Đăng xuất
-                </Button>
-              </>
-            ) : (
+            {isEditing ? (
               <>
                 <Button
                   variant="contained"
@@ -450,6 +384,26 @@ const Profile = () => {
                   }}
                 >
                   Hủy
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleLogout}
+                  sx={{
+                    px: 4,
+                    py: 1,
+                    borderColor: '#e53935',
+                    color: '#e53935',
+                    '&:hover': {
+                      borderColor: '#e53935',
+                      bgcolor: 'rgba(229,57,53,0.04)'
+                    }
+                  }}
+                >
+                  Đăng xuất
                 </Button>
               </>
             )}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Blood_Donation_Support.Model;
 
@@ -32,7 +33,7 @@ public partial class DonationRequest
     public virtual BloodComponent Component { get; set; } = null!;
 
     public virtual ICollection<DonationRequestsDetail> DonationRequestsDetails { get; set; } = new List<DonationRequestsDetail>();
-
+    [ForeignKey("MemberId")]
     public virtual Member Member { get; set; } = null!;
 
     public virtual BloodDonationPeriod Period { get; set; } = null!;

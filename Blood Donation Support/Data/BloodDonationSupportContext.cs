@@ -35,7 +35,7 @@ public partial class BloodDonationSupportContext : DbContext
     public virtual DbSet<DonationRequestsDetail> DonationRequestsDetails { get; set; }
 
     public virtual DbSet<Member> Members { get; set; }
-
+    public virtual DbSet<Role> Role { get; set; }
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
@@ -145,9 +145,6 @@ public partial class BloodDonationSupportContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__BloodUnit__Compo__628FA481");
 
-            entity.HasOne(d => d.Donor).WithMany(p => p.BloodUnits)
-                .HasForeignKey(d => d.DonorId)
-                .HasConstraintName("FK__BloodUnit__Donor__6383C8BA");
         });
 
         modelBuilder.Entity<DonationRequest>(entity =>
@@ -213,6 +210,17 @@ public partial class BloodDonationSupportContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.Member)
                 .HasForeignKey<Member>(d => d.UserId)
                 .HasConstraintName("FK__Members__UserId__6A30C649");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1B0F2A3C4D");
+            
+            entity.HasIndex(e => e.Name, "UQ__Role__737584F6A0B1D3C2").IsUnique();
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(10)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<Notification>(entity =>
@@ -298,6 +306,11 @@ public partial class BloodDonationSupportContext : DbContext
             entity.HasIndex(e => e.CitizenNumber, "UQ__Users__B2F0D91E87CE2AD8").IsUnique();
 
             entity.Property(e => e.Address).HasMaxLength(255);
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                  .HasForeignKey(d => d.RoleId)
+                  .HasConstraintName("FK__Users__RoleId__17036CC0");
+
             entity.Property(e => e.CitizenNumber)
                 .HasMaxLength(20)
                 .IsUnicode(false);

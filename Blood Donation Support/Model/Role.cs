@@ -1,18 +1,12 @@
-using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-namespace Blood_Donation_Support.Model
+namespace Blood_Donation_Support.Model;
+
+public partial class Role
 {
-    public partial class Role
-    {
-        public Role()
-        {
-            Users = new HashSet<User>();
-        }
+    [Key]
+    public int RoleId { get; set; }
+    public string? Name { get; set; }
 
-        public int RoleId { get; set; }
-        public string Name { get; set; } = null!;
-
-        public virtual ICollection<User> Users { get; set; }
-    }
+    public virtual ICollection<User> Users { get; set; } = new List<User>(); 
 }

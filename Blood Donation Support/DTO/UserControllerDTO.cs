@@ -37,6 +37,9 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "Địa chỉ là bắt buộc")]
         public string Address { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Vai trò là bắt buộc")]
+        public int RoleId { get; set; }
+
         // Thông tin thêm cho Member (không bắt buộc)
         public int? BloodTypeId { get; set; }
         public int? Weight { get; set; }
@@ -90,6 +93,7 @@ namespace Blood_Donation_Support.DTO
         [StringLength(40)]
         public required string FullName { get; set; }
 
+        [Required]
         [StringLength(12)]
         [RegularExpression(@"^\d{12}$", ErrorMessage = "Số CCCD/CMND không hợp lệ")]
         public required string CitizenNumber { get; set; }
@@ -100,7 +104,7 @@ namespace Blood_Donation_Support.DTO
 
         [Required]
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
-        public required string? PhoneNumber { get; set; }
+        public required string PhoneNumber { get; set; }
 
         [Required]
         public DateOnly DateOfBirth { get; set; }
@@ -110,10 +114,51 @@ namespace Blood_Donation_Support.DTO
         public bool Sex { get; set; }
 
         [Required]
-        public string? Address { get; set; }
-
+        public required string Address { get; set; }
+        [Required(ErrorMessage = "Vai trò là bắt buộc")]
+   
         [Required]
         public int RoleId { get; set; }
+
+        [Required]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Thông tin thêm cho Member (không bắt buộc)
+        [Required]
+        public int? BloodTypeId { get; set; }
+        [Required]
+        public int? Weight { get; set; }
+        [Required]
+        public int? Height { get; set; }
+        [Required]
+        public bool IsDonor { get; set; } = false; 
+        [Required]
+        public bool IsRecipient { get; set; } = false; 
+    }
+    public class UpdateProfile // Update user profile data
+    {
+        [Required]
+        [EmailAddress]
+        public required string Email { get; set; }
+
+        [Required]
+        [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
+        public required string PhoneNumber { get; set; }
+
+        [Required]
+        public DateOnly DateOfBirth { get; set; }
+
+        [Required]
+        public required string Address { get; set; }
+
+        [Required]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Member Information
+        [Required]
+        public int? Weight { get; set; }
+        [Required]
+        public int? Height { get; set; }
     }
 
 

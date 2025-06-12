@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -18,6 +18,9 @@ public partial class BloodUnit
     public DateOnly ExpiryDate { get; set; }
 
     public int Volume { get; set; }
+
+    // Remaining volume (mL) for partially used units; equals Volume for new units
+    public int RemainingVolume { get; set; }
 
     public string BloodStatus { get; set; } = null!;
     public int RemainingVolume { get; set; }

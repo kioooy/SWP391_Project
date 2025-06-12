@@ -28,6 +28,8 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<BloodUnit> BloodUnits { get; set; }
 
+    public virtual DbSet<BloodReservation> BloodReservations { get; set; }
+
     public virtual DbSet<DonationRequest> DonationRequests { get; set; }
 
     public virtual DbSet<DonationRequestsDetail> DonationRequestsDetails { get; set; }

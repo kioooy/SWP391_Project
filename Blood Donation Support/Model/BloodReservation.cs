@@ -1,9 +1,11 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Blood_Donation_Support.Model;
 
 public partial class BloodReservation
 {
+    [Key]
     public int ReservationId { get; set; }
 
     public int BloodUnitId { get; set; }

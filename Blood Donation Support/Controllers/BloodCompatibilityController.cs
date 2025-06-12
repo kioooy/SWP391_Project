@@ -69,5 +69,27 @@ namespace Blood_Donation_Support.Controllers
                 CompatibleBloodTypes = compatibilityTable[recipientBloodType]
             });
         }
+
+        // Helper method used by BloodInventoryController – not exposed as API
+        [NonAction]
+        public List<string>? GetCompatibleList(string recipientBloodType, string component)
+        {
+            if (string.IsNullOrWhiteSpace(recipientBloodType) || string.IsNullOrWhiteSpace(component))
+                return null;
+
+            Dictionary<string, List<string>> compatibilityTable = component.ToLower() switch
+            {
+                "whole-blood" => WholeBloodCompatibility,
+                "red-cell" => RedCellCompatibility,
+                "plasma" => PlasmaCompatibility,
+                "platelet" => PlateletCompatibility,
+                _ => null
+            };
+
+            if (compatibilityTable == null || !compatibilityTable.ContainsKey(recipientBloodType))
+                return null;
+
+            return compatibilityTable[recipientBloodType];
+        }
     }
 }

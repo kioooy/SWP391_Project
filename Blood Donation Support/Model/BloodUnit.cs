@@ -23,7 +23,7 @@ public partial class BloodUnit
     public int RemainingVolume { get; set; }
 
     public string BloodStatus { get; set; } = null!;
-    public int RemainingVolume { get; set; }
+
     public virtual BloodType BloodType { get; set; } = null!;
 
     public virtual BloodComponent Component { get; set; } = null!;

@@ -150,7 +150,7 @@ namespace Blood_Donation_Support.Controllers
                 DateOfBirth = model.DateOfBirth, // ngày tháng năm sinh
                 Sex = model.Sex, // giới tính
                 Address = model.Address, // địa chỉ
-                RoleId = '3', // Mặc định là Member (RoleId = 3)
+                RoleId = 3, // Mặc định là Member (RoleId = 3)
                 CreatedAt = DateTime.Now, // 
                 UpdatedAt = DateTime.Now, // 
                 IsActive = true // Mặc định là hoạt động
@@ -201,24 +201,33 @@ namespace Blood_Donation_Support.Controllers
             if (existingUser == null) // check if User or Member exists
                 return NotFound(); // Status code 404 Not Found 
 
-            // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var age = today.Year - model.DateOfBirth.Year;
-            if (model.DateOfBirth > today.AddYears(-age)) age--;// Calculate age (subtracting years)
-            if (age < 18)
-                return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
 
-            // Update only the fields on User
-            existingUser.Email = model.Email;             // Email  
-            existingUser.PhoneNumber = model.PhoneNumber; // Phone Number
-            existingUser.DateOfBirth = model.DateOfBirth; // Date of Birth
-            existingUser.Address = model.Address;         // Address
-            existingUser.UpdatedAt = DateTime.Now;        // UpdatedAt            // Update only the fields on Member 
-            var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
+
+            // Update only the fields on User if provided
+            if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
+            {
+                var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);
+                if (isPhoneNumberTaken)
+                {
+                    return BadRequest(new { message = "Số điện thoại đã tồn tại cho người dùng khác." });
+                }
+                existingUser.PhoneNumber = model.PhoneNumber;
+            }
+            
+            if (!string.IsNullOrEmpty(model.Address))
+                existingUser.Address = model.Address;
+            
+            existingUser.UpdatedAt = DateTime.Now; // Set by server
+
+            // Update only the fields on Member if provided
+            var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id);
             if (existingMember != null)
             {
-                existingMember.Weight = model.Weight;      // Weight
-                existingMember.Height = model.Height;      // Height
+                if (model.Weight.HasValue)
+                    existingMember.Weight = model.Weight.Value;
+                
+                if (model.Height.HasValue)
+                    existingMember.Height = model.Height.Value;
             }
 
             // Add handle commit code ( Use Transaction For multiple update tabledatabase )
@@ -333,13 +342,46 @@ namespace Blood_Donation_Support.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (user == null)
+            if (users == null)
             {
                 return NotFound();
             }
 
-            return Ok(user);
+            return Ok(users);
         }        
+        // Get User by Id
+        // GET: api/User/{id}
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .Include(u => u.Member)
+                    .ThenInclude(m => m.BloodType)
+                .FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null) return NotFound();
+            return Ok(new
+            {
+                user.UserId,
+                user.FullName,
+                user.CitizenNumber,
+                user.Email,
+                user.PhoneNumber,
+                user.DateOfBirth,
+                user.Sex,
+                user.Address,
+                user.Role.Name,
+                user.CreatedAt,
+                user.UpdatedAt,
+                // Member info
+                user.Member?.BloodType?.BloodTypeName,
+                user.Member?.Weight,
+                user.Member?.Height,
+                user.Member?.IsDonor,
+                user.Member?.IsRecipient
+            });
+        }
         // Update User Profile (admin)
         // PATCH: api/User/{id}
         [HttpPatch("{id}")]
@@ -357,27 +399,26 @@ namespace Blood_Donation_Support.Controllers
                 return NotFound();
             }
 
-            var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == request.RoleId);
+            var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == model.RoleId);
             if (!roleExists)
             {
                 return BadRequest(new { message = "Invalid RoleId." });
             }
             // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var age = today.Year - request.DateOfBirth.Year;
-            if (request.DateOfBirth > today.AddYears(-age)) age--;
+            var age = today.Year - model.DateOfBirth.Year;
+            if (model.DateOfBirth > today.AddYears(-age)) age--;
             if (age < 18)
                 return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
             // Update only the fields you want to allow to be changed
-            existingUser.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
-            existingUser.FullName = model.FullName;        // Full Name
-            existingUser.PhoneNumber = model.PhoneNumber;  // Phone Number
-            existingUser.FullName = model.FullName;        // Full Name
-            existingUser.DateOfBirth = model.DateOfBirth;  // Date of Birth
-            existingUser.Sex = model.Sex;                  // Gender
-            existingUser.Address = model.Address;          // Address
-            existingUser.RoleId = model.RoleId;            // Role ID
-            existingUser.UpdatedAt = DateTime.Now;         // UpdatedAt
+            user.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
+            user.FullName = model.FullName;        // Full Name
+            user.PhoneNumber = model.PhoneNumber;  // Phone Number
+            user.DateOfBirth = model.DateOfBirth;  // Date of Birth
+            user.Sex = model.Sex;                  // Gender
+            user.Address = model.Address;          // Address
+            user.RoleId = model.RoleId;            // Role ID
+            user.UpdatedAt = DateTime.Now;         // UpdatedAt
             
             var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
             if (existingMember != null)
@@ -397,6 +438,7 @@ namespace Blood_Donation_Support.Controllers
                 {
                     _context.Members.Update(existingMember); // Update Member information
                 }
+                _context.Users.Update(user); // update user
                 await _context.SaveChangesAsync(); // Save changes to the database
                 await transaction.CommitAsync(); // Commit the transaction
             }
@@ -406,13 +448,6 @@ namespace Blood_Donation_Support.Controllers
                 throw; // Rethrow the exception if it is a concurrency issue 
             }
             return NoContent(); // Return 204 No Content if successful
-                await _context.SaveChangesAsync();
-                return Ok(new { message = "User updated successfully." });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw;
-            }
         }
 
         // Create User 

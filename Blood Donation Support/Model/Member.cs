@@ -1,10 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using NetTopologySuite.Geometries;
 
 namespace Blood_Donation_Support.Model;
 
 public partial class Member
 {
+    // Địa chỉ dạng text (hiển thị cho nhân viên, người dùng)
+    public string? Address { get; set; }
+
+    // Vị trí địa lý (tọa độ) sử dụng NetTopologySuite Point (SRID 4326)
+    public NetTopologySuite.Geometries.Point? Location { get; set; }
     public int UserId { get; set; }
 
     public int? BloodTypeId { get; set; }

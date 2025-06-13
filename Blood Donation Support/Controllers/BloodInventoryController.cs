@@ -36,9 +36,12 @@ public class BloodInventoryController : ControllerBase
         var compLower = component.ToLower();
         int componentId = compLower switch
         {
-            "red-cell" => 1,
-            "plasma" => 2,
-            "platelet" => 3,
+            "whole blood" => 1, // Corrected ID based on DB
+            "red-cell" => 2,
+            "red blood cells" => 2, // Corrected ID based on DB
+            "plasma" => 3, // Corrected ID based on DB
+            "platelet" => 4,
+            "platelets" => 4, // Corrected ID based on DB
             _ => -1
         };
         if (componentId == -1)

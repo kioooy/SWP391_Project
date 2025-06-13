@@ -55,6 +55,7 @@ namespace Blood_Donation_Support.Controllers
             Dictionary<string, List<string>> compatibilityTable = component.ToLower() switch
             {
                 "whole-blood" => WholeBloodCompatibility,
+                "whole blood" => WholeBloodCompatibility, // Add without hyphen for consistency
                 "red-cell" => RedCellCompatibility,
                 "plasma" => PlasmaCompatibility,
                 "platelet" => PlateletCompatibility,
@@ -80,16 +81,20 @@ namespace Blood_Donation_Support.Controllers
             Dictionary<string, List<string>> compatibilityTable = component.ToLower() switch
             {
                 "whole-blood" => WholeBloodCompatibility,
+                "whole blood" => WholeBloodCompatibility, // Add without hyphen for consistency
                 "red-cell" => RedCellCompatibility,
                 "plasma" => PlasmaCompatibility,
                 "platelet" => PlateletCompatibility,
                 _ => null
             };
 
-            if (compatibilityTable == null || !compatibilityTable.ContainsKey(recipientBloodType))
+            // Convert recipientBloodType to uppercase for case-insensitive lookup
+            var upperRecipientBloodType = recipientBloodType.ToUpper();
+
+            if (compatibilityTable == null || !compatibilityTable.ContainsKey(upperRecipientBloodType))
                 return null;
 
-            return compatibilityTable[recipientBloodType];
+            return compatibilityTable[upperRecipientBloodType];
         }
     }
 }

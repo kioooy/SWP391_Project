@@ -1,5 +1,7 @@
 using Blood_Donation_Support.Data;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite;
+using NetTopologySuite.Geometries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -10,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Đăng ký DbContext với container DI
 builder.Services.AddDbContext<BloodDonationSupportContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), x => x.UseNetTopologySuite()));
 
 // Cấu hình xác thực JWT
 

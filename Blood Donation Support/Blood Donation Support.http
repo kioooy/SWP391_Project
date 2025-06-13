@@ -1,6 +1,0 @@
-@Blood_Donation_Support_HostAddress = http://localhost:5250
-
-GET {{Blood_Donation_Support_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

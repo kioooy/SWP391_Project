@@ -126,9 +126,6 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "Vai trò là bắt buộc")]
         public int RoleId { get; set; }
 
-        [Required]
-        public DateTime? UpdatedAt { get; set; }
-
         // Thông tin thêm cho Member (không bắt buộc)
         public int? BloodTypeId { get; set; }
         public int? Weight { get; set; }
@@ -151,6 +148,8 @@ namespace Blood_Donation_Support.DTO
         // Member Information
         public int? Weight { get; set; }
         public int? Height { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 
 

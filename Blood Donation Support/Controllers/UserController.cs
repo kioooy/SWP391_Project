@@ -9,7 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-
+using NetTopologySuite.Geometries; // Added for Point type
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -194,16 +194,13 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Member,Admin")]
         public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateProfile model)
         {
-            if (!ModelState.IsValid) // check model state
-                return BadRequest(ModelState); // Status code 400 Bad Request 
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
-            if (existingUser == null) // check if User or Member exists
-                return NotFound(); // Status code 404 Not Found 
+            var existingUser = await _context.Users.FindAsync(id);
+            if (existingUser == null)
+                return NotFound();
 
-
-
-            // Update only the fields on User if provided
             if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
             {
                 var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);
@@ -213,11 +210,11 @@ namespace Blood_Donation_Support.Controllers
                 }
                 existingUser.PhoneNumber = model.PhoneNumber;
             }
-            
+
             if (!string.IsNullOrEmpty(model.Address))
                 existingUser.Address = model.Address;
-            
-            existingUser.UpdatedAt = DateTime.Now; // Set by server
+
+            existingUser.UpdatedAt = DateTime.Now;
 
             // Update only the fields on Member if provided
             var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id);
@@ -225,12 +222,18 @@ namespace Blood_Donation_Support.Controllers
             {
                 if (model.Weight.HasValue)
                     existingMember.Weight = model.Weight.Value;
-                
+
                 if (model.Height.HasValue)
                     existingMember.Height = model.Height.Value;
+
+                // Update Location if Latitude and Longitude are provided
+                if (model.Latitude.HasValue && model.Longitude.HasValue)
+                {
+                    existingMember.Location = new Point(model.Longitude.Value, model.Latitude.Value) { SRID = 4326 };
+                }
             }
 
-            // Add handle commit code ( Use Transaction For multiple update tabledatabase )
+            // Add handle commit code ( Use Transaction For multiple update table database )
             var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -238,14 +241,14 @@ namespace Blood_Donation_Support.Controllers
                 {
                     _context.Members.Update(existingMember); // Update Member information
                 }
-
+                _context.Users.Update(existingUser); // update user
                 await _context.SaveChangesAsync(); // Save changes to the database
-                await transaction.CommitAsync(); // Commit the transaction  
+                await transaction.CommitAsync(); // Commit the transaction
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw;
+                throw; // Rethrow the exception if it is a concurrency issue 
             }
             return NoContent(); // Return 204 No Content if successful
         }

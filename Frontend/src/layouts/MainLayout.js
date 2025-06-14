@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Outlet,
   Link as RouterLink,
@@ -13,6 +13,8 @@ import {
   Container,
   Button,
   Stack,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
@@ -22,12 +24,10 @@ import NewsIcon from "@mui/icons-material/Article";
 import ContactIcon from "@mui/icons-material/ContactMail";
 import { logout } from "../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
+import { selectIsAuthenticated, selectUser, selectIsStaff, selectIsTestUser } from "../features/auth/authSlice";
 import Footer from "../components/Footer";
 import PersonIcon from "@mui/icons-material/Person";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 import SearchIcon from "@mui/icons-material/Search";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -187,24 +187,54 @@ const MainLayout = () => {
             </Box>
             {/* Đăng nhập/Đăng ký hoặc Profile */}
             <Box>
-              {isAuthenticated || isTestUser ? (
-                <Button
-                  color="primary"
-                  startIcon={<AccountCircleIcon />}
-                  onClick={handleProfile}
-                >
-                  {isStaff ? "Staff" : (isTestUser ? "Test User" : "Profile")}
-                </Button>
-              ) : (
-                <Button
-                  variant="text"
-                  color="primary"
-                  onClick={handleLogin}
-                  startIcon={<PersonIcon />}
-                >
-                  Đăng nhập
-                </Button>
-              )}
+              <Button
+                color="primary"
+                startIcon={<AccountCircleIcon />}
+                onClick={handleMenu}
+              >
+                {isAuthenticated || isTestUser
+                  ? isStaff
+                    ? "Staff"
+                    : isTestUser
+                    ? "Test User"
+                    : "Profile"
+                  : "Guest"}
+              </Button>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={open}
+                onClose={handleClose}
+              >
+                {isAuthenticated || isTestUser ? (
+                  [
+                    <MenuItem key="profile" onClick={handleProfile}>
+                      Hồ sơ
+                    </MenuItem>,
+                    <MenuItem key="logout" onClick={handleLogoutAll}>
+                      Đăng xuất
+                    </MenuItem>,
+                  ]
+                ) : (
+                  [
+                    <MenuItem key="login" onClick={handleLogin}>
+                      Đăng nhập
+                    </MenuItem>,
+                    <MenuItem key="signup" onClick={handleSignup}>
+                      Đăng ký
+                    </MenuItem>,
+                  ]
+                )}
+              </Menu>
             </Box>
           </Box>
         </Container>

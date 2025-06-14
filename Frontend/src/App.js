@@ -15,7 +15,7 @@ import { selectIsAuthenticated } from "./features/auth/authSlice";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import Profile from "./pages/Profile";
+
 import TransfusionManagement from "./pages/TransfusionManagement ";
 import BloodDonationCertificate from "./pages/Certificate";
 import SearchByDistance from "./pages/SearchByDistance";
@@ -52,7 +52,7 @@ const App = () => {
         <Route path="/news" element={<News />} />
         <Route path="/news/:id" element={<NewsDetail />} />
         <Route path="/booking" element={<BookingPage />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile" element={<UserProfile />} />
         <Route
           path="/transfusion-request"
           element={<TransfusionManagement />}

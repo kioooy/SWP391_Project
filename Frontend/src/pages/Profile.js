@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -47,13 +48,59 @@ const Profile = () => {
   const isTestUser = localStorage.getItem('isTestUser') === 'true';
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedUser, setEditedUser] = useState({});
+  const [editedUser, setEditedUser] = useState({
+    fullName: '',
+    citizenNumber: '',
+    email: '',
+    phoneNumber: '',
+    dateOfBirth: '',
+    sex: '',
+    address: '',
+    bloodTypeName: '',
+    weight: '',
+    height: '',
+    isDonor: false,
+    isRecipient: false,
+  });
   const [errors, setErrors] = useState({});
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
+          return;
+        }
+
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const response = await axios.get(`${API_URL}/User/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // API trả về một mảng, nên lấy phần tử đầu tiên
+        const userData = response.data[0]; 
+        if (userData) {
+          setEditedUser({
+            ...userData,
+            dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
+          });
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy thông tin người dùng:', error);
+        setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Load user profile from localStorage when component mounts
   useEffect(() => {
@@ -216,31 +263,31 @@ const Profile = () => {
                       mr: 2,
                     }}
                   >
-                    {displayUser?.firstName?.charAt(0).toUpperCase() || displayUser?.lastName?.charAt(0).toUpperCase() || displayUser?.email?.charAt(0).toUpperCase() || ''}
+                    {editedUser?.fullName?.charAt(0).toUpperCase() || editedUser?.email?.charAt(0).toUpperCase() || ''}
                   </Avatar>
                   <Box>
-                    <Typography variant="h6" gutterBottom>{displayUser?.firstName} {displayUser?.lastName}</Typography>
-                    <Typography variant="body2" color="text.secondary">{displayUser?.email}</Typography>
+                    <Typography variant="h6" gutterBottom>{editedUser?.fullName}</Typography>
+                    <Typography variant="body2" color="text.secondary">{editedUser?.email}</Typography>
                   </Box>
                 </Box>
 
                 <Stack spacing={2}>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">Số CMND</Typography>
-                    <Typography variant="body1">{displayUser?.personalId || '-'}</Typography>
+                    <Typography variant="body1">{editedUser?.citizenNumber || '-'}</Typography>
                   </Box>
 
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">Ngày sinh</Typography>
-                    <Typography variant="body1">{displayUser?.dateOfBirth ? dayjs(displayUser.dateOfBirth).format('DD/MM/YYYY') : '-'}</Typography>
+                    <Typography variant="body1">{editedUser?.dateOfBirth ? dayjs(editedUser.dateOfBirth).format('DD/MM/YYYY') : '-'}</Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">Giới tính</Typography>
-                    <Typography variant="body1">{displayUser?.gender || '-'}</Typography>
+                    <Typography variant="body1">{editedUser?.sex || '-'}</Typography>
                   </Box>
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">Nhóm máu</Typography>
-                    <Typography variant="body1">{displayUser?.bloodType || '-'}</Typography>
+                    <Typography variant="body1">{editedUser?.bloodTypeName || '-'}</Typography>
                   </Box>
                 </Stack>
 
@@ -328,31 +375,31 @@ const Profile = () => {
                   <Stack spacing={2}>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Địa chỉ liên hệ</Typography>
-                      <Typography variant="body1">{displayUser?.address || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.address || '-'}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Điện thoại di động</Typography>
-                      <Typography variant="body1">{displayUser?.phoneNumber || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.phoneNumber || '-'}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Điện thoại bàn</Typography>
-                      <Typography variant="body1">{displayUser?.landlinePhone || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.landlinePhone || '-'}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Email</Typography>
-                      <Typography variant="body1">{displayUser?.email || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.email || '-'}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Cân nặng</Typography>
-                      <Typography variant="body1">{displayUser?.weight || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.weight || '-'}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Chiều cao</Typography>
-                      <Typography variant="body1">{displayUser?.height || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.height || '-'}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="subtitle2" color="text.secondary">Nghề nghiệp</Typography>
-                      <Typography variant="body1">{displayUser?.occupation || '-'}</Typography>
+                      <Typography variant="body1">{editedUser?.occupation || '-'}</Typography>
                     </Box>
                   </Stack>
                 )}

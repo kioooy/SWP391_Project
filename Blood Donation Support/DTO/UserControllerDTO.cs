@@ -81,6 +81,14 @@ namespace Blood_Donation_Support.DTO
 
         [Required]
         public int RoleId { get; set; }
+
+        // Thông tin thêm cho Member (không bắt buộc)
+        public int? BloodTypeId { get; set; }
+        public int? Weight { get; set; }
+        public int? Height { get; set; }
+        public bool IsDonor { get; set; } = true; // Mặc định là người hiến máu
+        public bool IsRecipient { get; set; } = false; // Mặc định không phải người nhận máu
+
     }
 
     public class CreateUser
@@ -115,9 +123,8 @@ namespace Blood_Donation_Support.DTO
 
         [Required]
         public required string Address { get; set; }
+
         [Required(ErrorMessage = "Vai trò là bắt buộc")]
-   
-        [Required]
         public int RoleId { get; set; }
 
         [Required]

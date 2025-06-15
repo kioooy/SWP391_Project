@@ -37,7 +37,7 @@ public partial class User
     public bool IsActive { get; set; } = true;
 
     public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();
-
+    public virtual ICollection<Article> Articles { get; set; } = new List<Article>();
     public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
 
     public virtual Member? Member { get; set; }

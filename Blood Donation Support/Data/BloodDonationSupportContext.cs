@@ -18,6 +18,8 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<Blog> Blogs { get; set; }
 
+    public virtual DbSet<Article> Articles { get; set; }
+
     public virtual DbSet<BloodCompatibilityRule> BloodCompatibilityRules { get; set; }
 
     public virtual DbSet<BloodComponent> BloodComponents { get; set; }
@@ -69,6 +71,28 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Blog__UserId__5EBF139D");
+        });
+
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.HasKey(e => e.ArticleId).HasName("PK__Article__9C6270E828DBB88A");
+
+            entity.ToTable("Article");
+
+            entity.Property(e => e.Content).HasColumnType("ntext");
+            entity.Property(e => e.PublishedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Articles)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Article__UserId__0D7A0286");
         });
 
         modelBuilder.Entity<BloodCompatibilityRule>(entity =>

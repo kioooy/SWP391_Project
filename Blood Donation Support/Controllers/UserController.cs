@@ -333,13 +333,12 @@ namespace Blood_Donation_Support.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (user == null)
-            {
-                return NotFound();
-            }
+            if (users == null)
+                    return NotFound();
 
-            return Ok(user);
-        }        
+          return Ok(users);
+        }
+
         // Update User Profile (admin)
         // PATCH: api/User/{id}
         [HttpPatch("{id}")]
@@ -347,38 +346,34 @@ namespace Blood_Donation_Support.Controllers
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var user = await _context.Users.FindAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
-            var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == request.RoleId);
+            var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == model.RoleId);
             if (!roleExists)
-            {
                 return BadRequest(new { message = "Invalid RoleId." });
-            }
+
             // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var age = today.Year - request.DateOfBirth.Year;
-            if (request.DateOfBirth > today.AddYears(-age)) age--;
+            var age = today.Year - model.DateOfBirth.Year;
+            if (model.DateOfBirth > today.AddYears(-age)) age--;
             if (age < 18)
                 return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
+
             // Update only the fields you want to allow to be changed
-            existingUser.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
-            existingUser.FullName = model.FullName;        // Full Name
-            existingUser.PhoneNumber = model.PhoneNumber;  // Phone Number
-            existingUser.FullName = model.FullName;        // Full Name
-            existingUser.DateOfBirth = model.DateOfBirth;  // Date of Birth
-            existingUser.Sex = model.Sex;                  // Gender
-            existingUser.Address = model.Address;          // Address
-            existingUser.RoleId = model.RoleId;            // Role ID
-            existingUser.UpdatedAt = DateTime.Now;         // UpdatedAt
-            
+            user.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
+            user.FullName = model.FullName;        // Full Name
+            user.PhoneNumber = model.PhoneNumber;  // Phone Number
+            user.FullName = model.FullName;        // Full Name
+            user.DateOfBirth = model.DateOfBirth;  // Date of Birth
+            user.Sex = model.Sex;                  // Gender
+            user.Address = model.Address;          // Address
+            user.RoleId = model.RoleId;            // Role ID
+            user.UpdatedAt = DateTime.Now;         // UpdatedAt
+
             var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
             if (existingMember != null)
             {
@@ -394,27 +389,20 @@ namespace Blood_Donation_Support.Controllers
             try
             {
                 if (existingMember != null)
-                {
                     _context.Members.Update(existingMember); // Update Member information
-                }
+
                 await _context.SaveChangesAsync(); // Save changes to the database
                 await transaction.CommitAsync(); // Commit the transaction
+
+                return Ok(new { message = "User updated successfully." });
+
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw; // Rethrow the exception if it is a concurrency issue 
-            }
-            return NoContent(); // Return 204 No Content if successful
-                await _context.SaveChangesAsync();
-                return Ok(new { message = "User updated successfully." });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
                 throw;
             }
         }
-
         // Create User 
         // PATCH: api/User/create
         [HttpPost("create")]
@@ -468,7 +456,7 @@ namespace Blood_Donation_Support.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUserById), new { id = user.UserId }, user);
+            return CreatedAtAction(nameof(CreateUser), new { id = user.UserId }, user);
         }
 
         // Delete User (soft delete)

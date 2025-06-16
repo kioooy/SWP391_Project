@@ -82,13 +82,12 @@ namespace Blood_Donation_Support.DTO
         [Required]
         public int RoleId { get; set; }
 
-        // Thông tin thêm cho Member (không bắt buộc)
+        // Bổ sung thuộc tính cho Member
         public int? BloodTypeId { get; set; }
         public int? Weight { get; set; }
         public int? Height { get; set; }
-        public bool IsDonor { get; set; } = true; // Mặc định là người hiến máu
-        public bool IsRecipient { get; set; } = false; // Mặc định không phải người nhận máu
-
+        public bool? IsDonor { get; set; }
+        public bool? IsRecipient { get; set; }
     }
 
     public class CreateUser
@@ -127,45 +126,30 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "Vai trò là bắt buộc")]
         public int RoleId { get; set; }
 
-        [Required]
-        public DateTime? UpdatedAt { get; set; }
-
         // Thông tin thêm cho Member (không bắt buộc)
-        [Required]
         public int? BloodTypeId { get; set; }
-        [Required]
         public int? Weight { get; set; }
-        [Required]
         public int? Height { get; set; }
-        [Required]
         public bool IsDonor { get; set; } = false; 
-        [Required]
         public bool IsRecipient { get; set; } = false; 
     }
     public class UpdateProfile // Update user profile data
     {
-        [Required]
         [EmailAddress]
-        public required string Email { get; set; }
+        public string? Email { get; set; }
 
-        [Required]
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
-        public required string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
-        [Required]
-        public DateOnly DateOfBirth { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
 
-        [Required]
-        public required string Address { get; set; }
-
-        [Required]
-        public DateTime? UpdatedAt { get; set; }
+        public string? Address { get; set; }
 
         // Member Information
-        [Required]
         public int? Weight { get; set; }
-        [Required]
         public int? Height { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 
 

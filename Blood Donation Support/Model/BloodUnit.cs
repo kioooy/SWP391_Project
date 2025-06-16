@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -19,8 +19,11 @@ public partial class BloodUnit
 
     public int Volume { get; set; }
 
-    public string BloodStatus { get; set; } = null!;
+    // Remaining volume (mL) for partially used units; equals Volume for new units
     public int RemainingVolume { get; set; }
+
+    public string BloodStatus { get; set; } = null!;
+
     public virtual BloodType BloodType { get; set; } = null!;
 
     public virtual BloodComponent Component { get; set; } = null!;

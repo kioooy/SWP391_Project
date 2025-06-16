@@ -15,9 +15,14 @@ import { selectIsAuthenticated } from "./features/auth/authSlice";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import Profile from "./pages/Profile";
+
 import TransfusionManagement from "./pages/TransfusionManagement ";
 import BloodDonationCertificate from "./pages/Certificate";
+import SearchByDistance from "./pages/SearchByDistance";
+import EmergencyRequest from "./pages/EmergencyRequest";
+import BloodInventory from "./pages/BloodInventory";
+import UserProfile from "./pages/UserProfile";
+import Dashboard from "./pages/Dashboard";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -47,12 +52,17 @@ const App = () => {
         <Route path="/news" element={<News />} />
         <Route path="/news/:id" element={<NewsDetail />} />
         <Route path="/booking" element={<BookingPage />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile" element={<UserProfile />} />
         <Route
           path="/transfusion-request"
           element={<TransfusionManagement />}
         />
         <Route path="/certificate" element={<BloodDonationCertificate />} />
+        <Route path="/search-distance" element={<SearchByDistance />} />
+        <Route path="/emergency-request" element={<EmergencyRequest />} />
+        <Route path="/blood-inventory" element={<BloodInventory />} />
+        <Route path="/user-profile" element={<UserProfile />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Route>
 
       {/* Fallback Route */}

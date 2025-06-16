@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Outlet,
   Link as RouterLink,
@@ -13,6 +13,8 @@ import {
   Container,
   Button,
   Stack,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
@@ -22,12 +24,14 @@ import NewsIcon from "@mui/icons-material/Article";
 import ContactIcon from "@mui/icons-material/ContactMail";
 import { logout } from "../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
+import { selectIsAuthenticated, selectUser, selectIsStaff, selectIsTestUser } from "../features/auth/authSlice";
 import Footer from "../components/Footer";
 import PersonIcon from "@mui/icons-material/Person";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
+import SearchIcon from "@mui/icons-material/Search";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import BloodtypeIcon from "@mui/icons-material/Bloodtype";
 
 const MainContainer = styled(Box)(({ theme }) => ({
   minHeight: "100vh",
@@ -72,9 +76,13 @@ const MainLayout = () => {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
 
   const handleLogout = async () => {
     await dispatch(logout());
+    localStorage.removeItem("isTestUser");
+    localStorage.removeItem("isStaff");
     navigate("/login");
   };
 
@@ -82,22 +90,27 @@ const MainLayout = () => {
     navigate("/login");
   };
 
+  const handleStaffLogin = () => {
+    localStorage.setItem("isStaff", "true");
+    localStorage.setItem("isTestUser", "true");
+    navigate("/");
+  };
+
   const handleSignup = () => {
     navigate("/signup");
   };
 
-  // Kiểm tra trạng thái đăng nhập test user
-  const isTestUser = localStorage.getItem("isTestUser") === "true";
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   const handleLogoutAll = () => {
     localStorage.removeItem("isTestUser");
+    localStorage.removeItem("isStaff");
     handleClose();
     handleLogout();
   };
@@ -106,17 +119,41 @@ const MainLayout = () => {
     navigate("/profile");
   };
 
+  // Kiểm tra trạng thái đăng nhập test user và staff
+  const isTestUser = localStorage.getItem("isTestUser") === "true";
+  const isStaff = localStorage.getItem("isStaff") === "true";
+
   let menuItems = [
     { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
     { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
     { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
     { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
     { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
+    { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+    { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
   ];
-  if (user && user.role === 'staff') {
-    menuItems = [
-      { path: "/transfusion-request", label: "Quản lý yêu cầu truyền máu", icon: <HistoryIcon /> },
-    ];
+
+  // Menu items cho người dùng đã đăng nhập
+  if (isAuthenticated || isTestUser) {
+    if (isStaff) {
+      // Menu items cho nhân viên
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
+      ];
+    } else {
+      // Menu items cho người dùng thường và tài khoản test
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+        { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
+        { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
+        { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
+        { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+        { path: "/user-profile", label: "Hồ Sơ", icon: <PersonIcon /> },
+      ];
+    }
   }
 
   return (
@@ -131,7 +168,7 @@ const MainLayout = () => {
               justifyContent: "space-between",
             }}
           >
-            <Box sx={{ width: 80 }} /> {/* giữ chỗ để logo ở giữa */}
+            <Box sx={{ width: 80 }} />
             {/* Logo */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <img
@@ -150,24 +187,54 @@ const MainLayout = () => {
             </Box>
             {/* Đăng nhập/Đăng ký hoặc Profile */}
             <Box>
-              {isAuthenticated || isTestUser ? (
-                <Button
-                  color="primary"
-                  startIcon={<AccountCircleIcon />}
-                  onClick={handleProfile}
-                >
-                  {isTestUser ? "User" : "Profile"}
-                </Button>
-              ) : (
-                <Button
-                  variant="text"
-                  color="primary"
-                  onClick={handleLogin}
-                  startIcon={<PersonIcon />}
-                >
-                  Đăng nhập
-                </Button>
-              )}
+              <Button
+                color="primary"
+                startIcon={<AccountCircleIcon />}
+                onClick={handleMenu}
+              >
+                {isAuthenticated || isTestUser
+                  ? isStaff
+                    ? "Staff"
+                    : isTestUser
+                    ? "Test User"
+                    : "Profile"
+                  : "Guest"}
+              </Button>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={open}
+                onClose={handleClose}
+              >
+                {isAuthenticated || isTestUser ? (
+                  [
+                    <MenuItem key="profile" onClick={handleProfile}>
+                      Hồ sơ
+                    </MenuItem>,
+                    <MenuItem key="logout" onClick={handleLogoutAll}>
+                      Đăng xuất
+                    </MenuItem>,
+                  ]
+                ) : (
+                  [
+                    <MenuItem key="login" onClick={handleLogin}>
+                      Đăng nhập
+                    </MenuItem>,
+                    <MenuItem key="signup" onClick={handleSignup}>
+                      Đăng ký
+                    </MenuItem>,
+                  ]
+                )}
+              </Menu>
             </Box>
           </Box>
         </Container>

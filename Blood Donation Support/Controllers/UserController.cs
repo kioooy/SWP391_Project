@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+using NetTopologySuite.Geometries; // Added for Point type
 
 
 namespace Blood_Donation_Support.Controllers
@@ -150,7 +151,7 @@ namespace Blood_Donation_Support.Controllers
                 DateOfBirth = model.DateOfBirth, // ngày tháng năm sinh
                 Sex = model.Sex, // giới tính
                 Address = model.Address, // địa chỉ
-                RoleId = '3', // Mặc định là Member (RoleId = 3)
+                RoleId = 3, // Mặc định là Member (RoleId = 3)
                 CreatedAt = DateTime.Now, // 
                 UpdatedAt = DateTime.Now, // 
                 IsActive = true // Mặc định là hoạt động
@@ -198,30 +199,43 @@ namespace Blood_Donation_Support.Controllers
                 return BadRequest(ModelState); // Status code 400 Bad Request 
 
             var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
-            if (existingUser == null) // check if User or Member exists
+            if (existingUser == null)
                 return NotFound(); // Status code 404 Not Found 
 
-            // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var age = today.Year - model.DateOfBirth.Year;
-            if (model.DateOfBirth > today.AddYears(-age)) age--;// Calculate age (subtracting years)
-            if (age < 18)
-                return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
-
-            // Update only the fields on User
-            existingUser.Email = model.Email;             // Email  
-            existingUser.PhoneNumber = model.PhoneNumber; // Phone Number
-            existingUser.DateOfBirth = model.DateOfBirth; // Date of Birth
-            existingUser.Address = model.Address;         // Address
-            existingUser.UpdatedAt = DateTime.Now;        // UpdatedAt            // Update only the fields on Member 
-            var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
-            if (existingMember != null)
+            if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
             {
-                existingMember.Weight = model.Weight;      // Weight
-                existingMember.Height = model.Height;      // Height
+                // Check existing Phone Number
+                var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);
+                if (isPhoneNumberTaken)
+                {
+                    return BadRequest(new { message = "Số điện thoại đã tồn tại cho người dùng khác." });
+                }
+                existingUser.PhoneNumber = model.PhoneNumber;
             }
 
-            // Add handle commit code ( Use Transaction For multiple update tabledatabase )
+            if (!string.IsNullOrEmpty(model.Address)) // Check existing andress
+                existingUser.Address = model.Address;
+
+            existingUser.UpdatedAt = DateTime.Now;
+
+            // Update only the fields on Member if provided
+            var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id);
+            if (existingMember != null)
+            {
+                if (model.Weight.HasValue)
+                    existingMember.Weight = model.Weight.Value;
+
+                if (model.Height.HasValue)
+                    existingMember.Height = model.Height.Value;
+
+                // Update Location if Latitude and Longitude are provided
+                if (model.Latitude.HasValue && model.Longitude.HasValue)
+                {
+                    existingMember.Location = new Point(model.Longitude.Value, model.Latitude.Value) { SRID = 4326 };
+                }
+            }
+
+            // Add handle commit code ( Use Transaction For multiple update table database )
             var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -229,14 +243,14 @@ namespace Blood_Donation_Support.Controllers
                 {
                     _context.Members.Update(existingMember); // Update Member information
                 }
-
+                _context.Users.Update(existingUser); // update user
                 await _context.SaveChangesAsync(); // Save changes to the database
-                await transaction.CommitAsync(); // Commit the transaction  
+                await transaction.CommitAsync(); // Commit the transaction
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw;
+                throw; // Rethrow the exception if it is a concurrency issue 
             }
             return NoContent(); // Return 204 No Content if successful
         }
@@ -334,11 +348,45 @@ namespace Blood_Donation_Support.Controllers
                 .FirstOrDefaultAsync();
 
             if (users == null)
-                    return NotFound();
+            {
+                return NotFound();
+            }
 
-          return Ok(users);
+            return Ok(users);
+        }        
+        // Get User by Id
+        // GET: api/User/{id}
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .Include(u => u.Member)
+                    .ThenInclude(m => m.BloodType)
+                .FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null) return NotFound();
+            return Ok(new
+            {
+                user.UserId,
+                user.FullName,
+                user.CitizenNumber,
+                user.Email,
+                user.PhoneNumber,
+                user.DateOfBirth,
+                user.Sex,
+                user.Address,
+                user.Role.Name,
+                user.CreatedAt,
+                user.UpdatedAt,
+                // Member info
+                user.Member?.BloodType?.BloodTypeName,
+                user.Member?.Weight,
+                user.Member?.Height,
+                user.Member?.IsDonor,
+                user.Member?.IsRecipient
+            });
         }
-
         // Update User Profile (admin)
         // PATCH: api/User/{id}
         [HttpPatch("{id}")]
@@ -367,13 +415,12 @@ namespace Blood_Donation_Support.Controllers
             user.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
             user.FullName = model.FullName;        // Full Name
             user.PhoneNumber = model.PhoneNumber;  // Phone Number
-            user.FullName = model.FullName;        // Full Name
             user.DateOfBirth = model.DateOfBirth;  // Date of Birth
             user.Sex = model.Sex;                  // Gender
             user.Address = model.Address;          // Address
             user.RoleId = model.RoleId;            // Role ID
             user.UpdatedAt = DateTime.Now;         // UpdatedAt
-
+            
             var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
             if (existingMember != null)
             {

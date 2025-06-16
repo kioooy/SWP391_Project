@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using NetTopologySuite.Geometries; // Added for Point type
 
+
 namespace Blood_Donation_Support.Controllers
 {
     [ApiController]
@@ -194,15 +195,16 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Member,Admin")]
         public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateProfile model)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (!ModelState.IsValid) // check model state
+                return BadRequest(ModelState); // Status code 400 Bad Request 
 
-            var existingUser = await _context.Users.FindAsync(id);
+            var existingUser = await _context.Users.FindAsync(id); // Find the existing User by UserId
             if (existingUser == null)
-                return NotFound();
+                return NotFound(); // Status code 404 Not Found 
 
             if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
             {
+                // Check existing Phone Number
                 var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);
                 if (isPhoneNumberTaken)
                 {
@@ -211,7 +213,7 @@ namespace Blood_Donation_Support.Controllers
                 existingUser.PhoneNumber = model.PhoneNumber;
             }
 
-            if (!string.IsNullOrEmpty(model.Address))
+            if (!string.IsNullOrEmpty(model.Address)) // Check existing andress
                 existingUser.Address = model.Address;
 
             existingUser.UpdatedAt = DateTime.Now;
@@ -392,27 +394,23 @@ namespace Blood_Donation_Support.Controllers
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUser model)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var user = await _context.Users.FindAsync(id);
             if (user == null)
-            {
                 return NotFound();
-            }
 
             var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == model.RoleId);
             if (!roleExists)
-            {
                 return BadRequest(new { message = "Invalid RoleId." });
-            }
+
             // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
             var today = DateOnly.FromDateTime(DateTime.Today);
             var age = today.Year - model.DateOfBirth.Year;
             if (model.DateOfBirth > today.AddYears(-age)) age--;
             if (age < 18)
                 return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
+
             // Update only the fields you want to allow to be changed
             user.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
             user.FullName = model.FullName;        // Full Name
@@ -438,21 +436,20 @@ namespace Blood_Donation_Support.Controllers
             try
             {
                 if (existingMember != null)
-                {
                     _context.Members.Update(existingMember); // Update Member information
-                }
-                _context.Users.Update(user); // update user
+
                 await _context.SaveChangesAsync(); // Save changes to the database
                 await transaction.CommitAsync(); // Commit the transaction
+
+                return Ok(new { message = "User updated successfully." });
+
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw; // Rethrow the exception if it is a concurrency issue 
+                throw;
             }
-            return NoContent(); // Return 204 No Content if successful
         }
-
         // Create User 
         // PATCH: api/User/create
         [HttpPost("create")]
@@ -506,7 +503,7 @@ namespace Blood_Donation_Support.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUserById), new { id = user.UserId }, user);
+            return CreatedAtAction(nameof(CreateUser), new { id = user.UserId }, user);
         }
 
         // Delete User (soft delete)

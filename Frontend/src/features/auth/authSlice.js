@@ -1,5 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode'; // Import thư viện jwt-decode
+
+// Hàm kiểm tra token hết hạn
+const isTokenExpired = (token) => {
+  if (!token) return true;
+  try {
+    const decoded = jwtDecode(token);
+    const currentTime = Date.now() / 1000; // Chuyển đổi sang giây
+    return decoded.exp < currentTime;
+  } catch (error) {
+    // Lỗi khi giải mã token (token không hợp lệ)
+    return true;
+  }
+};
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 
@@ -47,13 +61,47 @@ export const logout = createAsyncThunk(
   }
 );
 
-const initialState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
-  loading: false,
-  error: null,
+const getInitialState = () => {
+  const token = localStorage.getItem('token');
+  if (token && !isTokenExpired(token)) {
+    try {
+      const decoded = jwtDecode(token);
+      // Giả định payload của token có các trường userId, fullName, role
+      return {
+        user: {
+          userId: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.sub,
+          fullName: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
+          role: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+        },
+        token: token,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+      };
+    } catch (error) {
+      console.error("Lỗi giải mã token khi khởi tạo:", error);
+      // Xóa token không hợp lệ
+      localStorage.removeItem('token');
+      return {
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        loading: false,
+        error: null,
+      };
+    }
+  }
+  return {
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    loading: false,
+    error: null,
+  };
 };
+
+const initialState = getInitialState();
+
 
 const authSlice = createSlice({
   name: 'auth',
@@ -73,7 +121,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = { userId: action.payload.userId, fullName: action.payload.fullName, role: action.payload.role };
         state.token = action.payload.token;
       })
       .addCase(login.rejected, (state, action) => {
@@ -88,7 +136,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = { userId: action.payload.userId, fullName: action.payload.fullName, role: action.payload.role };
         state.token = action.payload.token;
       })
       .addCase(register.rejected, (state, action) => {
@@ -111,5 +159,10 @@ export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectUser = (state) => state.auth.user;
 export const selectAuthError = (state) => state.auth.error;
 export const selectAuthLoading = (state) => state.auth.loading;
+
+// Các selector mới để debug
+export const selectUserRole = (state) => state.auth.user?.role;
+export const selectUserId = (state) => state.auth.user?.userId;
+export const selectUserFullName = (state) => state.auth.user?.fullName;
 
 export default authSlice.reducer; 

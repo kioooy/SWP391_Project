@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -14,6 +14,9 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { login as loginThunk } from '../../features/auth/authSlice';
+import { useState } from 'react'; // Import useState
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api'; // Sử dụng cùng API_URL với authSlice
 
 const validationSchema = Yup.object({
   citizenId: Yup.string()
@@ -27,76 +30,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { error, loading } = useSelector((state) => state.auth);
-
-  const handleStaffLogin = () => {
-    // Xóa các trạng thái đăng nhập cũ
-    localStorage.removeItem("isTestUser");
-    localStorage.removeItem("testUserData");
-    
-    // Thiết lập trạng thái staff
-    localStorage.setItem("isStaff", "true");
-    localStorage.setItem("isTestUser", "true");
-    
-    // Tạo dữ liệu staff
-    const staffData = {
-      id: "STAFF001",
-      fullName: "Nhân Viên Staff",
-      citizenNumber: "987654321098",
-      role: "staff",
-      position: "Nhân viên quản lý",
-      department: "Phòng Hiến máu",
-      email: "staff@example.com",
-      phoneNumber: "0987654321"
-    };
-    localStorage.setItem("staffData", JSON.stringify(staffData));
-    
-    navigate("/");
-  };
-
-  const handleTestUserLogin = () => {
-    // Xóa các trạng thái đăng nhập cũ
-    localStorage.removeItem("isStaff");
-    localStorage.removeItem("staffData");
-    
-    // Thiết lập trạng thái test user
-    localStorage.setItem("isTestUser", "true");
-    
-    // Tạo dữ liệu test user
-    const testUserData = {
-      id: "TEST001",
-      fullName: "Nguyễn Văn Test",
-      citizenNumber: "123456789012",
-      password: "Test@123",
-      bloodType: "A+",
-      dateOfBirth: "1990-01-01",
-      gender: "Nam",
-      address: "123 Đường Test, Quận 1, TP.HCM",
-      phoneNumber: "0123456789",
-      email: "test@example.com",
-      lastDonationDate: "2024-01-01",
-      nextDonationDate: "2024-07-01",
-      donationHistory: [
-        {
-          id: 1,
-          date: "2024-01-01",
-          location: "Bệnh viện Chợ Rẫy",
-          bloodType: "A+",
-          volume: 350,
-          status: "completed"
-        },
-        {
-          id: 2,
-          date: "2023-07-01",
-          location: "Bệnh viện 115",
-          bloodType: "A+",
-          volume: 350,
-          status: "completed"
-        }
-      ]
-    };
-    localStorage.setItem("testUserData", JSON.stringify(testUserData));
-    navigate("/");
-  };
+  const [showLocationAlert, setShowLocationAlert] = useState(false); // State để quản lý Alert
 
   const formik = useFormik({
     initialValues: {
@@ -106,23 +40,58 @@ const Login = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        // Kiểm tra nếu là tài khoản test
-        if (values.citizenId === "123456789012" && values.password === "Test@123") {
-          handleTestUserLogin();
-          return;
+        const resultAction = await dispatch(loginThunk(values)).unwrap();
+        const userId = resultAction.userId; // Lấy userId từ kết quả đăng nhập
+        const token = resultAction.token; // Lấy token từ kết quả đăng nhập
+
+        // Sau khi đăng nhập thành công, cố gắng lấy và cập nhật vị trí
+        if (userId && token) {
+          try {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                  const { latitude, longitude } = position.coords;
+                  console.log('Vị trí được lấy:', latitude, longitude);
+                  try {
+                    await fetch(`${API_BASE_URL}/User/${userId}/location`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ latitude, longitude }),
+                    });
+                    console.log('Vị trí đã được cập nhật thành công trên backend.');
+                  } catch (error) {
+                    console.error('Lỗi khi cập nhật vị trí lên backend:', error);
+                  }
+                },
+                (error) => {
+                  // Xử lý lỗi khi người dùng từ chối hoặc có vấn đề khác
+                  console.error('Lỗi khi lấy vị trí:', error);
+                  if (error.code === error.PERMISSION_DENIED) {
+                    setShowLocationAlert(true); // Hiển thị Alert khi từ chối
+                  } else {
+                    // Các lỗi khác (ví dụ: timeout)
+                    // Có thể hiển thị một thông báo khác nếu cần
+                  }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+              );
+            } else {
+              console.log('Trình duyệt không hỗ trợ Geolocation.');
+              // Có thể hiển thị Alert nếu trình duyệt không hỗ trợ
+            }
+          } catch (geoInitErr) {
+            console.error('Lỗi khởi tạo Geolocation:', geoInitErr);
+          }
         }
-        
-        // Kiểm tra nếu là tài khoản staff
-        if (values.citizenId === "987654321098" && values.password === "Staff@123") {
-          handleStaffLogin();
-          return;
-        }
-        
-        // Nếu không phải tài khoản test hoặc staff, thực hiện đăng nhập thông thường
-        await dispatch(loginThunk(values)).unwrap();
+
+        console.log('Kết quả đăng nhập:', resultAction);
         navigate('/');
       } catch (err) {
         // Error is handled by the auth slice
+        console.error('Lỗi đăng nhập:', err);
       }
     },
   });
@@ -189,16 +158,6 @@ const Login = () => {
             {error}
           </Alert>
         )}
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            <strong>Tài khoản test:</strong><br />
-            CCCD: 123456789012<br />
-            Mật khẩu: Test@123<br /><br />
-            <strong>Tài khoản staff:</strong><br />
-            CCCD: 987654321098<br />
-            Mật khẩu: Staff@123
-          </Typography>
-        </Alert>
         <TextField
           fullWidth
           id="citizenId"
@@ -231,31 +190,19 @@ const Login = () => {
         >
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
         </Button>
-        <Divider sx={{ my: 2 }}>hoặc</Divider>
-        <Stack spacing={2}>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="primary"
-            onClick={handleStaffLogin}
-          >
-            Đăng nhập với tài khoản Staff
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="secondary"
-            onClick={handleTestUserLogin}
-          >
-            Đăng nhập với tài khoản Test
-          </Button>
-        </Stack>
+
         <Box sx={{ textAlign: 'center' }}>
           <Link component={RouterLink} to="/signup" variant="body2">
             {"Chưa có tài khoản? Đăng Ký"}
           </Link>
         </Box>
       </Box>
+
+      {showLocationAlert && (
+        <Alert severity="warning" onClose={() => setShowLocationAlert(false)} sx={{ mt: 2 }}>
+          Bạn đã từ chối cấp quyền vị trí. Chức năng tìm kiếm người cần/hiến máu theo khoảng cách có thể không hoạt động chính xác.
+        </Alert>
+      )}
     </Box>
   );
 };

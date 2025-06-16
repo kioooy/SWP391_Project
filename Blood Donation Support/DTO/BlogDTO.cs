@@ -1,5 +1,3 @@
-using System;
-
 namespace Blood_Donation_Support.DTO
 {
     public class BlogDTO

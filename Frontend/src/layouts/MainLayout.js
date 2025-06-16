@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Outlet,
   Link as RouterLink,
@@ -87,13 +87,8 @@ const MainLayout = () => {
   };
 
   const handleLogin = () => {
+    console.log('handleLogin được gọi, đang điều hướng đến /login');
     navigate("/login");
-  };
-
-  const handleStaffLogin = () => {
-    localStorage.setItem("isStaff", "true");
-    localStorage.setItem("isTestUser", "true");
-    navigate("/");
   };
 
   const handleSignup = () => {
@@ -109,8 +104,6 @@ const MainLayout = () => {
   };
 
   const handleLogoutAll = () => {
-    localStorage.removeItem("isTestUser");
-    localStorage.removeItem("isStaff");
     handleClose();
     handleLogout();
   };
@@ -118,10 +111,6 @@ const MainLayout = () => {
   const handleProfile = () => {
     navigate("/profile");
   };
-
-  // Kiểm tra trạng thái đăng nhập test user và staff
-  const isTestUser = localStorage.getItem("isTestUser") === "true";
-  const isStaff = localStorage.getItem("isStaff") === "true";
 
   let menuItems = [
     { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
@@ -134,22 +123,24 @@ const MainLayout = () => {
   ];
 
   // Menu items cho người dùng đã đăng nhập
-  if (isAuthenticated || isTestUser) {
-    if (isStaff) {
-      // Menu items cho nhân viên
+  if (isAuthenticated && user) {
+    if (user.role.toLowerCase() === 'staff' || user.role.toLowerCase() === 'admin') {
+      // Menu items cho nhân viên và admin
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
+        { path: "/blood-inventory", label: "Quản lý Kho máu", icon: <BloodtypeIcon /> },
+        { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+        { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
       ];
     } else {
-      // Menu items cho người dùng thường và tài khoản test
+      // Menu items cho người dùng thường
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
         { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-        { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
         { path: "/user-profile", label: "Hồ Sơ", icon: <PersonIcon /> },
       ];
@@ -192,12 +183,12 @@ const MainLayout = () => {
                 startIcon={<AccountCircleIcon />}
                 onClick={handleMenu}
               >
-                {isAuthenticated || isTestUser
-                  ? isStaff
+                {isAuthenticated && user
+                  ? user.role === 'staff'
                     ? "Staff"
-                    : isTestUser
-                    ? "Test User"
-                    : "Profile"
+                    : user.role === 'admin'
+                    ? "Admin"
+                    : user.fullName || "Profile"
                   : "Guest"}
               </Button>
               <Menu
@@ -215,7 +206,7 @@ const MainLayout = () => {
                 open={open}
                 onClose={handleClose}
               >
-                {isAuthenticated || isTestUser ? (
+                {isAuthenticated && user ? (
                   [
                     <MenuItem key="profile" onClick={handleProfile}>
                       Hồ sơ
@@ -226,10 +217,10 @@ const MainLayout = () => {
                   ]
                 ) : (
                   [
-                    <MenuItem key="login" onClick={handleLogin}>
+                    <MenuItem key="login" onClick={() => { handleLogin(); handleClose(); }}>
                       Đăng nhập
                     </MenuItem>,
-                    <MenuItem key="signup" onClick={handleSignup}>
+                    <MenuItem key="signup" onClick={() => { handleSignup(); handleClose(); }}>
                       Đăng ký
                     </MenuItem>,
                   ]
@@ -249,8 +240,8 @@ const MainLayout = () => {
           <Stack direction="row" spacing={4}>
             {menuItems.map(
               (item) =>
-                ((item.path === "/certificate" &&
-                  (isAuthenticated || isTestUser)) ||
+                  ((item.path === "/certificate" &&
+                    (isAuthenticated && user)) ||
                   item.path !== "/certificate") && (
                   <NavButton
                     key={item.path}
@@ -266,8 +257,7 @@ const MainLayout = () => {
                     onClick={(e) => {
                       if (
                         item.path === "/booking" &&
-                        !isAuthenticated &&
-                        !isTestUser
+                        !(isAuthenticated && user)
                       ) {
                         e.preventDefault(); // Prevent default navigation
                         navigate("/login");

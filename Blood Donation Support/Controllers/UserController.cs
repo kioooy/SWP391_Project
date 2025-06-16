@@ -533,5 +533,101 @@ namespace Blood_Donation_Support.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "User soft deleted successfully" });
         }
+
+        // Update User Location
+        // PUT: api/User/{userId}/location
+        [HttpPut("{userId}/location")]
+        [Authorize(Roles = "Member,Staff,Admin")] // Allow Member, Staff, Admin to update their location
+        public async Task<IActionResult> UpdateUserLocation(int userId, [FromBody] LocationUpdateModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _context.Users.Include(u => u.Member).FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            // Ensure the user is updating their own location unless they are an Admin
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (currentUserId != userId.ToString() && currentUserRole != "Admin")
+            {
+                return Forbid(); // User is not authorized to update another user's location
+            }
+
+            // Create a Point object from latitude and longitude
+            // SRID 4326 is for WGS84 (latitude/longitude)
+            if (user.Member == null)
+            {
+                user.Member = new Member { UserId = user.UserId };
+                _context.Members.Add(user.Member);
+            }
+            user.Member.Location = new Point(model.Longitude, model.Latitude) { SRID = 4326 };
+            user.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User location updated successfully." });
+        }
+
+        // Search Users by Distance
+        // GET: api/User/search-by-distance
+        [HttpGet("search-by-distance")]
+        [Authorize(Roles = "Member,Staff,Admin")] // Allow Member, Staff, Admin to search
+        public async Task<IActionResult> SearchUsersByDistance(
+            [FromQuery] double latitude,
+            [FromQuery] double longitude,
+            [FromQuery] double radiusInKm, // Radius in kilometers
+            [FromQuery] string userType = null // Optional: "Donor" or "Recipient"
+        )
+        {
+            // Create a Point object for the search origin
+            var searchPoint = new Point(longitude, latitude) { SRID = 4326 };
+
+            // Convert radius from kilometers to meters for NetTopologySuite's Distance method
+            var radiusInMeters = radiusInKm * 1000;
+
+            var query = _context.Members.AsQueryable();
+
+            // Filter by user type if specified
+            if (!string.IsNullOrEmpty(userType))
+            {
+                if (userType.Equals("Donor", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(m => m.IsDonor == true);
+                }
+                else if (userType.Equals("Recipient", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(m => m.IsRecipient == true);
+                }
+            }
+
+            // Filter users by distance
+            var nearbyUsers = await query
+                .Include(m => m.User)
+                .Include(m => m.BloodType) // Include BloodType to access its properties
+                .Where(m => m.Location != null && m.Location.Distance(searchPoint) <= radiusInMeters)
+                .Select(m => new {
+                    m.UserId,
+                    m.User.FullName,
+                    m.User.Email,
+                    m.User.PhoneNumber,
+                    m.User.Address,
+                    m.IsDonor,
+                    m.IsRecipient,
+                    BloodTypeName = m.BloodType != null ? m.BloodType.BloodTypeName : null, // Access BloodTypeName
+                    Distance = m.Location.Distance(searchPoint) / 1000 // Distance in kilometers
+                })
+                .OrderBy(m => m.Distance)
+                .ToListAsync();
+
+            return Ok(nearbyUsers);
+        }
     }
+
 }

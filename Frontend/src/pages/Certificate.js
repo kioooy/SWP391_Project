@@ -160,7 +160,7 @@ const BloodDonationCertificate = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #e53e3e 0%, #c53030 100%)",
+        background: "#ffffff",
         borderRadius: 4,
         py: 4,
       }}
@@ -178,8 +178,8 @@ const BloodDonationCertificate = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
-                bgcolor: "#fff",
-                color: "#667eea",
+                bgcolor: "#e53e3e",
+                color: "#ffffff",
                 width: 56,
                 height: 56,
               }}
@@ -190,9 +190,8 @@ const BloodDonationCertificate = () => {
               <Typography
                 variant="h4"
                 sx={{
-                  color: "white",
+                  color: "#1a202c",
                   fontWeight: "bold",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 }}
               >
                 Chứng chỉ hiến máu
@@ -200,7 +199,7 @@ const BloodDonationCertificate = () => {
               <Typography
                 variant="subtitle1"
                 sx={{
-                  color: "rgba(255,255,255,0.8)",
+                  color: "#718096",
                   fontStyle: "italic",
                 }}
               >

@@ -31,6 +31,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -169,6 +170,7 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 const BookingPage = () => {
+  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [selectedDate, setSelectedDate] = useState(dayjs().add(1, 'day'));
   const [selectedCity, setSelectedCity] = useState('Hồ Chí Minh');
@@ -259,6 +261,63 @@ const BookingPage = () => {
     setOpenCalendarDialog(true);
   };
 
+  // Hàm lưu thông tin đặt lịch vào localStorage
+  const saveAppointmentToLocalStorage = () => {
+    const appointmentId = `AP-${dayjs().format('YYYYMMDDHHmmss')}-${String(Date.now()).slice(-3)}`;
+    
+    const detailData = {
+      appointmentId: appointmentId,
+      patientName: "Người dùng hiện tại", // Giả định lấy từ thông tin người dùng đăng nhập
+      patientId: "079xxxxxxx", // Giả định
+      phone: "09xxxxxxxx", // Giả định
+      email: "user@example.com", // Giả định
+      bloodType: "O+", // Giả định
+      donationCenter: selectedLocation || "Trung tâm Huyết học - Truyền máu TP.HCM",
+      centerAddress: selectedLocation || "466 Nguyễn Thị Minh Khai, Phường 02, Quận 3, TP.HCM",
+      centerPhone: "028 3930 1234",
+      appointmentDate: selectedDate.format('DD/MM/YYYY'),
+      appointmentTime: selectedTimeSlot,
+      donationType: "Hiến máu tình nguyện", // Mặc định
+      bloodAmount: "350ml", // Mặc định
+      notes: "(Chưa có ghi chú)", // Mặc định
+      // Các trường thông tin về hủy lịch (nếu có)
+      cancellationReason: null,
+      cancellationDate: null,
+      cancellationTime: null,
+      // Thông tin chuẩn bị (ví dụ cho lịch hẹn sắp tới)
+      preparationNotes: [
+        "Ăn nhẹ trước khi hiến máu",
+        "Uống nhiều nước",
+        "Mang theo CMND/CCCD",
+        "Không uống rượu bia 24h trước"
+      ],
+      staffName: "Chưa cập nhật", // Giả định
+      staffPhone: "Chưa cập nhật" // Giả định
+    };
+
+    const appointmentData = {
+      id: Date.now(), 
+      title: `${detailData.donationCenter} (${detailData.appointmentTime} - ${detailData.appointmentDate})`,
+      location: detailData.centerAddress,
+      time: `${detailData.appointmentTime} - ${detailData.appointmentDate}`,
+      status: "scheduled",
+      statusText: "Đã hẹn lịch",
+      createdAt: new Date().toISOString(),
+      formData: formData, 
+      detail: detailData // Lưu detail object vào đây
+    };
+
+    // Lấy danh sách lịch hẹn hiện tại từ localStorage
+    const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
+    
+    // Thêm lịch hẹn mới
+    existingAppointments.push(appointmentData);
+    
+    // Lưu lại vào localStorage
+    localStorage.setItem('userAppointments', JSON.stringify(existingAppointments));
+    
+    console.log('Đã lưu lịch hẹn:', appointmentData);
+  };
 
   const handleCheckboxChange = (name) => (event) => {
     const isChecked = event.target.checked;
@@ -1093,8 +1152,9 @@ const BookingPage = () => {
             variant="contained"
             onClick={() => {
               setOpenSummary(false);
-              alert('Đăng ký của bạn đã được gửi!');
-              // Gửi form tại đây nếu cần
+              saveAppointmentToLocalStorage(); // Lưu thông tin đặt lịch
+              alert('Đăng ký của bạn đã được gửi thành công!');
+              navigate('/user-profile'); // Chuyển hướng đến trang hồ sơ
             }}
           >
             Xác nhận gửi

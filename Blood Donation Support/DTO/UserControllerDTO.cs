@@ -122,7 +122,7 @@ namespace Blood_Donation_Support.DTO
 
         [Required]
         public required string Address { get; set; }
-   
+
         [Required(ErrorMessage = "Vai trò là bắt buộc")]
         public int RoleId { get; set; }
 
@@ -152,5 +152,9 @@ namespace Blood_Donation_Support.DTO
         public double? Longitude { get; set; }
     }
 
-
+    public class LocationUpdateModel
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
 }

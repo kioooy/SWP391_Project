@@ -22,6 +22,7 @@ import SearchByDistance from "./pages/SearchByDistance";
 import EmergencyRequest from "./pages/EmergencyRequest";
 import BloodInventory from "./pages/BloodInventory";
 import UserProfile from "./pages/UserProfile";
+import SearchDistance from "./pages/SearchDistance";
 import Dashboard from "./pages/Dashboard";
 
 dayjs.extend(isSameOrAfter);
@@ -29,6 +30,7 @@ dayjs.extend(isSameOrBefore);
 
 const App = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  console.log('isAuthenticated in App.js:', isAuthenticated);
 
   return (
     <Routes>
@@ -62,6 +64,7 @@ const App = () => {
         <Route path="/emergency-request" element={<EmergencyRequest />} />
         <Route path="/blood-inventory" element={<BloodInventory />} />
         <Route path="/user-profile" element={<UserProfile />} />
+        <Route path="/search-distance" element={<SearchDistance />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Route>
 

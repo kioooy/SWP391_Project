@@ -25,7 +25,6 @@ import UserProfile from "./pages/UserProfile";
 import SearchDistance from "./pages/SearchDistance";
 import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
-import BloodDonationForm from "./pages/BloodDonate";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -68,7 +67,6 @@ const App = () => {
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/search-distance" element={<SearchDistance />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/blood-donate" element={<BloodDonationForm />} />
         <Route path="/history" element={<AppointmentHistory />} />
       </Route>
 

@@ -15,7 +15,10 @@ import {
   Stack,
   Menu,
   MenuItem,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import axios from 'axios';
 import { styled } from "@mui/material/styles";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import HomeIcon from "@mui/icons-material/Home";
@@ -32,6 +35,23 @@ import SearchIcon from "@mui/icons-material/Search";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BloodtypeIcon from "@mui/icons-material/Bloodtype";
+
+// Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const d = R * c; // in metres
+  return d;
+}
 
 const MainContainer = styled(Box)(({ theme }) => ({
   minHeight: "100vh",
@@ -74,10 +94,55 @@ const MainLayout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const user = useSelector(selectUser);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
+
+  const [openLocationSnackbar, setOpenLocationSnackbar] = useState(false);
+  const [locationSnackbarMessage, setLocationSnackbarMessage] = useState('');
+
+  const { user: currentUser, isAuthenticated, token: authToken } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (currentUser && currentUser.role === 'Member') {
+      const hasShownSnackbar = sessionStorage.getItem('hasShownLocationSnackbar');
+
+      // Nếu người dùng chưa có vị trí hoặc Snackbar chưa được hiển thị trong phiên này
+      if ((!currentUser.latitude || !currentUser.longitude) && !hasShownSnackbar) {
+        setLocationSnackbarMessage('Vui lòng cập nhật vị trí của bạn để hệ thống có thể tìm kiếm và kết nối bạn với người hiến/nhận máu phù hợp.');
+        setOpenLocationSnackbar(true);
+        sessionStorage.setItem('hasShownLocationSnackbar', 'true');
+      } else if (currentUser.latitude && currentUser.longitude) {
+        // Nếu người dùng đã có vị trí, kiểm tra xem vị trí có lỗi thói không
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude: currentLat, longitude: currentLon } = position.coords;
+              const storedLat = currentUser.latitude;
+              const storedLon = currentUser.longitude;
+
+              const distance = haversineDistance(storedLat, storedLon, currentLat, currentLon);
+              const THRESHOLD = 500; // 500 meters
+
+              if (distance > THRESHOLD && !hasShownSnackbar) {
+                setLocationSnackbarMessage('Vị trí đã lưu của bạn có vẻ đã lỗi thói. Vui lòng cập nhật vị trí hiện tại của bạn.');
+                setOpenLocationSnackbar(true);
+                sessionStorage.setItem('hasShownLocationSnackbar', 'true');
+              }
+            },
+            (error) => {
+              console.error("Lỗi khi lấy vị trí hiện tại: ", error);
+              // Có thể hiển thị thông báo lỗi cho người dùng nếu cần
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          );
+        }
+      }
+    } else if (!currentUser) {
+      // Clear snackbar state if user logs out
+      sessionStorage.removeItem('hasShownLocationSnackbar');
+      setOpenLocationSnackbar(false);
+    }
+  }, [currentUser]);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -123,8 +188,10 @@ const MainLayout = () => {
   ];
 
   // Menu items cho người dùng đã đăng nhập
-  if (isAuthenticated && user) {
-    if (user.role.toLowerCase() === 'staff' || user.role.toLowerCase() === 'admin') {
+
+  if (isAuthenticated && currentUser) {
+    if (currentUser.role.toLowerCase() === 'staff' || currentUser.role.toLowerCase() === 'admin') {
+
       // Menu items cho nhân viên và admin
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
@@ -183,30 +250,31 @@ const MainLayout = () => {
                 startIcon={<AccountCircleIcon />}
                 onClick={handleMenu}
               >
-                {isAuthenticated && user
-                  ? user.role === 'staff'
+
+                {isAuthenticated && currentUser
+                  ? currentUser.role === 'staff'
                     ? "Staff"
-                    : user.role === 'admin'
+                    : currentUser.role === 'admin'
                     ? "Admin"
-                    : user.fullName || "Profile"
+                    : currentUser.fullName || "Profile"
+
                   : "Guest"}
               </Button>
               <Menu
                 id="menu-appbar"
                 anchorEl={anchorEl}
-                anchorOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
-                }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                 keepMounted
                 transformOrigin={{
-                  vertical: "top",
-                  horizontal: "right",
+                  vertical: "bottom",
+                  horizontal: "center"
                 }}
                 open={open}
                 onClose={handleClose}
               >
-                {isAuthenticated && user ? (
+
+                {isAuthenticated && currentUser ? (
+
                   [
                     <MenuItem key="profile" onClick={handleProfile}>
                       Hồ sơ
@@ -241,7 +309,9 @@ const MainLayout = () => {
             {menuItems.map(
               (item) =>
                   ((item.path === "/certificate" &&
-                    (isAuthenticated && user)) ||
+
+                    (isAuthenticated && currentUser)) ||
+
                   item.path !== "/certificate") && (
                   <NavButton
                     key={item.path}
@@ -257,7 +327,9 @@ const MainLayout = () => {
                     onClick={(e) => {
                       if (
                         item.path === "/booking" &&
-                        !(isAuthenticated && user)
+
+                        !(isAuthenticated && currentUser)
+
                       ) {
                         e.preventDefault(); // Prevent default navigation
                         navigate("/login");
@@ -275,6 +347,31 @@ const MainLayout = () => {
       <ContentContainer maxWidth="lg">
         <Outlet />
       </ContentContainer>
+      <Snackbar
+        open={openLocationSnackbar}
+        autoHideDuration={10000}
+        onClose={() => setOpenLocationSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setOpenLocationSnackbar(false)}
+          severity="warning"
+          sx={{ width: '100%' }}
+        >
+          {locationSnackbarMessage}
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => {
+              navigate('/profile?scrollToLocation=true');
+              setOpenLocationSnackbar(false);
+            }}
+            sx={{ ml: 2, fontWeight: 'bold' }}
+          >
+            CẬP NHẬT NGAY
+          </Button>
+        </Alert>
+      </Snackbar>
       <Footer />
     </MainContainer>
   );

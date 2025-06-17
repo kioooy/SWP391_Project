@@ -108,10 +108,10 @@ const getValidationSchema = (activeStep) => {
 
   if (activeStep >= 1) {
     baseSchema.personalId = Yup.string()
-      .matches(/^[0-9]{12}$/, 'Số CCCD phải có 12 chữ số')
+      .matches(/^[0-9]{9,12}$/, 'Số CCCD phải có từ 9 đến 12 chữ số')
       .required('Vui lòng nhập số CCCD');
     baseSchema.fullName = Yup.string()
-      .min(2, 'Họ tên phải có ít nhất 2 ký tự')
+      .min(1, 'Họ tên không được để trống')
       .required('Vui lòng nhập họ và tên');
     baseSchema.dateOfBirth = Yup.date()
       .nullable()
@@ -128,11 +128,12 @@ const getValidationSchema = (activeStep) => {
     baseSchema.city = Yup.string().required('Vui lòng chọn tỉnh/thành phố');
     baseSchema.district = Yup.string().required('Vui lòng chọn quận/huyện');
     baseSchema.street = Yup.string().required('Vui lòng nhập số nhà, tên đường');
+    baseSchema.address = Yup.string().min(1, 'Địa chỉ không được để trống');
   }
 
   if (activeStep >= 2) {
     baseSchema.mobilePhone = Yup.string()
-      .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
+      .matches(/^0[0-9]{9}$/, 'Số điện thoại phải bắt đầu bằng 0 và có 10 chữ số')
       .required('Vui lòng nhập số điện thoại di động');
     baseSchema.email = Yup.string()
       .email('Email không đúng định dạng')
@@ -147,14 +148,14 @@ const getValidationSchema = (activeStep) => {
       .required('Vui lòng nhập cân nặng')
       .test('is-positive-number', 'Cân nặng phải là số dương', function(value) {
         if (!value) return false;
-        const num = parseFloat(value);
+        const num = parseInt(value);
         return !isNaN(num) && num > 0;
       });
     baseSchema.height = Yup.string()
       .required('Vui lòng nhập chiều cao')
       .test('is-positive-number', 'Chiều cao phải là số dương', function(value) {
         if (!value) return false;
-        const num = parseFloat(value);
+        const num = parseInt(value);
         return !isNaN(num) && num > 0;
       });
     baseSchema.bloodTypeId = Yup.number()
@@ -164,11 +165,7 @@ const getValidationSchema = (activeStep) => {
 
   if (activeStep >= 3) {
     baseSchema.password = Yup.string()
-      .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
-      )
+      .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
       .required('Vui lòng nhập mật khẩu');
     baseSchema.confirmPassword = Yup.string()
       .oneOf([Yup.ref('password'), null], 'Xác nhận mật khẩu không khớp')
@@ -234,33 +231,25 @@ const Signup = () => {
 
       // Submit registration data on final step
       try {
-        // Transform form data to match API schema
+        // Transform form data to match API schema - tạm thời bỏ qua các trường bị lỗi
         const registrationData = {
-          fullName: values.fullName,
-          password: values.password,
-          citizenNumber: values.personalId,
-          email: values.email,
-          phoneNumber: values.mobilePhone,
-          dateOfBirth: {
-            year: values.dateOfBirth ? values.dateOfBirth.year() : 0,
-            month: values.dateOfBirth ? values.dateOfBirth.month() + 1 : 0, // dayjs month is 0-based
-            day: values.dateOfBirth ? values.dateOfBirth.date() : 0,
-            dayOfWeek: values.dateOfBirth ? values.dateOfBirth.day() : 0
-          },
+          fullName: values.fullName || '',
+          password: values.password || '',
+          citizenNumber: values.personalId || '',
+          email: values.email || '',
+          phoneNumber: values.mobilePhone || '',
           sex: values.gender === 'male', // true for male, false for female
-          address: `${values.street}, ${values.district}, ${values.city}`,
-          roleId: values.roleId,
-          bloodTypeId: values.bloodTypeId,
-          weight: parseFloat(values.weight) || 0,
-          height: parseFloat(values.height) || 0,
+          address: `${values.street || ''}, ${values.district || ''}, ${values.city || ''}`,
+          roleId: values.roleId || 1,
           isDonor: values.accountType === 'donor',
-          isRecipient: values.accountType === 'recipient',
-          occupation: values.occupation === 'Khác' ? values.otherOccupation : values.occupation
+          isRecipient: values.accountType === 'recipient'
         };
         
+        console.log('Registration data:', registrationData);
         await dispatch(register(registrationData)).unwrap();
         navigate('/');
       } catch (err) {
+        console.error('Registration error:', err);
         // Error is handled by the auth slice
       }
     },

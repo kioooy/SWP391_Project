@@ -13,7 +13,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { login as loginThunk } from '../../features/auth/authSlice';
+import { login as loginThunk, createTestAccount } from '../../features/auth/authSlice';
 import { useState } from 'react'; // Import useState
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api'; // Sử dụng cùng API_URL với authSlice
@@ -31,6 +31,12 @@ const Login = () => {
   const dispatch = useDispatch();
   const { error, loading } = useSelector((state) => state.auth);
   const [showLocationAlert, setShowLocationAlert] = useState(false); // State để quản lý Alert
+
+  // Hàm xử lý test login
+  const handleTestLogin = () => {
+    dispatch(createTestAccount());
+    navigate('/');
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -189,6 +195,18 @@ const Login = () => {
           disabled={loading}
         >
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+        </Button>
+
+        {/* Nút test login cho development */}
+        <Button
+          type="button"
+          fullWidth
+          variant="outlined"
+          color="secondary"
+          sx={{ mb: 2 }}
+          onClick={handleTestLogin}
+        >
+          Test Login (Development)
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>

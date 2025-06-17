@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectIsAuthenticated, updateUserLocation } from '../features/auth/authSlice';
 import {
   Container,
   Typography,
@@ -29,6 +32,7 @@ import {
   Select,
   MenuItem,
   Alert,
+  Snackbar,
   Divider,
 } from '@mui/material';
 import {
@@ -44,9 +48,36 @@ import {
 import axios from 'axios';
 import dayjs from 'dayjs';
 
+// Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const d = R * c; // in metres
+  return d;
+}
+
 const UserProfile = () => {
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const locationButtonRef = useRef(null);
+  const { user, token: authToken } = useSelector((state) => state.auth);
+  const userId = user?.userId;
+
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     citizenNumber: '',
@@ -69,6 +100,94 @@ const UserProfile = () => {
     message: '',
     severity: 'success'
   });
+
+  // Hàm cập nhật vị trí người dùng
+  const handleUpdateLocation = async () => {
+    setLocationLoading(true);
+    setLocationError(null);
+
+    if (!navigator.geolocation) {
+      setLocationError('Trình duyệt của bạn không hỗ trợ Geolocation API.');
+      setLocationLoading(false);
+      return;
+    }
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+
+      const { latitude: newLat, longitude: newLon } = position.coords;
+      setUserLocation({ latitude: newLat, longitude: newLon }); // Cập nhật trạng thái cục bộ để hiển thị
+
+      // Lấy vị trí đã lưu từ Redux user state
+      const storedLat = user?.latitude;
+      const storedLon = user?.longitude;
+
+      // Kiểm tra xem vị trí mới có trùng với vị trí đã lưu không (trong vòng 1 mét)
+      let shouldUpdateBackend = true;
+      if (storedLat !== undefined && storedLat !== null && storedLon !== undefined && storedLon !== null) {
+        const distance = haversineDistance(storedLat, storedLon, newLat, newLon);
+        const THRESHOLD_METERS = 200; // Ngưỡng 200 mét
+
+        if (distance <= THRESHOLD_METERS) {
+          setSnackbar({ open: true, message: 'Vị trí hiện tại gần giống với vị trí đã lưu. Không cần cập nhật.', severity: 'info' });
+          shouldUpdateBackend = false;
+        }
+      }
+
+      if (shouldUpdateBackend) {
+        if (userId && authToken) {
+          const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+          try {
+            const response = await axios.put(`${API_URL}/User/${userId}/location`, {
+              latitude: newLat,
+              longitude: newLon,
+            }, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+              },
+            });
+
+            if (response.status === 200) {
+              setSnackbar({ open: true, message: 'Cập nhật vị trí thành công!', severity: 'success' });
+              // Cập nhật lại Redux store
+              dispatch(updateUserLocation({ latitude: newLat, longitude: newLon }));
+            } else {
+              setSnackbar({ open: true, message: 'Cập nhật vị trí thất bại.', severity: 'error' });
+            }
+          } catch (apiError) {
+            console.error('Lỗi API khi cập nhật vị trí:', apiError);
+            setSnackbar({ open: true, message: 'Cập nhật vị trí thất bại do lỗi máy chủ.', severity: 'error' });
+          }
+        } else {
+          setSnackbar({ open: true, message: 'Không có thông tin người dùng hoặc token.', severity: 'warning' });
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy hoặc cập nhật vị trí:', error);
+      if (error.code === error.PERMISSION_DENIED) {
+        setLocationError('Bạn đã từ chối cấp quyền truy cập vị trí. Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt.');
+        setSnackbar({ open: true, message: 'Bạn đã từ chối cấp quyền truy cập vị trí.', severity: 'error' });
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        setLocationError('Thông tin vị trí không khả dụng.');
+        setSnackbar({ open: true, message: 'Thông tin vị trí không khả dụng.', severity: 'error' });
+      } else if (error.code === error.TIMEOUT) {
+        setLocationError('Yêu cầu lấy vị trí đã hết thời gian.');
+        setSnackbar({ open: true, message: 'Yêu cầu lấy vị trí đã hết thời gian.', severity: 'error' });
+      } else {
+        setLocationError(error.message || 'Lỗi không xác định khi lấy vị trí.');
+        setSnackbar({ open: true, message: 'Lỗi khi lấy hoặc cập nhật vị trí.', severity: 'error' });
+      }
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
   // Fetch dữ liệu người dùng từ API khi component mount
   useEffect(() => {
@@ -115,6 +234,27 @@ const UserProfile = () => {
 
     fetchUserProfile();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('scrollToLocation') === 'true') {
+      if (locationButtonRef.current) {
+        locationButtonRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Thêm hiệu ứng nổi bật tạm thời
+        locationButtonRef.current.style.transition = 'background-color 0.5s ease-in-out, border-color 0.5s ease-in-out';
+        locationButtonRef.current.style.backgroundColor = '#ffeb3b'; // Màu vàng nổi bật
+        locationButtonRef.current.style.borderColor = '#ffc107'; // Viền vàng đậm
+
+        setTimeout(() => {
+          locationButtonRef.current.style.backgroundColor = ''; // Trở lại màu gốc
+          locationButtonRef.current.style.borderColor = ''; // Trở lại viền gốc
+        }, 2000); // Hiệu ứng kéo dài 2 giây
+      }
+      // Xóa tham số khỏi URL để tránh cuộn lại khi refresh
+      params.delete('scrollToLocation');
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location.search, navigate]);
 
   // Hàm đóng Snackbar
   const handleCloseSnackbar = () => {
@@ -317,10 +457,32 @@ const UserProfile = () => {
                   <Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
                   {formData.email}
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
-                  {formData.address}
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                  <LocationOn sx={{ verticalAlign: 'middle', mr: 0.5 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
+
+                {user?.role.toLowerCase() === 'member' && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Cập nhật vị trí của bạn để giúp những người cần máu có thể tìm thấy bạn dễ dàng hơn.
+                    </Typography>
+                    <Button
+                      ref={locationButtonRef}
+                      variant="contained"
+                      color="primary"
+                      onClick={handleUpdateLocation}
+                      disabled={locationLoading}
+                      startIcon={<LocationOn />} 
+                    >
+                      {locationLoading ? 'Đang cập nhật...' : 'Cập nhật vị trí hiện tại'}
+                    </Button>
+                    {locationError && (
+                      <Alert severity="error" sx={{ mt: 1 }}>
+                        {locationError}
+                      </Alert>
+                    )}
+                  </Box>
+                )}
               </Box>
 
               <Box>
@@ -549,8 +711,13 @@ const UserProfile = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
 
-export default UserProfile; 
+export default UserProfile;

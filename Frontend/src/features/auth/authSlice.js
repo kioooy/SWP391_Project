@@ -110,6 +110,12 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    updateUserLocation: (state, action) => {
+      if (state.user) {
+        state.user.latitude = action.payload.latitude;
+        state.user.longitude = action.payload.longitude;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -152,7 +158,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, updateUserLocation } = authSlice.actions;
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;

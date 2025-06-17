@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Button, CircularProgress, Alert, List, ListItem, ListItemText, Paper } from '@mui/material';
+
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+
 
 const API_BASE_URL = 'http://localhost:5250/api'; // Đồng bộ với các API khác
 
 const SearchDistance = () => {
+
   const navigate = useNavigate();
+
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,6 +107,7 @@ const SearchDistance = () => {
             <Alert severity="success" sx={{ my: 2 }}>Vị trí của bạn đã được cập nhật thành công. Cơ sở y tế sẽ sử dụng thông tin này để điều phối khi cần.</Alert>
         )}
 
+
         {!loading && !error && !userLocation && user?.role.toLowerCase() === 'member' && (
           <Alert severity="warning" sx={{ my: 2 }}>
             Để cơ sở y tế có thể điều phối bạn khi cần máu hoặc để bạn tìm kiếm các điểm hiến máu gần nhất, vui lòng cập nhật vị trí của bạn.
@@ -117,6 +122,7 @@ const SearchDistance = () => {
           </Alert>
         )}
         {!loading && !error && !userLocation && user?.role.toLowerCase() !== 'member' && (
+
             <Alert severity="warning" sx={{ my: 2 }}>Vui lòng cho phép truy cập vị trí để sử dụng chức năng này.</Alert>
         )}
       </Box>

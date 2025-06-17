@@ -188,8 +188,10 @@ const MainLayout = () => {
   ];
 
   // Menu items cho người dùng đã đăng nhập
+
   if (isAuthenticated && currentUser) {
     if (currentUser.role.toLowerCase() === 'staff' || currentUser.role.toLowerCase() === 'admin') {
+
       // Menu items cho nhân viên và admin
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
@@ -248,12 +250,14 @@ const MainLayout = () => {
                 startIcon={<AccountCircleIcon />}
                 onClick={handleMenu}
               >
+
                 {isAuthenticated && currentUser
                   ? currentUser.role === 'staff'
                     ? "Staff"
                     : currentUser.role === 'admin'
                     ? "Admin"
                     : currentUser.fullName || "Profile"
+
                   : "Guest"}
               </Button>
               <Menu
@@ -268,7 +272,9 @@ const MainLayout = () => {
                 open={open}
                 onClose={handleClose}
               >
+
                 {isAuthenticated && currentUser ? (
+
                   [
                     <MenuItem key="profile" onClick={handleProfile}>
                       Hồ sơ
@@ -303,7 +309,9 @@ const MainLayout = () => {
             {menuItems.map(
               (item) =>
                   ((item.path === "/certificate" &&
+
                     (isAuthenticated && currentUser)) ||
+
                   item.path !== "/certificate") && (
                   <NavButton
                     key={item.path}
@@ -319,7 +327,9 @@ const MainLayout = () => {
                     onClick={(e) => {
                       if (
                         item.path === "/booking" &&
+
                         !(isAuthenticated && currentUser)
+
                       ) {
                         e.preventDefault(); // Prevent default navigation
                         navigate("/login");

@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectUser, selectIsAuthenticated, updateUserLocation } from '../features/auth/authSlice';
 import {
   Container,
   Typography,
@@ -29,6 +32,7 @@ import {
   Select,
   MenuItem,
   Alert,
+  Snackbar,
   Divider,
 } from '@mui/material';
 import {
@@ -44,13 +48,40 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
-import { useNavigate } from 'react-router-dom';
+
+// Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const d = R * c; // in metres
+  return d;
+}
 
 const UserProfile = () => {
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const locationButtonRef = useRef(null);
+  const { user, token: authToken } = useSelector((state) => state.auth);
+  const userId = user?.userId;
+
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [openCancelDialog, setOpenCancelDialog] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     citizenNumber: '',
@@ -73,6 +104,7 @@ const UserProfile = () => {
     message: '',
     severity: 'success'
   });
+
 
   // State cho lịch hẹn sắp tới
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
@@ -123,6 +155,7 @@ const UserProfile = () => {
     fetchUserProfile();
   }, []);
 
+
   // Load lịch hẹn từ localStorage
   useEffect(() => {
     const loadAppointments = () => {
@@ -144,10 +177,6 @@ const UserProfile = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Khởi tạo dispatch
-  const dispatch = useDispatch();
-  const navigate = useNavigate(); // Import useNavigate nếu chưa có
-
   // Hàm xử lý đăng xuất
   const handleLogout = async () => {
     await dispatch(logout());
@@ -156,13 +185,21 @@ const UserProfile = () => {
     navigate("/login");
   };
 
-  // Hàm xóa lịch hẹn sắp tới
-  const handleDeleteUpcomingAppointment = (idToDelete) => {
+  // Hàm mở dialog xác nhận hủy lịch hẹn
+  const handleOpenCancelDialog = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setOpenCancelDialog(true);
+  };
+
+  // Hàm xác nhận hủy lịch hẹn
+  const handleConfirmCancel = () => {
+    if (!appointmentToCancel) return;
+    
     try {
       const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
       
       const updatedAppointments = existingAppointments.map(app => {
-        if (app.id === idToDelete) {
+        if (app.id === appointmentToCancel.id) {
           return {
             ...app,
             status: 'expired',
@@ -183,10 +220,20 @@ const UserProfile = () => {
       // Cập nhật lại state chỉ với các lịch hẹn sắp tới (status === 'scheduled')
       setUpcomingAppointments(updatedAppointments.filter(app => app.status === 'scheduled'));
       setSnackbar({ open: true, message: 'Lịch hẹn đã được hủy thành công!', severity: 'success' });
+      
+      // Đóng dialog và reset state
+      setOpenCancelDialog(false);
+      setAppointmentToCancel(null);
     } catch (error) {
       console.error('Lỗi khi xóa lịch hẹn:', error);
       setSnackbar({ open: true, message: 'Lỗi khi hủy lịch hẹn.', severity: 'error' });
     }
+  };
+
+  // Hàm hủy dialog xác nhận
+  const handleCloseCancelDialog = () => {
+    setOpenCancelDialog(false);
+    setAppointmentToCancel(null);
   };
 
   // Dữ liệu mẫu lịch sử hiến máu
@@ -230,6 +277,70 @@ const UserProfile = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+  };
+
+  const handleUpdateLocation = async () => {
+    setLocationLoading(true);
+    setLocationError(null);
+
+    if (!navigator.geolocation) {
+      setLocationError('Trình duyệt của bạn không hỗ trợ định vị địa lý.');
+      setLocationLoading(false);
+      return;
+    }
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      setUserLocation({ latitude, longitude });
+
+      // Gửi vị trí lên server
+      const token = localStorage.getItem('token');
+      if (token) {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        await axios.put(`${apiUrl}/User/update-location`, {
+          latitude,
+          longitude
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+
+      setSnackbar({ 
+        open: true, 
+        message: 'Cập nhật vị trí thành công!', 
+        severity: 'success' 
+      });
+    } catch (error) {
+      console.error('Lỗi khi cập nhật vị trí:', error);
+      let errorMessage = 'Không thể lấy vị trí hiện tại.';
+      
+      if (error.code === 1) {
+        errorMessage = 'Quyền truy cập vị trí bị từ chối. Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt.';
+      } else if (error.code === 2) {
+        errorMessage = 'Không thể xác định vị trí hiện tại. Vui lòng thử lại.';
+      } else if (error.code === 3) {
+        errorMessage = 'Hết thời gian chờ lấy vị trí. Vui lòng thử lại.';
+      }
+      
+      setLocationError(errorMessage);
+      setSnackbar({ 
+        open: true, 
+        message: errorMessage, 
+        severity: 'error' 
+      });
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -393,10 +504,32 @@ const UserProfile = () => {
                   <Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
                   {formData.email}
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
-                  {formData.address}
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                  <LocationOn sx={{ verticalAlign: 'middle', mr: 0.5 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
+
+                {user?.role?.toLowerCase() === 'member' && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Cập nhật vị trí của bạn để giúp những người cần máu có thể tìm thấy bạn dễ dàng hơn.
+                    </Typography>
+                    <Button
+                      ref={locationButtonRef}
+                      variant="contained"
+                      color="primary"
+                      onClick={handleUpdateLocation}
+                      disabled={locationLoading}
+                      startIcon={<LocationOn />} 
+                    >
+                      {locationLoading ? 'Đang cập nhật...' : 'Cập nhật vị trí hiện tại'}
+                    </Button>
+                    {locationError && (
+                      <Alert severity="error" sx={{ mt: 1 }}>
+                        {locationError}
+                      </Alert>
+                    )}
+                  </Box>
+                )}
               </Box>
 
               <Box>
@@ -545,7 +678,7 @@ const UserProfile = () => {
                               variant="contained"
                               color="error"
                               startIcon={<DeleteIcon />}
-                              onClick={() => handleDeleteUpcomingAppointment(latestAppointment.id)}
+                              onClick={() => handleOpenCancelDialog(latestAppointment)}
                             >
                               Hủy lịch hẹn
                             </Button>
@@ -717,8 +850,53 @@ const UserProfile = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog xác nhận hủy lịch hẹn */}
+      <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>
+          Xác nhận hủy lịch hẹn
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Bạn có chắc chắn muốn hủy lịch hẹn này không?
+          </Typography>
+          {appointmentToCancel && (
+            <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+              <Typography variant="subtitle2" fontWeight="bold" color="primary.main">
+                Thông tin lịch hẹn:
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <strong>Ngày hẹn:</strong> {appointmentToCancel.detail?.appointmentDate}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Khung giờ:</strong> {appointmentToCancel.detail?.appointmentTime}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Địa điểm:</strong> {appointmentToCancel.detail?.donationCenter}
+              </Typography>
+            </Box>
+          )}
+          <Typography variant="body2" color="error.main" sx={{ mt: 2, fontStyle: 'italic' }}>
+            ⚠️ Hành động này không thể hoàn tác. Lịch hẹn sẽ bị hủy vĩnh viễn.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancelDialog} variant="outlined">
+            Không hủy
+          </Button>
+          <Button onClick={handleConfirmCancel} variant="contained" color="error">
+            Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
 
-export default UserProfile; 
+export default UserProfile;

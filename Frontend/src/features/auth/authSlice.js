@@ -133,6 +133,7 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+
     createTestAccount: (state) => {
       // Tạo token giả cho tài khoản test
       const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
@@ -198,6 +199,7 @@ const authSlice = createSlice({
       });
   },
 });
+
 
 export const { clearError, createTestAccount } = authSlice.actions;
 

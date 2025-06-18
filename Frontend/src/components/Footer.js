@@ -193,36 +193,19 @@ const Footer = () => {
         </FooterSection>
 
         <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+      </Container>
 
         <FooterBottom>
-          <Container maxWidth="lg">
+          <Box>
             <Grid container alignItems="center" justifyContent="space-between">
               <Grid item xs={12}>
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', textAlign: 'center', fontWeight: 'bold' }}>
                   © 2024 Hệ Thống Hiến Máu Việt Nam. Tất cả quyền được bảo lưu.
                 </Typography>
               </Grid>
-              {/* <Grid item xs={12} md={6}>
-                <Stack
-                  direction={{ xs: 'column', md: 'row' }}
-                  spacing={2}
-                  justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
-                >
-                  <FooterLink href="#" sx={{ padding: 0 }}>
-                    Điều khoản sử dụng
-                  </FooterLink>
-                  <FooterLink href="#" sx={{ padding: 0 }}>
-                    Chính sách bảo mật
-                  </FooterLink>
-                  <FooterLink href="#" sx={{ padding: 0 }}>
-                    Sitemap
-                  </FooterLink>
-                </Stack>
-              </Grid> */}
             </Grid>
-          </Container>
+          </Box>
         </FooterBottom>
-      </Container>
     </FooterContainer>
   );
 };

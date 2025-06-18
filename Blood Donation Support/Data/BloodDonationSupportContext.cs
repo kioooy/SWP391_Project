@@ -41,6 +41,7 @@ public partial class BloodDonationSupportContext : DbContext
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
+    public virtual DbSet<Hospital> Hospitals { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 

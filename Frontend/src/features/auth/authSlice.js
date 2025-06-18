@@ -130,11 +130,16 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
+    updateUserLocation(state, action) {
+      if (state.user) {
+        state.user.latitude = action.payload.latitude;
+        state.user.longitude = action.payload.longitude;
+      }
+    },
+    clearError(state) {
       state.error = null;
     },
-
-    createTestAccount: (state) => {
+    createTestAccount(state) {
       // Tạo token giả cho tài khoản test
       const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
       
@@ -201,7 +206,7 @@ const authSlice = createSlice({
 });
 
 
-export const { clearError, createTestAccount } = authSlice.actions;
+export const { clearError, createTestAccount, updateUserLocation } = authSlice.actions;
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;

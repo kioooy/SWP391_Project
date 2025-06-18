@@ -222,7 +222,8 @@ const MainLayout = () => {
         { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-        { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+        // { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> }, // Ẩn với member
+        ...(currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff') ? [{ path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> }] : []),
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
         { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
       ];

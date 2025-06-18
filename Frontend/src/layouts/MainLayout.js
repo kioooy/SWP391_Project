@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Outlet,
   Link as RouterLink,
@@ -32,8 +32,6 @@ import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
 import Footer from "../components/Footer";
 import PersonIcon from "@mui/icons-material/Person";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 import SearchIcon from "@mui/icons-material/Search";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -201,17 +199,23 @@ const MainLayout = () => {
     { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
   ];
 
-  // Menu items cho người dùng đã đăng nhập
-
+  // Xác định menu items dựa trên vai trò người dùng
   if (isAuthenticated || isTestUser) {
-    if (isStaff) {
-      // Menu items cho nhân viên
+    // Nếu là nhân viên hoặc admin
+    if (isStaff || (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff'))) {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
       ];
+      
+      // Nếu là Admin thì thêm menu quản lý bệnh viện
+      if (currentUser?.role === 'Admin') {
+        menuItems.push(
+          { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> }
+        );
+      }
     } else {
-      // Menu items cho người dùng thường và tài khoản test
+      // Menu cho người dùng thường
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
@@ -224,6 +228,14 @@ const MainLayout = () => {
         { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
       ];
     }
+  } else {
+    // Menu cho người dùng chưa đăng nhập
+    menuItems = [
+      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+      { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+    ];
   }
 
   return (

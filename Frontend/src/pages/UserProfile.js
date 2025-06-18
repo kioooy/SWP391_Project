@@ -48,9 +48,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
-import { useNavigate } from 'react-router-dom';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -177,9 +175,63 @@ const UserProfile = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Khởi tạo dispatch
-  const dispatch = useDispatch();
-  const navigate = useNavigate(); // Import useNavigate nếu chưa có
+  // Hàm xử lý cập nhật vị trí
+  const handleUpdateLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Trình duyệt của bạn không hỗ trợ định vị địa lý');
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ latitude, longitude });
+        
+        try {
+          const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+          await axios.put(
+            `${API_URL}/User/${userId}/location`,
+            { latitude, longitude },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
+              },
+            }
+          );
+          
+          // Cập nhật Redux store
+          dispatch(updateUserLocation({ latitude, longitude }));
+          
+          setSnackbar({
+            open: true,
+            message: 'Cập nhật vị trí thành công!',
+            severity: 'success',
+          });
+        } catch (error) {
+          console.error('Lỗi khi cập nhật vị trí:', error);
+          setLocationError('Có lỗi xảy ra khi cập nhật vị trí');
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (error) => {
+        console.error('Lỗi khi lấy vị trí:', error);
+        setLocationLoading(false);
+        setLocationError('Không thể lấy vị trí của bạn. Vui lòng kiểm tra quyền truy cập vị trí.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  // Các hàm xử lý khác
 
   // Hàm xử lý đăng xuất
   const handleLogout = async () => {
@@ -430,7 +482,7 @@ const UserProfile = () => {
                   <LocationOn sx={{ verticalAlign: 'middle', mr: 0.5 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
-                {user?.role.toLowerCase() === 'member' && (
+                {user?.role && user.role.toString().toLowerCase() === 'member' && (
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Cập nhật vị trí của bạn để giúp những người cần máu có thể tìm thấy bạn dễ dàng hơn.

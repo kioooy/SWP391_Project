@@ -82,6 +82,23 @@ const occupations = [
   'Khác',
 ];
 
+const bloodTypes = [
+  { id: 1, name: 'A+' },
+  { id: 2, name: 'A-' },
+  { id: 3, name: 'B+' },
+  { id: 4, name: 'B-' },
+  { id: 5, name: 'AB+' },
+  { id: 6, name: 'AB-' },
+  { id: 7, name: 'O+' },
+  { id: 8, name: 'O-' },
+];
+
+const roles = [
+  { id: 1, name: 'Người dùng' },
+  { id: 2, name: 'Quản trị viên' },
+  { id: 3, name: 'Nhân viên y tế' },
+];
+
 const getValidationSchema = (activeStep) => {
   const baseSchema = {};
 
@@ -91,10 +108,10 @@ const getValidationSchema = (activeStep) => {
 
   if (activeStep >= 1) {
     baseSchema.personalId = Yup.string()
-      .matches(/^[0-9]{12}$/, 'Số CCCD phải có 12 chữ số')
+      .matches(/^[0-9]{9,12}$/, 'Số CCCD phải có từ 9 đến 12 chữ số')
       .required('Vui lòng nhập số CCCD');
     baseSchema.fullName = Yup.string()
-      .min(2, 'Họ tên phải có ít nhất 2 ký tự')
+      .min(1, 'Họ tên không được để trống')
       .required('Vui lòng nhập họ và tên');
     baseSchema.dateOfBirth = Yup.date()
       .nullable()
@@ -111,31 +128,44 @@ const getValidationSchema = (activeStep) => {
     baseSchema.city = Yup.string().required('Vui lòng chọn tỉnh/thành phố');
     baseSchema.district = Yup.string().required('Vui lòng chọn quận/huyện');
     baseSchema.street = Yup.string().required('Vui lòng nhập số nhà, tên đường');
+    baseSchema.address = Yup.string().min(1, 'Địa chỉ không được để trống');
   }
 
   if (activeStep >= 2) {
     baseSchema.mobilePhone = Yup.string()
-      .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
+      .matches(/^0[0-9]{9}$/, 'Số điện thoại phải bắt đầu bằng 0 và có 10 chữ số')
       .required('Vui lòng nhập số điện thoại di động');
     baseSchema.email = Yup.string()
       .email('Email không đúng định dạng')
       .required('Vui lòng nhập email');
     baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
-    baseSchema.weight = Yup.number()
-      .positive('Cân nặng phải là số dương')
-      .required('Vui lòng nhập cân nặng');
-    baseSchema.height = Yup.number()
-      .positive('Chiều cao phải là số dương') 
-      .required('Vui lòng nhập chiều cao');
+    baseSchema.otherOccupation = Yup.string().when('occupation', {
+      is: 'Khác',
+      then: (schema) => schema.required('Vui lòng nhập nghề nghiệp của bạn'),
+      otherwise: (schema) => schema.notRequired(),
+    });
+    baseSchema.weight = Yup.string()
+      .required('Vui lòng nhập cân nặng')
+      .test('is-positive-number', 'Cân nặng phải là số dương', function(value) {
+        if (!value) return false;
+        const num = parseInt(value);
+        return !isNaN(num) && num > 0;
+      });
+    baseSchema.height = Yup.string()
+      .required('Vui lòng nhập chiều cao')
+      .test('is-positive-number', 'Chiều cao phải là số dương', function(value) {
+        if (!value) return false;
+        const num = parseInt(value);
+        return !isNaN(num) && num > 0;
+      });
+    baseSchema.bloodTypeId = Yup.number()
+      .min(1, 'Vui lòng chọn nhóm máu')
+      .required('Vui lòng chọn nhóm máu');
   }
 
   if (activeStep >= 3) {
     baseSchema.password = Yup.string()
-      .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
-      )
+      .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
       .required('Vui lòng nhập mật khẩu');
     baseSchema.confirmPassword = Yup.string()
       .oneOf([Yup.ref('password'), null], 'Xác nhận mật khẩu không khớp')
@@ -175,8 +205,11 @@ const Signup = () => {
       height: '',
       email: '',
       occupation: '',
+      otherOccupation: '',
       password: '',
       confirmPassword: '',
+      bloodTypeId: '',
+      roleId: 1,
     },
     validate: (values) => {
       try {
@@ -198,12 +231,25 @@ const Signup = () => {
 
       // Submit registration data on final step
       try {
+        // Transform form data to match API schema - tạm thời bỏ qua các trường bị lỗi
         const registrationData = {
-          ...values,
+          fullName: values.fullName || '',
+          password: values.password || '',
+          citizenNumber: values.personalId || '',
+          email: values.email || '',
+          phoneNumber: values.mobilePhone || '',
+          sex: values.gender === 'male', // true for male, false for female
+          address: `${values.street || ''}, ${values.district || ''}, ${values.city || ''}`,
+          roleId: values.roleId || 1,
+          isDonor: values.accountType === 'donor',
+          isRecipient: values.accountType === 'recipient'
         };
+        
+        console.log('Registration data:', registrationData);
         await dispatch(register(registrationData)).unwrap();
         navigate('/');
       } catch (err) {
+        console.error('Registration error:', err);
         // Error is handled by the auth slice
       }
     },
@@ -221,6 +267,18 @@ const Signup = () => {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
+
+  // Hàm xử lý chỉ cho phép nhập số
+  const handleNumberInput = (e, fieldName) => {
+    const value = e.target.value.replace(/[^0-9]/g, ''); // Chỉ giữ lại số
+    formik.setFieldValue(fieldName, value);
+  };
+
+  // Các hàm xử lý riêng cho từng trường số
+  const handlePersonalIdChange = (e) => handleNumberInput(e, 'personalId');
+  const handleMobilePhoneChange = (e) => handleNumberInput(e, 'mobilePhone');
+  const handleWeightChange = (e) => handleNumberInput(e, 'weight');
+  const handleHeightChange = (e) => handleNumberInput(e, 'height');
 
   const renderStepContent = (step) => {
     switch (step) {
@@ -362,7 +420,7 @@ const Signup = () => {
                   label="Số CCCD(*)"
                   placeholder="VD: 123456789012"
                   value={formik.values.personalId}
-                  onChange={formik.handleChange}
+                  onChange={handlePersonalIdChange}
                   error={formik.touched.personalId && Boolean(formik.errors.personalId)}
                   helperText={formik.touched.personalId && formik.errors.personalId}
                   inputProps={{ maxLength: 12 }}
@@ -561,7 +619,7 @@ const Signup = () => {
                   label="Điện thoại di động (*)"
                   placeholder="VD: 0909090909"
                   value={formik.values.mobilePhone}
-                  onChange={formik.handleChange}
+                  onChange={handleMobilePhoneChange}
                   error={formik.touched.mobilePhone && Boolean(formik.errors.mobilePhone)}
                   helperText={formik.touched.mobilePhone && formik.errors.mobilePhone}
                   inputProps={{ maxLength: 10 }}
@@ -613,6 +671,29 @@ const Signup = () => {
                 </FormControl>
               </Grid>
 
+              {/* Nghề nghiệp khác - chỉ hiển thị khi chọn "Khác" */}
+              {formik.values.occupation === 'Khác' && (
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                    <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      Vui lòng nhập nghề nghiệp của bạn
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    name="otherOccupation"
+                    label="Nghề nghiệp của bạn (*)"
+                    placeholder="VD: Nhà báo, Luật sư, Kiến trúc sư..."
+                    value={formik.values.otherOccupation}
+                    onChange={formik.handleChange}
+                    error={formik.touched.otherOccupation && Boolean(formik.errors.otherOccupation)}
+                    helperText={formik.touched.otherOccupation && formik.errors.otherOccupation}
+                    inputProps={{ maxLength: 50 }}
+                  />
+                </Grid>
+              )}
+
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                   <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
@@ -623,14 +704,18 @@ const Signup = () => {
                 <TextField
                   fullWidth
                   name="weight"
-                  type="number"
+                  type="text"
                   label="Cân nặng (*)"
                   placeholder="Vui lòng nhập cân nặng"
                   value={formik.values.weight}
-                  onChange={formik.handleChange}
+                  onChange={handleWeightChange}
                   error={formik.touched.weight && Boolean(formik.errors.weight)}
                   helperText={formik.touched.weight && formik.errors.weight}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ 
+                    maxLength: 3,
+                    pattern: '[0-9]*',
+                    inputMode: 'numeric'
+                  }}
                 />
               </Grid>
 
@@ -638,7 +723,7 @@ const Signup = () => {
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                   <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
                   <Typography variant="caption" color="text.secondary">
-                    Vui lòng cung cấp chiêu cao của bạn để chúng tôi có thể xác định khả năng hiến máu. Chiều cao phải là số dương.
+                    Vui lòng cung cấp chiều cao của bạn để chúng tôi có thể xác định khả năng hiến máu. Chiều cao phải là số dương.
                   </Typography>
                 </Box>
                 <TextField
@@ -646,13 +731,41 @@ const Signup = () => {
                   name="height"
                   label="Chiều cao (*)"
                   placeholder="Vui lòng nhập chiều cao"
-                  type="number"
+                  type="text"
                   value={formik.values.height}
-                  onChange={formik.handleChange}
+                  onChange={handleHeightChange}
                   error={formik.touched.height && Boolean(formik.errors.height)}
                   helperText={formik.touched.height && formik.errors.height}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ 
+                    maxLength: 3,
+                    pattern: '[0-9]*',
+                    inputMode: 'numeric'
+                  }}
                 />
+              </Grid>
+
+              {/* Nhóm máu */}
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Nhóm máu (*)</InputLabel>
+                  <Select
+                    name="bloodTypeId"
+                    value={formik.values.bloodTypeId}
+                    onChange={formik.handleChange}
+                    error={formik.touched.bloodTypeId && Boolean(formik.errors.bloodTypeId)}
+                  >
+                    {bloodTypes.map((bloodType) => (
+                      <MenuItem key={bloodType.id} value={bloodType.id}>
+                        {bloodType.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formik.touched.bloodTypeId && formik.errors.bloodTypeId && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.bloodTypeId}
+                    </Typography>
+                  )}
+                </FormControl>
               </Grid>
             </Grid>
 

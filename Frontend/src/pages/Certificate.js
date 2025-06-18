@@ -33,6 +33,7 @@ import {
   Edit,
   Add,
 } from "@mui/icons-material";
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const BloodDonationCertificate = () => {
   const [certificates, setCertificates] = useState([
@@ -159,7 +160,8 @@ const BloodDonationCertificate = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background: "#ffffff",
+        borderRadius: 4,
         py: 4,
       }}
     >
@@ -176,8 +178,8 @@ const BloodDonationCertificate = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
-                bgcolor: "#fff",
-                color: "#667eea",
+                bgcolor: "#e53e3e",
+                color: "#ffffff",
                 width: 56,
                 height: 56,
               }}
@@ -188,9 +190,8 @@ const BloodDonationCertificate = () => {
               <Typography
                 variant="h4"
                 sx={{
-                  color: "white",
+                  color: "#1a202c",
                   fontWeight: "bold",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.3)",
                 }}
               >
                 Chứng chỉ hiến máu
@@ -198,7 +199,7 @@ const BloodDonationCertificate = () => {
               <Typography
                 variant="subtitle1"
                 sx={{
-                  color: "rgba(255,255,255,0.8)",
+                  color: "#718096",
                   fontStyle: "italic",
                 }}
               >
@@ -286,7 +287,7 @@ const BloodDonationCertificate = () => {
                       onClick={() => handleOpenDialog(certificate)}
                       sx={{ color: "#667eea" }}
                     >
-                      <Edit />
+                      <VisibilityIcon />
                     </IconButton>
                   </Box>
 
@@ -497,126 +498,100 @@ const BloodDonationCertificate = () => {
               color: "#1a202c",
             }}
           >
-            {editingCertificate ? "Chỉnh sửa chứng chỉ" : "Thêm chứng chỉ mới"}
+            {editingCertificate ? "Xem thông tin chứng chỉ" : "Thêm chứng chỉ mới"}
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Số CCCD"
-                  value={formData.cccd}
-                  onChange={(e) => handleInputChange("cccd", e.target.value)}
-                  variant="outlined"
-                  disabled
-                />
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Số CCCD
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.cccd}
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Họ và tên"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  variant="outlined"
-                  disabled
-                />
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Họ và Tên
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.name}
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Ngày sinh"
-                  value={formData.dateOfBirth}
-                  onChange={(e) =>
-                    handleInputChange("dateOfBirth", e.target.value)
-                  }
-                  variant="outlined"
-                  placeholder="dd/mm/yyyy"
-                  disabled
-                />
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Ngày sinh
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.dateOfBirth}
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth disabled>
-                  <InputLabel>Nhóm máu</InputLabel>
-                  <Select
-                    value={formData.bloodType}
-                    label="Nhóm máu"
-                    onChange={(e) =>
-                      handleInputChange("bloodType", e.target.value)
-                    }
-                  >
-                    {bloodTypes.map((type) => (
-                      <MenuItem key={type} value={type}>
-                        {type}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Địa chỉ"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  variant="outlined"
-                  multiline
-                  rows={2}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Cơ sở tiếp nhận máu"
-                  value={formData.donationCenter}
-                  onChange={(e) =>
-                    handleInputChange("donationCenter", e.target.value)
-                  }
-                  variant="outlined"
-                  disabled
-                />
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Nhóm máu
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.bloodType}
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth disabled>
-                  <InputLabel>Lượng máu hiến</InputLabel>
-                  <Select
-                    value={formData.bloodAmount}
-                    label="Lượng máu hiến"
-                    onChange={(e) =>
-                      handleInputChange("bloodAmount", e.target.value)
-                    }
-                  >
-                    {bloodAmounts.map((amount) => (
-                      <MenuItem key={amount} value={amount}>
-                        {amount}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Địa Chỉ
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.address}
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Ngày hiến máu"
-                  value={formData.donationDate}
-                  onChange={(e) =>
-                    handleInputChange("donationDate", e.target.value)
-                  }
-                  variant="outlined"
-                  placeholder="dd/mm/yyyy"
-                />
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Cơ sở tiếp nhận máu
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.donationCenter}
+                  </Typography>
+                </Box>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Số chứng chỉ"
-                  value={formData.certificateNumber}
-                  onChange={(e) =>
-                    handleInputChange("certificateNumber", e.target.value)
-                  }
-                  variant="outlined"
-                  disabled
-                />
+              <Grid item xs={12} sm={6}>
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Lượng máu hiến
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.bloodAmount}
+                  </Typography>
+                </Box>
               </Grid>
+              <Grid item xs={12} sm={6}>
+                <Box>
+                  <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                    Ngày hiến máu
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                    {formData.donationDate}
+                  </Typography>
+                </Box>
+              </Grid>
+              {/* <Grid item xs={12}>
+                    <Box>
+                    <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
+                      Số Chứng Chỉ
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
+                      {formData.certificateNumber}
+                    </Typography>
+                  </Box>
+                </Grid> */}
             </Grid>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
@@ -633,7 +608,7 @@ const BloodDonationCertificate = () => {
                 },
               }}
             >
-              {editingCertificate ? "Cập nhật" : "Thêm mới"}
+              {editingCertificate ? "Xem xong" : "Thêm mới"}
             </Button>
           </DialogActions>
         </Dialog>

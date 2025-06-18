@@ -44,9 +44,13 @@ import {
   CalendarToday,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { useDispatch } from 'react-redux';
+import { logout } from '../features/auth/authSlice';
+import { useNavigate } from 'react-router-dom';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -101,93 +105,9 @@ const UserProfile = () => {
     severity: 'success'
   });
 
-  // Hàm cập nhật vị trí người dùng
-  const handleUpdateLocation = async () => {
-    setLocationLoading(true);
-    setLocationError(null);
 
-    if (!navigator.geolocation) {
-      setLocationError('Trình duyệt của bạn không hỗ trợ Geolocation API.');
-      setLocationLoading(false);
-      return;
-    }
-
-    try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        });
-      });
-
-      const { latitude: newLat, longitude: newLon } = position.coords;
-      setUserLocation({ latitude: newLat, longitude: newLon }); // Cập nhật trạng thái cục bộ để hiển thị
-
-      // Lấy vị trí đã lưu từ Redux user state
-      const storedLat = user?.latitude;
-      const storedLon = user?.longitude;
-
-      // Kiểm tra xem vị trí mới có trùng với vị trí đã lưu không (trong vòng 1 mét)
-      let shouldUpdateBackend = true;
-      if (storedLat !== undefined && storedLat !== null && storedLon !== undefined && storedLon !== null) {
-        const distance = haversineDistance(storedLat, storedLon, newLat, newLon);
-        const THRESHOLD_METERS = 200; // Ngưỡng 200 mét
-
-        if (distance <= THRESHOLD_METERS) {
-          setSnackbar({ open: true, message: 'Vị trí hiện tại gần giống với vị trí đã lưu. Không cần cập nhật.', severity: 'info' });
-          shouldUpdateBackend = false;
-        }
-      }
-
-      if (shouldUpdateBackend) {
-        if (userId && authToken) {
-          const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-          try {
-            const response = await axios.put(`${API_URL}/User/${userId}/location`, {
-              latitude: newLat,
-              longitude: newLon,
-            }, {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`,
-              },
-            });
-
-            if (response.status === 200) {
-              setSnackbar({ open: true, message: 'Cập nhật vị trí thành công!', severity: 'success' });
-              // Cập nhật lại Redux store
-              dispatch(updateUserLocation({ latitude: newLat, longitude: newLon }));
-            } else {
-              setSnackbar({ open: true, message: 'Cập nhật vị trí thất bại.', severity: 'error' });
-            }
-          } catch (apiError) {
-            console.error('Lỗi API khi cập nhật vị trí:', apiError);
-            setSnackbar({ open: true, message: 'Cập nhật vị trí thất bại do lỗi máy chủ.', severity: 'error' });
-          }
-        } else {
-          setSnackbar({ open: true, message: 'Không có thông tin người dùng hoặc token.', severity: 'warning' });
-        }
-      }
-    } catch (error) {
-      console.error('Lỗi khi lấy hoặc cập nhật vị trí:', error);
-      if (error.code === error.PERMISSION_DENIED) {
-        setLocationError('Bạn đã từ chối cấp quyền truy cập vị trí. Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt.');
-        setSnackbar({ open: true, message: 'Bạn đã từ chối cấp quyền truy cập vị trí.', severity: 'error' });
-      } else if (error.code === error.POSITION_UNAVAILABLE) {
-        setLocationError('Thông tin vị trí không khả dụng.');
-        setSnackbar({ open: true, message: 'Thông tin vị trí không khả dụng.', severity: 'error' });
-      } else if (error.code === error.TIMEOUT) {
-        setLocationError('Yêu cầu lấy vị trí đã hết thời gian.');
-        setSnackbar({ open: true, message: 'Yêu cầu lấy vị trí đã hết thời gian.', severity: 'error' });
-      } else {
-        setLocationError(error.message || 'Lỗi không xác định khi lấy vị trí.');
-        setSnackbar({ open: true, message: 'Lỗi khi lấy hoặc cập nhật vị trí.', severity: 'error' });
-      }
-    } finally {
-      setLocationLoading(false);
-    }
-  };
+  // State cho lịch hẹn sắp tới
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
   // Fetch dữ liệu người dùng từ API khi component mount
   useEffect(() => {
@@ -235,30 +155,71 @@ const UserProfile = () => {
     fetchUserProfile();
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('scrollToLocation') === 'true') {
-      if (locationButtonRef.current) {
-        locationButtonRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Thêm hiệu ứng nổi bật tạm thời
-        locationButtonRef.current.style.transition = 'background-color 0.5s ease-in-out, border-color 0.5s ease-in-out';
-        locationButtonRef.current.style.backgroundColor = '#ffeb3b'; // Màu vàng nổi bật
-        locationButtonRef.current.style.borderColor = '#ffc107'; // Viền vàng đậm
 
-        setTimeout(() => {
-          locationButtonRef.current.style.backgroundColor = ''; // Trở lại màu gốc
-          locationButtonRef.current.style.borderColor = ''; // Trở lại viền gốc
-        }, 2000); // Hiệu ứng kéo dài 2 giây
+  // Load lịch hẹn từ localStorage
+  useEffect(() => {
+    const loadAppointments = () => {
+      try {
+        const appointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
+        // Lọc chỉ lịch hẹn sắp tới (status = "scheduled")
+        const upcoming = appointments.filter(app => app.status === 'scheduled');
+        setUpcomingAppointments(upcoming);
+      } catch (error) {
+        console.error('Lỗi khi load lịch hẹn:', error);
       }
-      // Xóa tham số khỏi URL để tránh cuộn lại khi refresh
-      params.delete('scrollToLocation');
-      navigate({ search: params.toString() }, { replace: true });
-    }
-  }, [location.search, navigate]);
+    };
+
+    loadAppointments();
+  }, []);
 
   // Hàm đóng Snackbar
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Khởi tạo dispatch
+  const dispatch = useDispatch();
+  const navigate = useNavigate(); // Import useNavigate nếu chưa có
+
+  // Hàm xử lý đăng xuất
+  const handleLogout = async () => {
+    await dispatch(logout());
+    localStorage.removeItem("isTestUser");
+    localStorage.removeItem("isStaff");
+    navigate("/login");
+  };
+
+  // Hàm xóa lịch hẹn sắp tới
+  const handleDeleteUpcomingAppointment = (idToDelete) => {
+    try {
+      const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
+      
+      const updatedAppointments = existingAppointments.map(app => {
+        if (app.id === idToDelete) {
+          return {
+            ...app,
+            status: 'expired',
+            statusText: 'Đã xoá',
+            detail: {
+              ...(app.detail || {}),
+              cancellationReason: 'Người dùng tự hủy',
+              cancellationDate: dayjs().format('DD/MM/YYYY'),
+              cancellationTime: dayjs().format('HH:mm'),
+            }
+          };
+        }
+        return app;
+      });
+
+      localStorage.setItem('userAppointments', JSON.stringify(updatedAppointments));
+      
+      // Cập nhật lại state chỉ với các lịch hẹn sắp tới (status === 'scheduled')
+      setUpcomingAppointments(updatedAppointments.filter(app => app.status === 'scheduled'));
+      setSnackbar({ open: true, message: 'Lịch hẹn đã được hủy thành công!', severity: 'success' });
+    } catch (error) {
+      console.error('Lỗi khi xóa lịch hẹn:', error);
+      setSnackbar({ open: true, message: 'Lỗi khi hủy lịch hẹn.', severity: 'error' });
+    }
   };
 
   // Dữ liệu mẫu lịch sử hiến máu
@@ -441,6 +402,14 @@ const UserProfile = () => {
                 >
                   Chỉnh sửa thông tin
                 </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  sx={{ mt: 1 }}
+                  onClick={handleLogout}
+                >
+                  Đăng xuất
+                </Button>
               </Box>
 
               <Divider sx={{ my: 2 }} />
@@ -561,7 +530,99 @@ const UserProfile = () => {
               </TabPanel>
               <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
-                <Typography variant="body1">Chưa có lịch hẹn nào.</Typography>
+                {upcomingAppointments.length > 0 ? (
+                  <Box sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', borderRadius: 2 }}>
+                    {(() => {
+                      const latestAppointment = upcomingAppointments[0]; // Chỉ lấy lịch hẹn đầu tiên/gần nhất
+                      const detail = latestAppointment.detail || {};
+                      return (
+                        <>
+                          <Typography variant="h6" fontWeight="bold" color="#4285f4" sx={{ mb: 2 }}>
+                            Thông tin chi tiết lịch hẹn
+                          </Typography>
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Mã lịch hẹn</Typography>
+                              <Typography variant="body1" fontWeight="bold">{detail.appointmentId}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                              {getStatusChip(latestAppointment.status)}
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Ngày hẹn</Typography>
+                              <Typography variant="body1" fontWeight="bold">{detail.appointmentDate}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Khung giờ</Typography>
+                              <Typography variant="body1" fontWeight="bold">{detail.appointmentTime}</Typography>
+                            </Grid>
+                            <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Trung tâm hiến máu</Typography>
+                              <Typography variant="body1" fontWeight="bold">{detail.donationCenter}</Typography>
+                              <Typography variant="body2" color="text.secondary">{detail.centerAddress}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Số điện thoại trung tâm</Typography>
+                              <Typography variant="body1">{detail.centerPhone}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Loại hiến máu</Typography>
+                              <Typography variant="body1">{detail.donationType}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Lượng máu</Typography>
+                              <Typography variant="body1">{detail.bloodAmount}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Nhân viên phụ trách</Typography>
+                              <Typography variant="body1">{detail.staffName}</Typography>
+                            </Grid>
+                            {detail.notes && (
+                              <Grid item xs={12}>
+                                <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
+                                <Typography variant="body1">{detail.notes}</Typography>
+                              </Grid>
+                            )}
+                            {detail.preparationNotes && detail.preparationNotes.length > 0 && (
+                              <Grid item xs={12}>
+                                <Typography variant="body2" color="text.secondary">Hướng dẫn chuẩn bị:</Typography>
+                                <Box component="ul" sx={{ pl: 2 }}>
+                                  {detail.preparationNotes.map((note, idx) => (
+                                    <Typography key={idx} component="li" variant="body2">{note}</Typography>
+                                  ))}
+                                </Box>
+                              </Grid>
+                            )}
+                          </Grid>
+                          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                            <Button
+                              variant="contained"
+                              color="error"
+                              startIcon={<DeleteIcon />}
+                              onClick={() => handleDeleteUpcomingAppointment(latestAppointment.id)}
+                            >
+                              Hủy lịch hẹn
+                            </Button>
+                          </Box>
+                        </>
+                      );
+                    })()} 
+                  </Box>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                      Chưa có lịch hẹn nào.
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      sx={{ mt: 2 }}
+                      onClick={() => window.location.href = '/booking'}
+                    >
+                      Đặt lịch ngay
+                    </Button>
+                  </Box>
+                )}
               </TabPanel>
             </CardContent>
           </Card>

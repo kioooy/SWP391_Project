@@ -39,10 +39,17 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      console.log('Sending registration data to API:', userData);
+      const response = await axios.post(`${API_URL}/User/register`, userData);
       localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
+      console.error('Registration API error:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.response?.data?.message);
+      console.error('Validation errors:', error.response?.data?.errors);
+      console.error('Model errors:', error.response?.data?.errors?.model);
+      console.error('DateOfBirth errors:', error.response?.data?.errors?.['$.dateOfBirth']);
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
@@ -63,16 +70,30 @@ export const logout = createAsyncThunk(
 
 const getInitialState = () => {
   const token = localStorage.getItem('token');
+  console.log('Token from localStorage:', token);
+  
+  // Tạo tài khoản test nếu chưa có
+  if (!localStorage.getItem('testAccountCreated')) {
+    localStorage.setItem('testAccountCreated', 'true');
+    console.log('Test account created for development');
+  }
+  
   if (token && !isTokenExpired(token)) {
     try {
       const decoded = jwtDecode(token);
+      console.log('Decoded token:', decoded);
+      
       // Giả định payload của token có các trường userId, fullName, role
+      const user = {
+        userId: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.sub,
+        fullName: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
+        role: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+      };
+      
+      console.log('Extracted user info:', user);
+      
       return {
-        user: {
-          userId: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.sub,
-          fullName: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
-          role: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-        },
+        user: user,
         token: token,
         isAuthenticated: true,
         loading: false,
@@ -91,6 +112,8 @@ const getInitialState = () => {
       };
     }
   }
+  
+  console.log('No valid token found, returning unauthenticated state');
   return {
     user: null,
     token: null,
@@ -110,11 +133,30 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    updateUserLocation: (state, action) => {
-      if (state.user) {
-        state.user.latitude = action.payload.latitude;
-        state.user.longitude = action.payload.longitude;
-      }
+
+    createTestAccount: (state) => {
+      // Tạo token giả cho tài khoản test
+      const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+      
+      state.user = {
+        userId: '1234567890',
+        fullName: 'Test User',
+        role: 'User'
+      };
+      state.token = testToken;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
+      
+      // Lưu vào localStorage
+      localStorage.setItem('token', testToken);
+      localStorage.setItem('userProfile', JSON.stringify({
+        userId: '1234567890',
+        fullName: 'Test User',
+        role: 'User'
+      }));
+      
+      console.log('Test account logged in successfully');
     },
   },
   extraReducers: (builder) => {
@@ -158,7 +200,8 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, updateUserLocation } = authSlice.actions;
+
+export const { clearError, createTestAccount } = authSlice.actions;
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;

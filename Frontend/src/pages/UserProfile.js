@@ -302,9 +302,10 @@ const UserProfile = () => {
 
       // Gửi vị trí lên server
       const token = localStorage.getItem('token');
-      if (token) {
+      // Lấy userId từ Redux store (user?.userId)
+      if (token && user?.userId) {
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        await axios.put(`${apiUrl}/User/update-location`, {
+        await axios.put(`${apiUrl}/User/${user?.userId}/location`, {
           latitude,
           longitude
         }, {

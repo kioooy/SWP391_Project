@@ -224,7 +224,6 @@ const MainLayout = () => {
         { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
         { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-        { path: "/user-profile", label: "Hồ Sơ", icon: <PersonIcon /> },
         { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
       ];
     }

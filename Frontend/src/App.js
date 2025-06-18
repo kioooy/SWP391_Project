@@ -26,6 +26,7 @@ import SearchDistance from "./pages/SearchDistance";
 import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
+import BloodSearch from "./pages/BloodSearch";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -70,6 +71,7 @@ const App = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/history" element={<AppointmentHistory />} />
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
+        <Route path="/blood-search" element={<BloodSearch />} />
       </Route>
 
       {/* Fallback Route */}

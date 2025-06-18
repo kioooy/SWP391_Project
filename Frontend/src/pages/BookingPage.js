@@ -21,7 +21,8 @@ import {
   FormControlLabel,
   Checkbox,
   TextField,
-  Divider
+  Divider,
+  Alert
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -180,6 +181,7 @@ const BookingPage = () => {
   const [timeLocationCompleted, setTimeLocationCompleted] = useState(false);
   const [openSummary, setOpenSummary] = useState(false);
   const [openCalendarDialog, setOpenCalendarDialog] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   // Form states
   const [formData, setFormData] = useState({
@@ -255,10 +257,87 @@ const BookingPage = () => {
     setTabValue(0);
   };
   const handleSubmit = () => {
+    // Kiểm tra validation trước khi cho phép submit
+    const validationResult = validateFormData();
+    if (validationResult) {
+      setValidationError(validationResult);
+      alert(validationResult);
+      return;
+    }
+    
+    // Nếu validation thành công, xóa lỗi và mở dialog
+    setValidationError('');
     setOpenSummary(true);
   };
   const handleViewCalendar = () => {
     setOpenCalendarDialog(true);
+  };
+
+  // Hàm kiểm tra validation cho phiếu khai báo y tế
+  const validateFormData = () => {
+    // Kiểm tra câu hỏi 1: Anh/chị từng hiến máu chưa?
+    if (!formData['1.1'] && !formData['1.2']) {
+      return 'Bạn chưa trả lời câu hỏi 1: Anh/chị từng hiến máu chưa?';
+    }
+
+    // Kiểm tra câu hỏi 2: Hiện tại, anh/chị có mắc bệnh lý nào không?
+    if (!formData['2.1'] && !formData['2.2']) {
+      return 'Bạn chưa trả lời câu hỏi 2: Hiện tại, anh/chị có mắc bệnh lý nào không?';
+    }
+    if (formData['2.1'] && !formData['2.1_detail'].trim()) {
+      return 'Bạn đã chọn "Có" ở câu hỏi 2 nhưng chưa nhập chi tiết bệnh lý';
+    }
+
+    // Kiểm tra câu hỏi 3: Trước đây, anh/chị có từng mắc một trong các bệnh...
+    if (!formData['3.1'] && !formData['3.2'] && !formData['3.3']) {
+      return 'Bạn chưa trả lời câu hỏi 3: Trước đây, anh/chị có từng mắc một trong các bệnh...';
+    }
+    if (formData['3.3'] && !formData['3.3_detail'].trim()) {
+      return 'Bạn đã chọn "Bệnh khác" ở câu hỏi 3 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 4: Trong 12 tháng gần đây, anh/chị có:
+    if (!formData['4.1'] && !formData['4.2'] && !formData['4.3'] && !formData['4.4']) {
+      return 'Bạn chưa trả lời câu hỏi 4: Trong 12 tháng gần đây, anh/chị có:';
+    }
+    if (formData['4.3'] && !formData['4.3_detail'].trim()) {
+      return 'Bạn đã chọn "Khác" ở câu hỏi 4 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 5: Trong 06 tháng gần đây, anh/chị có:
+    if (!formData['5.1'] && !formData['5.2'] && !formData['5.3'] && !formData['5.4'] && 
+        !formData['5.5'] && !formData['5.6'] && !formData['5.7'] && !formData['5.8'] && 
+        !formData['5.9'] && !formData['5.10'] && !formData['5.11']) {
+      return 'Bạn chưa trả lời câu hỏi 5: Trong 06 tháng gần đây, anh/chị có:';
+    }
+
+    // Kiểm tra câu hỏi 6: Trong 01 tháng gần đây, anh/chị có:
+    if (!formData['6.1'] && !formData['6.2'] && !formData['6.3']) {
+      return 'Bạn chưa trả lời câu hỏi 6: Trong 01 tháng gần đây, anh/chị có:';
+    }
+
+    // Kiểm tra câu hỏi 7: Trong 14 ngày gần đây, anh/chị có:
+    if (!formData['7.1'] && !formData['7.2'] && !formData['7.3']) {
+      return 'Bạn chưa trả lời câu hỏi 7: Trong 14 ngày gần đây, anh/chị có:';
+    }
+    if (formData['7.3'] && !formData['7.3_detail'].trim()) {
+      return 'Bạn đã chọn "Khác" ở câu hỏi 7 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 8: Trong 07 ngày gần đây, anh/chị có:
+    if (!formData['8.1'] && !formData['8.2'] && !formData['8.3']) {
+      return 'Bạn chưa trả lời câu hỏi 8: Trong 07 ngày gần đây, anh/chị có:';
+    }
+    if (formData['8.3'] && !formData['8.3_detail'].trim()) {
+      return 'Bạn đã chọn "Khác" ở câu hỏi 8 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 9: Câu hỏi dành cho phụ nữ:
+    if (!formData['9.1'] && !formData['9.2'] && !formData['9.3']) {
+      return 'Bạn chưa trả lời câu hỏi 9: Câu hỏi dành cho phụ nữ:';
+    }
+
+    return null; // Không có lỗi
   };
 
   // Hàm lưu thông tin đặt lịch vào localStorage
@@ -706,6 +785,18 @@ const BookingPage = () => {
                 <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 3 }}>
                   Phiếu đăng ký hiến máu
                 </Typography>
+
+                {/* Hiển thị thông báo lỗi validation */}
+                {validationError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    <Typography variant="body1" fontWeight="bold">
+                      {validationError}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Vui lòng hoàn thành tất cả các câu hỏi trước khi tiếp tục.
+                    </Typography>
+                  </Alert>
+                )}
 
                 {/* Question 1 */}
                 <QuestionCard>

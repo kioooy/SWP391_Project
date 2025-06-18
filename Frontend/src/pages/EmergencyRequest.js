@@ -41,7 +41,6 @@ const EmergencyRequest = () => {
     patientName: '',
     bloodType: '',
     quantity: '',
-    urgency: 'high', // 'high', 'medium', 'low'
     contactName: '',
     contactPhone: '',
     contactEmail: '',
@@ -81,7 +80,6 @@ const EmergencyRequest = () => {
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
       if (!formData.quantity) newErrors.quantity = 'Vui lòng nhập số lượng máu cần';
-      if (!formData.urgency) newErrors.urgency = 'Vui lòng chọn mức độ khẩn cấp';
     } else if (activeStep === 1) {
       if (!formData.contactName) newErrors.contactName = 'Vui lòng nhập tên người liên hệ';
       if (!formData.contactPhone) newErrors.contactPhone = 'Vui lòng nhập số điện thoại';
@@ -114,7 +112,6 @@ const EmergencyRequest = () => {
         patientName: '',
         bloodType: '',
         quantity: '',
-        urgency: 'high',
         contactName: '',
         contactPhone: '',
         contactEmail: '',
@@ -211,51 +208,6 @@ const EmergencyRequest = () => {
                 error={!!errors.quantity}
                 helperText={errors.quantity}
               />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth error={!!errors.urgency}>
-                <InputLabel>Mức độ khẩn cấp</InputLabel>
-                <Select
-                  value={formData.urgency}
-                  label="Mức độ khẩn cấp"
-                  onChange={handleChange('urgency')}
-                >
-                  <MenuItem value="high">
-                    <Chip
-                      icon={<Warning />}
-                      label="Khẩn cấp"
-                      color="error"
-                      size="small"
-                      sx={{ mr: 1 }}
-                    />
-                    Cần ngay trong vòng 24h
-                  </MenuItem>
-                  <MenuItem value="medium">
-                    <Chip
-                      icon={<Warning />}
-                      label="Cấp bách"
-                      color="warning"
-                      size="small"
-                      sx={{ mr: 1 }}
-                    />
-                    Cần trong vòng 48h
-                  </MenuItem>
-                  <MenuItem value="low">
-                    <Chip
-                      icon={<Warning />}
-                      label="Bình thường"
-                      color="info"
-                      size="small"
-                      sx={{ mr: 1 }}
-                    />
-                    Cần trong vòng 1 tuần
-                  </MenuItem>
-                </Select>
-                {errors.urgency && (
-                  <FormHelperText>{errors.urgency}</FormHelperText>
-                )}
-              </FormControl>
             </Grid>
 
             <Grid item xs={12}>
@@ -387,38 +339,6 @@ const EmergencyRequest = () => {
                       Số lượng máu
                     </Typography>
                     <Typography>{formData.quantity} đơn vị</Typography>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Mức độ khẩn cấp
-                    </Typography>
-                    <Typography>
-                      {formData.urgency === 'high' && (
-                        <Chip
-                          icon={<Warning />}
-                          label="Khẩn cấp - Cần trong 24h"
-                          color="error"
-                          size="small"
-                        />
-                      )}
-                      {formData.urgency === 'medium' && (
-                        <Chip
-                          icon={<Warning />}
-                          label="Cấp bách - Cần trong 48h"
-                          color="warning"
-                          size="small"
-                        />
-                      )}
-                      {formData.urgency === 'low' && (
-                        <Chip
-                          icon={<Warning />}
-                          label="Bình thường - Cần trong 1 tuần"
-                          color="info"
-                          size="small"
-                        />
-                      )}
-                    </Typography>
                   </Grid>
                 </Grid>
               </CardContent>

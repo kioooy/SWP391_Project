@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -27,129 +27,186 @@ import {
   FilterList,
   Clear,
 } from "@mui/icons-material";
+import { useSelector } from 'react-redux';
 
 const SearchByDistance = () => {
+  const [searchType, setSearchType] = useState("donor");
+  const [latitude, setLatitude] = useState(0);
+  const [longitude, setLongitude] = useState(0);
+  const [radius, setRadius] = useState(10000); // mét
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { user: currentUser, isAuthenticated } = useSelector(state => state.auth);
+  const [hospitalName, setHospitalName] = useState('');
+
+  // Tự động lấy tọa độ bệnh viện nếu Staff/Admin
+  useEffect(() => {
+    if (currentUser?.role === 'Staff' || currentUser?.role === 'Admin') {
+      (async () => {
+        try {
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${apiUrl}/BloodDistanceSearch/hospitals`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error('Không thể lấy thông tin bệnh viện');
+          const [h] = await res.json();
+          console.log("Dữ liệu bệnh viện từ API:", h); // Debug: Kiểm tra đối tượng h
+          if (h) {
+            console.log("Tên bệnh viện:", h.name); // Debug: Kiểm tra h.name
+            console.log("Latitude:", h.latitude); // Debug: Kiểm tra h.latitude
+            console.log("Longitude:", h.longitude); // Debug: Kiểm tra h.longitude
+            setLatitude(h.latitude);
+            setLongitude(h.longitude);
+            setHospitalName(h.name);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      })();
+    }
+  }, [currentUser]);
+
+  // Lấy vị trí hiện tại
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+        },
+        () => {
+          setError("Không thể lấy vị trí hiện tại!");
+        }
+      );
+    } else {
+      setError("Trình duyệt không hỗ trợ lấy vị trí!");
+    }
+  };
+
+  // Gửi request tìm kiếm
+  const handleSearch = async () => {
+    setLoading(true);
+    setError(null);
+    setResults([]);
+    try {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const token = localStorage.getItem('token');
+      let url = '';
+      const radiusInMeters = radius * 1000;
+      if (searchType === 'donor') {
+        url = `${apiUrl}/BloodDistanceSearch/donors-nearby?latitude=${latitude}&longitude=${longitude}&radius=${radiusInMeters}`;
+      } else {
+        url = `${apiUrl}/BloodDistanceSearch/recipients-nearby?latitude=${latitude}&longitude=${longitude}&radius=${radiusInMeters}`;
+      }
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Không thể lấy dữ liệu từ server');
+      const data = await res.json();
+      setResults(data);
+    } catch (err) {
+      setError('Không thể lấy dữ liệu từ server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const [bloodTypeNeeded, setBloodTypeNeeded] = useState("");
   const [bloodCategory, setBloodCategory] = useState("");
   const [province, setProvince] = useState("");
   const [timeNeeded, setTimeNeeded] = useState("");
   const [availability, setAvailability] = useState("");
-  const [searchType, setSearchType] = useState("donor");
 
-  // Dữ liệu mẫu mở rộng
-  const mockData = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      bloodType: "A+",
-      distance: 2.5,
-      lastDonation: "2024-01-15",
-      location: "Quận 1, TP.HCM",
-      phone: "0123456789",
-      email: "nguyenvana@email.com",
-      avatar: "A",
-      category: "máu toàn phần",
-      availability: "Sẵn có",
-      type: "donor",
-      timeAvailable: "trong ngày",
-      province: "TP.HCM",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      bloodType: "O+",
-      distance: 3.8,
-      lastDonation: "2024-02-20",
-      location: "Quận 3, TP.HCM",
-      phone: "0987654321",
-      email: "tranthib@email.com",
-      avatar: "B",
-      category: "tiểu cầu",
-      availability: "Hiếm",
-      type: "donor",
-      timeAvailable: "gấp",
-      province: "TP.HCM",
-    },
-    {
-      id: 3,
-      name: "Bệnh viện Chợ Rẫy",
-      bloodType: "B+",
-      distance: 1.2,
-      urgency: "Khẩn cấp",
-      location: "Quận 5, TP.HCM",
-      phone: "02838554137",
-      email: "contact@choray.vn",
-      avatar: "CR",
-      category: "huyết tương",
-      availability: "Sẵn có",
-      type: "receiver",
-      timeAvailable: "gấp",
-      province: "TP.HCM",
-    },
-    {
-      id: 4,
-      name: "Lê Văn C",
-      bloodType: "AB+",
-      distance: 5.2,
-      lastDonation: "2024-03-10",
-      location: "Quận 7, TP.HCM",
-      phone: "0912345678",
-      email: "levanc@email.com",
-      avatar: "C",
-      category: "máu toàn phần",
-      availability: "Sẵn có",
-      type: "donor",
-      timeAvailable: "lịch hẹn cụ thể",
-      province: "TP.HCM",
-    },
-    {
-      id: 5,
-      name: "Bệnh viện Bạch Mai",
-      bloodType: "O-",
-      distance: 8.5,
-      urgency: "Bình thường",
-      location: "Đống Đa, Hà Nội",
-      phone: "02438691155",
-      email: "contact@bachmai.vn",
-      avatar: "BM",
-      category: "tiểu cầu",
-      availability: "Hiếm",
-      type: "receiver",
-      timeAvailable: "trong ngày",
-      province: "Hà Nội",
-    },
-    {
-      id: 6,
-      name: "Phạm Thị D",
-      bloodType: "A-",
-      distance: 4.1,
-      lastDonation: "2024-01-25",
-      location: "Hai Bà Trưng, Hà Nội",
-      phone: "0934567890",
-      email: "phamthid@email.com",
-      avatar: "D",
-      category: "huyết tương",
-      availability: "Hiếm",
-      type: "donor",
-      timeAvailable: "gấp",
-      province: "Hà Nội",
-    },
-  ];
+  // Hàm lấy vị trí hiện tại và gọi API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      setResults([]);
+      try {
+        // Lấy vị trí hiện tại
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+        const { latitude, longitude } = position.coords;
+        const radius = 10000; // 10km mặc định, có thể cho user chọn
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const token = localStorage.getItem('token');
+        let url = '';
+        if (searchType === 'donor') {
+          url = `${apiUrl}/BloodDistanceSearch/donors-nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
+        } else {
+          url = `${apiUrl}/BloodDistanceSearch/recipients-nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
+        }
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Không thể lấy dữ liệu từ server');
+        const data = await res.json();
+        // Map dữ liệu về format cần thiết (giả lập các trường cần thiết)
+        let mapped = data.map((item, idx) => ({
+          id: item.UserId || idx,
+          name: item.FullName || item.Address || '-',
+          bloodType: item.BloodTypeId || '-',
+          distance: item.Location && item.Location.coordinates ? Number(item.Location.coordinates[0]).toFixed(2) : '-',
+          location: item.Address || '-',
+          phone: item.Phone || '-',
+          email: item.Email || '-',
+          avatar: item.FullName ? item.FullName[0] : '-',
+          category: '-',
+          availability: '-',
+          type: searchType,
+          timeAvailable: '-',
+          province: '-',
+        }));
+        if (mapped.length === 0) {
+          mapped = [{
+            id: '-',
+            name: '-',
+            bloodType: '-',
+            distance: '-',
+            location: '-',
+            phone: '-',
+            email: '-',
+            avatar: '-',
+            category: '-',
+            availability: '-',
+            type: searchType,
+            timeAvailable: '-',
+            province: '-',
+          }];
+        }
+        setResults(mapped);
+      } catch (err) {
+        setError('Không thể lấy vị trí hoặc dữ liệu từ server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line
+  }, [searchType]);
+
+
 
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   const bloodCategories = ["máu toàn phần", "tiểu cầu", "huyết tương"];
   const timeOptions = ["gấp", "trong ngày", "lịch hẹn cụ thể"];
   const availabilityOptions = ["Sẵn có", "Hiếm"];
 
+  // Đã xoá toàn bộ mockData và dữ liệu mẫu
+
   // Hàm lọc dữ liệu
   const filteredResults = useMemo(() => {
-    return mockData.filter((item) => {
-      // Lọc theo loại tìm kiếm (donor/receiver)
-      if (item.type !== searchType) return false;
-
+    return results.filter((item) => {
       // Lọc theo nhóm máu
       if (bloodTypeNeeded && item.bloodType !== bloodTypeNeeded) return false;
-
       // Lọc theo loại máu
       if (bloodCategory && item.category !== bloodCategory) return false;
 
@@ -161,7 +218,7 @@ const SearchByDistance = () => {
       )
         return false;
 
-      // Lọc theo thời gian cần
+      // Lọc theo thởi gian cần
       if (timeNeeded && item.timeAvailable !== timeNeeded) return false;
 
       // Lọc theo tình trạng sẵn có
@@ -170,7 +227,7 @@ const SearchByDistance = () => {
       return true;
     });
   }, [
-    mockData,
+    results,
     searchType,
     bloodTypeNeeded,
     bloodCategory,
@@ -198,307 +255,114 @@ const SearchByDistance = () => {
   ].filter(Boolean).length;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography
-        variant="h4"
-        fontWeight="bold"
-        gutterBottom
-        sx={{ mb: 4, color: "primary.main" }}
-      >
-        Thanh tìm kiếm bộ lọc chính
-      </Typography>
-
-      {/* Bộ lọc tìm kiếm chính */}
-      <Card sx={{ mb: 4 }}>
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Card>
         <CardContent>
-          <Grid container spacing={3}>
-            {/* Loại tìm kiếm */}
-            <Grid item xs={12} md={6}>
+          <Typography variant="h5" align="center" gutterBottom>
+            Tìm kiếm theo khoảng cách
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Loại tìm kiếm</InputLabel>
                 <Select
                   value={searchType}
                   label="Loại tìm kiếm"
-                  onChange={(e) => setSearchType(e.target.value)}
+                  onChange={e => setSearchType(e.target.value)}
                 >
                   <MenuItem value="donor">Tìm người hiến máu</MenuItem>
-                  <MenuItem value="receiver">Tìm người cần máu</MenuItem>
+                  <MenuItem value="recipient">Tìm người nhận máu</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-
-            {/* Nhóm máu cần tìm */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Nhóm máu cần tìm</InputLabel>
-                <Select
-                  value={bloodTypeNeeded}
-                  label="Nhóm máu cần tìm"
-                  onChange={(e) => setBloodTypeNeeded(e.target.value)}
-                >
-                  <MenuItem value="">Tất cả</MenuItem>
-                  {bloodTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Loại máu cần */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Loại máu cần</InputLabel>
-                <Select
-                  value={bloodCategory}
-                  label="Loại máu cần"
-                  onChange={(e) => setBloodCategory(e.target.value)}
-                >
-                  <MenuItem value="">Tất cả</MenuItem>
-                  {bloodCategories.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Tỉnh/thành phố hoặc bệnh viện cụ thể */}
-            <Grid item xs={12} md={6}>
+            {(currentUser?.role === 'Staff' || currentUser?.role === 'Admin') && hospitalName ? (
+              <Grid item xs={12}>
+                <Typography>
+                  Địa điểm: <b>{hospitalName}</b> ({latitude?.toFixed(6)}, {longitude?.toFixed(6)})
+                </Typography>
+              </Grid>
+            ) : (
+              <>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label="Vĩ độ (latitude)"
+                    value={latitude}
+                    onChange={e => setLatitude(e.target.value)}
+                    fullWidth
+                    type="number"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label="Kinh độ (longitude)"
+                    value={longitude}
+                    onChange={e => setLongitude(e.target.value)}
+                    fullWidth
+                    type="number"
+                  />
+                </Grid>
+              </>
+            )}
+            <Grid item xs={12} sm={4}>
               <TextField
+                label="Bán kính tìm kiếm (km)"
+                type="number"
+                value={radius}
+                onChange={e => setRadius(Number(e.target.value))}
                 fullWidth
-                label="Tỉnh/thành phố hoặc bệnh viện cụ thể"
-                value={province}
-                onChange={(e) => setProvince(e.target.value)}
-                placeholder="Nhập tên tỉnh/thành phố hoặc bệnh viện..."
-                variant="outlined"
+                inputProps={{ min: 0, max: 100, step: 0.1 }}
+                helperText="Nhập số thập phân theo định dạng hệ thống, ví dụ: 0,5 hoặc 0.5 tuỳ máy."
               />
             </Grid>
-
-            {/* Thời gian cần */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Thời gian cần</InputLabel>
-                <Select
-                  value={timeNeeded}
-                  label="Thời gian cần"
-                  onChange={(e) => setTimeNeeded(e.target.value)}
-                >
-                  <MenuItem value="">Tất cả</MenuItem>
-                  {timeOptions.map((time) => (
-                    <MenuItem key={time} value={time}>
-                      {time}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Tình trạng sẵn có hoặc hiếm */}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Tình trạng sẵn có hoặc hiếm</InputLabel>
-                <Select
-                  value={availability}
-                  label="Tình trạng sẵn có hoặc hiếm"
-                  onChange={(e) => setAvailability(e.target.value)}
-                >
-                  <MenuItem value="">Tất cả</MenuItem>
-                  {availabilityOptions.map((avail) => (
-                    <MenuItem key={avail} value={avail}>
-                      {avail}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Nút điều khiển */}
             <Grid item xs={12}>
-              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<FilterList />}
-                  size="large"
-                  sx={{ flex: 1 }}
-                >
-                  Áp dụng bộ lọc ({activeFiltersCount})
+              {!(currentUser?.role === 'Staff' || currentUser?.role === 'Admin') && (
+                <Button onClick={handleGetLocation} variant="outlined" sx={{ mr: 2 }}>
+                  Lấy vị trí hiện tại
                 </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<Clear />}
-                  size="large"
-                  onClick={clearAllFilters}
-                  disabled={activeFiltersCount === 0}
-                >
-                  Xóa tất cả
-                </Button>
-              </Stack>
+              )}
+              <Button onClick={handleSearch} variant="contained">
+                Tìm kiếm
+              </Button>
             </Grid>
           </Grid>
         </CardContent>
       </Card>
-
-      {/* Thông tin bộ lọc hiện tại */}
-      {activeFiltersCount > 0 && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            Đang áp dụng {activeFiltersCount} bộ lọc:
-            {bloodTypeNeeded && ` Nhóm máu: ${bloodTypeNeeded}`}
-            {bloodCategory && ` | Loại máu: ${bloodCategory}`}
-            {province && ` | Tỉnh/TP: ${province}`}
-            {timeNeeded && ` | Thời gian: ${timeNeeded}`}
-            {availability && ` | Tình trạng: ${availability}`}
-          </Typography>
-        </Alert>
-      )}
-
-      {/* Kết quả tìm kiếm */}
-      <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
-        Kết quả tìm kiếm ({filteredResults.length} kết quả)
-      </Typography>
-
-      {filteredResults.length === 0 ? (
-        <Card>
-          <CardContent sx={{ textAlign: "center", py: 6 }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Không tìm thấy kết quả phù hợp
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Hãy thử điều chỉnh bộ lọc để tìm kiếm với tiêu chí khác
-            </Typography>
-            <Button variant="outlined" onClick={clearAllFilters}>
-              Xóa tất cả bộ lọc
-            </Button>
+      {loading && <Typography align="center" sx={{ mt: 2 }}>Đang tải dữ liệu...</Typography>}
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+      {results.length > 0 ? (
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>Kết quả:</Typography>
+            <Grid container spacing={2}>
+              {filteredResults.map((item, idx) => (
+                <Grid item xs={12} key={idx}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="subtitle1"><b>UserId:</b> {item.userId}</Typography>
+                      <Typography variant="body2"><b>Địa chỉ:</b> {item.address}</Typography>
+                      <Typography variant="body2"><b>Location:</b> {JSON.stringify(item.Location)}</Typography>
+                      <Typography variant="body2"><b>BloodTypeId:</b> {item.bloodTypeId}</Typography>
+                      <Typography variant="body2"><b>Cân nặng:</b> {item.weight}</Typography>
+                      <Typography variant="body2"><b>Chiều cao:</b> {item.height}</Typography>
+                      <Typography variant="body2"><b>Khoảng cách:</b> {item.distance < 1000 ? `${Math.round(item.distance)} mét` : `${(item.distance/1000).toFixed(2)} km`}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={3}>
-          {filteredResults.map((item) => (
-            <Grid item xs={12} key={item.id}>
-              <Card>
-                <CardContent>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item>
-                      <Avatar
-                        sx={{
-                          bgcolor:
-                            item.availability === "Hiếm"
-                              ? "error.main"
-                              : "primary.main",
-                          width: 56,
-                          height: 56,
-                        }}
-                      >
-                        {item.avatar}
-                      </Avatar>
-                    </Grid>
-
-                    <Grid item xs>
-                      <Typography variant="h6" gutterBottom>
-                        {item.name}
-                      </Typography>
-
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{ mb: 1, flexWrap: "wrap", gap: 1 }}
-                      >
-                        <Chip
-                          icon={<Bloodtype />}
-                          label={`Nhóm máu ${item.bloodType}`}
-                          color="error"
-                          size="small"
-                        />
-                        <Chip label={item.category} color="info" size="small" />
-                        <Chip
-                          icon={<LocationOn />}
-                          label={`${item.distance} km`}
-                          color="primary"
-                          size="small"
-                        />
-                        <Chip
-                          label={item.availability}
-                          color={
-                            item.availability === "Hiếm" ? "error" : "success"
-                          }
-                          size="small"
-                        />
-                        <Chip
-                          label={item.timeAvailable}
-                          color="warning"
-                          size="small"
-                        />
-                      </Stack>
-
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        gutterBottom
-                      >
-                        <LocationOn
-                          sx={{
-                            fontSize: 16,
-                            verticalAlign: "middle",
-                            mr: 0.5,
-                          }}
-                        />
-                        {item.location}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        gutterBottom
-                      >
-                        <Phone
-                          sx={{
-                            fontSize: 16,
-                            verticalAlign: "middle",
-                            mr: 0.5,
-                          }}
-                        />
-                        {item.phone}
-                      </Typography>
-
-                      <Typography variant="body2" color="text.secondary">
-                        <Email
-                          sx={{
-                            fontSize: 16,
-                            verticalAlign: "middle",
-                            mr: 0.5,
-                          }}
-                        />
-                        {item.email}
-                      </Typography>
-
-                      {item.lastDonation && (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mt: 1 }}
-                        >
-                          Lần hiến máu gần nhất: {item.lastDonation}
-                        </Typography>
-                      )}
-                    </Grid>
-
-                    <Grid item>
-                      <IconButton color="primary" size="large">
-                        <Directions />
-                      </IconButton>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Typography align="center" color="text.secondary">
+              Không tìm thấy kết quả phù hợp
+            </Typography>
+          </CardContent>
+        </Card>
       )}
     </Container>
   );
-};
+}
 
 export default SearchByDistance;

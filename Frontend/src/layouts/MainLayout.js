@@ -199,28 +199,43 @@ const MainLayout = () => {
     { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
   ];
 
-  // Menu items cho người dùng đã đăng nhập
-
+  // Xác định menu items dựa trên vai trò người dùng
   if (isAuthenticated || isTestUser) {
-    if (isStaff) {
-      // Menu items cho nhân viên
+    // Nếu là nhân viên hoặc admin
+    if (isStaff || (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff'))) {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
       ];
+      
+      // Nếu là Admin thì thêm menu quản lý bệnh viện
+      if (currentUser?.role === 'Admin') {
+        menuItems.push(
+          { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> }
+        );
+      }
     } else {
-      // Menu items cho người dùng thường và tài khoản test
+      // Menu cho người dùng thường
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
         { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-        { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+        // { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> }, // Ẩn với member
+        ...(currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff') ? [{ path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> }] : []),
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
         { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
       ];
     }
+  } else {
+    // Menu cho người dùng chưa đăng nhập
+    menuItems = [
+      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+      { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+    ];
   }
 
   return (

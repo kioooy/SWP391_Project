@@ -155,7 +155,6 @@ const UserProfile = () => {
     fetchUserProfile();
   }, []);
 
-
   // Load lịch hẹn từ localStorage
   useEffect(() => {
     const loadAppointments = () => {
@@ -303,9 +302,10 @@ const UserProfile = () => {
 
       // Gửi vị trí lên server
       const token = localStorage.getItem('token');
-      if (token) {
+      // Lấy userId từ Redux store (user?.userId)
+      if (token && user?.userId) {
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        await axios.put(`${apiUrl}/User/update-location`, {
+        await axios.put(`${apiUrl}/User/${user?.userId}/location`, {
           latitude,
           longitude
         }, {
@@ -508,7 +508,9 @@ const UserProfile = () => {
                   <LocationOn sx={{ verticalAlign: 'middle', mr: 0.5 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
-                {user?.role?.toLowerCase() === 'member' && (
+
+                {user?.role && user.role.toString().toLowerCase() === 'member' && (
+
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Cập nhật vị trí của bạn để giúp những người cần máu có thể tìm thấy bạn dễ dàng hơn.

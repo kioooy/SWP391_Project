@@ -30,13 +30,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { error, loading } = useSelector((state) => state.auth);
-  const [showLocationAlert, setShowLocationAlert] = useState(false); // State để quản lý Alert
-
-  // Hàm xử lý test login
-  const handleTestLogin = () => {
-    dispatch(createTestAccount());
-    navigate('/');
-  };
+  const [showLocationAlert, setShowLocationAlert] = React.useState(false); // State để quản lý Alert
 
   const formik = useFormik({
     initialValues: {
@@ -197,16 +191,19 @@ const Login = () => {
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
         </Button>
 
-        {/* Nút test login cho development */}
+        {/* Nút đăng nhập member nhanh */}
         <Button
-          type="button"
           fullWidth
           variant="outlined"
           color="secondary"
           sx={{ mb: 2 }}
-          onClick={handleTestLogin}
+          onClick={() => {
+            dispatch(createTestAccount());
+            localStorage.setItem('isTestUser', 'true');
+            navigate('/');
+          }}
         >
-          Test Login (Development)
+          Đăng nhập Member (tài khoản mẫu)
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>

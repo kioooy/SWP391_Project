@@ -52,19 +52,30 @@ const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hi�
 // ];
 
 const cities = [
-  'Hồ Chí Minh',
-  'Hà Nội',
-  'Đà Nẵng',
-  'Cần Thơ',
-  'Hải Phòng',
+  'An Giang', 'Bà Rịa - Vũng Tàu', 'Bắc Giang', 'Bắc Kạn', 'Bạc Liêu', 'Bắc Ninh',
+  'Bến Tre', 'Bình Định', 'Bình Dương', 'Bình Phước', 'Bình Thuận', 'Cà Mau',
+  'Cần Thơ', 'Cao Bằng', 'Đà Nẵng', 'Đắk Lắk', 'Đắk Nông', 'Điện Biên',
+  'Đồng Nai', 'Đồng Tháp', 'Gia Lai', 'Hà Giang', 'Hà Nam', 'Hà Nội',
+  'Hà Tĩnh', 'Hải Dương', 'Hải Phòng', 'Hậu Giang', 'Hòa Bình', 'Hưng Yên',
+  'Khánh Hòa', 'Kiên Giang', 'Kon Tum', 'Lai Châu', 'Lâm Đồng', 'Lạng Sơn',
+  'Lào Cai', 'Long An', 'Nam Định', 'Nghệ An', 'Ninh Bình', 'Ninh Thuận',
+  'Phú Thọ', 'Phú Yên', 'Quảng Bình', 'Quảng Nam', 'Quảng Ngãi', 'Quảng Ninh',
+  'Quảng Trị', 'Sóc Trăng', 'Sơn La', 'Tây Ninh', 'Thái Bình', 'Thái Nguyên',
+  'Thanh Hóa', 'Thừa Thiên Huế', 'Tiền Giang', 'TP Hồ Chí Minh', 'Trà Vinh',
+  'Tuyên Quang', 'Vĩnh Long', 'Vĩnh Phúc', 'Yên Bái'
 ];
 
 const districts = {
-  'Hồ Chí Minh': ['Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp', 'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Quận Thủ Đức'],
-  'Hà Nội': ['Hoàn Kiếm', 'Ba Đình', 'Đống Đa', 'Hai Bà Trưng', 'Hoàng Mai', 'Thanh Xuân', 'Cầu Giấy', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Tây Hồ', 'Long Biên', 'Hà Đông'],
-  'Đà Nẵng': ['Hải Châu', 'Cẩm Lệ', 'Ngũ Hành Sơn', 'Sơn Trà', 'Liên Chiểu', 'Thanh Khê'],
-  'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn', 'Thốt Nốt'],
-  'Hải Phòng': ['Hồng Bàng', 'Ngô Quyền', 'Lê Chân', 'Hải An', 'Kiến An', 'Đồ Sơn'],
+  'TP Hồ Chí Minh': ['Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10', 'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp', 'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú', 'Quận Thủ Đức', 'Huyện Bình Chánh', 'Huyện Củ Chi', 'Huyện Hóc Môn', 'Huyện Nhà Bè'],
+  'Hà Nội': ['Ba Đình', 'Hoàn Kiếm', 'Đống Đa', 'Hai Bà Trưng', 'Hoàng Mai', 'Thanh Xuân', 'Cầu Giấy', 'Nam Từ Liêm', 'Bắc Từ Liêm', 'Tây Hồ', 'Long Biên', 'Hà Đông', 'Sơn Tây', 'Chương Mỹ', 'Đan Phượng', 'Đông Anh', 'Gia Lâm', 'Hoài Đức', 'Mê Linh', 'Mỹ Đức', 'Phú Xuyên', 'Phúc Thọ', 'Quốc Oai', 'Sóc Sơn', 'Thạch Thất', 'Thanh Oai', 'Thanh Trì', 'Thường Tín', 'Ứng Hòa'],
+  'Đà Nẵng': ['Hải Châu', 'Cẩm Lệ', 'Ngũ Hành Sơn', 'Sơn Trà', 'Liên Chiểu', 'Thanh Khê', 'Hòa Vang', 'Hoàng Sa'],
+  'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn', 'Thốt Nốt', 'Phong Điền', 'Cờ Đỏ', 'Vĩnh Thạnh', 'Thới Lai'],
+  'Hải Phòng': ['Hồng Bàng', 'Ngô Quyền', 'Lê Chân', 'Hải An', 'Kiến An', 'Đồ Sơn', 'Dương Kinh', 'An Dương', 'An Lão', 'Kiến Thụy', 'Thủy Nguyên', 'Tiên Lãng', 'Vĩnh Bảo', 'Cát Hải', 'Bạch Long Vĩ'],
+  'An Giang': ['Thành phố Long Xuyên', 'Thành phố Châu Đốc', 'Huyện An Phú', 'Huyện Châu Phú', 'Huyện Châu Thành', 'Huyện Chợ Mới', 'Huyện Phú Tân', 'Huyện Thoại Sơn', 'Huyện Tịnh Biên', 'Huyện Tri Tôn'],
+  'Bình Dương': ['Thành phố Thủ Dầu Một', 'Thị xã Bến Cát', 'Thị xã Tân Uyên', 'Huyện Bắc Tân Uyên', 'Huyện Bàu Bàng', 'Huyện Dầu Tiếng', 'Huyện Phú Giáo', 'Thị xã Dĩ An', 'Thị xã Thuận An'],
+  'Đồng Nai': ['Thành phố Biên Hòa', 'Thành phố Long Khánh', 'Huyện Cẩm Mỹ', 'Huyện Định Quán', 'Huyện Long Thành', 'Huyện Nhơn Trạch', 'Huyện Tân Phú', 'Huyện Thống Nhất', 'Huyện Trảng Bom', 'Huyện Vĩnh Cửu', 'Huyện Xuân Lộc'],
+  'Nghệ An': ['Thành phố Vinh', 'Thị xã Cửa Lò', 'Thị xã Thái Hòa', 'Huyện Anh Sơn', 'Huyện Con Cuông', 'Huyện Diễn Châu', 'Huyện Đô Lương', 'Huyện Hưng Nguyên', 'Huyện Kỳ Sơn', 'Huyện Nam Đàn', 'Huyện Nghi Lộc', 'Huyện Nghĩa Đàn', 'Huyện Quế Phong', 'Huyện Quỳ Châu', 'Huyện Quỳ Hợp', 'Huyện Quỳnh Lưu', 'Huyện Tân Kỳ', 'Huyện Thanh Chương', 'Huyện Tương Dương', 'Huyện Yên Thành'],
+  'Thanh Hóa': ['Thành phố Thanh Hóa', 'Thị xã Bỉm Sơn', 'Thị xã Sầm Sơn', 'Huyện Bá Thước', 'Huyện Cẩm Thủy', 'Huyện Đông Sơn', 'Huyện Hà Trung', 'Huyện Hậu Lộc', 'Huyện Hoằng Hóa', 'Huyện Lang Chánh', 'Huyện Mường Lát', 'Huyện Nga Sơn', 'Huyện Ngọc Lặc', 'Huyện Như Thanh', 'Huyện Như Xuân', 'Huyện Nông Cống', 'Huyện Quan Hóa', 'Huyện Quan Sơn', 'Huyện Quảng Xương', 'Huyện Thạch Thành', 'Huyện Thiệu Hóa', 'Huyện Thọ Xuân', 'Huyện Thường Xuân', 'Huyện Tĩnh Gia', 'Huyện Triệu Sơn', 'Huyện Vĩnh Lộc', 'Huyện Yên Định'],
 };
 
 const occupations = [
@@ -80,6 +91,17 @@ const occupations = [
   'Lao động tự do',
   'Nghỉ hưu',
   'Khác',
+];
+
+const bloodTypes = [
+  { id: 1, label: 'A+' },
+  { id: 2, label: 'A-' },
+  { id: 3, label: 'B+' },
+  { id: 4, label: 'B-' },
+  { id: 5, label: 'AB+' },
+  { id: 6, label: 'AB-' },
+  { id: 7, label: 'O+' },
+  { id: 8, label: 'O-' },
 ];
 
 const getValidationSchema = (activeStep) => {
@@ -115,18 +137,21 @@ const getValidationSchema = (activeStep) => {
 
   if (activeStep >= 2) {
     baseSchema.mobilePhone = Yup.string()
-      .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
+      .matches(/^0[3|5|7|8|9][0-9]{8}$/, 'Số điện thoại di động phải đúng định dạng Việt Nam (10 số, bắt đầu bằng 03, 05, 07, 08, 09)')
       .required('Vui lòng nhập số điện thoại di động');
     baseSchema.email = Yup.string()
       .email('Email không đúng định dạng')
       .required('Vui lòng nhập email');
     baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
     baseSchema.weight = Yup.number()
+      .typeError('Vui lòng nhập cân nặng')
       .positive('Cân nặng phải là số dương')
       .required('Vui lòng nhập cân nặng');
     baseSchema.height = Yup.number()
-      .positive('Chiều cao phải là số dương') 
+      .typeError('Vui lòng nhập chiều cao')
+      .positive('Chiều cao phải là số dương')
       .required('Vui lòng nhập chiều cao');
+    baseSchema.bloodTypeId = Yup.string().required('Vui lòng chọn nhóm máu');
   }
 
   if (activeStep >= 3) {
@@ -154,6 +179,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const currentStepRef = React.useRef(0);
+  const [otherOccupation, setOtherOccupation] = useState('');
 
   // Update ref when activeStep changes
   React.useEffect(() => {
@@ -177,6 +203,7 @@ const Signup = () => {
       occupation: '',
       password: '',
       confirmPassword: '',
+      bloodTypeId: '',
     },
     validate: (values) => {
       try {
@@ -561,7 +588,11 @@ const Signup = () => {
                   label="Điện thoại di động (*)"
                   placeholder="VD: 0909090909"
                   value={formik.values.mobilePhone}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, loại bỏ ký tự không phải số
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '');
+                    formik.setFieldValue('mobilePhone', onlyNums);
+                  }}
                   error={formik.touched.mobilePhone && Boolean(formik.errors.mobilePhone)}
                   helperText={formik.touched.mobilePhone && formik.errors.mobilePhone}
                   inputProps={{ maxLength: 10 }}
@@ -592,11 +623,14 @@ const Signup = () => {
               {/* Nghề nghiệp */}
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Nghề nghiệp (*)</InputLabel>
+                  <InputLabel shrink>Nghề nghiệp (*)</InputLabel>
                   <Select
                     name="occupation"
                     value={formik.values.occupation}
-                    onChange={formik.handleChange}
+                    onChange={e => {
+                      formik.handleChange(e);
+                      if (e.target.value !== 'Khác') setOtherOccupation('');
+                    }}
                     error={formik.touched.occupation && Boolean(formik.errors.occupation)}
                   >
                     {occupations.map((occupation) => (
@@ -612,6 +646,22 @@ const Signup = () => {
                   )}
                 </FormControl>
               </Grid>
+              {/* Nếu chọn Khác thì hiện ô nhập nghề nghiệp */}
+              {formik.values.occupation === 'Khác' && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    name="otherOccupation"
+                    label="Nhập nghề nghiệp khác"
+                    value={otherOccupation}
+                    onChange={e => {
+                      setOtherOccupation(e.target.value);
+                      formik.setFieldValue('occupation', e.target.value);
+                    }}
+                    required
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
@@ -623,14 +673,18 @@ const Signup = () => {
                 <TextField
                   fullWidth
                   name="weight"
-                  type="number"
-                  label="Cân nặng (*)"
+                  type="text"
+                  label="Cân nặng (kg) (*)"
                   placeholder="Vui lòng nhập cân nặng"
                   value={formik.values.weight}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, tối đa 3 ký tự
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                    formik.setFieldValue('weight', onlyNums);
+                  }}
                   error={formik.touched.weight && Boolean(formik.errors.weight)}
                   helperText={formik.touched.weight && formik.errors.weight}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ maxLength: 3, inputMode: 'numeric', pattern: '[0-9]*', style: { MozAppearance: 'textfield' } }}
                 />
               </Grid>
 
@@ -644,15 +698,41 @@ const Signup = () => {
                 <TextField
                   fullWidth
                   name="height"
-                  label="Chiều cao (*)"
+                  label="Chiều cao (cm) (*)"
                   placeholder="Vui lòng nhập chiều cao"
-                  type="number"
+                  type="text"
                   value={formik.values.height}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, tối đa 3 ký tự
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                    formik.setFieldValue('height', onlyNums);
+                  }}
                   error={formik.touched.height && Boolean(formik.errors.height)}
                   helperText={formik.touched.height && formik.errors.height}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ maxLength: 3, inputMode: 'numeric', pattern: '[0-9]*', style: { MozAppearance: 'textfield' } }}
                 />
+              </Grid>
+
+              {/* Nhóm máu */}
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Nhóm máu (*)</InputLabel>
+                  <Select
+                    name="bloodTypeId"
+                    value={formik.values.bloodTypeId}
+                    onChange={formik.handleChange}
+                    error={formik.touched.bloodTypeId && Boolean(formik.errors.bloodTypeId)}
+                  >
+                    {bloodTypes.map((type) => (
+                      <MenuItem key={type.id} value={type.id}>{type.label}</MenuItem>
+                    ))}
+                  </Select>
+                  {formik.touched.bloodTypeId && formik.errors.bloodTypeId && (
+                    <Typography variant="caption" color="error">
+                      {formik.errors.bloodTypeId}
+                    </Typography>
+                  )}
+                </FormControl>
               </Grid>
             </Grid>
 

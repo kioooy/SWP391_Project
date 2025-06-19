@@ -137,17 +137,19 @@ const getValidationSchema = (activeStep) => {
 
   if (activeStep >= 2) {
     baseSchema.mobilePhone = Yup.string()
-      .matches(/^[0-9]{10}$/, 'Số điện thoại di động phải có 10 chữ số')
+      .matches(/^0[3|5|7|8|9][0-9]{8}$/, 'Số điện thoại di động phải đúng định dạng Việt Nam (10 số, bắt đầu bằng 03, 05, 07, 08, 09)')
       .required('Vui lòng nhập số điện thoại di động');
     baseSchema.email = Yup.string()
       .email('Email không đúng định dạng')
       .required('Vui lòng nhập email');
     baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
     baseSchema.weight = Yup.number()
+      .typeError('Vui lòng nhập cân nặng')
       .positive('Cân nặng phải là số dương')
       .required('Vui lòng nhập cân nặng');
     baseSchema.height = Yup.number()
-      .positive('Chiều cao phải là số dương') 
+      .typeError('Vui lòng nhập chiều cao')
+      .positive('Chiều cao phải là số dương')
       .required('Vui lòng nhập chiều cao');
     baseSchema.bloodTypeId = Yup.string().required('Vui lòng chọn nhóm máu');
   }
@@ -177,6 +179,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const currentStepRef = React.useRef(0);
+  const [otherOccupation, setOtherOccupation] = useState('');
 
   // Update ref when activeStep changes
   React.useEffect(() => {
@@ -585,7 +588,11 @@ const Signup = () => {
                   label="Điện thoại di động (*)"
                   placeholder="VD: 0909090909"
                   value={formik.values.mobilePhone}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, loại bỏ ký tự không phải số
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '');
+                    formik.setFieldValue('mobilePhone', onlyNums);
+                  }}
                   error={formik.touched.mobilePhone && Boolean(formik.errors.mobilePhone)}
                   helperText={formik.touched.mobilePhone && formik.errors.mobilePhone}
                   inputProps={{ maxLength: 10 }}
@@ -616,11 +623,14 @@ const Signup = () => {
               {/* Nghề nghiệp */}
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Nghề nghiệp (*)</InputLabel>
+                  <InputLabel shrink>Nghề nghiệp (*)</InputLabel>
                   <Select
                     name="occupation"
                     value={formik.values.occupation}
-                    onChange={formik.handleChange}
+                    onChange={e => {
+                      formik.handleChange(e);
+                      if (e.target.value !== 'Khác') setOtherOccupation('');
+                    }}
                     error={formik.touched.occupation && Boolean(formik.errors.occupation)}
                   >
                     {occupations.map((occupation) => (
@@ -636,6 +646,22 @@ const Signup = () => {
                   )}
                 </FormControl>
               </Grid>
+              {/* Nếu chọn Khác thì hiện ô nhập nghề nghiệp */}
+              {formik.values.occupation === 'Khác' && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    name="otherOccupation"
+                    label="Nhập nghề nghiệp khác"
+                    value={otherOccupation}
+                    onChange={e => {
+                      setOtherOccupation(e.target.value);
+                      formik.setFieldValue('occupation', e.target.value);
+                    }}
+                    required
+                  />
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
@@ -647,14 +673,18 @@ const Signup = () => {
                 <TextField
                   fullWidth
                   name="weight"
-                  type="number"
-                  label="Cân nặng (*)"
+                  type="text"
+                  label="Cân nặng (kg) (*)"
                   placeholder="Vui lòng nhập cân nặng"
                   value={formik.values.weight}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, tối đa 3 ký tự
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                    formik.setFieldValue('weight', onlyNums);
+                  }}
                   error={formik.touched.weight && Boolean(formik.errors.weight)}
                   helperText={formik.touched.weight && formik.errors.weight}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ maxLength: 3, inputMode: 'numeric', pattern: '[0-9]*', style: { MozAppearance: 'textfield' } }}
                 />
               </Grid>
 
@@ -668,14 +698,18 @@ const Signup = () => {
                 <TextField
                   fullWidth
                   name="height"
-                  label="Chiều cao (*)"
+                  label="Chiều cao (cm) (*)"
                   placeholder="Vui lòng nhập chiều cao"
-                  type="number"
+                  type="text"
                   value={formik.values.height}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, tối đa 3 ký tự
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                    formik.setFieldValue('height', onlyNums);
+                  }}
                   error={formik.touched.height && Boolean(formik.errors.height)}
                   helperText={formik.touched.height && formik.errors.height}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ maxLength: 3, inputMode: 'numeric', pattern: '[0-9]*', style: { MozAppearance: 'textfield' } }}
                 />
               </Grid>
 

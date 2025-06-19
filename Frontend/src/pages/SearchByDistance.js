@@ -339,12 +339,14 @@ const SearchByDistance = () => {
                   <Card variant="outlined">
                     <CardContent>
                       <Typography variant="subtitle1"><b>UserId:</b> {item.userId}</Typography>
-                      <Typography variant="body2"><b>Địa chỉ:</b> {item.address}</Typography>
-                      <Typography variant="body2"><b>Location:</b> {JSON.stringify(item.Location)}</Typography>
-                      <Typography variant="body2"><b>BloodTypeId:</b> {item.bloodTypeId}</Typography>
-                      <Typography variant="body2"><b>Cân nặng:</b> {item.weight}</Typography>
-                      <Typography variant="body2"><b>Chiều cao:</b> {item.height}</Typography>
-                      <Typography variant="body2"><b>Khoảng cách:</b> {item.distance < 1000 ? `${Math.round(item.distance)} mét` : `${(item.distance/1000).toFixed(2)} km`}</Typography>
+<Typography variant="body2"><b>Họ tên:</b> {item.fullName}</Typography>
+<Typography variant="body2"><b>SĐT:</b> {item.phone}</Typography>
+<Typography variant="body2"><b>Email:</b> {item.email}</Typography>
+<Typography variant="body2"><b>Nhóm máu:</b> {item.bloodType}</Typography>
+<Typography variant="body2"><b>Địa chỉ:</b> {item.address}</Typography>
+<Typography variant="body2"><b>Cân nặng:</b> {item.weight}</Typography>
+<Typography variant="body2"><b>Chiều cao:</b> {item.height}</Typography>
+<Typography variant="body2"><b>Khoảng cách:</b> {item.distance < 1000 ? `${Math.round(item.distance)} mét` : `${(item.distance/1000).toFixed(2)} km`}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>

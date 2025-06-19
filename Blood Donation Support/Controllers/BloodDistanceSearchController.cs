@@ -36,13 +36,18 @@ namespace Blood_Donation_Support.Controllers
             var center = new Point(longitude, latitude) { SRID = 4326 };
             var donors = await _context.Members
                 .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius)
+                .Include(m => m.User)
+                .Include(m => m.BloodType)
                 .Select(m => new {
                     m.UserId,
-                    m.Address,
+                    FullName = m.User.FullName,
+                    Phone = m.User.PhoneNumber,
+                    Email = m.User.Email,
+                    BloodType = m.BloodType.BloodTypeName,
+                    Address = m.User.Address,
                     Latitude = m.Location.Y,
                     Longitude = m.Location.X,
                     Distance = m.Location.Distance(center),
-                    m.BloodTypeId,
                     m.Weight,
                     m.Height
                 })
@@ -66,13 +71,18 @@ namespace Blood_Donation_Support.Controllers
             var center = new Point(longitude, latitude) { SRID = 4326 };
             var recipients = await _context.Members
                 .Where(m => m.IsRecipient == true && m.Location != null && m.Location.Distance(center) <= radius)
+                .Include(m => m.User)
+                .Include(m => m.BloodType)
                 .Select(m => new {
                     m.UserId,
-                    m.Address,
+                    FullName = m.User.FullName,
+                    Phone = m.User.PhoneNumber,
+                    Email = m.User.Email,
+                    BloodType = m.BloodType.BloodTypeName,
+                    Address = m.User.Address,
                     Latitude = m.Location.Y,
                     Longitude = m.Location.X,
                     Distance = m.Location.Distance(center),
-                    m.BloodTypeId,
                     m.Weight,
                     m.Height
                 })

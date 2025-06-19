@@ -622,6 +622,82 @@
         }
       }
     },
+    "/api/BloodDistanceSearch/donors-nearby": {
+      "get": {
+        "tags": [
+          "BloodDistanceSearch"
+        ],
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "radius",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodDistanceSearch/recipients-nearby": {
+      "get": {
+        "tags": [
+          "BloodDistanceSearch"
+        ],
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "radius",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BloodDonationPeriod": {
       "post": {
         "tags": [
@@ -791,6 +867,206 @@
         }
       }
     },
+    "/api/BloodInventory/available": {
+      "get": {
+        "tags": [
+          "BloodInventory"
+        ],
+        "parameters": [
+          {
+            "name": "recipientBloodType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "component",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableBloodDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableBloodDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableBloodDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/BloodUnit": {
+      "get": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitAdd"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitAdd"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodUnit/{id}": {
+      "get": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitUpdate"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitUpdate"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodUnit/{id}/discard": {
+      "patch": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitDelete"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitDelete"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BloodUnitDelete"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/DonationRequest/{id}": {
       "get": {
         "tags": [
@@ -935,6 +1211,132 @@
         "responses": {
           "200": {
             "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Reservations": {
+      "post": {
+        "tags": [
+          "Reservations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReservationDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReservationDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReservationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Reservations/{id}": {
+      "patch": {
+        "tags": [
+          "Reservations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Reservations/active": {
+      "get": {
+        "tags": [
+          "Reservations"
+        ],
+        "parameters": [
+          {
+            "name": "transfusionId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationDto"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1168,6 +1570,27 @@
       }
     },
     "/api/User/{id}": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
       "patch": {
         "tags": [
           "User"
@@ -1394,6 +1817,24 @@
         },
         "additionalProperties": false
       },
+      "AvailableBloodDto": {
+        "type": "object",
+        "properties": {
+          "bloodType": {
+            "type": "string",
+            "nullable": true
+          },
+          "units": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalVolume": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "BlogCreateDTO": {
         "type": "object",
         "properties": {
@@ -1497,6 +1938,84 @@
         },
         "additionalProperties": false
       },
+      "BloodUnitAdd": {
+        "required": [
+          "bloodStatus",
+          "bloodTypeId",
+          "componentId",
+          "volume"
+        ],
+        "type": "object",
+        "properties": {
+          "bloodTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "addDate": {
+            "$ref": "#/components/schemas/DateOnly"
+          },
+          "volume": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bloodStatus": {
+            "maxLength": 15,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BloodUnitDelete": {
+        "required": [
+          "bloodStatus"
+        ],
+        "type": "object",
+        "properties": {
+          "bloodStatus": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BloodUnitUpdate": {
+        "required": [
+          "addDate",
+          "bloodStatus",
+          "bloodTypeId",
+          "componentId",
+          "volume"
+        ],
+        "type": "object",
+        "properties": {
+          "bloodTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "addDate": {
+            "$ref": "#/components/schemas/DateOnly"
+          },
+          "volume": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bloodStatus": {
+            "maxLength": 15,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateBloodDonationPeriodDTO": {
         "required": [
           "location",
@@ -1542,23 +2061,40 @@
         },
         "additionalProperties": false
       },
+      "CreateReservationDto": {
+        "required": [
+          "bloodUnitId",
+          "expireAt",
+          "transfusionId"
+        ],
+        "type": "object",
+        "properties": {
+          "bloodUnitId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transfusionId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateUser": {
         "required": [
           "address",
-          "bloodTypeId",
           "citizenNumber",
           "dateOfBirth",
           "email",
           "fullName",
-          "height",
-          "isDonor",
-          "isRecipient",
           "passwordHash",
           "phoneNumber",
           "roleId",
-          "sex",
-          "updatedAt",
-          "weight"
+          "sex"
         ],
         "type": "object",
         "properties": {
@@ -1603,21 +2139,20 @@
             "type": "integer",
             "format": "int32"
           },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
           "bloodTypeId": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "weight": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "height": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "isDonor": {
             "type": "boolean"
@@ -1825,6 +2360,36 @@
         },
         "additionalProperties": false
       },
+      "ReservationDto": {
+        "type": "object",
+        "properties": {
+          "reservationId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bloodUnitId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transfusionId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reservedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "RoleDTO": {
         "type": "object",
         "properties": {
@@ -1926,45 +2491,44 @@
         "additionalProperties": false
       },
       "UpdateProfile": {
-        "required": [
-          "address",
-          "dateOfBirth",
-          "email",
-          "height",
-          "phoneNumber",
-          "updatedAt",
-          "weight"
-        ],
         "type": "object",
         "properties": {
           "email": {
-            "minLength": 1,
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "nullable": true
           },
           "phoneNumber": {
-            "minLength": 1,
             "pattern": "^0\\d{9}$",
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "dateOfBirth": {
             "$ref": "#/components/schemas/DateOnly"
           },
           "address": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "updatedAt": {
             "type": "string",
-            "format": "date-time"
+            "nullable": true
           },
           "weight": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
           },
           "height": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2068,10 +2632,12 @@
             "nullable": true
           },
           "isDonor": {
-            "type": "boolean"
+            "type": "boolean",
+            "nullable": true
           },
           "isRecipient": {
-            "type": "boolean"
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -13,7 +13,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { login as loginThunk } from '../../features/auth/authSlice';
+import { login as loginThunk, createTestAccount } from '../../features/auth/authSlice';
 import { useState } from 'react'; // Import useState
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api'; // Sử dụng cùng API_URL với authSlice
@@ -189,6 +189,21 @@ const Login = () => {
           disabled={loading}
         >
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+        </Button>
+
+        {/* Nút đăng nhập member nhanh */}
+        <Button
+          fullWidth
+          variant="outlined"
+          color="secondary"
+          sx={{ mb: 2 }}
+          onClick={() => {
+            dispatch(createTestAccount());
+            localStorage.setItem('isTestUser', 'true');
+            navigate('/');
+          }}
+        >
+          Đăng nhập Member (tài khoản mẫu)
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>

@@ -109,6 +109,12 @@ const UserProfile = () => {
   // State cho lịch hẹn sắp tới
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
+  // State cho lỗi form
+  const [formErrors, setFormErrors] = useState({});
+
+  // State cho dữ liệu chỉnh sửa trong dialog
+  const [editFormData, setEditFormData] = useState({});
+
   // Fetch dữ liệu người dùng từ API khi component mount
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -271,6 +277,7 @@ const UserProfile = () => {
   };
 
   const handleOpenDialog = () => {
+    setEditFormData(formData);
     setOpenDialog(true);
   };
 
@@ -343,40 +350,57 @@ const UserProfile = () => {
     }
   };
 
+  // Validate form dùng editFormData
+  const validateForm = () => {
+    const errors = {};
+    if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(editFormData.fullName?.trim() || '')) {
+      errors.fullName = 'Họ và tên chỉ được nhập chữ.';
+    }
+    if (!/^\d{12}$/.test(editFormData.citizenNumber?.trim() || '')) {
+      errors.citizenNumber = 'Số CMND phải là 12 chữ số.';
+    }
+    if (editFormData.gender !== 'male' && editFormData.gender !== 'female') {
+      errors.gender = 'Giới tính chỉ được chọn Nam hoặc Nữ.';
+    }
+    if (!/^\d{1,3}$/.test(editFormData.weight?.trim() || '')) {
+      errors.weight = 'Cân nặng chỉ được nhập số và tối đa 3 chữ số.';
+    }
+    if (!/^\d{1,3}$/.test(editFormData.height?.trim() || '')) {
+      errors.height = 'Chiều cao chỉ được nhập số và tối đa 3 chữ số.';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
         return;
       }
-
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
       const payload = {
-        ...formData,
-        sex: formData.gender === 'male' ? true : formData.gender === 'female' ? false : null,
-        bloodTypeName: formData.bloodType,
-        phoneNumber: formData.phone,
-        citizenNumber: formData.citizenNumber,
-        citizenIdCard: formData.citizenIdCard,
+        ...editFormData,
+        sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
+        bloodTypeName: editFormData.bloodType,
+        phoneNumber: editFormData.phone,
+        citizenNumber: editFormData.citizenNumber,
+        citizenIdCard: editFormData.citizenIdCard,
       };
-
-      // Xóa các trường không cần thiết hoặc đã được ánh xạ lại
       delete payload.gender;
       delete payload.bloodType;
       delete payload.phone;
-
-      const response = await axios.put(`${apiUrl}/users/${formData.id}`, payload, {
+      const response = await axios.put(`${apiUrl}/users/${editFormData.id}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (response.status === 200) {
         setSnackbar({ open: true, message: 'Cập nhật thông tin thành công!', severity: 'success' });
         handleCloseDialog();
-        // Có thể cần cập nhật lại dữ liệu người dùng sau khi lưu thành công
-        // Ví dụ: fetchData();
+        setFormData(editFormData); // cập nhật lại dữ liệu hiển thị ngoài
       } else {
         setSnackbar({ open: true, message: `Lỗi khi cập nhật: ${response.statusText}`, severity: 'error' });
       }
@@ -720,9 +744,11 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.fullName}
-            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+            value={editFormData.fullName || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '') })}
             sx={{ mb: 2 }}
+            error={!!formErrors.fullName}
+            helperText={formErrors.fullName}
           />
           <TextField
             margin="dense"
@@ -731,9 +757,11 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.citizenNumber}
-            onChange={(e) => setFormData({ ...formData, citizenNumber: e.target.value })}
+            value={editFormData.citizenNumber || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, citizenNumber: e.target.value.replace(/[^0-9]/g, '').slice(0,12) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.citizenNumber}
+            helperText={formErrors.citizenNumber}
           />
 
           <TextField
@@ -746,22 +774,22 @@ const UserProfile = () => {
             InputLabelProps={{
               shrink: true,
             }}
-            value={formData.dateOfBirth}
-            onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            value={editFormData.dateOfBirth || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
             sx={{ mb: 2 }}
           />
-          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }} error={!!formErrors.gender}>
             <InputLabel>Giới tính</InputLabel>
             <Select
               name="gender"
-              value={formData.gender}
-              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+              value={editFormData.gender || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
               label="Giới tính"
             >
               <MenuItem value="male">Nam</MenuItem>
               <MenuItem value="female">Nữ</MenuItem>
-              <MenuItem value="other">Khác</MenuItem>
             </Select>
+            {formErrors.gender && <Typography color="error" variant="caption">{formErrors.gender}</Typography>}
           </FormControl>
           <TextField
             margin="dense"
@@ -770,8 +798,8 @@ const UserProfile = () => {
             type="tel"
             fullWidth
             variant="outlined"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            value={editFormData.phone || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
             sx={{ mb: 2 }}
           />
           <TextField
@@ -781,8 +809,8 @@ const UserProfile = () => {
             type="email"
             fullWidth
             variant="outlined"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            value={editFormData.email || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
             sx={{ mb: 2 }}
           />
           <TextField
@@ -792,31 +820,35 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            value={editFormData.address || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
             sx={{ mb: 2 }}
           />
           <TextField
             margin="dense"
             name="weight"
             label="Cân nặng (kg)"
-            type="number"
+            type="text"
             fullWidth
             variant="outlined"
-            value={formData.weight}
-            onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+            value={editFormData.weight || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, weight: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.weight}
+            helperText={formErrors.weight}
           />
           <TextField
             margin="dense"
             name="height"
             label="Chiều cao (cm)"
-            type="number"
+            type="text"
             fullWidth
             variant="outlined"
-            value={formData.height}
-            onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+            value={editFormData.height || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, height: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.height}
+            helperText={formErrors.height}
           />
           <TextField
             margin="dense"
@@ -827,8 +859,8 @@ const UserProfile = () => {
             multiline
             rows={3}
             variant="outlined"
-            value={formData.medicalHistory}
-            onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+            value={editFormData.medicalHistory || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, medicalHistory: e.target.value })}
             sx={{ mb: 2 }}
           />
           <TextField
@@ -840,8 +872,8 @@ const UserProfile = () => {
             multiline
             rows={3}
             variant="outlined"
-            value={formData.allergies}
-            onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+            value={editFormData.allergies || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, allergies: e.target.value })}
             sx={{ mb: 2 }}
           />
         </DialogContent>

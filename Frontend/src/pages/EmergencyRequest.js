@@ -69,6 +69,60 @@ const EmergencyRequest = () => {
     }
   };
 
+  const handlePatientNameChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    setFormData({
+      ...formData,
+      patientName: value,
+    });
+    if (errors.patientName) {
+      setErrors({ ...errors, patientName: '' });
+    }
+  };
+
+  const handleQuantityChange = (event) => {
+    let value = event.target.value.replace(/[^0-9]/g, '');
+    if (value.startsWith('0')) value = value.replace(/^0+/, '');
+    setFormData({
+      ...formData,
+      quantity: value,
+    });
+    if (errors.quantity) {
+      setErrors({ ...errors, quantity: '' });
+    }
+  };
+
+  const handleReasonChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    setFormData({
+      ...formData,
+      reason: value,
+    });
+  };
+
+  const handleContactNameChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    setFormData({
+      ...formData,
+      contactName: value,
+    });
+    if (errors.contactName) {
+      setErrors({ ...errors, contactName: '' });
+    }
+  };
+
+  const handleContactPhoneChange = (event) => {
+    let value = event.target.value.replace(/[^0-9]/g, '');
+    if (value.startsWith('0')) value = value.replace(/^0+/, '0');
+    setFormData({
+      ...formData,
+      contactPhone: value,
+    });
+    if (errors.contactPhone) {
+      setErrors({ ...errors, contactPhone: '' });
+    }
+  };
+
   const validateStep = () => {
     const newErrors = {};
     
@@ -172,7 +226,7 @@ const EmergencyRequest = () => {
                 fullWidth
                 label="Tên bệnh nhân"
                 value={formData.patientName}
-                onChange={handleChange('patientName')}
+                onChange={handlePatientNameChange}
                 error={!!errors.patientName}
                 helperText={errors.patientName}
               />
@@ -202,11 +256,12 @@ const EmergencyRequest = () => {
               <TextField
                 fullWidth
                 label="Số lượng máu cần (đơn vị)"
-                type="number"
+                type="text"
                 value={formData.quantity}
-                onChange={handleChange('quantity')}
+                onChange={handleQuantityChange}
                 error={!!errors.quantity}
                 helperText={errors.quantity}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
               />
             </Grid>
 
@@ -217,7 +272,7 @@ const EmergencyRequest = () => {
                 multiline
                 rows={3}
                 value={formData.reason}
-                onChange={handleChange('reason')}
+                onChange={handleReasonChange}
               />
             </Grid>
           </Grid>
@@ -231,7 +286,7 @@ const EmergencyRequest = () => {
                 fullWidth
                 label="Tên người liên hệ"
                 value={formData.contactName}
-                onChange={handleChange('contactName')}
+                onChange={handleContactNameChange}
                 error={!!errors.contactName}
                 helperText={errors.contactName}
               />
@@ -242,9 +297,10 @@ const EmergencyRequest = () => {
                 fullWidth
                 label="Số điện thoại"
                 value={formData.contactPhone}
-                onChange={handleChange('contactPhone')}
+                onChange={handleContactPhoneChange}
                 error={!!errors.contactPhone}
                 helperText={errors.contactPhone}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
               />
             </Grid>
 

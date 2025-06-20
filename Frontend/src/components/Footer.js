@@ -95,7 +95,7 @@ const Footer = () => {
         <FooterSection>
           <Grid container spacing={4}>
             {/* Brand Section */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <BloodtypeIcon sx={{ fontSize: 40, mr: 2, color: theme.palette.secondary.main }} />
@@ -107,54 +107,11 @@ const Footer = () => {
                   Chúng tôi cam kết mang đến dịch vụ hiến máu an toàn, chuyên nghiệp và nhân văn.
                   Mỗi giọt máu bạn hiến tặng sẽ góp phần cứu sống những sinh mệnh quý giá.
                 </Typography>
-
-                {/* Social Media */}
-                {/* <Typography variant="h6" sx={{ mb: 2 }}>
-                  Kết nối với chúng tôi
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  <SocialIconButton size="small">
-                    <FacebookIcon />
-                  </SocialIconButton>
-                  <SocialIconButton size="small">
-                    <TwitterIcon />
-                  </SocialIconButton>
-                  <SocialIconButton size="small">
-                    <InstagramIcon />
-                  </SocialIconButton>
-                  <SocialIconButton size="small">
-                    <YouTubeIcon />
-                  </SocialIconButton>
-                </Stack> */}
               </Box>
             </Grid>
 
-            {/* Navigation Links */}
-            {/*<Grid item xs={12} md={2}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-                Điều hướng
-              </Typography>
-              {footerLinks.map((link, index) => (
-                <FooterLink key={index} component={RouterLink} to={link.path}>
-                  {link.label}
-                </FooterLink>
-              ))}
-            </Grid>*/}
-
-            {/* Quick Links */}
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-                Liên kết nhanh
-              </Typography>
-              {quickLinks.map((link, index) => (
-                <FooterLink key={index} component={RouterLink} to={link.path}>
-                  {link.label}
-                </FooterLink>
-              ))}
-            </Grid>
-
             {/* Contact Info */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
                 Thông tin liên hệ
               </Typography>

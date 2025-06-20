@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System.Linq;
+using System;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -40,7 +41,7 @@ namespace Blood_Donation_Support.Controllers
             };
 
             _context.BloodDonationPeriods.Add(period);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
 
             return CreatedAtAction(nameof(GetBloodDonationPeriodById), new { id = period.PeriodId }, period);
         }
@@ -75,17 +76,32 @@ namespace Blood_Donation_Support.Controllers
             period.TargetQuantity = dto.TargetQuantity;
             period.ImageUrl = dto.ImageUrl;
 
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
             return NoContent();
         }
 
         // GET: api/BloodDonationPeriod
         [HttpGet]
-        [Authorize(Roles = "Staff,Admin")]
+        [AllowAnonymous]
         public IActionResult GetAllBloodDonationPeriods()
         {
-            var periods = _context.BloodDonationPeriods.ToList();
-            return Ok(periods);
+            // Tự động cập nhật các đợt đã hết hạn
+            var expiredPeriods = _context.BloodDonationPeriods
+                .Where(p => p.Status == "Active" && p.PeriodDateTo < DateTime.Now)
+                .ToList();
+            foreach (var period in expiredPeriods)
+            {
+                period.Status = "Completed";
+                period.IsActive = false;
+            }
+            if (expiredPeriods.Any())
+                _context.SaveChanges();
+
+            // Trả về các đợt khả dụng
+            var availablePeriods = _context.BloodDonationPeriods
+                .Where(p => p.Status == "Active" && p.IsActive && DateTime.Now >= p.PeriodDateFrom && DateTime.Now <= p.PeriodDateTo)
+                .ToList();
+            return Ok(availablePeriods);
         }
 
         // PATCH: api/BloodDonationPeriod/{id}/status
@@ -102,7 +118,7 @@ namespace Blood_Donation_Support.Controllers
                 return NotFound();
 
             period.Status = status;
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
             return NoContent();
         }
         // GET: api/BloodDonationPeriod/progress/{id}
@@ -127,6 +143,15 @@ namespace Blood_Donation_Support.Controllers
                 PeriodDateTo = period.PeriodDateTo
             };
             return Ok(progress);
+        }
+
+        // GET: api/BloodDonationPeriod/all
+        [HttpGet("all")]
+        [Authorize(Roles = "Staff,Admin")]
+        public IActionResult GetAllPeriodsForStaff()
+        {
+            var allPeriods = _context.BloodDonationPeriods.ToList();
+            return Ok(allPeriods);
         }
     }
 }

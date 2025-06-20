@@ -94,6 +94,7 @@ const occupations = [
 ];
 
 const bloodTypes = [
+  { id: 0, label: 'Chưa biết' },
   { id: 1, label: 'A+' },
   { id: 2, label: 'A-' },
   { id: 3, label: 'B+' },
@@ -142,7 +143,6 @@ const getValidationSchema = (activeStep) => {
     baseSchema.email = Yup.string()
       .email('Email không đúng định dạng')
       .required('Vui lòng nhập email');
-    baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
     baseSchema.weight = Yup.number()
       .typeError('Vui lòng nhập cân nặng')
       .positive('Cân nặng phải là số dương')
@@ -200,14 +200,19 @@ const Signup = () => {
       weight: '',
       height: '',
       email: '',
-      occupation: '',
       password: '',
       confirmPassword: '',
       bloodTypeId: '',
     },
     validate: (values) => {
       try {
-        getValidationSchema(currentStepRef.current).validateSync(values, { abortEarly: false });
+        // Bỏ occupation khỏi validation
+        const schema = getValidationSchema(currentStepRef.current);
+        // Xóa occupation nếu có trong schema
+        if (schema.fields && schema.fields.occupation) {
+          delete schema.fields.occupation;
+        }
+        schema.validateSync(values, { abortEarly: false });
         return {};
       } catch (error) {
         const errors = {};
@@ -226,7 +231,20 @@ const Signup = () => {
       // Submit registration data on final step
       try {
         const registrationData = {
-          ...values,
+          fullName: values.fullName,
+          password: values.password,
+          citizenNumber: values.personalId,
+          email: values.email,
+          phoneNumber: values.mobilePhone,
+          dateOfBirth: values.dateOfBirth ? dayjs(values.dateOfBirth).format('YYYY-MM-DD') : null,
+          sex: values.gender === 'male' ? true : false,
+          address: `${values.street}, ${values.district}, ${values.city}`,
+          roleId: values.accountType === 'donor' ? 1 : 2, // hoặc map theo backend
+          bloodTypeId: values.bloodTypeId,
+          weight: Number(values.weight),
+          height: Number(values.height),
+          isDonor: values.accountType === 'donor',
+          isRecipient: values.accountType === 'recipient',
         };
         await dispatch(register(registrationData)).unwrap();
         navigate('/');
@@ -619,49 +637,6 @@ const Signup = () => {
                   inputProps={{ maxLength: 60 }}
                 />
               </Grid>
-
-              {/* Nghề nghiệp */}
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel shrink>Nghề nghiệp (*)</InputLabel>
-                  <Select
-                    name="occupation"
-                    value={formik.values.occupation}
-                    onChange={e => {
-                      formik.handleChange(e);
-                      if (e.target.value !== 'Khác') setOtherOccupation('');
-                    }}
-                    error={formik.touched.occupation && Boolean(formik.errors.occupation)}
-                  >
-                    {occupations.map((occupation) => (
-                      <MenuItem key={occupation} value={occupation}>
-                        {occupation}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {formik.touched.occupation && formik.errors.occupation && (
-                    <Typography variant="caption" color="error">
-                      {formik.errors.occupation}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
-              {/* Nếu chọn Khác thì hiện ô nhập nghề nghiệp */}
-              {formik.values.occupation === 'Khác' && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    name="otherOccupation"
-                    label="Nhập nghề nghiệp khác"
-                    value={otherOccupation}
-                    onChange={e => {
-                      setOtherOccupation(e.target.value);
-                      formik.setFieldValue('occupation', e.target.value);
-                    }}
-                    required
-                  />
-                </Grid>
-              )}
 
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>

@@ -23,5 +23,7 @@ public partial class BloodDonationPeriod
 
     public string? ImageUrl { get; set; }
 
+    public bool IsActive { get; set; } = true;
+
     public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
 }

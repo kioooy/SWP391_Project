@@ -8,8 +8,8 @@ import Signup from "./pages/auth/Signup";
 import Home from "./pages/Home";
 import FAQ from "./pages/FAQ";
 import Events from "./pages/Events";
-import News from "./pages/News";
-import NewsDetail from "./pages/NewsDetail";
+import Article from "./pages/News";
+import ArticleDetail from "./pages/NewsDetail";
 import BookingPage from "./pages/BookingPage";
 import { selectIsAuthenticated } from "./features/auth/authSlice";
 import dayjs from "dayjs";
@@ -27,12 +27,15 @@ import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
 import BloodSearch from "./pages/BloodSearch";
+import BloodDonationPeriodManagement from './pages/BloodDonationPeriodManagement';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 const App = () => {
+  console.log('DEBUG App.js loaded');
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const role = useSelector(state => state.auth.user?.role);
   console.log('isAuthenticated in App.js:', isAuthenticated);
 
   return (
@@ -54,8 +57,8 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/news/:id" element={<NewsDetail />} />
+        <Route path="/article" element={<Article />} />
+        <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route
@@ -72,6 +75,10 @@ const App = () => {
         <Route path="/history" element={<AppointmentHistory />} />
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
+        {/* Route chỉ cho staff */}
+        {role === 'Staff' && (
+          <Route path="/manage-blood-periods" element={<BloodDonationPeriodManagement />} />
+        )}
       </Route>
 
       {/* Fallback Route */}

@@ -1,31 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockUsers } from './mockData';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode'; // Import thư viện jwt-decode
+
+// Hàm kiểm tra token hết hạn
+const isTokenExpired = (token) => {
+  if (!token) return true;
+  try {
+    const decoded = jwtDecode(token);
+    const currentTime = Date.now() / 1000; // Chuyển đổi sang giây
+    return decoded.exp < currentTime;
+  } catch (error) {
+    // Lỗi khi giải mã token (token không hợp lệ)
+    return true;
+  }
+};
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      // Giả lập độ trễ của API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const user = mockUsers.find(u => u.email === credentials.email && u.password === credentials.password);
-      
-      if (!user) {
-        throw new Error('Email hoặc mật khẩu không đúng');
-      }
-
-      // Tạo token giả
-      const token = 'mock_token_' + Math.random();
-      localStorage.setItem('token', token);
-
-      // Loại bỏ password trước khi trả về
-      const { password, ...userWithoutPassword } = user;
-      
-      return {
-        user: userWithoutPassword,
-        token
+      const payload = {
+        citizenNumber: credentials.citizenId,
+        password: credentials.password,
       };
+      const response = await axios.post(`${API_URL}/User/login`, payload);
+      localStorage.setItem('token', response.data.token);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message || 'Đăng nhập thất bại');
     }
@@ -36,34 +39,18 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-      // Giả lập độ trễ của API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Kiểm tra email đã tồn tại
-      if (mockUsers.some(u => u.email === userData.email)) {
-        throw new Error('Email đã được sử dụng');
-      }
-
-      // Tạo user mới
-      const newUser = {
-        id: mockUsers.length + 1,
-        ...userData
-      };
-      mockUsers.push(newUser);
-
-      // Tạo token giả
-      const token = 'mock_token_' + Math.random();
-      localStorage.setItem('token', token);
-
-      // Loại bỏ password trước khi trả về
-      const { password, ...userWithoutPassword } = newUser;
-      
-      return {
-        user: userWithoutPassword,
-        token
-      };
+      console.log('Sending registration data to API:', userData);
+      const response = await axios.post(`${API_URL}/User/register`, userData);
+      localStorage.setItem('token', response.data.token);
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message || 'Đăng ký thất bại');
+      console.error('Registration API error:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.response?.data?.message);
+      console.error('Validation errors:', error.response?.data?.errors);
+      console.error('Model errors:', error.response?.data?.errors?.model);
+      console.error('DateOfBirth errors:', error.response?.data?.errors?.['$.dateOfBirth']);
+      return rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
 );
@@ -71,54 +58,110 @@ export const register = createAsyncThunk(
 export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
+    // Xóa tất cả thông tin liên quan đến người dùng
     localStorage.removeItem('token');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('isTestUser');
+    
+    // Xóa token khỏi header của axios
+    delete axios.defaults.headers.common['Authorization'];
   }
 );
 
-export const updateProfile = createAsyncThunk(
-  'auth/updateProfile',
-  async (userData, { getState, rejectWithValue }) => {
+const getInitialState = () => {
+  const token = localStorage.getItem('token');
+  console.log('Token from localStorage:', token);
+  
+  // Tạo tài khoản test nếu chưa có
+  if (!localStorage.getItem('testAccountCreated')) {
+    localStorage.setItem('testAccountCreated', 'true');
+    console.log('Test account created for development');
+  }
+  
+  if (token && !isTokenExpired(token)) {
     try {
-      // Giả lập độ trễ của API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const decoded = jwtDecode(token);
+      console.log('Decoded token:', decoded);
       
-      const { auth } = getState();
-      const userIndex = mockUsers.findIndex(u => u.id === auth.user.id);
-      
-      if (userIndex === -1) {
-        throw new Error('Không tìm thấy người dùng');
-      }
-
-      // Cập nhật thông tin người dùng
-      mockUsers[userIndex] = {
-        ...mockUsers[userIndex],
-        ...userData
+      // Giả định payload của token có các trường userId, fullName, role
+      const user = {
+        userId: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.sub,
+        fullName: decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
+        role: decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
       };
-
+      
+      console.log('Extracted user info:', user);
+      
       return {
-        ...mockUsers[userIndex],
-        password: undefined // Không trả về mật khẩu
+        user: user,
+        token: token,
+        isAuthenticated: true,
+        loading: false,
+        error: null,
       };
     } catch (error) {
-      return rejectWithValue(error.message || 'Cập nhật thông tin thất bại');
+      console.error("Lỗi giải mã token khi khởi tạo:", error);
+      // Xóa token không hợp lệ
+      localStorage.removeItem('token');
+      return {
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        loading: false,
+        error: null,
+      };
     }
   }
-);
-
-const initialState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
-  loading: false,
-  error: null,
+  
+  console.log('No valid token found, returning unauthenticated state');
+  return {
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    loading: false,
+    error: null,
+  };
 };
+
+const initialState = getInitialState();
+
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
+    updateUserLocation(state, action) {
+      if (state.user) {
+        state.user.latitude = action.payload.latitude;
+        state.user.longitude = action.payload.longitude;
+      }
+    },
+    clearError(state) {
       state.error = null;
+    },
+    createTestAccount(state) {
+      // Tạo token giả cho tài khoản test
+      const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsInJvbGUiOiJVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+      
+      state.user = {
+        userId: '1234567890',
+        fullName: 'Test User',
+        role: 'User'
+      };
+      state.token = testToken;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
+      
+      // Lưu vào localStorage
+      localStorage.setItem('token', testToken);
+      localStorage.setItem('userProfile', JSON.stringify({
+        userId: '1234567890',
+        fullName: 'Test User',
+        role: 'User'
+      }));
+      
+      console.log('Test account logged in successfully');
     },
   },
   extraReducers: (builder) => {
@@ -131,7 +174,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = { userId: action.payload.userId, fullName: action.payload.fullName, role: action.payload.role };
         state.token = action.payload.token;
       })
       .addCase(login.rejected, (state, action) => {
@@ -146,7 +189,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = { userId: action.payload.userId, fullName: action.payload.fullName, role: action.payload.role };
         state.token = action.payload.token;
       })
       .addCase(register.rejected, (state, action) => {
@@ -175,12 +218,18 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError } = authSlice.actions;
+
+export const { clearError, createTestAccount, updateUserLocation } = authSlice.actions;
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectUser = (state) => state.auth.user;
 export const selectAuthError = (state) => state.auth.error;
 export const selectAuthLoading = (state) => state.auth.loading;
+
+// Các selector mới để debug
+export const selectUserRole = (state) => state.auth.user?.role;
+export const selectUserId = (state) => state.auth.user?.userId;
+export const selectUserFullName = (state) => state.auth.user?.fullName;
 
 export default authSlice.reducer; 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -40,6 +40,8 @@ import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   backgroundColor: '#f5f5f5',
@@ -172,6 +174,7 @@ function TabPanel({ children, value, index, ...other }) {
 
 const BookingPage = () => {
   const navigate = useNavigate();
+  const userId = useSelector(state => state.auth.user?.userId);
   const [tabValue, setTabValue] = useState(0);
   const [selectedDate, setSelectedDate] = useState(dayjs().add(1, 'day'));
   const [selectedCity, setSelectedCity] = useState('Hồ Chí Minh');
@@ -182,6 +185,8 @@ const BookingPage = () => {
   const [openSummary, setOpenSummary] = useState(false);
   const [openCalendarDialog, setOpenCalendarDialog] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [periods, setPeriods] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -398,6 +403,48 @@ const BookingPage = () => {
     console.log('Đã lưu lịch hẹn:', appointmentData);
   };
 
+  // Thêm hàm gọi API đăng ký hiến máu
+  const handleRegisterDonation = async () => {
+    try {
+      if (!userId) {
+        alert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!');
+        return;
+      }
+      // TODO: Lấy các giá trị thực tế từ user/profile/context
+      const periodId = selectedPeriod ? selectedPeriod.periodId : null;
+      const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
+      const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
+      const donationVolume = 350; // ml, hoặc lấy từ form
+      const patientCondition = 'Khỏe mạnh'; // hoặc lấy từ form
+      const requestDate = new Date().toISOString();
+      
+      const payload = {
+        donationId: 0, // để backend tự sinh
+        memberId: userId,
+        periodId: periodId,
+        componentId: componentId,
+        preferredDonationDate: selectedDate.format('YYYY-MM-DD'),
+        responsibleById: responsibleById,
+        requestDate: requestDate,
+        approvalDate: null,
+        donationVolume: donationVolume,
+        status: 'Pending',
+        notes: '',
+        patientCondition: patientCondition
+      };
+
+      const response = await axios.post('/api/DonationRequest', payload);
+      if (response.status === 200) {
+        alert('Đăng ký của bạn đã được gửi thành công!');
+        navigate('/user-profile');
+      } else {
+        alert('Có lỗi xảy ra khi đăng ký!');
+      }
+    } catch (error) {
+      alert('Lỗi kết nối server hoặc thiếu thông tin!');
+    }
+  };
+
   const handleCheckboxChange = (name) => (event) => {
     const isChecked = event.target.checked;
 
@@ -553,13 +600,6 @@ const BookingPage = () => {
     'Nha Trang',
   ];
 
-  const locations = [
-    'Hiến máu - Trung Tâm Hiến Máu Nhân Đạo Tp.HCM',
-    'Hiến máu - 466 Nguyễn Thị Minh Khai',
-    'Hiến máu - Bệnh viện Chợ Rẫy',
-    'Hiến máu - Bệnh viện Bình Dân',
-  ];
-
   const timeSlots = [
     '07:00 - 11:00',
     '13:00 - 16:00',
@@ -575,6 +615,24 @@ const BookingPage = () => {
 
   const weekDays = getWeekDays();
   const weekDayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    axios.get('/api/BloodDonationPeriod', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      const filtered = res.data.filter(p => p.status === 'Active' || p.status === 'Completed');
+      setPeriods(filtered);
+      if (filtered.length > 0) {
+        setSelectedPeriod(filtered[0]);
+      }
+    })
+    .catch(() => {
+      setPeriods([]);
+      setSelectedPeriod(null);
+    });
+  }, []);
 
   return (
     <>
@@ -662,52 +720,21 @@ const BookingPage = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                       <LocationOnIcon sx={{ mr: 2, color: 'primary.main' }} />
                       <Typography variant="h6" fontWeight="bold">
-                        Chọn địa điểm hiến máu
+                        Địa điểm hiến máu
                       </Typography>
                     </Box>
-
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Tỉnh/Thành phố</InputLabel>
-                          <Select
-                            value={selectedCity}
-                            label="Tỉnh/Thành phố"
-                            onChange={(e) => setSelectedCity(e.target.value)}
-                          >
-                            {cities.map((city) => (
-                              <MenuItem key={city} value={city}>
-                                {city}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <FormControl fullWidth>
-                          <InputLabel>Địa điểm</InputLabel>
-                          <Select
-                            value={selectedLocation}
-                            label="Địa điểm"
-                            onChange={(e) => setSelectedLocation(e.target.value)}
-                          >
-                            {locations.map((location) => (
-                              <MenuItem key={location} value={location}>
-                                <Box>
-                                  <Typography variant="body2" color="primary" fontWeight="bold">
-                                    {location}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    106 Thiên Phước, Phường 9, Quận Tân Bình, TP.HCM
-                                  </Typography>
-                                </Box>
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </Grid>
+                    {selectedPeriod ? (
+                      <Box>
+                        <Typography variant="body1" color="primary" fontWeight="bold">
+                          {selectedPeriod.periodName} - {selectedPeriod.location}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Thời gian: {new Date(selectedPeriod.periodDateFrom).toLocaleString()} - {new Date(selectedPeriod.periodDateTo).toLocaleString()}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography color="error">Không có đợt hiến máu phù hợp!</Typography>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -1241,11 +1268,9 @@ const BookingPage = () => {
           <Button onClick={() => setOpenSummary(false)}>Quay lại</Button>
           <Button
             variant="contained"
-            onClick={() => {
+            onClick={async () => {
               setOpenSummary(false);
-              saveAppointmentToLocalStorage(); // Lưu thông tin đặt lịch
-              alert('Đăng ký của bạn đã được gửi thành công!');
-              navigate('/user-profile'); // Chuyển hướng đến trang hồ sơ
+              await handleRegisterDonation();
             }}
           >
             Xác nhận gửi

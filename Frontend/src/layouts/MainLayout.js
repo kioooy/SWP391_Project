@@ -103,6 +103,12 @@ const MainLayout = () => {
 
   const { user: currentUser, isAuthenticated, token: authToken } = useSelector((state) => state.auth);
 
+  // Thêm log để kiểm tra user và role
+  console.log('DEBUG currentUser:', currentUser);
+  if (currentUser) {
+    console.log('DEBUG currentUser.role:', currentUser.role);
+  }
+
   useEffect(() => {
     if (currentUser && currentUser.role === 'Member') {
       const hasShownSnackbar = sessionStorage.getItem('hasShownLocationSnackbar');
@@ -189,54 +195,38 @@ const MainLayout = () => {
   const isTestUser = localStorage.getItem("isTestUser") === "true";
   const isStaff = localStorage.getItem("isStaff") === "true";
 
-  let menuItems = [
-    { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-    { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-    { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
-    { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-    { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-    { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
-    { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-  ];
+  let menuItems = [];
+  console.log('DEBUG currentUser at menuItems:', currentUser);
 
-  // Xác định menu items dựa trên vai trò người dùng
-  if (isAuthenticated || isTestUser) {
-    // Nếu là nhân viên hoặc admin
-    if (isStaff || (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff'))) {
-      menuItems = [
-        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-        { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
-        { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
-      ];
-      
-      // Nếu là Admin thì thêm menu quản lý bệnh viện
-      if (currentUser?.role === 'Admin') {
-        menuItems.push(
-          { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
-          { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> }
-        );
-      }
-    } else {
-      // Menu cho người dùng thường
-      menuItems = [
-        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-        { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
-        { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-        { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
-      ];
-    }
+  if (currentUser && currentUser.role === 'Staff') {
+    menuItems = [
+      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> }
+    ];
+  } else if (currentUser && currentUser.role === 'Admin') {
+    menuItems = [
+      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
+      { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> }
+    ];
   } else {
-    // Menu cho người dùng chưa đăng nhập
     menuItems = [
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
       { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
-      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
+      { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
+      { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+      { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
     ];
   }
+  console.log('DEBUG menuItems render:', menuItems);
+
+  console.log('DEBUG MainLayout mounted');
 
   return (
     <MainContainer>

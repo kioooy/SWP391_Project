@@ -27,12 +27,15 @@ import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
 import BloodSearch from "./pages/BloodSearch";
+import BloodDonationPeriodManagement from './pages/BloodDonationPeriodManagement';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 const App = () => {
+  console.log('DEBUG App.js loaded');
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const role = useSelector(state => state.auth.user?.role);
   console.log('isAuthenticated in App.js:', isAuthenticated);
 
   return (
@@ -72,6 +75,10 @@ const App = () => {
         <Route path="/history" element={<AppointmentHistory />} />
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
+        {/* Route chỉ cho staff */}
+        {role === 'Staff' && (
+          <Route path="/manage-blood-periods" element={<BloodDonationPeriodManagement />} />
+        )}
       </Route>
 
       {/* Fallback Route */}

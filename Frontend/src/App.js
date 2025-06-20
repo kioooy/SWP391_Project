@@ -8,8 +8,8 @@ import Signup from "./pages/auth/Signup";
 import Home from "./pages/Home";
 import FAQ from "./pages/FAQ";
 import Events from "./pages/Events";
-import News from "./pages/News";
-import NewsDetail from "./pages/NewsDetail";
+import Article from "./pages/News";
+import ArticleDetail from "./pages/NewsDetail";
 import BookingPage from "./pages/BookingPage";
 import { selectIsAuthenticated } from "./features/auth/authSlice";
 import dayjs from "dayjs";
@@ -57,8 +57,8 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/news/:id" element={<NewsDetail />} />
+        <Route path="/article" element={<Article />} />
+        <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route

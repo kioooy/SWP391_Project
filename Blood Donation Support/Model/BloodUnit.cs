@@ -28,7 +28,5 @@ public partial class BloodUnit
 
     public virtual BloodComponent Component { get; set; } = null!;
 
-    public virtual ICollection<DonationRequestsDetail> DonationRequestsDetails { get; set; } = new List<DonationRequestsDetail>();
-
     public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();
 }

@@ -34,10 +34,10 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<DonationRequest> DonationRequests { get; set; }
 
-    public virtual DbSet<DonationRequestsDetail> DonationRequestsDetails { get; set; }
-
     public virtual DbSet<Member> Members { get; set; }
+
     public virtual DbSet<Role> Role { get; set; }
+
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
@@ -202,20 +202,6 @@ public partial class BloodDonationSupportContext : DbContext
             entity.HasOne(d => d.ResponsibleBy).WithMany(p => p.DonationRequests)
                 .HasForeignKey(d => d.ResponsibleById)
                 .HasConstraintName("FK__DonationR__Respo__6754599E");
-        });
-
-        modelBuilder.Entity<DonationRequestsDetail>(entity =>
-        {
-            entity.HasKey(e => e.DetailsId).HasName("PK__Donation__BAC8628C4BCD2DF5");
-
-            entity.HasOne(d => d.BloodUnit).WithMany(p => p.DonationRequestsDetails)
-                .HasForeignKey(d => d.BloodUnitId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__DonationR__Blood__693CA210");
-
-            entity.HasOne(d => d.Donation).WithMany(p => p.DonationRequestsDetails)
-                .HasForeignKey(d => d.DonationId)
-                .HasConstraintName("FK__DonationR__Donat__68487DD7");
         });
 
         modelBuilder.Entity<Member>(entity =>

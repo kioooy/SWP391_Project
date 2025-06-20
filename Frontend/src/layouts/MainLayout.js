@@ -200,14 +200,14 @@ const MainLayout = () => {
 
   if (currentUser && currentUser.role === 'Staff') {
     menuItems = [
-      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Staff
       { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
       { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
       { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> }
     ];
   } else if (currentUser && currentUser.role === 'Admin') {
     menuItems = [
-      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Admin
       { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
       { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
       { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
@@ -217,7 +217,7 @@ const MainLayout = () => {
     menuItems = [
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-      { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
+      { path: "/article", label: "Bài Viết", icon: <NewsIcon /> },
       { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
       { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },

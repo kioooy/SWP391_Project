@@ -446,22 +446,13 @@ const BloodDonationCertificate = () => {
                   <Box
                     sx={{
                       display: "flex",
-                      justifyContent: "space-between",
+                      justifyContent: "flex-end",
                       alignItems: "center",
                       mt: 3,
                       pt: 2,
                       borderTop: "1px solid rgba(0,0,0,0.08)",
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "#718096",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Số chứng chỉ: {certificate.certificateNumber}
-                    </Typography>
                     <Box>
                       <IconButton size="small" sx={{ color: "#667eea" }}>
                         <Print />
@@ -582,16 +573,6 @@ const BloodDonationCertificate = () => {
                   </Typography>
                 </Box>
               </Grid>
-              {/* <Grid item xs={12}>
-                    <Box>
-                    <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
-                      Số Chứng Chỉ
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                      {formData.certificateNumber}
-                    </Typography>
-                  </Box>
-                </Grid> */}
             </Grid>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>

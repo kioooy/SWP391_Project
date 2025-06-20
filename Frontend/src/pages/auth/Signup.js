@@ -118,6 +118,7 @@ const getValidationSchema = (activeStep) => {
       .required('Vui lòng nhập số CCCD');
     baseSchema.fullName = Yup.string()
       .min(2, 'Họ tên phải có ít nhất 2 ký tự')
+      .matches(/^[\p{L}\s]+$/u, 'Họ tên chỉ được chứa chữ và khoảng trắng')
       .required('Vui lòng nhập họ và tên');
     baseSchema.dateOfBirth = Yup.date()
       .nullable()
@@ -146,10 +147,14 @@ const getValidationSchema = (activeStep) => {
     baseSchema.weight = Yup.number()
       .typeError('Vui lòng nhập cân nặng')
       .positive('Cân nặng phải là số dương')
+      .min(45, 'Cân nặng tối thiểu là 45kg')
+      .max(300, 'Cân nặng tối đa là 300kg')
       .required('Vui lòng nhập cân nặng');
     baseSchema.height = Yup.number()
       .typeError('Vui lòng nhập chiều cao')
       .positive('Chiều cao phải là số dương')
+      .min(145, 'Chiều cao tối thiểu là 145cm')
+      .max(300, 'Chiều cao tối đa là 300cm')
       .required('Vui lòng nhập chiều cao');
     baseSchema.bloodTypeId = Yup.string().required('Vui lòng chọn nhóm máu');
   }
@@ -222,12 +227,22 @@ const Signup = () => {
         return errors;
       }
     },
+    validateOnChange: true,
+    validateOnBlur: true,
     onSubmit: async (values) => {
+      // Kiểm tra nếu chưa phải bước cuối cùng
       if (activeStep < 3) {
+        const errors = await formik.validateForm();
+        if (Object.keys(errors).length > 0) {
+          formik.setTouched(
+            Object.keys(errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
+            true
+          );
+          return;
+        }
         setActiveStep(activeStep + 1);
         return;
       }
-
       // Submit registration data on final step
       try {
         const registrationData = {
@@ -407,7 +422,11 @@ const Signup = () => {
                   label="Số CCCD(*)"
                   placeholder="VD: 123456789012"
                   value={formik.values.personalId}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, tối đa 12 ký tự
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+                    formik.setFieldValue('personalId', onlyNums);
+                  }}
                   error={formik.touched.personalId && Boolean(formik.errors.personalId)}
                   helperText={formik.touched.personalId && formik.errors.personalId}
                   inputProps={{ maxLength: 12 }}
@@ -428,7 +447,11 @@ const Signup = () => {
                   label="Họ và tên (*)"
                   placeholder="VD: Nguyễn Văn A"
                   value={formik.values.fullName}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập chữ và khoảng trắng
+                    const onlyLetters = e.target.value.replace(/[^\p{L}\s]/gu, '');
+                    formik.setFieldValue('fullName', onlyLetters);
+                  }}
                   error={formik.touched.fullName && Boolean(formik.errors.fullName)}
                   helperText={formik.touched.fullName && formik.errors.fullName}
                   inputProps={{ maxLength: 60 }}
@@ -550,7 +573,11 @@ const Signup = () => {
                       label="Số nhà, tên đường"
                       placeholder="Nhập số nhà, tên đường"
                       value={formik.values.street}
-                      onChange={formik.handleChange}
+                      onChange={e => {
+                        // Chỉ cho nhập số, chữ, khoảng trắng
+                        const onlyValid = e.target.value.replace(/[^\p{L}0-9\s]/gu, '');
+                        formik.setFieldValue('street', onlyValid);
+                      }}
                       error={formik.touched.street && Boolean(formik.errors.street)}
                       helperText={formik.touched.street && formik.errors.street}
                       inputProps={{ maxLength: 120 }}

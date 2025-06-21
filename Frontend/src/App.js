@@ -28,6 +28,7 @@ import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
 import BloodSearch from "./pages/BloodSearch";
 import BloodDonationPeriodManagement from './pages/BloodDonationPeriodManagement';
+import BloodDonationPeriods from './pages/BloodDonationPeriods';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -75,6 +76,7 @@ const App = () => {
         <Route path="/history" element={<AppointmentHistory />} />
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
+        <Route path="/blood-donation-periods" element={<BloodDonationPeriods />} />
         {/* Route chỉ cho staff */}
         {role === 'Staff' && (
           <Route path="/manage-blood-periods" element={<BloodDonationPeriodManagement />} />

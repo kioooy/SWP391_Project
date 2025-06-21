@@ -97,9 +97,10 @@ namespace Blood_Donation_Support.Controllers
             if (expiredPeriods.Any())
                 _context.SaveChanges();
 
-            // Trả về các đợt khả dụng
+            // Trả về các đợt đang hoạt động hoặc sắp diễn ra
             var availablePeriods = _context.BloodDonationPeriods
-                .Where(p => p.Status == "Active" && p.IsActive && DateTime.Now >= p.PeriodDateFrom && DateTime.Now <= p.PeriodDateTo)
+                .Where(p => p.Status == "Active" && p.IsActive && p.PeriodDateTo >= DateTime.Now.Date)
+                .OrderBy(p => p.PeriodDateFrom)
                 .ToList();
             return Ok(availablePeriods);
         }

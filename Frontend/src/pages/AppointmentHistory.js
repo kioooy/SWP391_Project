@@ -128,95 +128,25 @@ const AppointmentHistory = () => {
   const [selectedAppointment, setSelectedAppointment] = React.useState(null);
   const [appointments, setAppointments] = React.useState([]);
 
-  // Load lịch hẹn từ localStorage khi component mount
+  // useEffect chỉ gọi API lấy lịch sử đặt hẹn
   React.useEffect(() => {
-    const loadAppointments = () => {
+    const fetchAppointments = async () => {
       try {
-        console.log('Loading appointments from localStorage...');
-        const storedAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-        
-        // Ensure all loaded appointments have a 'detail' object
-        const processedAppointments = storedAppointments.map(app => ({
-          ...app,
-          detail: app.detail || {} // Ensure detail is an object
-        }));
-        
-        console.log('Processed appointments:', processedAppointments);
-        setAppointments(processedAppointments);
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        // Giả sử API trả về lịch sử đặt hẹn của user
+        const res = await fetch(`${apiUrl}/Reservation/history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Lỗi khi lấy lịch sử đặt hẹn');
+        const data = await res.json();
+        setAppointments(data || []);
       } catch (error) {
-        console.error('Lỗi khi load lịch hẹn:', error);
-        // Fallback to default data if localStorage fails
-        const fallbackData = [
-          {
-            id: 1,
-            title: "466 Nguyễn Thị minh Khai (thời gian làm việc từ 7g đến 11g)",
-            location: "466 Nguyễn Thị Minh Khai Phường 02, Quận 3, Tp Hồ Chí Minh",
-            time: "07:00 đến 11:00 - 22/06/2025",
-            status: "expired",
-            statusText: "Đã xoá",
-            detail: {
-              appointmentId: "AP-2025-001",
-              patientName: "Nguyễn Văn Minh",
-              patientId: "079201234567",
-              phone: "0901234567",
-              email: "nguyenvanminh@gmail.com",
-              bloodType: "O+",
-              donationCenter: "Trung tâm Huyết học - Truyền máu TP.HCM",
-              centerAddress: "466 Nguyễn Thị Minh Khai, Phường 02, Quận 3, TP.HCM",
-              centerPhone: "028 3930 1234",
-              appointmentDate: "22/06/2025",
-              appointmentTime: "07:00 - 11:00",
-              donationType: "Hiến máu tình nguyện",
-              bloodAmount: "350ml",
-              notes: "Bệnh nhân cần nhịn ăn 4 giờ trước khi hiến máu",
-              cancellationReason: "Bệnh nhân hủy lịch do lý do cá nhân",
-              cancellationDate: "20/06/2025",
-              cancellationTime: "14:30",
-              staffName: "Trần Thị Lan",
-              staffPhone: "0909876543"
-            }
-          },
-          {
-            id: 2,
-            title: "466 Nguyễn Thị minh Khai (thời gian làm việc từ 7g đến 11g)",
-            location: "466 Nguyễn Thị Minh Khai Phường 02, Quận 3, Tp Hồ Chí Minh",
-            time: "07:00 đến 11:00 - 16/06/2025",
-            status: "scheduled",
-            statusText: "Đã hẹn lịch",
-            detail: {
-              appointmentId: "AP-2025-002",
-              patientName: "Nguyễn Văn Minh",
-              patientId: "079201234567",
-              phone: "0901234567",
-              email: "nguyenvanminh@gmail.com",
-              bloodType: "O+",
-              donationCenter: "Trung tâm Huyết học - Truyền máu TP.HCM",
-              centerAddress: "466 Nguyễn Thị Minh Khai, Phường 02, Quận 3, TP.HCM",
-              centerPhone: "028 3930 1234",
-              appointmentDate: "16/06/2025",
-              appointmentTime: "07:00 - 11:00",
-              donationType: "Hiến máu tình nguyện",
-              bloodAmount: "350ml",
-              notes: "Bệnh nhân cần nhịn ăn 4 giờ trước khi hiến máu",
-              preparationNotes: [
-                "Ăn nhẹ trước khi hiến máu",
-                "Uống nhiều nước",
-                "Mang theo CMND/CCCD",
-                "Không uống rượu bia 24h trước"
-              ],
-              staffName: "Trần Thị Lan",
-              staffPhone: "0909876543"
-            }
-          },
-        ].map(app => ({ // Ensure fallback data also has detail
-          ...app,
-          detail: app.detail || {} 
-        }));
-        console.log('Using fallback data:', fallbackData);
-        setAppointments(fallbackData);
+        setAppointments([]);
       }
     };
-    loadAppointments();
+    fetchAppointments();
   }, []);
 
   const handleTitleClick = (appointmentId) => {

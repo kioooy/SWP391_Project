@@ -191,21 +191,6 @@ const Login = () => {
           {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
         </Button>
 
-        {/* Nút đăng nhập member nhanh */}
-        <Button
-          fullWidth
-          variant="outlined"
-          color="secondary"
-          sx={{ mb: 2 }}
-          onClick={() => {
-            dispatch(createTestAccount());
-            localStorage.setItem('isTestUser', 'true');
-            navigate('/');
-          }}
-        >
-          Đăng nhập Member (tài khoản mẫu)
-        </Button>
-
         <Box sx={{ textAlign: 'center' }}>
           <Link component={RouterLink} to="/signup" variant="body2">
             {"Chưa có tài khoản? Đăng Ký"}

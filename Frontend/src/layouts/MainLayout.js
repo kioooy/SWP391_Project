@@ -217,7 +217,7 @@ const MainLayout = () => {
     menuItems = [
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-      { path: "/article", label: "Bài Viết", icon: <NewsIcon /> },
+      { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
       { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
       { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },

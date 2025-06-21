@@ -66,7 +66,7 @@ namespace Blood_Donation_Support.Controllers
         // add donation request
         // POST: api/DonationRequest/register
         [HttpPost]
-        [Authorize(Roles = "Staff,Admin")] // Staff and Admin roles can view all donation requests
+        [Authorize(Roles = "Member,Staff,Admin")]
         public async Task<IActionResult> RegisterDonationRequests([FromBody] DonationRequestControllerDTO model)
         {
             if (!ModelState.IsValid) 

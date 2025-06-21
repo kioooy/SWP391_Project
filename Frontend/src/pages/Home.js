@@ -309,23 +309,6 @@ const Home = () => {
         </Container>
       </Box>
 
-      {/* Floating Action Button */}
-      <Fab
-        color="primary"
-        aria-label="book"
-        onClick={handleBookNow}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          zIndex: 1000,
-          width: 64,
-          height: 64,
-        }}
-      >
-        <BookOnlineIcon sx={{ fontSize: 32 }} />
-      </Fab>
-
       <Container maxWidth="lg" sx={{ py: 6, backgroundColor: '#F8FBFD' }}>
         {/* Section quyền lợi người hiến máu */}
         <Box sx={{ mb: 8 }}>

@@ -176,17 +176,17 @@ const BookingPage = () => {
   const navigate = useNavigate();
   const userId = useSelector(state => state.auth.user?.userId);
   const [tabValue, setTabValue] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(dayjs().add(1, 'day'));
+  const [donationDate, setDonationDate] = useState(null);
   const [selectedCity, setSelectedCity] = useState('Hồ Chí Minh');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 11:00');
-  const [currentWeek, setCurrentWeek] = useState(dayjs().startOf('week'));
   const [timeLocationCompleted, setTimeLocationCompleted] = useState(false);
   const [openSummary, setOpenSummary] = useState(false);
-  const [openCalendarDialog, setOpenCalendarDialog] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [periods, setPeriods] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -269,13 +269,16 @@ const BookingPage = () => {
       alert(validationResult);
       return;
     }
-    
-    // Nếu validation thành công, xóa lỗi và mở dialog
     setValidationError('');
     setOpenSummary(true);
   };
-  const handleViewCalendar = () => {
-    setOpenCalendarDialog(true);
+
+  const handlePeriodChange = (event) => {
+    const periodId = event.target.value;
+    const period = periods.find(p => p.periodId === periodId);
+    setSelectedPeriod(period);
+    setSelectedLocation(period ? period.location : '');
+    setDonationDate(null); // Reset date when period changes
   };
 
   // Hàm kiểm tra validation cho phiếu khai báo y tế
@@ -345,64 +348,6 @@ const BookingPage = () => {
     return null; // Không có lỗi
   };
 
-  // Hàm lưu thông tin đặt lịch vào localStorage
-  const saveAppointmentToLocalStorage = () => {
-    const appointmentId = `AP-${dayjs().format('YYYYMMDDHHmmss')}-${String(Date.now()).slice(-3)}`;
-    
-    const detailData = {
-      appointmentId: appointmentId,
-      patientName: "Người dùng hiện tại", // Giả định lấy từ thông tin người dùng đăng nhập
-      patientId: "079xxxxxxx", // Giả định
-      phone: "09xxxxxxxx", // Giả định
-      email: "user@example.com", // Giả định
-      bloodType: "O+", // Giả định
-      donationCenter: selectedLocation || "Trung tâm Huyết học - Truyền máu TP.HCM",
-      centerAddress: selectedLocation || "466 Nguyễn Thị Minh Khai, Phường 02, Quận 3, TP.HCM",
-      centerPhone: "028 3930 1234",
-      appointmentDate: selectedDate.format('DD/MM/YYYY'),
-      appointmentTime: selectedTimeSlot,
-      donationType: "Hiến máu tình nguyện", // Mặc định
-      bloodAmount: "350ml", // Mặc định
-      notes: "(Chưa có ghi chú)", // Mặc định
-      // Các trường thông tin về hủy lịch (nếu có)
-      cancellationReason: null,
-      cancellationDate: null,
-      cancellationTime: null,
-      // Thông tin chuẩn bị (ví dụ cho lịch hẹn sắp tới)
-      preparationNotes: [
-        "Ăn nhẹ trước khi hiến máu",
-        "Uống nhiều nước",
-        "Mang theo CMND/CCCD",
-        "Không uống rượu bia 24h trước"
-      ],
-      staffName: "Chưa cập nhật", // Giả định
-      staffPhone: "Chưa cập nhật" // Giả định
-    };
-
-    const appointmentData = {
-      id: Date.now(), 
-      title: `${detailData.donationCenter} (${detailData.appointmentTime} - ${detailData.appointmentDate})`,
-      location: detailData.centerAddress,
-      time: `${detailData.appointmentTime} - ${detailData.appointmentDate}`,
-      status: "scheduled",
-      statusText: "Đã hẹn lịch",
-      createdAt: new Date().toISOString(),
-      formData: formData, 
-      detail: detailData // Lưu detail object vào đây
-    };
-
-    // Lấy danh sách lịch hẹn hiện tại từ localStorage
-    const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-    
-    // Thêm lịch hẹn mới
-    existingAppointments.push(appointmentData);
-    
-    // Lưu lại vào localStorage
-    localStorage.setItem('userAppointments', JSON.stringify(existingAppointments));
-    
-    console.log('Đã lưu lịch hẹn:', appointmentData);
-  };
-
   // Thêm hàm gọi API đăng ký hiến máu
   const handleRegisterDonation = async () => {
     try {
@@ -410,20 +355,23 @@ const BookingPage = () => {
         alert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!');
         return;
       }
-      // TODO: Lấy các giá trị thực tế từ user/profile/context
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
       const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
       const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
       const donationVolume = 350; // ml, hoặc lấy từ form
       const patientCondition = 'Khỏe mạnh'; // hoặc lấy từ form
       const requestDate = new Date().toISOString();
-      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!');
+        return;
+      }
       const payload = {
         donationId: 0, // để backend tự sinh
         memberId: userId,
         periodId: periodId,
         componentId: componentId,
-        preferredDonationDate: selectedDate.format('YYYY-MM-DD'),
+        preferredDonationDate: null, // Không còn ngày cụ thể
         responsibleById: responsibleById,
         requestDate: requestDate,
         approvalDate: null,
@@ -432,8 +380,11 @@ const BookingPage = () => {
         notes: '',
         patientCondition: patientCondition
       };
-
-      const response = await axios.post('/api/DonationRequest', payload);
+      const response = await axios.post('/api/DonationRequest', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.status === 200) {
         alert('Đăng ký của bạn đã được gửi thành công!');
         navigate('/user-profile');
@@ -605,28 +556,13 @@ const BookingPage = () => {
     '13:00 - 16:00',
   ];
 
-  const getWeekDays = () => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(currentWeek.add(i, 'day'));
-    }
-    return days;
-  };
-
-  const weekDays = getWeekDays();
-  const weekDayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     axios.get('/api/BloodDonationPeriod', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => {
-      const filtered = res.data.filter(p => p.status === 'Active' || p.status === 'Completed');
-      setPeriods(filtered);
-      if (filtered.length > 0) {
-        setSelectedPeriod(filtered[0]);
-      }
+      setPeriods(res.data);
     })
     .catch(() => {
       setPeriods([]);
@@ -635,7 +571,7 @@ const BookingPage = () => {
   }, []);
 
   return (
-    <>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
           Đặt lịch hiến máu
@@ -670,71 +606,79 @@ const BookingPage = () => {
             <TabPanel value={tabValue} index={0}>
               {/* Time & Location Tab Content */}
               <Stack spacing={4}>
-                {/* Date Selection */}
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <CalendarTodayIcon sx={{ mr: 2, color: 'primary.main' }} />
-                      <Typography variant="h6" fontWeight="bold">
-                        Chọn ngày - {selectedDate.format('DD/MM/YYYY')}
-                      </Typography>
-
-                      <Button size="small" sx={{ ml: 'auto' }} onClick={handleViewCalendar}>
-                        Xem lịch
-                      </Button>
-    
-                    </Box>
-
-                    <WeekCalendar elevation={0} sx={{ border: '1px solid #e0e0e0' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <IconButton onClick={() => setCurrentWeek(currentWeek.subtract(1, 'week'))}>
-                          <ChevronLeftIcon />
-                        </IconButton>
-                        <Box sx={{ display: 'flex', gap: 1, flex: 1, justifyContent: 'center' }}>
-                          {weekDays.map((day, index) => (
-                            <DayButton
-                              key={index}
-                              selected={day.isSame(selectedDate, 'day')}
-                              onClick={() => setSelectedDate(day)}
-                            >
-                              <Typography variant="caption" sx={{ mb: 0.5 }}>
-                                {weekDayLabels[index]}
-                              </Typography>
-                              <Typography variant="body2" fontWeight="bold">
-                                {day.format('D')}
-                              </Typography>
-                            </DayButton>
-                          ))}
-                        </Box>
-                        <IconButton onClick={() => setCurrentWeek(currentWeek.add(1, 'week'))}>
-                          <ChevronRightIcon />
-                        </IconButton>
-                      </Box>
-                    </WeekCalendar>
-                  </CardContent>
-                </Card>
-
                 {/* Location Selection */}
                 <Card>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                       <LocationOnIcon sx={{ mr: 2, color: 'primary.main' }} />
                       <Typography variant="h6" fontWeight="bold">
-                        Địa điểm hiến máu
+                        Chọn đợt hiến máu
                       </Typography>
                     </Box>
-                    {selectedPeriod ? (
-                      <Box>
-                        <Typography variant="body1" color="primary" fontWeight="bold">
-                          {selectedPeriod.periodName} - {selectedPeriod.location}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Thời gian: {new Date(selectedPeriod.periodDateFrom).toLocaleString()} - {new Date(selectedPeriod.periodDateTo).toLocaleString()}
-                        </Typography>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <DatePicker
+                          label="Từ ngày"
+                          value={fromDate}
+                          onChange={setFromDate}
+                          renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+                          maxDate={toDate}
+                        />
+                        <DatePicker
+                          label="Đến ngày"
+                          value={toDate}
+                          onChange={setToDate}
+                          renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+                          minDate={fromDate}
+                        />
                       </Box>
-                    ) : (
-                      <Typography color="error">Không có đợt hiến máu phù hợp!</Typography>
-                    )}
+                    </FormControl>
+                    <FormControl fullWidth>
+                      <InputLabel>Chọn đợt hiến máu</InputLabel>
+                      <Select
+                        value={selectedPeriod ? selectedPeriod.periodId : ''}
+                        onChange={handlePeriodChange}
+                        label="Chọn đợt hiến máu"
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                            },
+                          },
+                        }}
+                        disabled={!fromDate || !toDate}
+                      >
+                        {fromDate && toDate && periods
+                          .filter(period => {
+                            const from = dayjs(fromDate).startOf('day');
+                            const to = dayjs(toDate).endOf('day');
+                            const periodFrom = dayjs(period.periodDateFrom);
+                            const periodTo = dayjs(period.periodDateTo);
+                            return periodTo.isSameOrAfter(from) && periodFrom.isSameOrBefore(to);
+                          })
+                          .map((period) => (
+                            <MenuItem key={period.periodId} value={period.periodId}>
+                              <Box>
+                                <Typography variant="body1" fontWeight="bold">
+                                  {period.periodName}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {period.location}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {dayjs(period.periodDateFrom).format('DD/MM/YYYY')} - {dayjs(period.periodDateTo).format('DD/MM/YYYY')}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        {(!fromDate || !toDate) && (
+                          <MenuItem disabled>Vui lòng chọn khoảng ngày trước.</MenuItem>
+                        )}
+                        {fromDate && toDate && periods.length === 0 && (
+                          <MenuItem disabled>Không có đợt hiến máu nào đang diễn ra.</MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
                   </CardContent>
                 </Card>
 
@@ -798,6 +742,7 @@ const BookingPage = () => {
                     variant="contained"
                     size="large"
                     onClick={handleContinue}
+                    disabled={!selectedPeriod}
                     sx={{ px: 4, py: 1.5 }}
                   >
                     Tiếp tục
@@ -1123,7 +1068,7 @@ const BookingPage = () => {
         <DialogContent dividers>
           <Stack spacing={2}>
             <Typography variant="subtitle1">
-              <strong>Ngày hiến máu:</strong> {selectedDate.format('DD/MM/YYYY')}
+              <strong>Ngày hiến máu:</strong> {donationDate ? donationDate.format('DD/MM/YYYY') : 'Chưa chọn'}
             </Typography>
             <Typography variant="subtitle1">
               <strong>Khung giờ:</strong> {selectedTimeSlot}
@@ -1132,7 +1077,7 @@ const BookingPage = () => {
               <strong>Tỉnh/Thành phố:</strong> {selectedCity}
             </Typography>
             <Typography variant="subtitle1">
-              <strong>Địa điểm:</strong> {selectedLocation || 'Chưa chọn'}
+              <strong>Địa điểm:</strong> {selectedPeriod ? selectedPeriod.location : 'Chưa chọn'}
             </Typography>
 
             <Divider />
@@ -1277,35 +1222,7 @@ const BookingPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Dialog open={openCalendarDialog} onClose={() => setOpenCalendarDialog(false)}>
-        <DialogTitle>Chọn ngày hiến máu</DialogTitle>
-        <DialogContent>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker
-              label="Ngày hiến máu"
-              value={selectedDate}
-              onChange={(newValue) => {
-                setSelectedDate(newValue);
-              }}
-              renderInput={(params) => <TextField {...params} fullWidth />}
-            />
-          </LocalizationProvider>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCalendarDialog(false)}>Hủy</Button>
-          <Button
-            onClick={() => setOpenCalendarDialog(false)}
-            variant="contained"
-          >
-            Xác nhận
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-
-    </>
-
+    </LocalizationProvider>
   );
 };
 

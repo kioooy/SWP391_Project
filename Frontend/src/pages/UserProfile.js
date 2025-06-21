@@ -109,66 +109,103 @@ const UserProfile = () => {
   // State cho lịch hẹn sắp tới
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
-  // Fetch dữ liệu người dùng từ API khi component mount
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
-          return;
-        }
+  // State cho lỗi form
+  const [formErrors, setFormErrors] = useState({});
 
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        const response = await axios.get(`${API_URL}/User/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  // State cho dữ liệu chỉnh sửa trong dialog
+  const [editFormData, setEditFormData] = useState({});
 
-        const userData = response.data[0]; 
-        if (userData) {
-          setFormData({
-            ...userData,
-            fullName: userData.fullName || '',
-            citizenNumber: userData.citizenNumber || '',
-            citizenIdCard: userData.citizenIdCard || '',
-            dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
-            gender: userData.sex === true ? 'male' : userData.sex === false ? 'female' : '',
-            bloodType: userData.bloodTypeName || '',
-            phone: userData.phoneNumber || '',
-            email: userData.email || '',
-            address: userData.address || '',
-            weight: userData.weight || '',
-            height: userData.height || '',
-            // medicalHistory và allergies không có trong API GetUserProfile, giữ nguyên mặc định hoặc lấy từ nguồn khác nếu có
-            medicalHistory: '', 
-            allergies: '',
-          });
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy thông tin người dùng:', error);
-        setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+  // State cho lịch sử hiến máu
+  const [donationHistory, setDonationHistory] = useState([]);
+
+  // Định nghĩa fetchUserProfile bên ngoài useEffect để có thể gọi lại
+  const fetchUserProfile = async () => {
+    try {
+      console.log('fetchUserProfile được gọi lại');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
+        return;
       }
-    };
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const response = await axios.get(`${API_URL}/User/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Dữ liệu user mới:', response.data);
+      const userData = response.data[0]; 
+      if (userData) {
+        const id = userData.userId || userData.UserId || user?.userId;
+        setFormData({
+          id,
+          fullName: userData.fullName || '',
+          citizenNumber: userData.citizenNumber || '',
+          dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
+          gender: userData.sex === true ? 'male' : userData.sex === false ? 'female' : '',
+          bloodType: userData.bloodTypeName || '',
+          phone: userData.phoneNumber || '',
+          email: userData.email || '',
+          address: userData.address || '',
+          weight: userData.weight || userData.Weight || '',
+          height: userData.height || userData.Height || '',
+        });
+      } else {
+        console.warn('Không lấy được userData từ API');
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+      setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+    }
+  };
 
+  // useEffect chỉ gọi fetchUserProfile khi mount
+  useEffect(() => {
     fetchUserProfile();
   }, []);
 
-  // Load lịch hẹn từ localStorage
+  // Thêm hàm reloadUpcomingAppointments để có thể gọi lại khi cần
+  const reloadUpcomingAppointments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const res = await axios.get(`${apiUrl}/Reservation/upcoming`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
+    } catch (error) {
+      setUpcomingAppointments([]);
+    }
+  };
+
+  // Sửa useEffect cũ thành gọi reloadUpcomingAppointments
   useEffect(() => {
-    const loadAppointments = () => {
+    reloadUpcomingAppointments();
+  }, []);
+
+  // Nếu muốn reload khi chuyển tab, có thể thêm:
+  useEffect(() => {
+    if (tabValue === 1) reloadUpcomingAppointments();
+  }, [tabValue]);
+
+  // useEffect lấy lịch sử hiến máu từ backend
+  useEffect(() => {
+    const fetchDonationHistory = async () => {
       try {
-        const appointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-        // Lọc chỉ lịch hẹn sắp tới (status = "scheduled")
-        const upcoming = appointments.filter(app => app.status === 'scheduled');
-        setUpcomingAppointments(upcoming);
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        // Giả sử API trả về lịch sử hiến máu của user
+        const res = await axios.get(`${apiUrl}/DonationHistory`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setDonationHistory(res.data || []);
       } catch (error) {
-        console.error('Lỗi khi load lịch hẹn:', error);
+        setDonationHistory([]);
       }
     };
-
-    loadAppointments();
+    fetchDonationHistory();
   }, []);
 
   // Hàm đóng Snackbar
@@ -191,40 +228,24 @@ const UserProfile = () => {
   };
 
   // Hàm xác nhận hủy lịch hẹn
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!appointmentToCancel) return;
-    
     try {
-      const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-      
-      const updatedAppointments = existingAppointments.map(app => {
-        if (app.id === appointmentToCancel.id) {
-          return {
-            ...app,
-            status: 'expired',
-            statusText: 'Đã xoá',
-            detail: {
-              ...(app.detail || {}),
-              cancellationReason: 'Người dùng tự hủy',
-              cancellationDate: dayjs().format('DD/MM/YYYY'),
-              cancellationTime: dayjs().format('HH:mm'),
-            }
-          };
-        }
-        return app;
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      await axios.patch(`${apiUrl}/Reservation/${appointmentToCancel.id}?action=cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      localStorage.setItem('userAppointments', JSON.stringify(updatedAppointments));
-      
-      // Cập nhật lại state chỉ với các lịch hẹn sắp tới (status === 'scheduled')
-      setUpcomingAppointments(updatedAppointments.filter(app => app.status === 'scheduled'));
       setSnackbar({ open: true, message: 'Lịch hẹn đã được hủy thành công!', severity: 'success' });
-      
-      // Đóng dialog và reset state
       setOpenCancelDialog(false);
       setAppointmentToCancel(null);
+      // Reload lại danh sách lịch hẹn
+      const res = await axios.get(`${apiUrl}/Reservation/upcoming`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
     } catch (error) {
-      console.error('Lỗi khi xóa lịch hẹn:', error);
       setSnackbar({ open: true, message: 'Lỗi khi hủy lịch hẹn.', severity: 'error' });
     }
   };
@@ -235,42 +256,12 @@ const UserProfile = () => {
     setAppointmentToCancel(null);
   };
 
-  // Dữ liệu mẫu lịch sử hiến máu
-  const donationHistory = [
-    {
-      id: 1,
-      date: '2024-03-15',
-      location: 'Bệnh viện Chợ Rẫy',
-      bloodType: 'A+',
-      volume: 350,
-      status: 'completed',
-      nextDonationDate: '2024-06-15',
-    },
-    {
-      id: 2,
-      date: '2023-12-10',
-      location: 'Bệnh viện Nhi Đồng 1',
-      bloodType: 'A+',
-      volume: 350,
-      status: 'completed',
-      nextDonationDate: '2024-03-10',
-    },
-    {
-      id: 3,
-      date: '2023-09-05',
-      location: 'Bệnh viện 115',
-      bloodType: 'A+',
-      volume: 250,
-      status: 'completed',
-      nextDonationDate: '2023-12-05',
-    },
-  ];
-
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
   const handleOpenDialog = () => {
+    setEditFormData(formData);
     setOpenDialog(true);
   };
 
@@ -343,40 +334,81 @@ const UserProfile = () => {
     }
   };
 
+  // Validate form dùng editFormData
+  const validateForm = () => {
+    const errors = {};
+    // Họ tên: chỉ chữ và khoảng trắng, tối thiểu 2 ký tự
+    const fullNameTrim = (editFormData.fullName || '').trim();
+    if (!fullNameTrim || !/^[\p{L}\s]+$/u.test(fullNameTrim) || fullNameTrim.length < 2) {
+      errors.fullName = 'Họ và tên chỉ được nhập chữ và tối thiểu 2 ký tự.';
+    }
+    // Số CCCD: đúng 12 số
+    if (!editFormData.citizenNumber || !/^\d{12}$/.test(editFormData.citizenNumber)) {
+      errors.citizenNumber = 'Số CCCD phải là 12 chữ số.';
+    }
+    // Giới tính: chỉ Nam/Nữ
+    if (editFormData.gender !== 'male' && editFormData.gender !== 'female') {
+      errors.gender = 'Giới tính chỉ được chọn Nam hoặc Nữ.';
+    }
+    // Cân nặng: số, 45-300
+    const weightNum = Number(editFormData.weight);
+    if (isNaN(weightNum) || weightNum < 45 || weightNum > 300) {
+      errors.weight = 'Cân nặng phải từ 45 đến 300 kg.';
+    }
+    // Chiều cao: số, 145-300
+    const heightNum = Number(editFormData.height);
+    if (isNaN(heightNum) || heightNum < 145 || heightNum > 300) {
+      errors.height = 'Chiều cao phải từ 145 đến 300 cm.';
+    }
+    // Email
+    if (!editFormData.email || !/^\S+@\S+\.\S+$/.test(editFormData.email)) {
+      errors.email = 'Email không hợp lệ.';
+    }
+    // Số điện thoại: 10 số, bắt đầu 03,05,07,08,09
+    if (!editFormData.phone || !/^0[3|5|7|8|9][0-9]{8}$/.test(editFormData.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ.';
+    }
+    // Địa chỉ
+    if (!editFormData.address || editFormData.address.length < 5) {
+      errors.address = 'Vui lòng nhập địa chỉ.';
+    }
+    // Ngày sinh
+    if (!editFormData.dateOfBirth) {
+      errors.dateOfBirth = 'Vui lòng nhập ngày sinh.';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
         return;
       }
-
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      // Chỉ gửi các trường backend chấp nhận, đúng tên trường model backend
       const payload = {
-        ...formData,
-        sex: formData.gender === 'male' ? true : formData.gender === 'female' ? false : null,
-        bloodTypeName: formData.bloodType,
-        phoneNumber: formData.phone,
-        citizenNumber: formData.citizenNumber,
-        citizenIdCard: formData.citizenIdCard,
+        PhoneNumber: editFormData.phone,
+        Address: editFormData.address,
+        Sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
+        Weight: Number(editFormData.weight),
+        Height: Number(editFormData.height),
       };
-
-      // Xóa các trường không cần thiết hoặc đã được ánh xạ lại
-      delete payload.gender;
-      delete payload.bloodType;
-      delete payload.phone;
-
-      const response = await axios.put(`${apiUrl}/users/${formData.id}`, payload, {
+      console.log('Payload gửi lên:', payload);
+      const response = await axios.patch(`${apiUrl}/User/${editFormData.id}/profile`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (response.status === 200) {
+      console.log('Response cập nhật:', response);
+      if (response.status === 200 || response.status === 204) {
         setSnackbar({ open: true, message: 'Cập nhật thông tin thành công!', severity: 'success' });
         handleCloseDialog();
-        // Có thể cần cập nhật lại dữ liệu người dùng sau khi lưu thành công
-        // Ví dụ: fetchData();
+        // Fetch lại dữ liệu mới nhất từ API
+        fetchUserProfile();
       } else {
         setSnackbar({ open: true, message: `Lỗi khi cập nhật: ${response.statusText}`, severity: 'error' });
       }
@@ -581,32 +613,38 @@ const UserProfile = () => {
               </Box>
               <TabPanel value={tabValue} index={0}>
                 <Typography variant="h6" gutterBottom>Lịch sử hiến máu</Typography>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Ngày</TableCell>
-                        <TableCell>Địa điểm</TableCell>
-                        <TableCell>Nhóm máu</TableCell>
-                        <TableCell>Thể tích (ml)</TableCell>
-                        <TableCell>Trạng thái</TableCell>
-                        <TableCell>Ngày hiến máu tiếp theo</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {donationHistory.map((row) => (
-                        <TableRow key={row.id}>
-                          <TableCell>{row.date}</TableCell>
-                          <TableCell>{row.location}</TableCell>
-                          <TableCell>{row.bloodType}</TableCell>
-                          <TableCell>{row.volume}</TableCell>
-                          <TableCell>{getStatusChip(row.status)}</TableCell>
-                          <TableCell>{row.nextDonationDate}</TableCell>
+                {donationHistory.length > 0 ? (
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Ngày</TableCell>
+                          <TableCell>Địa điểm</TableCell>
+                          <TableCell>Nhóm máu</TableCell>
+                          <TableCell>Thể tích (ml)</TableCell>
+                          <TableCell>Trạng thái</TableCell>
+                          <TableCell>Ngày hiến máu tiếp theo</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {donationHistory.map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell>{row.date}</TableCell>
+                            <TableCell>{row.location}</TableCell>
+                            <TableCell>{row.bloodType}</TableCell>
+                            <TableCell>{row.volume}</TableCell>
+                            <TableCell>{getStatusChip(row.status)}</TableCell>
+                            <TableCell>{row.nextDonationDate}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                    Chưa có lịch sử hiến máu.
+                  </Typography>
+                )}
               </TabPanel>
               <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
@@ -720,22 +758,25 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.fullName}
-            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+            value={editFormData.fullName || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value.replace(/[^\p{L}\s]/gu, '') })}
             sx={{ mb: 2 }}
+            error={!!formErrors.fullName}
+            helperText={formErrors.fullName}
           />
           <TextField
             margin="dense"
             name="citizenNumber"
-            label="Số CMND"
+            label="Số CCCD"
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.citizenNumber}
-            onChange={(e) => setFormData({ ...formData, citizenNumber: e.target.value })}
+            value={editFormData.citizenNumber || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, citizenNumber: e.target.value.replace(/[^0-9]/g, '').slice(0,12) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.citizenNumber}
+            helperText={formErrors.citizenNumber}
           />
-
           <TextField
             margin="dense"
             name="dateOfBirth"
@@ -743,25 +784,25 @@ const UserProfile = () => {
             type="date"
             fullWidth
             variant="outlined"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            value={formData.dateOfBirth}
-            onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            value={editFormData.dateOfBirth || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
             sx={{ mb: 2 }}
+            error={!!formErrors.dateOfBirth}
+            helperText={formErrors.dateOfBirth}
           />
-          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }} error={!!formErrors.gender}>
             <InputLabel>Giới tính</InputLabel>
             <Select
               name="gender"
-              value={formData.gender}
-              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+              value={editFormData.gender || ''}
+              onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
               label="Giới tính"
             >
               <MenuItem value="male">Nam</MenuItem>
               <MenuItem value="female">Nữ</MenuItem>
-              <MenuItem value="other">Khác</MenuItem>
             </Select>
+            {formErrors.gender && <Typography color="error" variant="caption">{formErrors.gender}</Typography>}
           </FormControl>
           <TextField
             margin="dense"
@@ -770,9 +811,11 @@ const UserProfile = () => {
             type="tel"
             fullWidth
             variant="outlined"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            value={editFormData.phone || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/[^0-9]/g, '').slice(0,10) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
           />
           <TextField
             margin="dense"
@@ -781,9 +824,11 @@ const UserProfile = () => {
             type="email"
             fullWidth
             variant="outlined"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            value={editFormData.email || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
             sx={{ mb: 2 }}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
           />
           <TextField
             margin="dense"
@@ -792,57 +837,37 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            value={editFormData.address || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
             sx={{ mb: 2 }}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
           />
           <TextField
             margin="dense"
             name="weight"
             label="Cân nặng (kg)"
-            type="number"
+            type="text"
             fullWidth
             variant="outlined"
-            value={formData.weight}
-            onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+            value={editFormData.weight || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, weight: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.weight}
+            helperText={formErrors.weight}
           />
           <TextField
             margin="dense"
             name="height"
             label="Chiều cao (cm)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={formData.height}
-            onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="medicalHistory"
-            label="Tiền sử bệnh án"
             type="text"
             fullWidth
-            multiline
-            rows={3}
             variant="outlined"
-            value={formData.medicalHistory}
-            onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+            value={editFormData.height || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, height: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
             sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="allergies"
-            label="Dị ứng"
-            type="text"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={formData.allergies}
-            onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-            sx={{ mb: 2 }}
+            error={!!formErrors.height}
+            helperText={formErrors.height}
           />
         </DialogContent>
         <DialogActions>

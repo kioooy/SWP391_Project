@@ -218,7 +218,6 @@ const MainLayout = () => {
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
       { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
-      { path: "/blood-donation-periods", label: "Đợt Hiến Máu", icon: <BloodtypeIcon /> },
       { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
       { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },

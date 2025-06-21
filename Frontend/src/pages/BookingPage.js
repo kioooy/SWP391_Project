@@ -570,6 +570,20 @@ const BookingPage = () => {
     });
   }, []);
 
+  useEffect(() => {
+    const stored = localStorage.getItem('selectedPeriodInfo');
+    if (stored) {
+      const info = JSON.parse(stored);
+      if (info.period) {
+        setSelectedPeriod(info.period);
+        setSelectedLocation(info.period.location);
+      }
+      if (info.fromDate) setFromDate(dayjs(info.fromDate));
+      if (info.toDate) setToDate(dayjs(info.toDate));
+      localStorage.removeItem('selectedPeriodInfo');
+    }
+  }, []);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ py: 4 }}>

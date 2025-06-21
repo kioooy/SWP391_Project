@@ -115,49 +115,49 @@ const UserProfile = () => {
   // State cho dữ liệu chỉnh sửa trong dialog
   const [editFormData, setEditFormData] = useState({});
 
-  // Fetch dữ liệu người dùng từ API khi component mount
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
-          return;
-        }
-
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        const response = await axios.get(`${API_URL}/User/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const userData = response.data[0]; 
-        if (userData) {
-          setFormData({
-            ...userData,
-            fullName: userData.fullName || '',
-            citizenNumber: userData.citizenNumber || '',
-            citizenIdCard: userData.citizenIdCard || '',
-            dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
-            gender: userData.sex === true ? 'male' : userData.sex === false ? 'female' : '',
-            bloodType: userData.bloodTypeName || '',
-            phone: userData.phoneNumber || '',
-            email: userData.email || '',
-            address: userData.address || '',
-            weight: userData.weight || '',
-            height: userData.height || '',
-            // medicalHistory và allergies không có trong API GetUserProfile, giữ nguyên mặc định hoặc lấy từ nguồn khác nếu có
-            medicalHistory: '', 
-            allergies: '',
-          });
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy thông tin người dùng:', error);
-        setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+  // Định nghĩa fetchUserProfile bên ngoài useEffect để có thể gọi lại
+  const fetchUserProfile = async () => {
+    try {
+      console.log('fetchUserProfile được gọi lại');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
+        return;
       }
-    };
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const response = await axios.get(`${API_URL}/User/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Dữ liệu user mới:', response.data);
+      const userData = response.data[0]; 
+      if (userData) {
+        const id = userData.userId || userData.UserId || user?.userId;
+        setFormData({
+          id,
+          fullName: userData.fullName || '',
+          citizenNumber: userData.citizenNumber || '',
+          dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
+          gender: userData.sex === true ? 'male' : userData.sex === false ? 'female' : '',
+          bloodType: userData.bloodTypeName || '',
+          phone: userData.phoneNumber || '',
+          email: userData.email || '',
+          address: userData.address || '',
+          weight: userData.weight || userData.Weight || '',
+          height: userData.height || userData.Height || '',
+        });
+      } else {
+        console.warn('Không lấy được userData từ API');
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+      setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+    }
+  };
 
+  // useEffect chỉ gọi fetchUserProfile khi mount
+  useEffect(() => {
     fetchUserProfile();
   }, []);
 
@@ -353,20 +353,44 @@ const UserProfile = () => {
   // Validate form dùng editFormData
   const validateForm = () => {
     const errors = {};
-    if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(editFormData.fullName?.trim() || '')) {
-      errors.fullName = 'Họ và tên chỉ được nhập chữ.';
+    // Họ tên: chỉ chữ và khoảng trắng, tối thiểu 2 ký tự
+    const fullNameTrim = (editFormData.fullName || '').trim();
+    if (!fullNameTrim || !/^[\p{L}\s]+$/u.test(fullNameTrim) || fullNameTrim.length < 2) {
+      errors.fullName = 'Họ và tên chỉ được nhập chữ và tối thiểu 2 ký tự.';
     }
-    if (!/^\d{12}$/.test(editFormData.citizenNumber?.trim() || '')) {
-      errors.citizenNumber = 'Số CMND phải là 12 chữ số.';
+    // Số CCCD: đúng 12 số
+    if (!editFormData.citizenNumber || !/^\d{12}$/.test(editFormData.citizenNumber)) {
+      errors.citizenNumber = 'Số CCCD phải là 12 chữ số.';
     }
+    // Giới tính: chỉ Nam/Nữ
     if (editFormData.gender !== 'male' && editFormData.gender !== 'female') {
       errors.gender = 'Giới tính chỉ được chọn Nam hoặc Nữ.';
     }
-    if (!/^\d{1,3}$/.test(editFormData.weight?.trim() || '')) {
-      errors.weight = 'Cân nặng chỉ được nhập số và tối đa 3 chữ số.';
+    // Cân nặng: số, 45-300
+    const weightNum = Number(editFormData.weight);
+    if (isNaN(weightNum) || weightNum < 45 || weightNum > 300) {
+      errors.weight = 'Cân nặng phải từ 45 đến 300 kg.';
     }
-    if (!/^\d{1,3}$/.test(editFormData.height?.trim() || '')) {
-      errors.height = 'Chiều cao chỉ được nhập số và tối đa 3 chữ số.';
+    // Chiều cao: số, 145-300
+    const heightNum = Number(editFormData.height);
+    if (isNaN(heightNum) || heightNum < 145 || heightNum > 300) {
+      errors.height = 'Chiều cao phải từ 145 đến 300 cm.';
+    }
+    // Email
+    if (!editFormData.email || !/^\S+@\S+\.\S+$/.test(editFormData.email)) {
+      errors.email = 'Email không hợp lệ.';
+    }
+    // Số điện thoại: 10 số, bắt đầu 03,05,07,08,09
+    if (!editFormData.phone || !/^0[3|5|7|8|9][0-9]{8}$/.test(editFormData.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ.';
+    }
+    // Địa chỉ
+    if (!editFormData.address || editFormData.address.length < 5) {
+      errors.address = 'Vui lòng nhập địa chỉ.';
+    }
+    // Ngày sinh
+    if (!editFormData.dateOfBirth) {
+      errors.dateOfBirth = 'Vui lòng nhập ngày sinh.';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -381,26 +405,26 @@ const UserProfile = () => {
         return;
       }
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      // Chỉ gửi các trường backend chấp nhận, đúng tên trường model backend
       const payload = {
-        ...editFormData,
-        sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
-        bloodTypeName: editFormData.bloodType,
-        phoneNumber: editFormData.phone,
-        citizenNumber: editFormData.citizenNumber,
-        citizenIdCard: editFormData.citizenIdCard,
+        PhoneNumber: editFormData.phone,
+        Address: editFormData.address,
+        Sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
+        Weight: Number(editFormData.weight),
+        Height: Number(editFormData.height),
       };
-      delete payload.gender;
-      delete payload.bloodType;
-      delete payload.phone;
-      const response = await axios.put(`${apiUrl}/users/${editFormData.id}`, payload, {
+      console.log('Payload gửi lên:', payload);
+      const response = await axios.patch(`${apiUrl}/User/${editFormData.id}/profile`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.status === 200) {
+      console.log('Response cập nhật:', response);
+      if (response.status === 200 || response.status === 204) {
         setSnackbar({ open: true, message: 'Cập nhật thông tin thành công!', severity: 'success' });
         handleCloseDialog();
-        setFormData(editFormData); // cập nhật lại dữ liệu hiển thị ngoài
+        // Fetch lại dữ liệu mới nhất từ API
+        fetchUserProfile();
       } else {
         setSnackbar({ open: true, message: `Lỗi khi cập nhật: ${response.statusText}`, severity: 'error' });
       }
@@ -745,7 +769,7 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.fullName || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '') })}
+            onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value.replace(/[^\p{L}\s]/gu, '') })}
             sx={{ mb: 2 }}
             error={!!formErrors.fullName}
             helperText={formErrors.fullName}
@@ -753,7 +777,7 @@ const UserProfile = () => {
           <TextField
             margin="dense"
             name="citizenNumber"
-            label="Số CMND"
+            label="Số CCCD"
             type="text"
             fullWidth
             variant="outlined"
@@ -763,7 +787,6 @@ const UserProfile = () => {
             error={!!formErrors.citizenNumber}
             helperText={formErrors.citizenNumber}
           />
-
           <TextField
             margin="dense"
             name="dateOfBirth"
@@ -771,12 +794,12 @@ const UserProfile = () => {
             type="date"
             fullWidth
             variant="outlined"
-            InputLabelProps={{
-              shrink: true,
-            }}
+            InputLabelProps={{ shrink: true }}
             value={editFormData.dateOfBirth || ''}
             onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
             sx={{ mb: 2 }}
+            error={!!formErrors.dateOfBirth}
+            helperText={formErrors.dateOfBirth}
           />
           <FormControl fullWidth variant="outlined" sx={{ mb: 2 }} error={!!formErrors.gender}>
             <InputLabel>Giới tính</InputLabel>
@@ -799,8 +822,10 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.phone || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/[^0-9]/g, '').slice(0,10) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
           />
           <TextField
             margin="dense"
@@ -812,6 +837,8 @@ const UserProfile = () => {
             value={editFormData.email || ''}
             onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
             sx={{ mb: 2 }}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
           />
           <TextField
             margin="dense"
@@ -823,6 +850,8 @@ const UserProfile = () => {
             value={editFormData.address || ''}
             onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
             sx={{ mb: 2 }}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
           />
           <TextField
             margin="dense"
@@ -849,32 +878,6 @@ const UserProfile = () => {
             sx={{ mb: 2 }}
             error={!!formErrors.height}
             helperText={formErrors.height}
-          />
-          <TextField
-            margin="dense"
-            name="medicalHistory"
-            label="Tiền sử bệnh án"
-            type="text"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={editFormData.medicalHistory || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, medicalHistory: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="allergies"
-            label="Dị ứng"
-            type="text"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={editFormData.allergies || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, allergies: e.target.value })}
-            sx={{ mb: 2 }}
           />
         </DialogContent>
         <DialogActions>

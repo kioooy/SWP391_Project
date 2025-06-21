@@ -94,6 +94,8 @@ const UserProfile = () => {
     address: '',
     weight: '',
     height: '',
+    latitude: '', // Thêm trường latitude vào trạng thái ban đầu
+    longitude: '', // Thêm trường longitude vào trạng thái ban đầu
     medicalHistory: '',
     allergies: '',
   });
@@ -149,6 +151,8 @@ const UserProfile = () => {
           address: userData.address || '',
           weight: userData.weight || userData.Weight || '',
           height: userData.height || userData.Height || '',
+          latitude: userData.latitude || '', // Lấy latitude từ API và cập nhật vào formData
+          longitude: userData.longitude || '', // Lấy longitude từ API và cập nhật vào formData
         });
       } else {
         console.warn('Không lấy được userData từ API');
@@ -391,11 +395,16 @@ const UserProfile = () => {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
       // Chỉ gửi các trường backend chấp nhận, đúng tên trường model backend
       const payload = {
+        FullName: editFormData.fullName.trim(),
+        Email: editFormData.email.trim(),
         PhoneNumber: editFormData.phone,
         Address: editFormData.address,
         Sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
         Weight: Number(editFormData.weight),
         Height: Number(editFormData.height),
+        // Thêm Latitude và Longitude vào payload nếu có giá trị hợp lệ
+        ...(editFormData.latitude && !isNaN(Number(editFormData.latitude)) && { Latitude: Number(editFormData.latitude) }),
+        ...(editFormData.longitude && !isNaN(Number(editFormData.longitude)) && { Longitude: Number(editFormData.longitude) }),
       };
       console.log('Payload gửi lên:', payload);
       const response = await axios.patch(`${apiUrl}/User/${editFormData.id}/profile`, payload, {
@@ -772,7 +781,8 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.citizenNumber || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, citizenNumber: e.target.value.replace(/[^0-9]/g, '').slice(0,12) })}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
             error={!!formErrors.citizenNumber}
             helperText={formErrors.citizenNumber}

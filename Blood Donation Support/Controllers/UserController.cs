@@ -202,7 +202,24 @@ namespace Blood_Donation_Support.Controllers
             if (existingUser == null)
                 return NotFound(); // Status code 404 Not Found 
 
-            if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
+            if (!string.IsNullOrEmpty(model.FullName) && existingUser.FullName != model.FullName.Trim())
+            {
+                existingUser.FullName = model.FullName.Trim();
+            }
+
+            // Cập nhật Email nếu có thay đổi và chưa bị trùng
+    if (!string.IsNullOrEmpty(model.Email) && existingUser.Email != model.Email)
+    {
+        var isEmailTaken = await _context.Users.AnyAsync(u => u.Email == model.Email && u.UserId != id);
+        if (isEmailTaken)
+        {
+            return BadRequest(new { message = "Email đã tồn tại cho người dùng khác." });
+        }
+        existingUser.Email = model.Email;
+    }
+
+    // Cập nhật Số điện thoại
+    if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
             {
                 // Check existing Phone Number
                 var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);

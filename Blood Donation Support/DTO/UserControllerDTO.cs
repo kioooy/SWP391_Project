@@ -138,6 +138,9 @@ namespace Blood_Donation_Support.DTO
         [EmailAddress]
         public string? Email { get; set; }
 
+        // Thêm thuộc tính FullName để cập nhật họ tên
+        public string? FullName { get; set; }
+
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
         public string? PhoneNumber { get; set; }
 

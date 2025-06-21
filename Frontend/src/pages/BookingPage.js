@@ -185,6 +185,8 @@ const BookingPage = () => {
   const [validationError, setValidationError] = useState('');
   const [periods, setPeriods] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -267,8 +269,6 @@ const BookingPage = () => {
       alert(validationResult);
       return;
     }
-    
-    // Nếu validation thành công, xóa lỗi và mở dialog
     setValidationError('');
     setOpenSummary(true);
   };
@@ -348,64 +348,6 @@ const BookingPage = () => {
     return null; // Không có lỗi
   };
 
-  // Hàm lưu thông tin đặt lịch vào localStorage
-  const saveAppointmentToLocalStorage = () => {
-    const appointmentId = `AP-${dayjs().format('YYYYMMDDHHmmss')}-${String(Date.now()).slice(-3)}`;
-    
-    const detailData = {
-      appointmentId: appointmentId,
-      patientName: "Người dùng hiện tại", // Giả định lấy từ thông tin người dùng đăng nhập
-      patientId: "079xxxxxxx", // Giả định
-      phone: "09xxxxxxxx", // Giả định
-      email: "user@example.com", // Giả định
-      bloodType: "O+", // Giả định
-      donationCenter: selectedPeriod ? selectedPeriod.location : "Chưa chọn",
-      centerAddress: selectedPeriod ? selectedPeriod.location : "Chưa chọn",
-      centerPhone: "028 3930 1234",
-      appointmentDate: donationDate ? donationDate.format('DD/MM/YYYY') : 'Chưa chọn',
-      appointmentTime: selectedTimeSlot,
-      donationType: "Hiến máu tình nguyện", // Mặc định
-      bloodAmount: "350ml", // Mặc định
-      notes: "(Chưa có ghi chú)", // Mặc định
-      // Các trường thông tin về hủy lịch (nếu có)
-      cancellationReason: null,
-      cancellationDate: null,
-      cancellationTime: null,
-      // Thông tin chuẩn bị (ví dụ cho lịch hẹn sắp tới)
-      preparationNotes: [
-        "Ăn nhẹ trước khi hiến máu",
-        "Uống nhiều nước",
-        "Mang theo CMND/CCCD",
-        "Không uống rượu bia 24h trước"
-      ],
-      staffName: "Chưa cập nhật", // Giả định
-      staffPhone: "Chưa cập nhật" // Giả định
-    };
-
-    const appointmentData = {
-      id: Date.now(), 
-      title: `${detailData.donationCenter} (${detailData.appointmentTime} - ${detailData.appointmentDate})`,
-      location: detailData.centerAddress,
-      time: `${detailData.appointmentTime} - ${detailData.appointmentDate}`,
-      status: "scheduled",
-      statusText: "Đã hẹn lịch",
-      createdAt: new Date().toISOString(),
-      formData: formData, 
-      detail: detailData // Lưu detail object vào đây
-    };
-
-    // Lấy danh sách lịch hẹn hiện tại từ localStorage
-    const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-    
-    // Thêm lịch hẹn mới
-    existingAppointments.push(appointmentData);
-    
-    // Lưu lại vào localStorage
-    localStorage.setItem('userAppointments', JSON.stringify(existingAppointments));
-    
-    console.log('Đã lưu lịch hẹn:', appointmentData);
-  };
-
   // Thêm hàm gọi API đăng ký hiến máu
   const handleRegisterDonation = async () => {
     try {
@@ -413,20 +355,23 @@ const BookingPage = () => {
         alert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!');
         return;
       }
-      // TODO: Lấy các giá trị thực tế từ user/profile/context
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
       const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
       const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
       const donationVolume = 350; // ml, hoặc lấy từ form
       const patientCondition = 'Khỏe mạnh'; // hoặc lấy từ form
       const requestDate = new Date().toISOString();
-      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!');
+        return;
+      }
       const payload = {
         donationId: 0, // để backend tự sinh
         memberId: userId,
         periodId: periodId,
         componentId: componentId,
-        preferredDonationDate: donationDate.format('YYYY-MM-DD'),
+        preferredDonationDate: null, // Không còn ngày cụ thể
         responsibleById: responsibleById,
         requestDate: requestDate,
         approvalDate: null,
@@ -435,8 +380,11 @@ const BookingPage = () => {
         notes: '',
         patientCondition: patientCondition
       };
-
-      const response = await axios.post('/api/DonationRequest', payload);
+      const response = await axios.post('/api/DonationRequest', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.status === 200) {
         alert('Đăng ký của bạn đã được gửi thành công!');
         navigate('/user-profile');
@@ -623,7 +571,7 @@ const BookingPage = () => {
   }, []);
 
   return (
-    <>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
           Đặt lịch hiến máu
@@ -667,15 +615,48 @@ const BookingPage = () => {
                         Chọn đợt hiến máu
                       </Typography>
                     </Box>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <DatePicker
+                          label="Từ ngày"
+                          value={fromDate}
+                          onChange={setFromDate}
+                          renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+                          maxDate={toDate}
+                        />
+                        <DatePicker
+                          label="Đến ngày"
+                          value={toDate}
+                          onChange={setToDate}
+                          renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+                          minDate={fromDate}
+                        />
+                      </Box>
+                    </FormControl>
                     <FormControl fullWidth>
                       <InputLabel>Chọn đợt hiến máu</InputLabel>
                       <Select
                         value={selectedPeriod ? selectedPeriod.periodId : ''}
                         onChange={handlePeriodChange}
                         label="Chọn đợt hiến máu"
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                            },
+                          },
+                        }}
+                        disabled={!fromDate || !toDate}
                       >
-                        {periods.length > 0 ? (
-                          periods.map((period) => (
+                        {fromDate && toDate && periods
+                          .filter(period => {
+                            const from = dayjs(fromDate).startOf('day');
+                            const to = dayjs(toDate).endOf('day');
+                            const periodFrom = dayjs(period.periodDateFrom);
+                            const periodTo = dayjs(period.periodDateTo);
+                            return periodTo.isSameOrAfter(from) && periodFrom.isSameOrBefore(to);
+                          })
+                          .map((period) => (
                             <MenuItem key={period.periodId} value={period.periodId}>
                               <Box>
                                 <Typography variant="body1" fontWeight="bold">
@@ -689,32 +670,15 @@ const BookingPage = () => {
                                 </Typography>
                               </Box>
                             </MenuItem>
-                          ))
-                        ) : (
+                          ))}
+                        {(!fromDate || !toDate) && (
+                          <MenuItem disabled>Vui lòng chọn khoảng ngày trước.</MenuItem>
+                        )}
+                        {fromDate && toDate && periods.length === 0 && (
                           <MenuItem disabled>Không có đợt hiến máu nào đang diễn ra.</MenuItem>
                         )}
                       </Select>
                     </FormControl>
-
-                    {selectedPeriod && (
-                      <Box mt={4}>
-                        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                          Chọn ngày bạn sẽ đến
-                        </Typography>
-                        <TextField
-                          label="Ngày hiến máu"
-                          type="date"
-                          value={donationDate ? donationDate.format('YYYY-MM-DD') : ''}
-                          onChange={(e) => setDonationDate(dayjs(e.target.value))}
-                          InputLabelProps={{ shrink: true }}
-                          fullWidth
-                          inputProps={{
-                            min: dayjs(selectedPeriod.periodDateFrom).format('YYYY-MM-DD'),
-                            max: dayjs(selectedPeriod.periodDateTo).format('YYYY-MM-DD'),
-                          }}
-                        />
-                      </Box>
-                    )}
                   </CardContent>
                 </Card>
 
@@ -778,7 +742,7 @@ const BookingPage = () => {
                     variant="contained"
                     size="large"
                     onClick={handleContinue}
-                    disabled={!selectedPeriod || !donationDate}
+                    disabled={!selectedPeriod}
                     sx={{ px: 4, py: 1.5 }}
                   >
                     Tiếp tục
@@ -1258,8 +1222,7 @@ const BookingPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </>
-
+    </LocalizationProvider>
   );
 };
 

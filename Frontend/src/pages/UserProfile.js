@@ -115,6 +115,9 @@ const UserProfile = () => {
   // State cho dữ liệu chỉnh sửa trong dialog
   const [editFormData, setEditFormData] = useState({});
 
+  // State cho lịch sử hiến máu
+  const [donationHistory, setDonationHistory] = useState([]);
+
   // Định nghĩa fetchUserProfile bên ngoài useEffect để có thể gọi lại
   const fetchUserProfile = async () => {
     try {
@@ -161,20 +164,48 @@ const UserProfile = () => {
     fetchUserProfile();
   }, []);
 
-  // Load lịch hẹn từ localStorage
+  // Thêm hàm reloadUpcomingAppointments để có thể gọi lại khi cần
+  const reloadUpcomingAppointments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const res = await axios.get(`${apiUrl}/Reservation/upcoming`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
+    } catch (error) {
+      setUpcomingAppointments([]);
+    }
+  };
+
+  // Sửa useEffect cũ thành gọi reloadUpcomingAppointments
   useEffect(() => {
-    const loadAppointments = () => {
+    reloadUpcomingAppointments();
+  }, []);
+
+  // Nếu muốn reload khi chuyển tab, có thể thêm:
+  useEffect(() => {
+    if (tabValue === 1) reloadUpcomingAppointments();
+  }, [tabValue]);
+
+  // useEffect lấy lịch sử hiến máu từ backend
+  useEffect(() => {
+    const fetchDonationHistory = async () => {
       try {
-        const appointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-        // Lọc chỉ lịch hẹn sắp tới (status = "scheduled")
-        const upcoming = appointments.filter(app => app.status === 'scheduled');
-        setUpcomingAppointments(upcoming);
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        // Giả sử API trả về lịch sử hiến máu của user
+        const res = await axios.get(`${apiUrl}/DonationHistory`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setDonationHistory(res.data || []);
       } catch (error) {
-        console.error('Lỗi khi load lịch hẹn:', error);
+        setDonationHistory([]);
       }
     };
-
-    loadAppointments();
+    fetchDonationHistory();
   }, []);
 
   // Hàm đóng Snackbar
@@ -197,40 +228,24 @@ const UserProfile = () => {
   };
 
   // Hàm xác nhận hủy lịch hẹn
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!appointmentToCancel) return;
-    
     try {
-      const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-      
-      const updatedAppointments = existingAppointments.map(app => {
-        if (app.id === appointmentToCancel.id) {
-          return {
-            ...app,
-            status: 'expired',
-            statusText: 'Đã xoá',
-            detail: {
-              ...(app.detail || {}),
-              cancellationReason: 'Người dùng tự hủy',
-              cancellationDate: dayjs().format('DD/MM/YYYY'),
-              cancellationTime: dayjs().format('HH:mm'),
-            }
-          };
-        }
-        return app;
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      await axios.patch(`${apiUrl}/Reservation/${appointmentToCancel.id}?action=cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      localStorage.setItem('userAppointments', JSON.stringify(updatedAppointments));
-      
-      // Cập nhật lại state chỉ với các lịch hẹn sắp tới (status === 'scheduled')
-      setUpcomingAppointments(updatedAppointments.filter(app => app.status === 'scheduled'));
       setSnackbar({ open: true, message: 'Lịch hẹn đã được hủy thành công!', severity: 'success' });
-      
-      // Đóng dialog và reset state
       setOpenCancelDialog(false);
       setAppointmentToCancel(null);
+      // Reload lại danh sách lịch hẹn
+      const res = await axios.get(`${apiUrl}/Reservation/upcoming`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
     } catch (error) {
-      console.error('Lỗi khi xóa lịch hẹn:', error);
       setSnackbar({ open: true, message: 'Lỗi khi hủy lịch hẹn.', severity: 'error' });
     }
   };
@@ -240,37 +255,6 @@ const UserProfile = () => {
     setOpenCancelDialog(false);
     setAppointmentToCancel(null);
   };
-
-  // Dữ liệu mẫu lịch sử hiến máu
-  const donationHistory = [
-    {
-      id: 1,
-      date: '2024-03-15',
-      location: 'Bệnh viện Chợ Rẫy',
-      bloodType: 'A+',
-      volume: 350,
-      status: 'completed',
-      nextDonationDate: '2024-06-15',
-    },
-    {
-      id: 2,
-      date: '2023-12-10',
-      location: 'Bệnh viện Nhi Đồng 1',
-      bloodType: 'A+',
-      volume: 350,
-      status: 'completed',
-      nextDonationDate: '2024-03-10',
-    },
-    {
-      id: 3,
-      date: '2023-09-05',
-      location: 'Bệnh viện 115',
-      bloodType: 'A+',
-      volume: 250,
-      status: 'completed',
-      nextDonationDate: '2023-12-05',
-    },
-  ];
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -629,32 +613,38 @@ const UserProfile = () => {
               </Box>
               <TabPanel value={tabValue} index={0}>
                 <Typography variant="h6" gutterBottom>Lịch sử hiến máu</Typography>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Ngày</TableCell>
-                        <TableCell>Địa điểm</TableCell>
-                        <TableCell>Nhóm máu</TableCell>
-                        <TableCell>Thể tích (ml)</TableCell>
-                        <TableCell>Trạng thái</TableCell>
-                        <TableCell>Ngày hiến máu tiếp theo</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {donationHistory.map((row) => (
-                        <TableRow key={row.id}>
-                          <TableCell>{row.date}</TableCell>
-                          <TableCell>{row.location}</TableCell>
-                          <TableCell>{row.bloodType}</TableCell>
-                          <TableCell>{row.volume}</TableCell>
-                          <TableCell>{getStatusChip(row.status)}</TableCell>
-                          <TableCell>{row.nextDonationDate}</TableCell>
+                {donationHistory.length > 0 ? (
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Ngày</TableCell>
+                          <TableCell>Địa điểm</TableCell>
+                          <TableCell>Nhóm máu</TableCell>
+                          <TableCell>Thể tích (ml)</TableCell>
+                          <TableCell>Trạng thái</TableCell>
+                          <TableCell>Ngày hiến máu tiếp theo</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {donationHistory.map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell>{row.date}</TableCell>
+                            <TableCell>{row.location}</TableCell>
+                            <TableCell>{row.bloodType}</TableCell>
+                            <TableCell>{row.volume}</TableCell>
+                            <TableCell>{getStatusChip(row.status)}</TableCell>
+                            <TableCell>{row.nextDonationDate}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                    Chưa có lịch sử hiến máu.
+                  </Typography>
+                )}
               </TabPanel>
               <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>

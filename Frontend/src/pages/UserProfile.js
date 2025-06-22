@@ -364,10 +364,6 @@ const UserProfile = () => {
     if (isNaN(heightNum) || heightNum < 145 || heightNum > 300) {
       errors.height = 'Chiều cao phải từ 145 đến 300 cm.';
     }
-    // Email
-    if (!editFormData.email || !/^\S+@\S+\.\S+$/.test(editFormData.email)) {
-      errors.email = 'Email không hợp lệ.';
-    }
     // Số điện thoại: 10 số, bắt đầu 03,05,07,08,09
     if (!editFormData.phone || !/^0[3|5|7|8|9][0-9]{8}$/.test(editFormData.phone)) {
       errors.phone = 'Số điện thoại không hợp lệ.';
@@ -396,7 +392,6 @@ const UserProfile = () => {
       // Chỉ gửi các trường backend chấp nhận, đúng tên trường model backend
       const payload = {
         FullName: editFormData.fullName.trim(),
-        Email: editFormData.email.trim(),
         PhoneNumber: editFormData.phone,
         Address: editFormData.address,
         Sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
@@ -835,7 +830,8 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.email || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
             error={!!formErrors.email}
             helperText={formErrors.email}

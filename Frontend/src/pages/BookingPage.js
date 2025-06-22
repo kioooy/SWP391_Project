@@ -262,7 +262,7 @@ const BookingPage = () => {
       const periodFrom = dayjs(selectedPeriod.periodDateFrom);
       const periodTo = dayjs(selectedPeriod.periodDateTo);
       
-      if (selectedDate.isBefore(periodFrom) || selectedDate.isAfter(periodTo)) {
+      if (selectedDate.isBefore(periodFrom, 'day') || selectedDate.isAfter(periodTo, 'day')) {
         alert('Ngày hiến máu phải nằm trong khoảng thời gian của đợt hiến máu!');
         return;
       }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Box,
   Button,
@@ -28,6 +29,9 @@ import axios from 'axios';
 import CreateBloodDonationPeriod from '../components/CreateBloodDonationPeriod';
 
 const BloodDonationPeriodManagement = () => {
+  const currentUser = useSelector(state => state.auth.user);
+  const isAdmin = currentUser?.role === 'Admin';
+  const isStaff = currentUser?.role === 'Staff';
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,7 +43,10 @@ const BloodDonationPeriodManagement = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/BloodDonationPeriod/all', {
+      const route = (isAdmin || isStaff)
+        ? '/api/BloodDonationPeriod/all/admin,staff'
+        : '/api/BloodDonationPeriod';
+      const response = await axios.get(route, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -61,7 +68,7 @@ const BloodDonationPeriodManagement = () => {
   const handleStatusChange = async (periodId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/BloodDonationPeriod/${periodId}/status`, JSON.stringify(newStatus), {
+      await axios.patch(`/api/BloodDonationPeriod/${periodId}/status/admin`, JSON.stringify(newStatus), {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -219,6 +226,7 @@ const BloodDonationPeriodManagement = () => {
                     >
                       <EditIcon />
                     </IconButton>
+                    {isAdmin && (
                     <IconButton
                       size="small"
                       color="error"
@@ -229,6 +237,7 @@ const BloodDonationPeriodManagement = () => {
                     >
                       <DeleteIcon />
                     </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

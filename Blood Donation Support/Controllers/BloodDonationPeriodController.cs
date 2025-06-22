@@ -56,29 +56,7 @@ namespace Blood_Donation_Support.Controllers
                 return NotFound();
             return Ok(period);
         }
-        // PUT: api/BloodDonationPeriod/{id}
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> UpdateBloodDonationPeriod(int id, [FromBody] UpdateBloodDonationPeriodDTO dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
-            var period = await _context.BloodDonationPeriods.FindAsync(id);
-            if (period == null)
-                return NotFound();
-
-            period.PeriodName = dto.PeriodName;
-            period.Location = dto.Location;
-            period.Status = dto.Status;
-            period.PeriodDateFrom = dto.PeriodDateFrom;
-            period.PeriodDateTo = dto.PeriodDateTo;
-            period.TargetQuantity = dto.TargetQuantity;
-            period.ImageUrl = dto.ImageUrl;
-
-            _context.SaveChanges();
-            return NoContent();
-        }
 
         // GET: api/BloodDonationPeriod
         [HttpGet]
@@ -106,8 +84,8 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // PATCH: api/BloodDonationPeriod/{id}/status
-        [HttpPatch("{id}/status")]
-        [Authorize(Roles = "Staff,Admin")]
+        [HttpPatch("{id}/status/admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBloodDonationPeriodStatus(int id, [FromBody] string status)
         {
             var validStatuses = new[] { "Active", "Completed", "Cancelled" };
@@ -122,6 +100,20 @@ namespace Blood_Donation_Support.Controllers
             _context.SaveChanges();
             return NoContent();
         }
+        // PATCH: api/BloodDonationPeriod/{id}/isActive/admin
+        [HttpPatch("{id}/isActive/admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateBloodDonationPeriodIsActive(int id, [FromBody] bool isActive)
+        {
+            var period = await _context.BloodDonationPeriods.FindAsync(id);
+            if (period == null)
+                return NotFound();
+
+            period.IsActive = isActive;
+            _context.SaveChanges();
+            return NoContent();
+        }
+
         // GET: api/BloodDonationPeriod/progress/{id}
         [HttpGet("progress/{id}")]
         [AllowAnonymous]
@@ -146,13 +138,42 @@ namespace Blood_Donation_Support.Controllers
             return Ok(progress);
         }
 
-        // GET: api/BloodDonationPeriod/all
-        [HttpGet("all")]
+        // GET: api/BloodDonationPeriod/all/admin,staff
+        [HttpGet("all/admin,staff")]
         [Authorize(Roles = "Staff,Admin")]
         public IActionResult GetAllPeriodsForStaff()
         {
             var allPeriods = _context.BloodDonationPeriods.ToList();
             return Ok(allPeriods);
+        }
+
+        // PATCH: api/BloodDonationPeriod/{id}/details/admin,staff
+        [HttpPatch("{id}/details/admin,staff")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> StaffUpdateBloodDonationPeriod(int id, [FromBody] StaffUpdateBloodDonationPeriodDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var period = await _context.BloodDonationPeriods.FindAsync(id);
+            if (period == null)
+                return NotFound();
+
+            // Chỉ được phép chỉnh PeriodDateFrom khi sự kiện chưa bắt đầu
+            if (DateTime.Now >= period.PeriodDateFrom && dto.PeriodDateFrom != period.PeriodDateFrom)
+            {
+                return BadRequest("Không thể thay đổi ngày bắt đầu khi đợt hiến máu đã diễn ra hoặc đang diễn ra.");
+            }
+
+            period.PeriodName = dto.PeriodName;
+            period.Location = dto.Location;
+            period.PeriodDateFrom = dto.PeriodDateFrom;
+            period.PeriodDateTo = dto.PeriodDateTo;
+            period.TargetQuantity = dto.TargetQuantity;
+            period.ImageUrl = dto.ImageUrl;
+
+            _context.SaveChanges();
+            return NoContent();
         }
     }
 }

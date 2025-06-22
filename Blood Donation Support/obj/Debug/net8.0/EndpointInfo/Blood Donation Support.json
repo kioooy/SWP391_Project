@@ -945,6 +945,75 @@
         }
       }
     },
+    "/api/DonationAlert/LastSuccessfulDonation/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/CheckDonationEligibility/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/LoginNotification/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/DonationRequest/{id}": {
       "get": {
         "tags": [
@@ -2465,6 +2534,10 @@
           "email": {
             "type": "string",
             "format": "email",
+            "nullable": true
+          },
+          "fullName": {
+            "type": "string",
             "nullable": true
           },
           "phoneNumber": {

@@ -45,7 +45,7 @@ const DonationRequestManagement = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/DonationRequest/all', {
+      const response = await axios.get('/api/DonationRequest', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(response.data);
@@ -171,10 +171,11 @@ const DonationRequestManagement = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
+                  <TableCell>Họ tên</TableCell>
                 <TableCell>Số CCCD</TableCell>
                 <TableCell>Nhóm máu</TableCell>
                 <TableCell>Ngày hẹn</TableCell>
-                <TableCell>Đợt hiến máu (ID)</TableCell>
+                <TableCell>Đợt hiến máu</TableCell>
                 <TableCell>Trạng thái</TableCell>
                 <TableCell>Ghi chú</TableCell>
                 <TableCell>Thao tác</TableCell>
@@ -184,12 +185,13 @@ const DonationRequestManagement = () => {
               {filteredRequests.map((req) => (
                 <TableRow key={req.donationId} hover>
                   <TableCell>{req.donationId}</TableCell>
+                  <TableCell>{req.memberName}</TableCell>
                   <TableCell>{req.citizenNumber}</TableCell>
                   <TableCell>{req.bloodTypeName}</TableCell>
                   <TableCell>
                     {dayjs(req.preferredDonationDate).format('DD/MM/YYYY')}
                   </TableCell>
-                  <TableCell>{req.periodId}</TableCell>
+                  <TableCell>{`${req.periodId} - ${req.periodName}`}</TableCell>
                   <TableCell>{getStatusChip(req.status)}</TableCell>
                   <TableCell>{req.notes}</TableCell>
                   <TableCell>

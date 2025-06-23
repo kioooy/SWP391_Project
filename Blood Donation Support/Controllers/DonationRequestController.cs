@@ -45,12 +45,17 @@ namespace Blood_Donation_Support.Controllers
             var donationRequests = await _context.DonationRequests
                 .Include(dr => dr.Member)
                     .ThenInclude(m => m.User)
+                .Include(dr => dr.Period)
                 .Select(dr => new
                 {
                     dr.DonationId,
+                    MemberId = dr.MemberId,
+                    MemberName = dr.Member.User.FullName,
                     dr.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
                     dr.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
+
                     dr.PeriodId,
+                    PeriodName = dr.Period.PeriodName,
                     dr.ComponentId,
                     dr.PreferredDonationDate,
                     dr.ResponsibleById,
@@ -59,6 +64,9 @@ namespace Blood_Donation_Support.Controllers
                     dr.Status,
                     dr.RequestDate,
                     dr.ApprovalDate
+
+                                 // Approval Date (date approved) 
+
                 })
                 .ToListAsync();
 
@@ -68,8 +76,8 @@ namespace Blood_Donation_Support.Controllers
         // add donation request
         // POST: api/DonationRequest/register
         [HttpPost]
-        [Authorize(Roles = "Member,Staff,Admin")]
-        public async Task<IActionResult> RegisterDonationRequests([FromBody] DonationRequestControllerDTO model)
+        [Authorize(Roles = "Member,Staff,Admin")]  
+        public async Task<IActionResult> RegisterDonationRequests([FromBody] CreateDonationRequest model)
         {
             if (!ModelState.IsValid) 
                 return BadRequest(ModelState); // Return 400 Bad Request if model state is invalid
@@ -94,53 +102,51 @@ namespace Blood_Donation_Support.Controllers
                 PatientCondition = model.PatientCondition            // Patient Condition
             };
 
-            try // Attempt to add the new donation request
+            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            try 
             {
                 await _context.DonationRequests.AddAsync(donationRequest); // Add the donation request to the context
-                await _context.SaveChangesAsync(); // Save changes to the database
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
+
+                return Ok(new // Return 200 OK with the created donation request
+                {
+                    donationRequest.DonationId,
+                    donationRequest.MemberId,
+                    donationRequest.PeriodId,
+                    donationRequest.ComponentId,
+                    donationRequest.PreferredDonationDate,
+                    donationRequest.ResponsibleById,
+                    donationRequest.RequestDate,
+                    donationRequest.ApprovalDate,
+                    donationRequest.DonationVolume,
+                    donationRequest.Status,
+                    donationRequest.Notes,
+                    donationRequest.PatientCondition
+                });
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateConcurrencyException)
             {
-                return BadRequest(ex.Message); // Return 400 Bad Request with the exception message
+                await transaction.RollbackAsync(); // Rollback the transaction if an error occurs
+                throw;
             }
-            return Ok(new
-            {
-                donationRequest.DonationId, 
-                donationRequest.MemberId,
-                donationRequest.PeriodId,
-                donationRequest.ComponentId,
-                donationRequest.PreferredDonationDate,
-                donationRequest.ResponsibleById,
-                donationRequest.RequestDate,
-                donationRequest.ApprovalDate,
-                donationRequest.DonationVolume,
-                donationRequest.Status,
-                donationRequest.Notes,
-                donationRequest.PatientCondition
-            });
         }
 
         // update donation request status by id
         // PATCH: api/DonationRequest/updateStatus/{id}
         [HttpPatch("{id}/update-status")]
-        [Authorize(Roles = "Staff,Admin")] // Only Staff and Admin can update donation requests
+        [Authorize(Roles = "Staff,Admin")] 
         public async Task<IActionResult> UpdateDonationRequestStatus(int id, [FromBody] UpdateStatusDonationRequest model)
         {
-            // check existing request by DonationId
-            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id);
+            // check existing request (status "pending" ) by DonationId
+            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id && u.Status == "Pending");
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-            // check existing member by MemberId
-            var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
-            if (member == null)
-                return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
+
             // check existing staff by ResponsibleById
             var staff = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.ResponsibleById);
             if (staff == null || staff.RoleId != 2)
                 return NotFound($"Not Found StaffId: {model.ResponsibleById}."); // Return 404 Not Found 
-
-            if (existingRequest.Status == "Completed" || existingRequest.Status == "Cancelled" || existingRequest.Status == "Rejected")
-                return BadRequest(); // Return 400 Bad Request 
 
             // Update the existing request 
             existingRequest.ResponsibleById = model.ResponsibleById;
@@ -149,29 +155,29 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.Notes = model.Notes;
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
-            try // Attempt to update the existing request
+            try 
             {
-                await _context.SaveChangesAsync(); // Save changes to the database
-                await transaction.CommitAsync(); // Commit the transaction
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
 
                 return Ok(new { message = $"Donation Requests Id {id} updated successfully" });
             }
             catch (DbUpdateConcurrencyException)
             {
-                await transaction.RollbackAsync(); // Rollback the transaction 
+                await transaction.RollbackAsync();  // Rollback the transaction 
                 throw;  
             }
         }
 
-        // update donation request by id
-        // PATCH: api/DonationRequest/updateRequest
-        [HttpPatch("{id}/update-request")]
-        [Authorize(Roles = "Staff,Admin")] // Only Staff and Admin can update donation requests
-        public async Task<IActionResult> UpdateDonationRequest(int id, [FromBody] UpdateDonationRequest model)
+        // update donation request by id ( "Completed" status )
+        // PATCH: api/DonationRequest/update-completed/{id}
+        [HttpPatch("{id}/update-completed")]
+        [Authorize(Roles = "Staff,Admin")] 
+        public async Task<IActionResult> CompletedDonationRequestStatus(int id, [FromBody] CompletedDonationRequest model)
         {
-            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id);
+            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id && u.Status == "Approved");
             if (existingRequest == null)
-                return NotFound(); // Return 404 Not Found 
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
 
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
             if (member == null)
@@ -186,19 +192,46 @@ namespace Blood_Donation_Support.Controllers
             member.DonationCount = (member.DonationCount ?? 0) + 1;        // Increment the donation count (+1)
             _context.Entry(member).State = EntityState.Modified;           // Mark the member entity as modified
 
+            // Add Blood Unit
+            // Calculate the expiry date
+            var shelfLifeDays = await _context.BloodComponents
+                .Where(c => c.ComponentId == existingRequest.ComponentId)
+                .Select(c => c.ShelfLifeDays)
+                .FirstOrDefaultAsync();
+            if (shelfLifeDays <= 0)
+                return BadRequest("Invalid shelf life for the blood component."); // Return 400 Bad Request if shelf life is invalid
+
+            var bloodUnit = new BloodUnit
+            {
+                BloodTypeId = member.BloodTypeId ?? 0,                  // Blood Type Id from member
+                ComponentId = existingRequest.ComponentId,              // Component Id from existing request
+                AddDate = DateOnly.FromDateTime(DateTime.Now),          // Add Date (current date)
+                ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)), // Expiry Date (current date + shelf life days)
+                Volume = existingRequest.DonationVolume ?? 0,           // Volume from existing request
+                RemainingVolume = existingRequest.DonationVolume ?? 0,  // Remaining Volume (initially equals Volume)
+                BloodStatus = "Available",                              // Blood Status (default "Available")
+                MemberId = model.MemberId                               // Member Id  
+            };
+
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
             {
-                await _context.SaveChangesAsync(); // Save changes to the database
+                await _context.AddAsync(bloodUnit); // Add the new blood unit to the context
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
 
-                await transaction.CommitAsync(); // Commit the transaction
+                return StatusCode(201, new // Return 201 Created with success messages
+                {                     
+                    memberMessage           = "Member updatd successfully.",
+                    donationRequestMessage  = "Donation request created successfully.", 
+                    bloodUnitMessage        = "Blood unit added successfully.",
+                });
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
                 throw;  
             }
-            return NoContent(); // Return 204 No Content to update success
         }
 
         // get upcoming donation requests for member

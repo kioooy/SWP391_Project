@@ -384,16 +384,6 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodDistanceSearchController",
-    "Method": "GetHospitals",
-    "RelativePath": "api/BloodDistanceSearch/hospitals",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.BloodDistanceSearchController",
     "Method": "GetNearbyRecipients",
     "RelativePath": "api/BloodDistanceSearch/recipients-nearby",
     "HttpMethod": "GET",
@@ -581,15 +571,41 @@
     ]
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
-    "Method": "CheckDonationEligibility",
-    "RelativePath": "api/DonationAlert/CheckDonationEligibility/{memberId}",
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetAllBloodUnits",
+    "RelativePath": "api/BloodUnit",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "AddBloodUnit",
+    "RelativePath": "api/BloodUnit",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitAdd",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetBloodUnitById",
+    "RelativePath": "api/BloodUnit/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "memberId",
+        "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
       }
@@ -597,32 +613,42 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
-    "Method": "GetLastSuccessfulDonation",
-    "RelativePath": "api/DonationAlert/LastSuccessfulDonation/{memberId}",
-    "HttpMethod": "GET",
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "UpdateBloodUnit",
+    "RelativePath": "api/BloodUnit/{id}",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "memberId",
+        "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitUpdate",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
-    "Method": "GetLoginNotification",
-    "RelativePath": "api/DonationAlert/LoginNotification/{memberId}",
-    "HttpMethod": "GET",
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "DiscardBloodUnit",
+    "RelativePath": "api/BloodUnit/{id}/discard",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "memberId",
+        "Name": "id",
         "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitDelete",
         "IsRequired": true
       }
     ],
@@ -648,7 +674,7 @@
     "Parameters": [
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.DonationRequestControllerDTO",
+        "Type": "Blood_Donation_Support.DTO.CreateDonationRequest",
         "IsRequired": true
       }
     ],
@@ -672,8 +698,8 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "UpdateDonationRequest",
-    "RelativePath": "api/DonationRequest/{id}/update-request",
+    "Method": "CompletedDonationRequestStatus",
+    "RelativePath": "api/DonationRequest/{id}/update-completed",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -685,7 +711,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateDonationRequest",
+        "Type": "Blood_Donation_Support.DTO.CompletedDonationRequest",
         "IsRequired": true
       }
     ],
@@ -707,53 +733,6 @@
       {
         "Name": "model",
         "Type": "Blood_Donation_Support.DTO.UpdateStatusDonationRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "GetUpcomingDonationRequests",
-    "RelativePath": "api/DonationRequest/upcoming/all-role",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "memberId",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.HospitalController",
-    "Method": "GetHospital",
-    "RelativePath": "api/Hospital",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.HospitalController",
-    "Method": "UpdateLocation",
-    "RelativePath": "api/Hospital/{id}/location",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "dto",
-        "Type": "Blood_Donation_Support.DTO.HospitalLocationUpdateDTO",
         "IsRequired": true
       }
     ],
@@ -1087,26 +1066,5 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.WeatherForecastController",
-    "Method": "Get",
-    "RelativePath": "WeatherForecast",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.Model.WeatherForecast, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ],
-    "EndpointName": "GetWeatherForecast"
   }
 ]

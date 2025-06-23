@@ -414,7 +414,15 @@ const BookingPage = () => {
         alert('Có lỗi xảy ra khi đăng ký!');
       }
     } catch (error) {
-      alert('Lỗi kết nối server hoặc thiếu thông tin!');
+      let msg = 'Lỗi kết nối server hoặc thiếu thông tin!';
+      if (error.response && error.response.data) {
+        if (typeof error.response.data === 'object' && error.response.data.message) {
+          msg = error.response.data.message;
+        } else if (typeof error.response.data === 'string') {
+          msg = error.response.data;
+        }
+      }
+      alert(msg);
     }
   };
 

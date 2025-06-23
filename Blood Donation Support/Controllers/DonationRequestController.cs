@@ -87,6 +87,23 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound(); // Return 404 Not Found if member not found
 
+            // Kiểm tra member có lịch hẹn sắp tới chưa
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var hasUpcoming = await _context.DonationRequests
+                .Include(dr => dr.Period)
+                .AnyAsync(dr =>
+                    dr.MemberId == member.UserId &&
+                    (dr.Status == "Pending" || dr.Status == "Approved") &&
+                    (
+                        (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                        dr.Period.PeriodDateFrom >= DateTime.Today
+                    )
+                );
+            if (hasUpcoming)
+            {
+                return BadRequest("Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.");
+            }
+
             var donationRequest = new DonationRequest
             {
                 MemberId = member.UserId,                            // Member Id ( UserId of role the member )
@@ -287,6 +304,47 @@ namespace Blood_Donation_Support.Controllers
                        .ToList();
 
             return Ok(list);
+        }
+
+        // cancel donation request by id
+        // PATCH: api/DonationRequest/{id}/cancel
+        [HttpPatch("{id}/cancel")]
+        [Authorize(Roles = "Member,Staff,Admin")]
+        public async Task<IActionResult> CancelDonationRequest(int id)
+        {
+            // Determine caller's role and id
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+
+            // Get the donation request
+            var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync(dr => dr.DonationId == id);
+            if (donationRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}.");
+
+            // Check if the user has permission to cancel this request
+            if (role == "Member" && donationRequest.MemberId != currentUserId)
+                return Forbid();
+
+            // Check if the request can be cancelled
+            if (donationRequest.Status != "Pending" && donationRequest.Status != "Approved")
+                return BadRequest("Chỉ có thể hủy lịch hẹn ở trạng thái chờ duyệt hoặc đã duyệt.");
+
+            // Update the request status to Cancelled
+            donationRequest.Status = "Cancelled";
+            donationRequest.Notes = "Đã hủy bởi người dùng";
+
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return Ok(new { message = "Hủy lịch hẹn thành công." });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

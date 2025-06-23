@@ -15,6 +15,7 @@ public class BloodUnitAdd
     [Required]
     [StringLength(15)]
     public required string BloodStatus { get; set; }
+    public int MemberId { get; set; } 
 }
 public class BloodUnitUpdate
 {
@@ -26,9 +27,12 @@ public class BloodUnitUpdate
     public DateOnly? AddDate { get; set; }
     [Required]
     public required int Volume { get; set; }
+    public int remainingVolume { get; set; }
     [Required]
     [StringLength(15)]
     public required string BloodStatus { get; set; }
+    public int MemberId { get; set; }
+
 }
 public class BloodUnitDelete
 {

@@ -1927,6 +1927,10 @@
             "maxLength": 15,
             "minLength": 0,
             "type": "string"
+          },
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -1969,10 +1973,18 @@
             "type": "integer",
             "format": "int32"
           },
+          "remainingVolume": {
+            "type": "integer",
+            "format": "int32"
+          },
           "bloodStatus": {
             "maxLength": 15,
             "minLength": 0,
             "type": "string"
+          },
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -1980,16 +1992,11 @@
       "CompletedDonationRequest": {
         "required": [
           "memberId",
-          "responsibleById",
           "status"
         ],
         "type": "object",
         "properties": {
           "memberId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "responsibleById": {
             "type": "integer",
             "format": "int32"
           },
@@ -2053,7 +2060,6 @@
       "CreateDonationRequest": {
         "required": [
           "componentId",
-          "donationId",
           "donationVolume",
           "memberId",
           "patientCondition",
@@ -2063,10 +2069,6 @@
         ],
         "type": "object",
         "properties": {
-          "donationId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "memberId": {
             "type": "integer",
             "format": "int32"
@@ -2079,12 +2081,12 @@
             "type": "integer",
             "format": "int32"
           },
-          "preferredDonationDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
           "responsibleById": {
             "type": "integer",
             "format": "int32"
+          },
+          "preferredDonationDate": {
+            "$ref": "#/components/schemas/DateOnly"
           },
           "requestDate": {
             "type": "string",
@@ -2098,10 +2100,6 @@
           "donationVolume": {
             "type": "integer",
             "format": "int32"
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
           },
           "notes": {
             "type": "string",
@@ -2496,16 +2494,11 @@
       },
       "UpdateStatusDonationRequest": {
         "required": [
-          "memberId",
           "responsibleById",
           "status"
         ],
         "type": "object",
         "properties": {
-          "memberId": {
-            "type": "integer",
-            "format": "int32"
-          },
           "responsibleById": {
             "type": "integer",
             "format": "int32"

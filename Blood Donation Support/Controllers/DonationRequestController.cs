@@ -133,10 +133,6 @@ namespace Blood_Donation_Support.Controllers
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
 
-            // check existing member by MemberId
-            var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
-            if (member == null)
-                return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
             // check existing staff by ResponsibleById
             var staff = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.ResponsibleById);
             if (staff == null || staff.RoleId != 2)
@@ -169,9 +165,9 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Staff,Admin")] 
         public async Task<IActionResult> CompletedDonationRequestStatus(int id, [FromBody] CompletedDonationRequest model)
         {
-            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id);
+            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id && u.Status == "Approved");
             if (existingRequest == null)
-                return NotFound(); // Return 404 Not Found 
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
 
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
             if (member == null)
@@ -203,24 +199,29 @@ namespace Blood_Donation_Support.Controllers
                 ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)), // Expiry Date (current date + shelf life days)
                 Volume = existingRequest.DonationVolume ?? 0,           // Volume from existing request
                 RemainingVolume = existingRequest.DonationVolume ?? 0,  // Remaining Volume (initially equals Volume)
-                BloodStatus = "Available"                               // Blood Status (default "Available")
+                BloodStatus = "Available",                              // Blood Status (default "Available")
+                MemberId = model.MemberId                               // Member Id  
             };
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
             {
                 await _context.AddAsync(bloodUnit); // Add the new blood unit to the context
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
 
-                await _context.SaveChangesAsync(); // Save changes to the database
-
-                await transaction.CommitAsync(); // Commit the transaction
+                return StatusCode(201, new // Return 201 Created with success messages
+                {                     
+                    memberMessage           = "Member updatd successfully.",
+                    donationRequestMessage  = "Donation request created successfully.", 
+                    bloodUnitMessage        = "Blood unit added successfully.",
+                });
             }
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
                 throw;  
             }
-            return NoContent(); // Return 204 No Content to update success
         }
 
     }

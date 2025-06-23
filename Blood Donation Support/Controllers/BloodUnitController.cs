@@ -106,8 +106,10 @@ public class BloodUnitController : ControllerBase
             ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)),     // Expiry Date
             Volume = model.Volume,                          // Volume (mL)
             BloodStatus = model.BloodStatus ?? "Available", // Blood Status (default to "Available" if null)
-            RemainingVolume = model.Volume                  // Remaining Volume (mL) equals initial volume for new units
+            RemainingVolume = model.Volume,                 // Remaining Volume (mL) equals initial volume for new units
+            MemberId = model.MemberId 
         };
+
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try
         {
@@ -147,13 +149,14 @@ public class BloodUnitController : ControllerBase
             return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
 
         // Update the properties of the existing blood unit
-        bloodUnit.BloodTypeId = model.BloodTypeId;      // Blood Type ID
-        bloodUnit.ComponentId = model.ComponentId;      // Component ID
+        bloodUnit.BloodTypeId = model.BloodTypeId;          // Blood Type ID
+        bloodUnit.ComponentId = model.ComponentId;          // Component ID
         bloodUnit.AddDate = model.AddDate ?? DateOnly.FromDateTime(DateTime.Now); // Date Added (default to today if null)
         bloodUnit.ExpiryDate = DateOnly.FromDateTime(model.AddDate?.ToDateTime(TimeOnly.MinValue).AddDays(shelfLifeDays) ?? DateTime.Now.AddDays(shelfLifeDays)); // Expiry Date
-        bloodUnit.Volume = model.Volume;                // Volume (mL)
-        bloodUnit.BloodStatus = model.BloodStatus;      // Blood Status
-
+        bloodUnit.Volume = model.Volume;                    // Volume (mL)
+        bloodUnit.RemainingVolume = model.remainingVolume;  // Remaining Volume (mL)
+        bloodUnit.BloodStatus = model.BloodStatus;          // Blood Status
+        bloodUnit.MemberId = model.MemberId; // Member ID
 
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try

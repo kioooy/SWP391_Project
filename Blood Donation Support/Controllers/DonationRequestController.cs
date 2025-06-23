@@ -197,13 +197,13 @@ namespace Blood_Donation_Support.Controllers
 
             var bloodUnit = new BloodUnit
             {
-                BloodTypeId = member.BloodTypeId ?? 0, // Blood Type Id from member
-                ComponentId = existingRequest.ComponentId, // Component Id from existing request
-                AddDate = DateOnly.FromDateTime(DateTime.Now), // Add Date (current date)
+                BloodTypeId = member.BloodTypeId ?? 0,                  // Blood Type Id from member
+                ComponentId = existingRequest.ComponentId,              // Component Id from existing request
+                AddDate = DateOnly.FromDateTime(DateTime.Now),          // Add Date (current date)
                 ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)), // Expiry Date (current date + shelf life days)
-                Volume = existingRequest.DonationVolume ?? 0, // Volume from existing request
-                RemainingVolume = existingRequest.DonationVolume ?? 0, // Remaining Volume (initially equals Volume)
-                BloodStatus = "Available" // Blood Status (default "Available")
+                Volume = existingRequest.DonationVolume ?? 0,           // Volume from existing request
+                RemainingVolume = existingRequest.DonationVolume ?? 0,  // Remaining Volume (initially equals Volume)
+                BloodStatus = "Available"                               // Blood Status (default "Available")
             };
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction

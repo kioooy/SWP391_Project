@@ -1109,17 +1109,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DonationRequestControllerDTO"
+                "$ref": "#/components/schemas/CreateDonationRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/DonationRequestControllerDTO"
+                "$ref": "#/components/schemas/CreateDonationRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/DonationRequestControllerDTO"
+                "$ref": "#/components/schemas/CreateDonationRequest"
               }
             }
           }
@@ -1173,7 +1173,7 @@
         }
       }
     },
-    "/api/DonationRequest/{id}/update-request": {
+    "/api/DonationRequest/{id}/update-completed": {
       "patch": {
         "tags": [
           "DonationRequest"
@@ -1193,17 +1193,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateDonationRequest"
+                "$ref": "#/components/schemas/CompletedDonationRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateDonationRequest"
+                "$ref": "#/components/schemas/CompletedDonationRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateDonationRequest"
+                "$ref": "#/components/schemas/CompletedDonationRequest"
               }
             }
           }
@@ -1693,45 +1693,6 @@
           }
         }
       }
-    },
-    "/WeatherForecast": {
-      "get": {
-        "tags": [
-          "WeatherForecast"
-        ],
-        "operationId": "GetWeatherForecast",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WeatherForecast"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -2016,6 +1977,34 @@
         },
         "additionalProperties": false
       },
+      "CompletedDonationRequest": {
+        "required": [
+          "memberId",
+          "responsibleById",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "responsibleById": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "minLength": 1,
+            "pattern": "Completed",
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateBloodDonationPeriodDTO": {
         "required": [
           "location",
@@ -2057,6 +2046,70 @@
           "imageUrl": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDonationRequest": {
+        "required": [
+          "componentId",
+          "donationId",
+          "donationVolume",
+          "memberId",
+          "patientCondition",
+          "periodId",
+          "requestDate",
+          "responsibleById"
+        ],
+        "type": "object",
+        "properties": {
+          "donationId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "periodId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "preferredDonationDate": {
+            "$ref": "#/components/schemas/DateOnly"
+          },
+          "responsibleById": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requestDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvalDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "donationVolume": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "patientCondition": {
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -2206,70 +2259,6 @@
         ],
         "type": "integer",
         "format": "int32"
-      },
-      "DonationRequestControllerDTO": {
-        "required": [
-          "componentId",
-          "donationId",
-          "donationVolume",
-          "memberId",
-          "patientCondition",
-          "periodId",
-          "requestDate",
-          "responsibleById"
-        ],
-        "type": "object",
-        "properties": {
-          "donationId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "memberId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "periodId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "componentId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "preferredDonationDate": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "responsibleById": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "requestDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "approvalDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "donationVolume": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "status": {
-            "type": "string",
-            "nullable": true
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "patientCondition": {
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
       },
       "LoginModel": {
         "type": "object",
@@ -2462,34 +2451,6 @@
         },
         "additionalProperties": false
       },
-      "UpdateDonationRequest": {
-        "required": [
-          "memberId",
-          "responsibleById",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "memberId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "responsibleById": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "status": {
-            "minLength": 1,
-            "pattern": "Completed",
-            "type": "string"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "UpdateProfile": {
         "type": "object",
         "properties": {
@@ -2637,28 +2598,6 @@
           },
           "isRecipient": {
             "type": "boolean",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "WeatherForecast": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "$ref": "#/components/schemas/DateOnly"
-          },
-          "temperatureC": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "temperatureF": {
-            "type": "integer",
-            "format": "int32",
-            "readOnly": true
-          },
-          "summary": {
-            "type": "string",
             "nullable": true
           }
         },

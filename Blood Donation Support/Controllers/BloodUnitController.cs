@@ -152,9 +152,10 @@ public class BloodUnitController : ControllerBase
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try
         {
-            _context.BloodUnits.Update(bloodUnit); // Update the existing blood unit
-            await _context.SaveChangesAsync(); // Save changes to the database
-            await transaction.CommitAsync(); // Commit the transaction
+            _context.BloodUnits.Update(bloodUnit);  // Update the existing blood unit
+            await _context.SaveChangesAsync();      // Save changes to the database
+            await transaction.CommitAsync();        // Commit the transaction
+
             return Ok(bloodUnit); // Return 200 OK with the updated blood unit
         }
         catch(DbUpdateConcurrencyException)
@@ -182,8 +183,8 @@ public class BloodUnitController : ControllerBase
         // Update the BloodStatus
         bloodUnit.BloodStatus = "Discarded";
             
-        _context.BloodUnits.Update(bloodUnit); // Update blood unit
-        await _context.SaveChangesAsync(); // Save changes to the database
+        _context.BloodUnits.Update(bloodUnit);  // Update blood unit
+        await _context.SaveChangesAsync();      // Save changes to the database
             
         return Ok(bloodUnit); // Return 200 OK with the updated blood unit
     }

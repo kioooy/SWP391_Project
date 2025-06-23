@@ -643,7 +643,7 @@
     "Parameters": [
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.DonationRequestControllerDTO",
+        "Type": "Blood_Donation_Support.DTO.CreateDonationRequest",
         "IsRequired": true
       }
     ],
@@ -667,8 +667,8 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "UpdateDonationRequest",
-    "RelativePath": "api/DonationRequest/{id}/update-request",
+    "Method": "CompletedDonationRequestStatus",
+    "RelativePath": "api/DonationRequest/{id}/update-completed",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -680,7 +680,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateDonationRequest",
+        "Type": "Blood_Donation_Support.DTO.CompletedDonationRequest",
         "IsRequired": true
       }
     ],
@@ -983,26 +983,5 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.WeatherForecastController",
-    "Method": "Get",
-    "RelativePath": "WeatherForecast",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.Model.WeatherForecast, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ],
-    "EndpointName": "GetWeatherForecast"
   }
 ]

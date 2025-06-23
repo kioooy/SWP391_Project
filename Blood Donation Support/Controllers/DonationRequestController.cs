@@ -4,6 +4,8 @@ using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Linq;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -199,5 +201,59 @@ namespace Blood_Donation_Support.Controllers
             return NoContent(); // Return 204 No Content to update success
         }
 
+        // get upcoming donation requests for member
+        // GET: api/DonationRequest/upcoming/all-role
+        [HttpGet("upcoming/all-role")]
+        [Authorize(Roles = "Member,Staff,Admin")]
+        public async Task<IActionResult> GetUpcomingDonationRequests([FromQuery] int? memberId)
+        {
+            // Determine caller's role and id
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+
+            if (role == "Member")
+            {
+                // member chỉ được xem lịch của chính mình
+                memberId = currentUserId;
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            IQueryable<DonationRequest> query = _context.DonationRequests
+                .Include(dr => dr.Period)
+                .Where(dr =>
+                    (dr.Status == "Pending" || dr.Status == "Approved") &&
+                    (
+                        (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                        dr.Period.PeriodDateFrom >= DateTime.Today
+                    )
+                );
+
+            if (memberId.HasValue)
+            {
+                query = query.Where(dr => dr.MemberId == memberId.Value);
+            }
+
+            var list = await query
+                .Select(dr => new
+                {
+                    dr.DonationId,
+                    dr.MemberId,
+                    dr.PreferredDonationDate,
+                    dr.Status,
+                    PeriodId = dr.Period.PeriodId,
+                    dr.Period.PeriodName,
+                    dr.Period.Location,
+                    dr.Period.PeriodDateFrom,
+                    dr.Period.PeriodDateTo
+                })
+                .ToListAsync();
+
+            // Sắp xếp sau khi đã lấy dữ liệu để tránh lỗi dịch LINQ
+            list = list.OrderBy(dr => dr.PreferredDonationDate.HasValue ? dr.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : dr.PeriodDateFrom)
+                       .ToList();
+
+            return Ok(list);
+        }
     }
 }

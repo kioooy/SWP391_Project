@@ -174,7 +174,7 @@ const UserProfile = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      const res = await axios.get(`${apiUrl}/Reservation/upcoming`, {
+      const res = await axios.get(`${apiUrl}/DonationRequest/upcoming/all-role`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUpcomingAppointments(res.data || []);
@@ -364,10 +364,6 @@ const UserProfile = () => {
     if (isNaN(heightNum) || heightNum < 145 || heightNum > 300) {
       errors.height = 'Chiều cao phải từ 145 đến 300 cm.';
     }
-    // Email
-    if (!editFormData.email || !/^\S+@\S+\.\S+$/.test(editFormData.email)) {
-      errors.email = 'Email không hợp lệ.';
-    }
     // Số điện thoại: 10 số, bắt đầu 03,05,07,08,09
     if (!editFormData.phone || !/^0[3|5|7|8|9][0-9]{8}$/.test(editFormData.phone)) {
       errors.phone = 'Số điện thoại không hợp lệ.';
@@ -396,7 +392,6 @@ const UserProfile = () => {
       // Chỉ gửi các trường backend chấp nhận, đúng tên trường model backend
       const payload = {
         FullName: editFormData.fullName.trim(),
-        Email: editFormData.email.trim(),
         PhoneNumber: editFormData.phone,
         Address: editFormData.address,
         Sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
@@ -439,6 +434,7 @@ const UserProfile = () => {
           />
         );
       case 'scheduled':
+      case 'Approved':
         return (
           <Chip
             icon={<CalendarToday />}
@@ -448,11 +444,21 @@ const UserProfile = () => {
           />
         );
       case 'cancelled':
+      case 'Cancelled':
+      case 'Rejected':
         return (
           <Chip
             icon={<WarningIcon />}
             label="Đã hủy"
             color="error"
+            size="small"
+          />
+        );
+      case 'Pending':
+        return (
+          <Chip
+            label="Chờ duyệt"
+            color="warning"
             size="small"
           />
         );
@@ -658,84 +664,70 @@ const UserProfile = () => {
               <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
                 {upcomingAppointments.length > 0 ? (
-                  <Box sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', borderRadius: 2 }}>
-                    {(() => {
-                      const latestAppointment = upcomingAppointments[0]; // Chỉ lấy lịch hẹn đầu tiên/gần nhất
-                      const detail = latestAppointment.detail || {};
-                      return (
-                        <>
-                          <Typography variant="h6" fontWeight="bold" color="#4285f4" sx={{ mb: 2 }}>
-                            Thông tin chi tiết lịch hẹn
-                          </Typography>
-                          <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Mã lịch hẹn</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.appointmentId}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
-                              {getStatusChip(latestAppointment.status)}
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Ngày hẹn</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.appointmentDate}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Khung giờ</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.appointmentTime}</Typography>
-                            </Grid>
-                            <Grid item xs={12}>
-                              <Typography variant="body2" color="text.secondary">Trung tâm hiến máu</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.donationCenter}</Typography>
-                              <Typography variant="body2" color="text.secondary">{detail.centerAddress}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Số điện thoại trung tâm</Typography>
-                              <Typography variant="body1">{detail.centerPhone}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Loại hiến máu</Typography>
-                              <Typography variant="body1">{detail.donationType}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Lượng máu</Typography>
-                              <Typography variant="body1">{detail.bloodAmount}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Nhân viên phụ trách</Typography>
-                              <Typography variant="body1">{detail.staffName}</Typography>
-                            </Grid>
-                            {detail.notes && (
-                              <Grid item xs={12}>
-                                <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
-                                <Typography variant="body1">{detail.notes}</Typography>
-                              </Grid>
-                            )}
-                            {detail.preparationNotes && detail.preparationNotes.length > 0 && (
-                              <Grid item xs={12}>
-                                <Typography variant="body2" color="text.secondary">Hướng dẫn chuẩn bị:</Typography>
-                                <Box component="ul" sx={{ pl: 2 }}>
-                                  {detail.preparationNotes.map((note, idx) => (
-                                    <Typography key={idx} component="li" variant="body2">{note}</Typography>
-                                  ))}
-                                </Box>
-                              </Grid>
-                            )}
+                  upcomingAppointments.map((appointment, index) => {
+                    // Cố gắng parse "notes" để lấy giờ và địa điểm bệnh viện
+                    let hospitalName = '';
+                    let timeSlot = 'Không xác định';
+                    if (appointment.notes) {
+                        const hospitalMatch = appointment.notes.match(/Địa điểm hiến máu: (.*?)\./);
+                        const timeMatch = appointment.notes.match(/Khung giờ: (.*)/);
+                        if (hospitalMatch && hospitalMatch[1] !== 'Chưa chọn') {
+                            hospitalName = hospitalMatch[1];
+                        }
+                        if (timeMatch) {
+                            timeSlot = timeMatch[1];
+                        }
+                    }
+
+                    return (
+                      <Box key={index} sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                        <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ mb: 2 }}>
+                          Thông tin đăng ký hiến máu
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
+                            <Typography variant="body1" fontWeight="bold">#{appointment.donationId}</Typography>
                           </Grid>
-                          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                            {getStatusChip(appointment.status)}
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
+                            <Typography variant="body1" fontWeight="bold">{dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY')}</Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Khung giờ</Typography>
+                            <Typography variant="body1" fontWeight="bold">{timeSlot}</Typography>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
+                            <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
+                          </Grid>
+                          <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
+                              <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
+                              <Typography variant="body2" color="text.secondary">{appointment.location}</Typography>
+                          </Grid>
+                        </Grid>
+                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
                             <Button
                               variant="contained"
                               color="error"
                               startIcon={<DeleteIcon />}
-                              onClick={() => handleOpenCancelDialog(latestAppointment)}
+                              onClick={() => {
+                                // Tạm thời vô hiệu hóa, vì backend chưa hỗ trợ user tự hủy
+                                setSnackbar({ open: true, message: 'Chức năng hủy hiện tại chưa khả dụng cho các yêu cầu chưa được duyệt.', severity: 'info' });
+                              }}
+                              disabled={appointment.status !== 'Approved'} // Chỉ cho phép hủy khi đã được duyệt
                             >
                               Hủy lịch hẹn
                             </Button>
-                          </Box>
-                        </>
-                      );
-                    })()} 
-                  </Box>
+                        </Box>
+                      </Box>
+                    );
+                  })
                 ) : (
                   <Box sx={{ textAlign: 'center', py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
@@ -835,7 +827,8 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.email || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
             error={!!formErrors.email}
             helperText={formErrors.email}

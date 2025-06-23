@@ -772,49 +772,9 @@
             "description": "Success"
           }
         }
-      },
-      "put": {
-        "tags": [
-          "BloodDonationPeriod"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBloodDonationPeriodDTO"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBloodDonationPeriodDTO"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBloodDonationPeriodDTO"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
       }
     },
-    "/api/BloodDonationPeriod/{id}/status": {
+    "/api/BloodDonationPeriod/{id}/status/admin": {
       "patch": {
         "tags": [
           "BloodDonationPeriod"
@@ -856,6 +816,48 @@
         }
       }
     },
+    "/api/BloodDonationPeriod/{id}/isActive/admin": {
+      "patch": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BloodDonationPeriod/progress/{id}": {
       "get": {
         "tags": [
@@ -879,11 +881,53 @@
         }
       }
     },
-    "/api/BloodDonationPeriod/all": {
+    "/api/BloodDonationPeriod/all/admin,staff": {
       "get": {
         "tags": [
           "BloodDonationPeriod"
         ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodDonationPeriod/{id}/details/admin,staff": {
+      "patch": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -941,6 +985,75 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/LastSuccessfulDonation/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/CheckDonationEligibility/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/LoginNotification/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
           }
         }
       }
@@ -1086,6 +1199,28 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/upcoming/all-role": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -2386,13 +2521,12 @@
         },
         "additionalProperties": false
       },
-      "UpdateBloodDonationPeriodDTO": {
+      "StaffUpdateBloodDonationPeriodDTO": {
         "required": [
           "location",
           "periodDateFrom",
           "periodDateTo",
           "periodName",
-          "status",
           "targetQuantity"
         ],
         "type": "object",
@@ -2404,11 +2538,6 @@
           },
           "location": {
             "maxLength": 255,
-            "minLength": 0,
-            "type": "string"
-          },
-          "status": {
-            "maxLength": 20,
             "minLength": 0,
             "type": "string"
           },
@@ -2465,6 +2594,10 @@
           "email": {
             "type": "string",
             "format": "email",
+            "nullable": true
+          },
+          "fullName": {
+            "type": "string",
             "nullable": true
           },
           "phoneNumber": {

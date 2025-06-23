@@ -187,6 +187,9 @@ const BookingPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [availableDates, setAvailableDates] = useState([]);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -253,6 +256,18 @@ const BookingPage = () => {
   };
 
   const handleContinue = () => {
+    // Validation cho ngày hiến máu
+    if (donationDate && selectedPeriod) {
+      const selectedDate = dayjs(donationDate);
+      const periodFrom = dayjs(selectedPeriod.periodDateFrom);
+      const periodTo = dayjs(selectedPeriod.periodDateTo);
+      
+      if (selectedDate.isBefore(periodFrom, 'day') || selectedDate.isAfter(periodTo, 'day')) {
+        alert('Ngày hiến máu phải nằm trong khoảng thời gian của đợt hiến máu!');
+        return;
+      }
+    }
+    
     setTimeLocationCompleted(true);
     setTabValue(1);
   };
@@ -279,6 +294,12 @@ const BookingPage = () => {
     setSelectedPeriod(period);
     setSelectedLocation(period ? period.location : '');
     setDonationDate(null); // Reset date when period changes
+  };
+
+  const handleHospitalChange = (event) => {
+    const hospitalId = event.target.value;
+    const hospital = hospitals.find(h => h.hospitalId === hospitalId);
+    setSelectedHospital(hospital);
   };
 
   // Hàm kiểm tra validation cho phiếu khai báo y tế
@@ -371,13 +392,13 @@ const BookingPage = () => {
         memberId: userId,
         periodId: periodId,
         componentId: componentId,
-        preferredDonationDate: null, // Không còn ngày cụ thể
+        preferredDonationDate: donationDate ? dayjs(donationDate).format('YYYY-MM-DD') : null, // Sử dụng ngày đã chọn
         responsibleById: responsibleById,
         requestDate: requestDate,
         approvalDate: null,
         donationVolume: donationVolume,
         status: 'Pending',
-        notes: '',
+        notes: `Địa điểm hiến máu: ${selectedHospital ? selectedHospital.name : 'Chưa chọn'}. Khung giờ: ${selectedTimeSlot}`,
         patientCondition: patientCondition
       };
       const response = await axios.post('/api/DonationRequest', payload, {
@@ -442,7 +463,6 @@ const BookingPage = () => {
         '8.3_detail': name === '8.3' ? prev['8.3_detail'] : '',
       }));
     }
-    // Handle multiple choice questions with "Không" logic
     else if (name.startsWith('4.')) {
       if (name === '4.4' && isChecked) {
         // If "Không" is selected, uncheck all others
@@ -571,6 +591,28 @@ const BookingPage = () => {
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    axios.get('/api/Hospital', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      // Đảm bảo hospitals luôn là array
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setHospitals(data);
+      } else if (data && typeof data === 'object') {
+        // Nếu API trả về object, chuyển thành array
+        setHospitals([data]);
+      } else {
+        setHospitals([]);
+      }
+    })
+    .catch(() => {
+      setHospitals([]);
+    });
+  }, []);
+
+  useEffect(() => {
     const stored = localStorage.getItem('selectedPeriodInfo');
     if (stored) {
       const info = JSON.parse(stored);
@@ -583,6 +625,23 @@ const BookingPage = () => {
       localStorage.removeItem('selectedPeriodInfo');
     }
   }, []);
+
+  useEffect(() => {
+    if (selectedPeriod) {
+      const start = dayjs(selectedPeriod.periodDateFrom);
+      const end = dayjs(selectedPeriod.periodDateTo);
+      const dates = [];
+      let currentDate = start;
+      while (currentDate.isBefore(end) || currentDate.isSame(end)) {
+        dates.push(currentDate);
+        currentDate = currentDate.add(1, 'day');
+      }
+      setAvailableDates(dates);
+    } else {
+      setAvailableDates([]);
+    }
+    setDonationDate(null); // Reset ngày đã chọn khi đổi đợt
+  }, [selectedPeriod]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -696,6 +755,109 @@ const BookingPage = () => {
                   </CardContent>
                 </Card>
 
+                {/* Date and Hospital Selection */}
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <CalendarTodayIcon sx={{ mr: 2, color: 'primary.main' }} />
+                      <Typography variant="h6" fontWeight="bold">
+                        Chọn ngày hiến máu và địa điểm
+                      </Typography>
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      Vui lòng chọn ngày hiến máu và địa điểm bệnh viện phù hợp với lịch trình của bạn.
+                    </Typography>
+                    
+                    {selectedPeriod && (
+                      <Alert severity="info" sx={{ mb: 3 }}>
+                        <Typography variant="body2">
+                          <strong>Khoảng thời gian hiến máu:</strong> Từ {dayjs(selectedPeriod.periodDateFrom).format('DD/MM/YYYY')} đến {dayjs(selectedPeriod.periodDateTo).format('DD/MM/YYYY')}
+                        </Typography>
+                      </Alert>
+                    )}
+                    
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <FormControl fullWidth>
+                          <InputLabel>Ngày hiến máu</InputLabel>
+                          <Select
+                            value={donationDate ? dayjs(donationDate).format('DD/MM/YYYY') : ''}
+                            onChange={(e) => setDonationDate(dayjs(e.target.value, 'DD/MM/YYYY'))}
+                            label="Ngày hiến máu"
+                            disabled={!selectedPeriod}
+                          >
+                            {availableDates.map((date) => (
+                              <MenuItem key={date.toString()} value={date.format('DD/MM/YYYY')}>
+                                {date.format('DD/MM/YYYY')}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <FormControl fullWidth>
+                          <InputLabel>Chọn địa điểm hiến máu</InputLabel>
+                          <Select
+                            value={selectedHospital ? selectedHospital.hospitalId : ''}
+                            onChange={handleHospitalChange}
+                            label="Chọn địa điểm hiến máu"
+                            MenuProps={{
+                              PaperProps: {
+                                style: {
+                                  maxHeight: 300,
+                                },
+                              },
+                            }}
+                          >
+                            {Array.isArray(hospitals) && hospitals.map((hospital) => (
+                              <MenuItem key={hospital.hospitalId} value={hospital.hospitalId}>
+                                <Box>
+                                  <Typography variant="body1" fontWeight="bold">
+                                    {hospital.name}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {hospital.address}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Điện thoại: {hospital.phone}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                            {(!Array.isArray(hospitals) || hospitals.length === 0) && (
+                              <MenuItem disabled>Không có địa điểm hiến máu nào.</MenuItem>
+                            )}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </Grid>
+
+                    {selectedHospital && (
+                      <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" color="primary.main" gutterBottom>
+                          Thông tin địa điểm đã chọn:
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Tên bệnh viện:</strong> {selectedHospital.name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Địa chỉ:</strong> {selectedHospital.address}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Điện thoại:</strong> {selectedHospital.phone}
+                        </Typography>
+                        {selectedHospital.email && (
+                          <Typography variant="body2">
+                            <strong>Email:</strong> {selectedHospital.email}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Blood Type Information */}
                 <Card>
                   <CardContent>
@@ -756,7 +918,7 @@ const BookingPage = () => {
                     variant="contained"
                     size="large"
                     onClick={handleContinue}
-                    disabled={!selectedPeriod}
+                    disabled={!selectedPeriod || !donationDate || !selectedHospital}
                     sx={{ px: 4, py: 1.5 }}
                   >
                     Tiếp tục
@@ -902,7 +1064,7 @@ const BookingPage = () => {
                     <FormGroup>
                       <StyledFormControlLabel
                         control={<Checkbox checked={formData['5.1']} onChange={handleCheckboxChange('5.1')} />}
-                        label="Khỏi bệnh sau khi mắc một trong các bệnh: thương hàn, nhiễm trùng máu, bị rắn cắn, viêm tắc động mạch, viêm tắc tĩnh mạch, viêm tụy, viêm tủy xương?"
+                        label="Khỏi bệnh sau khi mắc một trong các bệnh: thương hàn, nhiễm trùng máu, bị rắn cắn, viêm tắc động mạch, viêm tắc tĩnh mạch, viêm tủy, viêm tủy xương?"
                       />
                       <StyledFormControlLabel
                         control={<Checkbox checked={formData['5.2']} onChange={handleCheckboxChange('5.2')} />}
@@ -1082,16 +1244,24 @@ const BookingPage = () => {
         <DialogContent dividers>
           <Stack spacing={2}>
             <Typography variant="subtitle1">
-              <strong>Ngày hiến máu:</strong> {donationDate ? donationDate.format('DD/MM/YYYY') : 'Chưa chọn'}
+              <strong>Đợt hiến máu:</strong> {selectedPeriod ? selectedPeriod.periodName : 'Chưa chọn'}
+            </Typography>
+            <Typography variant="subtitle1">
+              <strong>Ngày hiến máu:</strong> {donationDate ? dayjs(donationDate).format('DD/MM/YYYY') : 'Chưa chọn'}
             </Typography>
             <Typography variant="subtitle1">
               <strong>Khung giờ:</strong> {selectedTimeSlot}
             </Typography>
             <Typography variant="subtitle1">
-              <strong>Tỉnh/Thành phố:</strong> {selectedCity}
+              <strong>Địa điểm hiến máu:</strong> {selectedHospital ? selectedHospital.name : 'Chưa chọn'}
             </Typography>
+            {selectedHospital && (
+              <Typography variant="subtitle1">
+                <strong>Địa chỉ:</strong> {selectedHospital.address}
+              </Typography>
+            )}
             <Typography variant="subtitle1">
-              <strong>Địa điểm:</strong> {selectedPeriod ? selectedPeriod.location : 'Chưa chọn'}
+              <strong>Địa điểm đợt hiến máu:</strong> {selectedPeriod ? selectedPeriod.location : 'Chưa chọn'}
             </Typography>
 
             <Divider />

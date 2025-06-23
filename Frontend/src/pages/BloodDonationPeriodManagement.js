@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Box,
   Button,
@@ -21,25 +22,33 @@ import {
   DialogActions,
   FormControl,
   Select,
-  MenuItem
+  MenuItem,
+  InputLabel
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import axios from 'axios';
 import CreateBloodDonationPeriod from '../components/CreateBloodDonationPeriod';
 
 const BloodDonationPeriodManagement = () => {
+  const currentUser = useSelector(state => state.auth.user);
+  const isAdmin = currentUser?.role === 'Admin';
+  const isStaff = currentUser?.role === 'Staff';
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const fetchPeriods = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/BloodDonationPeriod/all', {
+      const route = (isAdmin || isStaff)
+        ? '/api/BloodDonationPeriod/all/admin,staff'
+        : '/api/BloodDonationPeriod';
+      const response = await axios.get(route, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -61,7 +70,7 @@ const BloodDonationPeriodManagement = () => {
   const handleStatusChange = async (periodId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/BloodDonationPeriod/${periodId}/status`, JSON.stringify(newStatus), {
+      await axios.patch(`/api/BloodDonationPeriod/${periodId}/status/admin`, JSON.stringify(newStatus), {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -129,6 +138,13 @@ const BloodDonationPeriodManagement = () => {
     return new Date(dateString).toLocaleString('vi-VN');
   };
 
+  const filteredPeriods = periods.filter(period => {
+    if (statusFilter === 'all') {
+      return true;
+    }
+    return period.status === statusFilter;
+  });
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -159,6 +175,22 @@ const BloodDonationPeriodManagement = () => {
         </Alert>
       )}
 
+      <FormControl sx={{ minWidth: 200, mb: 2 }}>
+        <InputLabel id="status-filter-label">Lọc theo trạng thái</InputLabel>
+        <Select
+          labelId="status-filter-label"
+          id="status-filter"
+          value={statusFilter}
+          label="Lọc theo trạng thái"
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <MenuItem value="all">Tất cả</MenuItem>
+          <MenuItem value="Active">Hoạt động</MenuItem>
+          <MenuItem value="Completed">Hoàn thành</MenuItem>
+          <MenuItem value="Cancelled">Đã hủy</MenuItem>
+        </Select>
+      </FormControl>
+
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer>
           <Table stickyHeader>
@@ -176,7 +208,7 @@ const BloodDonationPeriodManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {periods.map((period) => (
+              {filteredPeriods.map((period) => (
                 <TableRow key={period.periodId} hover>
                   <TableCell>{period.periodId}</TableCell>
                   <TableCell>
@@ -219,6 +251,7 @@ const BloodDonationPeriodManagement = () => {
                     >
                       <EditIcon />
                     </IconButton>
+                    {isAdmin && (
                     <IconButton
                       size="small"
                       color="error"
@@ -229,6 +262,7 @@ const BloodDonationPeriodManagement = () => {
                     >
                       <DeleteIcon />
                     </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

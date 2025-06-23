@@ -22,7 +22,8 @@ import {
   DialogActions,
   FormControl,
   Select,
-  MenuItem
+  MenuItem,
+  InputLabel
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import axios from 'axios';
@@ -38,6 +39,7 @@ const BloodDonationPeriodManagement = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const fetchPeriods = async () => {
     try {
@@ -136,6 +138,13 @@ const BloodDonationPeriodManagement = () => {
     return new Date(dateString).toLocaleString('vi-VN');
   };
 
+  const filteredPeriods = periods.filter(period => {
+    if (statusFilter === 'all') {
+      return true;
+    }
+    return period.status === statusFilter;
+  });
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -166,6 +175,22 @@ const BloodDonationPeriodManagement = () => {
         </Alert>
       )}
 
+      <FormControl sx={{ minWidth: 200, mb: 2 }}>
+        <InputLabel id="status-filter-label">Lọc theo trạng thái</InputLabel>
+        <Select
+          labelId="status-filter-label"
+          id="status-filter"
+          value={statusFilter}
+          label="Lọc theo trạng thái"
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <MenuItem value="all">Tất cả</MenuItem>
+          <MenuItem value="Active">Hoạt động</MenuItem>
+          <MenuItem value="Completed">Hoàn thành</MenuItem>
+          <MenuItem value="Cancelled">Đã hủy</MenuItem>
+        </Select>
+      </FormControl>
+
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer>
           <Table stickyHeader>
@@ -183,7 +208,7 @@ const BloodDonationPeriodManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {periods.map((period) => (
+              {filteredPeriods.map((period) => (
                 <TableRow key={period.periodId} hover>
                   <TableCell>{period.periodId}</TableCell>
                   <TableCell>

@@ -28,6 +28,10 @@ import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
 import BloodSearch from "./pages/BloodSearch";
 import BloodDonationPeriodManagement from './pages/BloodDonationPeriodManagement';
+import News from './pages/News';
+import NewsDetail from './pages/NewsDetail';
+import DonationRequestManagement from './pages/DonationRequestManagement';
+import { RequireAuth } from "./components/RequireAuth";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -75,10 +79,11 @@ const App = () => {
         <Route path="/history" element={<AppointmentHistory />} />
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
-        {/* Route chỉ cho staff */}
-        {role === 'Staff' && (
-          <Route path="/manage-blood-periods" element={<BloodDonationPeriodManagement />} />
-        )}
+        <Route path="manage-blood-periods" element={<RequireAuth roles={['Admin', 'Staff']}><BloodDonationPeriodManagement /></RequireAuth>} />
+        <Route path="manage-requests" element={<RequireAuth roles={['Admin', 'Staff']}><DonationRequestManagement /></RequireAuth>} />
+        <Route path="transfusion-management" element={<RequireAuth roles={['Admin', 'Staff']}><TransfusionManagement/></RequireAuth>} />
+        <Route path="blood-search" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><BloodSearch /></RequireAuth>} />
+        <Route path="search-distance" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><SearchByDistance/></RequireAuth>} />
       </Route>
 
       {/* Fallback Route */}

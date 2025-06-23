@@ -190,6 +190,8 @@ const BookingPage = () => {
   const [hospitals, setHospitals] = useState([]);
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [availableDates, setAvailableDates] = useState([]);
+  const [donationVolume, setDonationVolume] = useState(350);
+  const [userWeight, setUserWeight] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -379,7 +381,6 @@ const BookingPage = () => {
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
       const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
       const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
-      const donationVolume = 350; // ml, hoặc lấy từ form
       const patientCondition = 'Khỏe mạnh'; // hoặc lấy từ form
       const requestDate = new Date().toISOString();
       const token = localStorage.getItem('token');
@@ -643,6 +644,28 @@ const BookingPage = () => {
     setDonationDate(null); // Reset ngày đã chọn khi đổi đợt
   }, [selectedPeriod]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get('/api/User/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        console.log('User profile API response:', res.data); // log dữ liệu trả về
+        const userData = Array.isArray(res.data) ? res.data[0] : res.data;
+        if (userData && userData.weight) {
+          setUserWeight(userData.weight);
+        } else {
+          setUserWeight(null);
+        }
+      }).catch(err => {
+        setUserWeight(null);
+        console.error('Lỗi lấy thông tin cân nặng:', err);
+      });
+    } else {
+      setUserWeight(null);
+    }
+  }, []);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -881,6 +904,61 @@ const BookingPage = () => {
                         />
                       ))}
                     </Stack>
+                  </CardContent>
+                </Card>
+
+                {/* Lượng máu muốn hiến */}
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <BloodtypeIcon sx={{ mr: 2, color: 'primary.main' }} />
+                      <Typography variant="h6" fontWeight="bold">
+                        Chọn lượng máu bạn muốn hiến
+                      </Typography>
+                    </Box>
+                    <FormControl fullWidth>
+                      <InputLabel>Lượng máu muốn hiến</InputLabel>
+                      <Select
+                        value={donationVolume}
+                        onChange={(e) => setDonationVolume(e.target.value)}
+                        label="Lượng máu muốn hiến"
+                      >
+                        <MenuItem value={250}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                            <span>250 ml</span>
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                              {userWeight && userWeight <= 50 ? "(Khuyến nghị)" : ""}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value={350}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                            <span>350 ml</span>
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                              {userWeight && userWeight > 50 && userWeight <= 60 ? "(Khuyến nghị)" : ""}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value={450}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                            <span>450 ml</span>
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                              {userWeight && userWeight > 60 ? "(Khuyến nghị)" : ""}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                      {userWeight && (
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          Cân nặng hiện tại của bạn: {userWeight} kg
+                        </Typography>
+                      )}
+                      {userWeight === null && (
+                        <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                          Không lấy được cân nặng từ hồ sơ. Vui lòng cập nhật cân nặng trong tài khoản để nhận khuyến nghị!
+                        </Typography>
+                      )}
+                    </FormControl>
                   </CardContent>
                 </Card>
 

@@ -7,6 +7,7 @@ using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using System;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -24,22 +25,26 @@ namespace Blood_Donation_Support.Controllers
         [HttpGet]
         public async Task<IActionResult> GetHospital()
         {
-            var hospital = await _context.Hospitals.FirstOrDefaultAsync();
-            if (hospital == null)
+            var hospitals = await _context.Hospitals
+                .Where(h => h.Location != null)
+                .Select(h => new
+                {
+                    h.HospitalId,
+                    h.Name,
+                    h.Address,
+                    h.Phone,
+                    h.Email,
+                    Latitude = h.Location.Y,
+                    Longitude = h.Location.X,
+                    h.CreatedAt,
+                    h.UpdatedAt
+                })
+                .ToListAsync();
+
+            if (!hospitals.Any())
                 return NotFound();
 
-            return Ok(new
-            {
-                hospital.HospitalId,
-                hospital.Name,
-                hospital.Address,
-                hospital.Phone,
-                hospital.Email,
-                Latitude = hospital.Location?.Y,
-                Longitude = hospital.Location?.X,
-                hospital.CreatedAt,
-                hospital.UpdatedAt
-            });
+            return Ok(hospitals);
         }
 
         // PUT: api/Hospital/{id}/location

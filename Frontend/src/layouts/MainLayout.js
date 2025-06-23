@@ -36,6 +36,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BloodtypeIcon from "@mui/icons-material/Bloodtype";
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -203,7 +204,8 @@ const MainLayout = () => {
       // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Staff
       { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
       { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
-      { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> }
+      { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> },
+      { path: "/manage-requests", label: "Quản lý Yêu cầu", icon: <AssignmentIcon /> }
     ];
   } else if (currentUser && currentUser.role === 'Admin') {
     menuItems = [
@@ -211,7 +213,8 @@ const MainLayout = () => {
       { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
       { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
       { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
-      { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> }
+      { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+      { path: "/manage-requests", label: "Quản lý Yêu cầu", icon: <AssignmentIcon /> }
     ];
   } else {
     menuItems = [

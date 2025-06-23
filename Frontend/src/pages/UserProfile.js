@@ -234,23 +234,26 @@ const UserProfile = () => {
   // Hàm xác nhận hủy lịch hẹn
   const handleConfirmCancel = async () => {
     if (!appointmentToCancel) return;
+    console.log('Appointment to cancel:', appointmentToCancel); // Log để debug
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      await axios.patch(`${apiUrl}/Reservation/${appointmentToCancel.id}?action=cancel`, {}, {
+      await axios.patch(`${apiUrl}/DonationRequest/${appointmentToCancel.donationId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSnackbar({ open: true, message: 'Lịch hẹn đã được hủy thành công!', severity: 'success' });
       setOpenCancelDialog(false);
       setAppointmentToCancel(null);
       // Reload lại danh sách lịch hẹn
-      const res = await axios.get(`${apiUrl}/Reservation/upcoming`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUpcomingAppointments(res.data || []);
+      reloadUpcomingAppointments();
     } catch (error) {
-      setSnackbar({ open: true, message: 'Lỗi khi hủy lịch hẹn.', severity: 'error' });
+      console.error('Error cancelling appointment:', error);
+      let errorMessage = 'Lỗi khi hủy lịch hẹn.';
+      if (error.response?.data) {
+        errorMessage = error.response.data;
+      }
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
@@ -716,11 +719,7 @@ const UserProfile = () => {
                               variant="contained"
                               color="error"
                               startIcon={<DeleteIcon />}
-                              onClick={() => {
-                                // Tạm thời vô hiệu hóa, vì backend chưa hỗ trợ user tự hủy
-                                setSnackbar({ open: true, message: 'Chức năng hủy hiện tại chưa khả dụng cho các yêu cầu chưa được duyệt.', severity: 'info' });
-                              }}
-                              disabled={appointment.status !== 'Approved'} // Chỉ cho phép hủy khi đã được duyệt
+                              onClick={() => handleOpenCancelDialog(appointment)}
                             >
                               Hủy lịch hẹn
                             </Button>

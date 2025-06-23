@@ -45,12 +45,16 @@ namespace Blood_Donation_Support.Controllers
             var donationRequests = await _context.DonationRequests
                 .Include(dr => dr.Member)
                     .ThenInclude(m => m.User)
+                .Include(dr => dr.Period)
                 .Select(dr => new
                 {
                     dr.DonationId,
+                    MemberId = dr.MemberId,
+                    MemberName = dr.Member.User.FullName,
                     dr.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
                     dr.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
                     dr.PeriodId,
+                    PeriodName = dr.Period.PeriodName,
                     dr.ComponentId,
                     dr.PreferredDonationDate,
                     dr.ResponsibleById,

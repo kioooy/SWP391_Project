@@ -698,6 +698,18 @@
         }
       }
     },
+    "/api/BloodDistanceSearch/hospitals": {
+      "get": {
+        "tags": [
+          "BloodDistanceSearch"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BloodDonationPeriod": {
       "post": {
         "tags": [
@@ -760,49 +772,9 @@
             "description": "Success"
           }
         }
-      },
-      "put": {
-        "tags": [
-          "BloodDonationPeriod"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBloodDonationPeriodDTO"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBloodDonationPeriodDTO"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateBloodDonationPeriodDTO"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
       }
     },
-    "/api/BloodDonationPeriod/{id}/status": {
+    "/api/BloodDonationPeriod/{id}/status/admin": {
       "patch": {
         "tags": [
           "BloodDonationPeriod"
@@ -844,6 +816,48 @@
         }
       }
     },
+    "/api/BloodDonationPeriod/{id}/isActive/admin": {
+      "patch": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BloodDonationPeriod/progress/{id}": {
       "get": {
         "tags": [
@@ -860,6 +874,60 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodDonationPeriod/all/admin,staff": {
+      "get": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodDonationPeriod/{id}/details/admin,staff": {
+      "patch": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -1067,6 +1135,75 @@
         }
       }
     },
+    "/api/DonationAlert/LastSuccessfulDonation/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/CheckDonationEligibility/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationAlert/LoginNotification/{memberId}": {
+      "get": {
+        "tags": [
+          "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/DonationRequest/{id}": {
       "get": {
         "tags": [
@@ -1204,6 +1341,82 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/CompletedDonationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/upcoming/all-role": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hospital": {
+      "get": {
+        "tags": [
+          "Hospital"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Hospital/{id}/location": {
+      "put": {
+        "tags": [
+          "Hospital"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HospitalLocationUpdateDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HospitalLocationUpdateDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HospitalLocationUpdateDTO"
               }
             }
           }
@@ -1687,6 +1900,93 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/{userId}/location": {
+      "put": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationUpdateModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationUpdateModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationUpdateModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/search-by-distance": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "radiusInKm",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "userType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -2258,6 +2558,34 @@
         "type": "integer",
         "format": "int32"
       },
+      "HospitalLocationUpdateDTO": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LocationUpdateModel": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginModel": {
         "type": "object",
         "properties": {
@@ -2404,13 +2732,12 @@
         },
         "additionalProperties": false
       },
-      "UpdateBloodDonationPeriodDTO": {
+      "StaffUpdateBloodDonationPeriodDTO": {
         "required": [
           "location",
           "periodDateFrom",
           "periodDateTo",
           "periodName",
-          "status",
           "targetQuantity"
         ],
         "type": "object",
@@ -2422,11 +2749,6 @@
           },
           "location": {
             "maxLength": 255,
-            "minLength": 0,
-            "type": "string"
-          },
-          "status": {
-            "maxLength": 20,
             "minLength": 0,
             "type": "string"
           },
@@ -2455,6 +2777,10 @@
           "email": {
             "type": "string",
             "format": "email",
+            "nullable": true
+          },
+          "fullName": {
+            "type": "string",
             "nullable": true
           },
           "phoneNumber": {

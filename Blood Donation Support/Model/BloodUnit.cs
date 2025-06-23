@@ -24,6 +24,10 @@ public partial class BloodUnit
 
     public string BloodStatus { get; set; } = null!;
 
+    public int MemberId { get; set; }
+
+    public virtual Member Member { get; set; } = null!;
+
     public virtual BloodType BloodType { get; set; } = null!;
 
     public virtual BloodComponent Component { get; set; } = null!;

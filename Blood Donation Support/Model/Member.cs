@@ -33,6 +33,8 @@ public partial class Member
 
     public virtual BloodType? BloodType { get; set; }
 
+    public virtual ICollection<BloodUnit> BloodUnits { get; set; } = new List<BloodUnit>();
+
     public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
 
     public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();

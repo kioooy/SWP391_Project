@@ -26,6 +26,12 @@ namespace Blood_Donation_Support.DTO
         [Required]
         public required string PatientCondition { get; set; }
     }
+    public class UpdateStatusCancelledDonationRequest
+    {
+        [Required]
+        [RegularExpression("Rejected|Cancelled")]
+        public required string Status { get; set; }
+    }
     public class UpdateStatusDonationRequest
     {
         [Required]
@@ -38,7 +44,6 @@ namespace Blood_Donation_Support.DTO
         public required string Status { get; set; }
         public string? Notes { get; set; }
     }
-
     public class UpdateDonationRequest
     {
         [Required]
@@ -51,6 +56,5 @@ namespace Blood_Donation_Support.DTO
         public required string Status { get; set; }
         public string? Notes { get; set; }
     }
-
 
 }

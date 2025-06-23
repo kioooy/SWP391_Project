@@ -169,6 +169,10 @@ public partial class BloodDonationSupportContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__BloodUnit__Compo__628FA481");
 
+            entity.HasOne(d => d.Member).WithMany(p => p.BloodUnits)
+                .HasForeignKey(d => d.MemberId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__BloodUnit__Membe__1332DBDC");
         });
 
         modelBuilder.Entity<DonationRequest>(entity =>

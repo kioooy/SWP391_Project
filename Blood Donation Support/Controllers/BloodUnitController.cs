@@ -28,11 +28,14 @@ public class BloodUnitController : ControllerBase
         var bloodUnits = await _context.BloodUnits
             .Include(bt => bt.BloodType) 
             .Include(c => c.Component)
+            .Include(m => m.Member)
+                .ThenInclude(u => u.User)
             .Select(bu => new
             {
                 bu.BloodUnitId,             // Blood Unit ID
                 bu.BloodType.BloodTypeName, // Blood Type Name
                 bu.Component.ComponentName, // Component Name
+                bu.Member.User.FullName,    // Full Name of the Member
                 bu.AddDate,                 // Date Added
                 bu.ExpiryDate,              // Expiry Date
                 bu.Volume,                  // Volume (mL)
@@ -55,12 +58,15 @@ public class BloodUnitController : ControllerBase
         var bloodUnit = await _context.BloodUnits
             .Include(bt => bt.BloodType)
             .Include(c => c.Component)
+            .Include(m => m.Member)
+                .ThenInclude(u => u.User)
             .Where(bu => bu.BloodUnitId == id)
             .Select(bu => new
             {
                 bu.BloodUnitId,             // Blood Unit ID
                 bu.BloodType.BloodTypeName, // Blood Type Name
                 bu.Component.ComponentName, // Component Name
+                bu.Member.User.FullName,    // Full Name of the Member
                 bu.AddDate,                 // Date Added
                 bu.ExpiryDate,              // Expiry Date
                 bu.Volume,                  // Volume (mL)

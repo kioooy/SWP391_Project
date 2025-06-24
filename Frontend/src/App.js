@@ -11,6 +11,8 @@ import Events from "./pages/Events";
 import Article from "./pages/News";
 import ArticleDetail from "./pages/NewsDetail";
 import BookingPage from "./pages/BookingPage";
+import BookingTransfusion from "./pages/BookingTransfusion";
+import TransfusionHistory from "./pages/TransfusionHistory";
 import { selectIsAuthenticated } from "./features/auth/authSlice";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -32,6 +34,7 @@ import News from './pages/News';
 import NewsDetail from './pages/NewsDetail';
 import DonationRequestManagement from './pages/DonationRequestManagement';
 import { RequireAuth } from "./components/RequireAuth";
+import BlogPage from "./pages/BlogPage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -64,11 +67,9 @@ const App = () => {
         <Route path="/article" element={<Article />} />
         <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
+        <Route path="/booking-transfusion" element={<BookingTransfusion />} />
+        <Route path="/transfusion-history" element={<TransfusionHistory />} />
         <Route path="/profile" element={<UserProfile />} />
-        <Route
-          path="/transfusion-request"
-          element={<TransfusionManagement />}
-        />
         <Route path="/certificate" element={<BloodDonationCertificate />} />
         <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />
@@ -84,6 +85,7 @@ const App = () => {
         <Route path="transfusion-management" element={<RequireAuth roles={['Admin', 'Staff']}><TransfusionManagement/></RequireAuth>} />
         <Route path="blood-search" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><BloodSearch /></RequireAuth>} />
         <Route path="search-distance" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><SearchByDistance/></RequireAuth>} />
+        <Route path="/blog" element={<BlogPage />} />
       </Route>
 
       {/* Fallback Route */}

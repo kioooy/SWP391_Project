@@ -119,21 +119,21 @@ const Footer = () => {
               <ContactItem>
                 <LocationOnIcon />
                 <Typography variant="body2">
-                  123 Đường ABC, Quận 1, TP.HCM, Việt Nam
+                118 Hồng Bàng, Phường 12, Quận 5, TP.HCM
                 </Typography>
               </ContactItem>
 
               <ContactItem>
                 <PhoneIcon />
                 <Typography variant="body2">
-                  Hotline: 1900-xxxx
+                  Hotline: 02839575334
                 </Typography>
               </ContactItem>
 
               <ContactItem>
                 <EmailIcon />
                 <Typography variant="body2">
-                  Email: info@hienmauvietnam.vn
+                  Email: lienlac@bthh.org.vn
                 </Typography>
               </ContactItem>
 

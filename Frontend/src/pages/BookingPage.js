@@ -40,8 +40,11 @@ import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   backgroundColor: '#f5f5f5',
@@ -192,6 +195,7 @@ const BookingPage = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [donationVolume, setDonationVolume] = useState(350);
   const [userWeight, setUserWeight] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // Form states
   const [formData, setFormData] = useState({
@@ -375,7 +379,7 @@ const BookingPage = () => {
   const handleRegisterDonation = async () => {
     try {
       if (!userId) {
-        alert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!');
+        setSnackbar({ open: true, message: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!', severity: 'error' });
         return;
       }
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
@@ -385,7 +389,7 @@ const BookingPage = () => {
       const requestDate = new Date().toISOString();
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!');
+        setSnackbar({ open: true, message: 'Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!', severity: 'error' });
         return;
       }
       const payload = {
@@ -408,10 +412,10 @@ const BookingPage = () => {
         },
       });
       if (response.status === 200) {
-        alert('Đăng ký của bạn đã được gửi thành công!');
-        navigate('/user-profile');
+        setSnackbar({ open: true, message: 'Đăng ký của bạn đã được gửi thành công!', severity: 'success' });
+        setTimeout(() => navigate('/user-profile'), 1500);
       } else {
-        alert('Có lỗi xảy ra khi đăng ký!');
+        setSnackbar({ open: true, message: 'Có lỗi xảy ra khi đăng ký!', severity: 'error' });
       }
     } catch (error) {
       let msg = 'Lỗi kết nối server hoặc thiếu thông tin!';
@@ -422,7 +426,7 @@ const BookingPage = () => {
           msg = error.response.data;
         }
       }
-      alert(msg);
+      setSnackbar({ open: true, message: msg, severity: 'error' });
     }
   };
 
@@ -674,6 +678,16 @@ const BookingPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (userWeight) {
+      if (userWeight <= 50) setDonationVolume(250);
+      else if (userWeight > 50 && userWeight <= 60) setDonationVolume(350);
+      else if (userWeight > 60) setDonationVolume(450);
+    } else {
+      setDonationVolume(350);
+    }
+  }, [userWeight]);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -719,6 +733,10 @@ const BookingPage = () => {
                         Chọn đợt hiến máu
                       </Typography>
                     </Box>
+                    <Typography variant="body2" sx={{ mb: 2, color: '#e53935', fontStyle: 'italic', display: 'flex', alignItems: 'center', fontWeight: 500 }}>
+                      <WarningIcon sx={{ fontSize: 20, mr: 1, color: '#e53935' }} />
+                      Vui lòng chọn ngày hiện tại để xem các đợt hiến máu phù hợp.
+                    </Typography>
                     <FormControl fullWidth sx={{ mb: 2 }}>
                       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         <DatePicker
@@ -971,6 +989,7 @@ const BookingPage = () => {
                 </Card>
 
                 {/* Time Slot Selection */}
+                {/*
                 <Card>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -979,11 +998,9 @@ const BookingPage = () => {
                         Chọn khung giờ bạn sẽ đến hiến máu
                       </Typography>
                     </Box>
-
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                       Thời gian nhận hồ sơ
                     </Typography>
-
                     <Stack direction="row" spacing={2}>
                       {timeSlots.map((slot) => (
                         <TimeSlotButton
@@ -997,6 +1014,7 @@ const BookingPage = () => {
                     </Stack>
                   </CardContent>
                 </Card>
+                */}
 
                 {/* Continue Button */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1492,6 +1510,11 @@ const BookingPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <MuiAlert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </LocalizationProvider>
   );
 };

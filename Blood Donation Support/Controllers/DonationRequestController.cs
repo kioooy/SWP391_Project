@@ -189,66 +189,20 @@ namespace Blood_Donation_Support.Controllers
         // update donation request by id ( "Completed" status )
         // PATCH: api/DonationRequest/update-completed/{id}
         [HttpPatch("{id}/update-completed")]
-        [Authorize(Roles = "Staff,Admin")] 
+        [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> CompletedDonationRequestStatus(int id, [FromBody] CompletedDonationRequest model)
         {
-            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id && u.Status == "Approved");
-            if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+            // Logic giống hủy: kiểm tra tồn tại DonationId, chỉ cho phép hoàn thành khi status là Pending hoặc Approved
+            var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync(dr => dr.DonationId == id);
+            if (donationRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}.");
+            if (donationRequest.Status != "Pending" && donationRequest.Status != "Approved")
+                return BadRequest("Chỉ có thể hoàn thành yêu cầu ở trạng thái chờ duyệt hoặc đã duyệt.");
 
-            var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
-            if (member == null)
-                return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
-
-            // Update the status Donation request 
-            existingRequest.Status = model.Status;
-            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
-
-            // Update member's data 
-            member.LastDonationDate = DateOnly.FromDateTime(DateTime.Now); // Update the member's last donation date
-            member.DonationCount = (member.DonationCount ?? 0) + 1;        // Increment the donation count (+1)
-            _context.Entry(member).State = EntityState.Modified;           // Mark the member entity as modified
-
-            // Add Blood Unit
-            // Calculate the expiry date
-            var shelfLifeDays = await _context.BloodComponents
-                .Where(c => c.ComponentId == existingRequest.ComponentId)
-                .Select(c => c.ShelfLifeDays)
-                .FirstOrDefaultAsync();
-            if (shelfLifeDays <= 0)
-                return BadRequest("Invalid shelf life for the blood component."); // Return 400 Bad Request if shelf life is invalid
-
-            var bloodUnit = new BloodUnit
-            {
-                BloodTypeId = member.BloodTypeId ?? 0,                  // Blood Type Id from member
-                ComponentId = existingRequest.ComponentId,              // Component Id from existing request
-                AddDate = DateOnly.FromDateTime(DateTime.Now),          // Add Date (current date)
-                ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)), // Expiry Date (current date + shelf life days)
-                Volume = existingRequest.DonationVolume ?? 0,           // Volume from existing request
-                RemainingVolume = existingRequest.DonationVolume ?? 0,  // Remaining Volume (initially equals Volume)
-                BloodStatus = "Available",                              // Blood Status (default "Available")
-                MemberId = model.MemberId                               // Member Id  
-            };
-
-            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
-            try 
-            {
-                await _context.AddAsync(bloodUnit); // Add the new blood unit to the context
-                await _context.SaveChangesAsync();  // Save changes to the database
-                await transaction.CommitAsync();    // Commit the transaction
-
-                return StatusCode(201, new // Return 201 Created with success messages
-                {                     
-                    memberMessage           = "Member updatd successfully.",
-                    donationRequestMessage  = "Donation request created successfully.", 
-                    bloodUnitMessage        = "Blood unit added successfully.",
-                });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                await transaction.RollbackAsync(); // Rollback the transaction 
-                throw;  
-            }
+            donationRequest.Status = "Completed";
+            _context.Entry(donationRequest).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Donation request marked as completed." });
         }
 
         // get upcoming donation requests for member

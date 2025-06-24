@@ -453,6 +453,7 @@ const BloodDonationCertificate = () => {
                       borderTop: "1px solid rgba(0,0,0,0.08)",
                     }}
                   >
+                    {/*
                     <Box>
                       <IconButton size="small" sx={{ color: "#667eea" }}>
                         <Print />
@@ -461,6 +462,7 @@ const BloodDonationCertificate = () => {
                         <Download />
                       </IconButton>
                     </Box>
+                    */}
                   </Box>
                 </CardContent>
               </Card>
@@ -576,9 +578,9 @@ const BloodDonationCertificate = () => {
             </Grid>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
-            <Button onClick={handleCloseDialog} sx={{ color: "#718096" }}>
+            {/* <Button onClick={handleCloseDialog} sx={{ color: "#718096" }}>
               Hủy
-            </Button>
+            </Button> */}
             <Button
               onClick={handleSave}
               variant="contained"

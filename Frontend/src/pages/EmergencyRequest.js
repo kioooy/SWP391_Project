@@ -36,7 +36,7 @@ import {
 const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
-    requestType: 'hospital', // 'hospital' hoặc 'individual'
+    requestType: 'individual', // Luôn là 'individual'
     hospitalName: '',
     patientName: '',
     bloodType: '',
@@ -81,8 +81,8 @@ const EmergencyRequest = () => {
   };
 
   const handleQuantityChange = (event) => {
-    let value = event.target.value.replace(/[^0-9]/g, '');
-    if (value.startsWith('0')) value = value.replace(/^0+/, '');
+    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 4); // chỉ cho nhập tối đa 4 số
+    if (value !== '' && Number(value) > 1000) value = '1000'; // không cho nhập quá 1000
     setFormData({
       ...formData,
       quantity: value,
@@ -112,8 +112,7 @@ const EmergencyRequest = () => {
   };
 
   const handleContactPhoneChange = (event) => {
-    let value = event.target.value.replace(/[^0-9]/g, '');
-    if (value.startsWith('0')) value = value.replace(/^0+/, '0');
+    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 10); // chỉ cho nhập tối đa 10 số
     setFormData({
       ...formData,
       contactPhone: value,
@@ -125,21 +124,26 @@ const EmergencyRequest = () => {
 
   const validateStep = () => {
     const newErrors = {};
-    
     if (activeStep === 0) {
-      if (!formData.requestType) newErrors.requestType = 'Vui lòng chọn loại yêu cầu';
-      if (formData.requestType === 'hospital' && !formData.hospitalName) {
-        newErrors.hospitalName = 'Vui lòng nhập tên bệnh viện';
-      }
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
       if (!formData.quantity) newErrors.quantity = 'Vui lòng nhập số lượng máu cần';
     } else if (activeStep === 1) {
       if (!formData.contactName) newErrors.contactName = 'Vui lòng nhập tên người liên hệ';
-      if (!formData.contactPhone) newErrors.contactPhone = 'Vui lòng nhập số điện thoại';
+      // Kiểm tra số điện thoại Việt Nam
+      if (!formData.contactPhone) {
+        newErrors.contactPhone = 'Vui lòng nhập số điện thoại';
+      } else if (!/^0[3|5|7|8|9][0-9]{8}$/.test(formData.contactPhone)) {
+        newErrors.contactPhone = 'Số điện thoại không hợp lệ (phải là số Việt Nam, 10 số, bắt đầu 03,05,07,08,09)';
+      }
+      // Kiểm tra email phải là gmail
+      if (!formData.contactEmail) {
+        newErrors.contactEmail = 'Vui lòng nhập email';
+      } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.contactEmail)) {
+        newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
+      }
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -161,7 +165,7 @@ const EmergencyRequest = () => {
       // Reset form và chuyển về bước đầu
       setActiveStep(0);
       setFormData({
-        requestType: 'hospital',
+        requestType: 'individual',
         hospitalName: '',
         patientName: '',
         bloodType: '',
@@ -255,13 +259,13 @@ const EmergencyRequest = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Số lượng máu cần (đơn vị)"
+                label="Số lượng máu cần (ml)"
                 type="text"
                 value={formData.quantity}
                 onChange={handleQuantityChange}
                 error={!!errors.quantity}
                 helperText={errors.quantity}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 4 }}
               />
             </Grid>
 
@@ -300,7 +304,7 @@ const EmergencyRequest = () => {
                 onChange={handleContactPhoneChange}
                 error={!!errors.contactPhone}
                 helperText={errors.contactPhone}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
               />
             </Grid>
 
@@ -311,6 +315,8 @@ const EmergencyRequest = () => {
                 type="email"
                 value={formData.contactEmail}
                 onChange={handleChange('contactEmail')}
+                error={!!errors.contactEmail}
+                helperText={errors.contactEmail}
               />
             </Grid>
 
@@ -394,7 +400,7 @@ const EmergencyRequest = () => {
                     <Typography variant="subtitle2" color="text.secondary">
                       Số lượng máu
                     </Typography>
-                    <Typography>{formData.quantity} đơn vị</Typography>
+                    <Typography>{formData.quantity} ml</Typography>
                   </Grid>
                 </Grid>
               </CardContent>

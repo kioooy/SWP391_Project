@@ -510,6 +510,28 @@ const UserProfile = () => {
     );
   }
 
+  // --- THÊM ĐOẠN NÀY: Gộp lịch hẹn đã lên lịch vào lịch sử hiến máu ---
+  const scheduledAppointments = upcomingAppointments
+    .filter(a => ["Approved", "scheduled"].includes(a.status))
+    .map(a => ({
+      id: a.donationId,
+      date: dayjs(a.preferredDonationDate).format('DD/MM/YYYY'),
+      location: a.location || 'Chưa có thông tin',
+      bloodType: formData.bloodType,
+      volume: '', // Nếu có trường volume thì lấy, không thì để rỗng
+      status: a.status,
+      nextDonationDate: '', // Nếu có thể tính được thì điền, không thì để rỗng
+      isScheduled: true // Đánh dấu là lịch hẹn rút gọn
+    }));
+
+  const fullHistory = [
+    ...donationHistory,
+    ...scheduledAppointments.filter(
+      sa => !donationHistory.some(dh => dh.id === sa.id)
+    )
+  ];
+  // --- HẾT ĐOẠN THÊM ---
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -650,7 +672,7 @@ const UserProfile = () => {
               </Box>
               <TabPanel value={tabValue} index={0}>
                 <Typography variant="h6" gutterBottom>Lịch sử hiến máu</Typography>
-                {donationHistory.length > 0 ? (
+                {fullHistory.length > 0 ? (
                   <TableContainer component={Paper}>
                     <Table>
                       <TableHead>
@@ -664,7 +686,7 @@ const UserProfile = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {donationHistory.map((row) => (
+                        {fullHistory.map((row) => (
                           <TableRow key={row.id}>
                             <TableCell>{row.date}</TableCell>
                             <TableCell>{row.location}</TableCell>
@@ -720,10 +742,6 @@ const UserProfile = () => {
                             <Typography variant="body1" fontWeight="bold">{dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY')}</Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">Khung giờ</Typography>
-                            <Typography variant="body1" fontWeight="bold">{timeSlot}</Typography>
-                          </Grid>
-                          <Grid item xs={12}>
                             <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                             <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
                           </Grid>
@@ -910,9 +928,6 @@ const UserProfile = () => {
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 <strong>Ngày hẹn:</strong> {appointmentToCancel.detail?.appointmentDate}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Khung giờ:</strong> {appointmentToCancel.detail?.appointmentTime}
               </Typography>
               <Typography variant="body2">
                 <strong>Địa điểm:</strong> {appointmentToCancel.detail?.donationCenter}

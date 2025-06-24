@@ -17,7 +17,7 @@ import {
   MenuItem,
   Snackbar,
   Alert,
-
+  Avatar,
 } from "@mui/material";
 import axios from 'axios';
 import { styled } from "@mui/material/styles";
@@ -152,6 +152,14 @@ const MainLayout = () => {
     }
   }, [currentUser]);
 
+  useEffect(() => {
+    if (currentUser && (currentUser.role === 'Staff' || currentUser.role === 'Admin')) {
+      if (location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/') {
+        navigate('/manage-requests', { replace: true });
+      }
+    }
+  }, [currentUser, location.pathname, navigate]);
+
   const handleLogout = async () => {
     await dispatch(logout());
     localStorage.removeItem("isTestUser");
@@ -201,20 +209,18 @@ const MainLayout = () => {
 
   if (currentUser && currentUser.role === 'Staff') {
     menuItems = [
-      // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Staff
-      { path: "/transfusion-request", label: "Yêu Cầu Truyền Máu", icon: <HistoryIcon /> },
+      { path: "/transfusion-request", label: "Quản Lý Yêu Cầu Truyền Máu", icon: <HistoryIcon /> },
       { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
       { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> },
-      { path: "/manage-requests", label: "Quản lý yêu cầu hiến máu", icon: <AssignmentIcon /> }
+      { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> }
     ];
   } else if (currentUser && currentUser.role === 'Admin') {
     menuItems = [
-      // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Admin
-      { path: "/transfusion-request", label: "Yêu Cầu Truyền Máu", icon: <HistoryIcon /> },
+      { path: "/transfusion-request", label: "Quản Lý Yêu Cầu Truyền Máu", icon: <HistoryIcon /> },
       { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
       { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
       { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
-      { path: "/manage-requests", label: "Quản lý yêu cầu hiến máu", icon: <AssignmentIcon /> }
+      { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> }
     ];
   } else {
     // Nếu chưa đăng nhập, chỉ hiện các mục cơ bản
@@ -272,12 +278,20 @@ const MainLayout = () => {
             </Box>
             {/* Đăng nhập/Đăng ký hoặc Profile */}
             <Box>
-
               {isAuthenticated || isTestUser ? (
                 <Button
                   color="primary"
-                  startIcon={<AccountCircleIcon />}
+                  startIcon={
+                    currentUser && currentUser.fullName ? (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                        {currentUser.fullName.charAt(0).toUpperCase()}
+                      </Avatar>
+                    ) : (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                    )
+                  }
                   onClick={handleProfile}
+                  sx={{ fontSize: 17, fontWeight: 'bold' }}
                 >
                   {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
                 </Button>
@@ -287,6 +301,7 @@ const MainLayout = () => {
                   color="primary"
                   onClick={handleLogin}
                   startIcon={<PersonIcon />}
+                  sx={{ fontSize: 18 }}
                 >
                   Đăng nhập
                 </Button>

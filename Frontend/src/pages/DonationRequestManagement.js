@@ -24,6 +24,7 @@ import {
   Select,
   MenuItem,
   TextField,
+  Snackbar,
 } from '@mui/material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -40,6 +41,13 @@ const DonationRequestManagement = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [actionType, setActionType] = useState(''); // 'Approve' or 'Reject'
   const [notes, setNotes] = useState('');
+
+  // Thêm dialog xác nhận hoàn thành/hủy
+  const [openActionDialog, setOpenActionDialog] = useState(false);
+  const [actionRequest, setActionRequest] = useState(null);
+  const [actionMode, setActionMode] = useState(''); // 'complete' hoặc 'cancel'
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchRequests = async () => {
     try {
@@ -106,10 +114,70 @@ const DonationRequestManagement = () => {
       );
 
       handleCloseDialog();
-      alert(`Yêu cầu đã được ${newStatus === 'Approved' ? 'duyệt' : 'từ chối'}.`);
+      setSnackbar({ open: true, message: `Yêu cầu đã được ${newStatus === 'Approved' ? 'duyệt' : 'từ chối'}.`, severity: 'success' });
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Cập nhật trạng thái thất bại!');
+      setSnackbar({ open: true, message: 'Cập nhật trạng thái thất bại!', severity: 'error' });
+    }
+  };
+
+  const handleOpenActionDialog = (request, mode) => {
+    setActionRequest(request);
+    setActionMode(mode);
+    setOpenActionDialog(true);
+  };
+
+  const handleCloseActionDialog = () => {
+    setOpenActionDialog(false);
+    setActionRequest(null);
+    setActionMode('');
+  };
+
+  const handleConfirmActionRequest = async () => {
+    if (!actionRequest) return;
+    const token = localStorage.getItem('token');
+    console.log('Gọi hoàn thành:', actionRequest.donationId, actionRequest.memberId);
+    if (!actionRequest.donationId || isNaN(actionRequest.donationId)) {
+      setSnackbar({ open: true, message: 'ID yêu cầu không hợp lệ!', severity: 'error' });
+      handleCloseActionDialog();
+      return;
+    }
+    try {
+      if (actionMode === 'complete') {
+        await axios.patch(`/api/DonationRequest/update-completed/${actionRequest.donationId}`, {
+          MemberId: actionRequest.memberId,
+          Status: 'Completed',
+          Notes: actionRequest.notes || '',
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRequests(
+          requests.map((req) =>
+            req.donationId === actionRequest.donationId
+              ? { ...req, status: 'Completed' }
+              : req
+          )
+        );
+        setSnackbar({ open: true, message: 'Đã hoàn thành yêu cầu!', severity: 'success' });
+      } else if (actionMode === 'cancel') {
+        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/cancel`, {
+          notes: 'Đã hủy bởi nhân viên',
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRequests(
+          requests.map((req) =>
+            req.donationId === actionRequest.donationId
+              ? { ...req, status: 'Cancelled', notes: 'Đã hủy bởi nhân viên' }
+              : req
+          )
+        );
+        setSnackbar({ open: true, message: 'Đã hủy yêu cầu!', severity: 'success' });
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Có lỗi xảy ra!', severity: 'error' });
+    } finally {
+      handleCloseActionDialog();
     }
   };
 
@@ -193,7 +261,7 @@ const DonationRequestManagement = () => {
                   </TableCell>
                   <TableCell>{`${req.periodId} - ${req.periodName}`}</TableCell>
                   <TableCell>{getStatusChip(req.status)}</TableCell>
-                  <TableCell>{req.notes}</TableCell>
+                  <TableCell>{req.status === 'Cancelled' && req.notes ? <b>{req.notes}</b> : req.notes}</TableCell>
                   <TableCell>
                     {req.status === 'Pending' && (
                       <Box sx={{ display: 'flex', gap: 1 }}>
@@ -212,6 +280,26 @@ const DonationRequestManagement = () => {
                           onClick={() => handleOpenDialog(req, 'Reject')}
                         >
                           Từ chối
+                        </Button>
+                      </Box>
+                    )}
+                    {req.status === 'Approved' && (
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          onClick={() => handleOpenActionDialog(req, 'complete')}
+                        >
+                          Hoàn thành
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          size="small"
+                          onClick={() => handleOpenActionDialog(req, 'cancel')}
+                        >
+                          Hủy
                         </Button>
                       </Box>
                     )}
@@ -251,6 +339,39 @@ const DonationRequestManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog xác nhận hoàn thành/hủy */}
+      <Dialog open={openActionDialog} onClose={handleCloseActionDialog}>
+        <DialogTitle>
+          {actionMode === 'complete' ? 'Xác nhận hoàn thành yêu cầu' : 'Xác nhận hủy yêu cầu'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn {actionMode === 'complete' ? 'đánh dấu hoàn thành' : 'hủy'} yêu cầu này không?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseActionDialog}>Hủy</Button>
+          <Button onClick={handleConfirmActionRequest} variant="contained" color={actionMode === 'complete' ? 'success' : 'error'}>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Container,
   Typography,
@@ -37,79 +38,75 @@ import {
 } from '@mui/icons-material';
 
 const BloodInventory = () => {
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedBlood, setSelectedBlood] = useState(null);
   const [formData, setFormData] = useState({
-    bloodType: '',
-    quantity: '',
-    expiryDate: '',
-    status: 'available', // 'available', 'reserved', 'expired'
-    source: '', // 'donation', 'transfer'
-    notes: '',
+    bloodTypeId: '',
+    componentId: '',
+    memberId: '',
+    volume: '',
+    bloodStatus: 'Available',
   });
 
-  // Dữ liệu mẫu
-  const mockInventory = [
-    {
-      id: 1,
-      bloodType: 'A+',
-      quantity: 15,
-      expiryDate: '2024-04-15',
-      status: 'available',
-      source: 'donation',
-      lastUpdated: '2024-03-15',
-    },
-    {
-      id: 2,
-      bloodType: 'B+',
-      quantity: 8,
-      expiryDate: '2024-04-10',
-      status: 'reserved',
-      source: 'transfer',
-      lastUpdated: '2024-03-14',
-    },
-    {
-      id: 3,
-      bloodType: 'O-',
-      quantity: 5,
-      expiryDate: '2024-03-20',
-      status: 'expired',
-      source: 'donation',
-      lastUpdated: '2024-03-13',
-    },
+  // Hardcode tạm danh sách nhóm máu, thành phần máu, member
+  const bloodTypes = [
+    { id: 1, name: 'A+' }, { id: 2, name: 'A-' }, { id: 3, name: 'B+' }, { id: 4, name: 'B-' },
+    { id: 5, name: 'AB+' }, { id: 6, name: 'AB-' }, { id: 7, name: 'O+' }, { id: 8, name: 'O-' }
+  ];
+  const components = [
+    { id: 1, name: 'Whole Blood' },
+    { id: 2, name: 'Red Blood Cells' },
+    { id: 3, name: 'Plasma' },
+    { id: 4, name: 'Platelets' }
+  ];
+  const members = [
+    { id: 1, name: 'Nguyen Van A' },
+    { id: 2, name: 'Le Thi B' },
+    { id: 3, name: 'Tran Van C' }
   ];
 
-  const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  // Fetch inventory
+  const fetchInventory = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/BloodUnit', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setInventory(res.data);
+      setError('');
+    } catch (err) {
+      setError('Không thể tải dữ liệu kho máu!');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Tính toán tổng số lượng máu theo nhóm
-  const totalByType = bloodTypes.reduce((acc, type) => {
-    const total = mockInventory
-      .filter((item) => item.bloodType === type && item.status === 'available')
-      .reduce((sum, item) => sum + item.quantity, 0);
-    acc[type] = total;
-    return acc;
-  }, {});
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
   const handleOpenDialog = (blood = null) => {
     if (blood) {
       setSelectedBlood(blood);
       setFormData({
-        bloodType: blood.bloodType,
-        quantity: blood.quantity,
-        expiryDate: blood.expiryDate,
-        status: blood.status,
-        source: blood.source,
-        notes: '',
+        bloodTypeId: blood.BloodTypeId || bloodTypes.find(t => t.name === blood.BloodTypeName)?.id || '',
+        componentId: blood.ComponentId || components.find(c => c.name === blood.ComponentName)?.id || '',
+        memberId: blood.MemberId || members.find(m => m.name === blood.FullName)?.id || '',
+        volume: blood.Volume || blood.RemainingVolume || '',
+        bloodStatus: blood.BloodStatus || 'Available',
       });
     } else {
       setSelectedBlood(null);
       setFormData({
-        bloodType: '',
-        quantity: '',
-        expiryDate: '',
-        status: 'available',
-        source: 'donation',
-        notes: '',
+        bloodTypeId: '',
+        componentId: '',
+        memberId: '',
+        volume: '',
+        bloodStatus: 'Available',
       });
     }
     setOpenDialog(true);
@@ -120,41 +117,70 @@ const BloodInventory = () => {
     setSelectedBlood(null);
   };
 
-  const handleSubmit = () => {
-    // Xử lý thêm/cập nhật đơn vị máu
-    console.log('Form submitted:', formData);
-    handleCloseDialog();
+  // Thêm hoặc cập nhật đơn vị máu
+  const handleSubmit = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      if (selectedBlood) {
+        // Update
+        await axios.patch(`/api/BloodUnit/${selectedBlood.BloodUnitId}`, {
+          BloodTypeId: formData.bloodTypeId,
+          ComponentId: formData.componentId,
+          MemberId: formData.memberId,
+          Volume: formData.volume,
+          BloodStatus: formData.bloodStatus,
+          remainingVolume: formData.volume,
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        // Add
+        await axios.post('/api/BloodUnit', {
+          BloodTypeId: formData.bloodTypeId,
+          ComponentId: formData.componentId,
+          MemberId: formData.memberId,
+          Volume: formData.volume,
+          BloodStatus: formData.bloodStatus,
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      fetchInventory();
+      handleCloseDialog();
+    } catch (err) {
+      setError('Lưu dữ liệu thất bại!');
+    }
   };
 
+  // Xóa (soft delete)
+  const handleDelete = async (blood) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.patch(`/api/BloodUnit/${blood.BloodUnitId}/discard`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchInventory();
+    } catch (err) {
+      setError('Xóa thất bại!');
+    }
+  };
+
+  // Thống kê tổng số lượng máu theo nhóm
+  const totalByType = bloodTypes.reduce((acc, type) => {
+    const total = inventory.filter((item) => item.BloodTypeName === type.name && item.BloodStatus === 'Available')
+      .reduce((sum, item) => sum + (item.RemainingVolume || 0), 0);
+    acc[type.name] = total;
+    return acc;
+  }, {});
+
   const getStatusChip = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'available':
-        return (
-          <Chip
-            icon={<CheckCircleIcon />}
-            label="Có sẵn"
-            color="success"
-            size="small"
-          />
-        );
+        return <Chip icon={<CheckCircleIcon />} label="Có sẵn" color="success" size="small" />;
       case 'reserved':
-        return (
-          <Chip
-            icon={<WarningIcon />}
-            label="Đã đặt"
-            color="warning"
-            size="small"
-          />
-        );
+        return <Chip icon={<WarningIcon />} label="Đã đặt" color="warning" size="small" />;
       case 'expired':
-        return (
-          <Chip
-            icon={<WarningIcon />}
-            label="Hết hạn"
-            color="error"
-            size="small"
-          />
-        );
+        return <Chip icon={<WarningIcon />} label="Hết hạn" color="error" size="small" />;
       default:
         return null;
     }
@@ -165,25 +191,26 @@ const BloodInventory = () => {
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
         Quản lý kho máu
       </Typography>
-
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading ? <Box textAlign="center"><LinearProgress /></Box> : <>
       {/* Thống kê tổng quan */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {bloodTypes.map((type) => (
-          <Grid item xs={12} sm={6} md={3} key={type}>
+          <Grid item xs={12} sm={6} md={3} key={type.id}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Nhóm máu {type}
+                  Nhóm máu {type.name}
                 </Typography>
                 <Typography variant="h4" color="primary" gutterBottom>
-                  {totalByType[type] || 0}
+                  {totalByType[type.name] || 0}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   đơn vị máu có sẵn
                 </Typography>
                 <LinearProgress
                   variant="determinate"
-                  value={(totalByType[type] || 0) * 10}
+                  value={(totalByType[type.name] || 0) * 10}
                   sx={{ mt: 1 }}
                 />
               </CardContent>
@@ -191,7 +218,6 @@ const BloodInventory = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Bảng quản lý kho máu */}
       <Card>
         <CardContent>
@@ -205,45 +231,35 @@ const BloodInventory = () => {
               Thêm đơn vị máu
             </Button>
           </Box>
-
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Nhóm máu</TableCell>
-                  <TableCell>Số lượng</TableCell>
+                  <TableCell>Thành phần</TableCell>
+                  <TableCell>Thể tích (ml)</TableCell>
+                  <TableCell>Ngày thêm</TableCell>
                   <TableCell>Ngày hết hạn</TableCell>
                   <TableCell>Trạng thái</TableCell>
-                  <TableCell>Nguồn</TableCell>
-                  <TableCell>Cập nhật lần cuối</TableCell>
+                  <TableCell>Người hiến</TableCell>
                   <TableCell>Thao tác</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {mockInventory.map((row) => (
-                  <TableRow key={row.id}>
+                {inventory.map((row) => (
+                  <TableRow key={row.BloodUnitId}>
+                    <TableCell>{row.BloodTypeName}</TableCell>
+                    <TableCell>{row.ComponentName}</TableCell>
+                    <TableCell>{row.Volume}</TableCell>
+                    <TableCell>{row.AddDate}</TableCell>
+                    <TableCell>{row.ExpiryDate}</TableCell>
+                    <TableCell>{getStatusChip(row.BloodStatus)}</TableCell>
+                    <TableCell>{row.FullName}</TableCell>
                     <TableCell>
-                      <Chip
-                        label={row.bloodType}
-                        color="error"
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{row.quantity}</TableCell>
-                    <TableCell>{row.expiryDate}</TableCell>
-                    <TableCell>{getStatusChip(row.status)}</TableCell>
-                    <TableCell>
-                      {row.source === 'donation' ? 'Hiến máu' : 'Chuyển kho'}
-                    </TableCell>
-                    <TableCell>{row.lastUpdated}</TableCell>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDialog(row)}
-                      >
+                      <IconButton size="small" onClick={() => handleOpenDialog(row)}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton size="small" color="error">
+                      <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
@@ -254,7 +270,7 @@ const BloodInventory = () => {
           </TableContainer>
         </CardContent>
       </Card>
-
+      </>}
       {/* Dialog thêm/sửa đơn vị máu */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
@@ -266,33 +282,53 @@ const BloodInventory = () => {
               <FormControl fullWidth>
                 <InputLabel>Nhóm máu</InputLabel>
                 <Select
-                  value={formData.bloodType}
+                  value={formData.bloodTypeId}
                   label="Nhóm máu"
-                  onChange={(e) =>
-                    setFormData({ ...formData, bloodType: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, bloodTypeId: e.target.value })}
                 >
                   {bloodTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
+                    <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Thành phần</InputLabel>
+                <Select
+                  value={formData.componentId}
+                  label="Thành phần"
+                  onChange={(e) => setFormData({ ...formData, componentId: e.target.value })}
+                >
+                  {components.map((c) => (
+                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Người hiến</InputLabel>
+                <Select
+                  value={formData.memberId}
+                  label="Người hiến"
+                  onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
+                >
+                  {members.map((m) => (
+                    <MenuItem key={m.id} value={m.id}>{m.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Số lượng"
+                label="Thể tích (ml)"
                 type="number"
-                value={formData.quantity}
-                onChange={(e) =>
-                  setFormData({ ...formData, quantity: e.target.value })
-                }
+                value={formData.volume}
+                onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
               />
             </Grid>
-
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth

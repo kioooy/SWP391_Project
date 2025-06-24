@@ -21,7 +21,13 @@ import {
   FormControlLabel,
   Checkbox,
   TextField,
+<<<<<<< Updated upstream
   Divider
+=======
+  Divider,
+  Alert,
+  Snackbar
+>>>>>>> Stashed changes
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -34,6 +40,13 @@ import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+<<<<<<< Updated upstream
+=======
+import WarningIcon from '@mui/icons-material/Warning';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { Alert as MuiAlert } from '@mui/material';
+>>>>>>> Stashed changes
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   backgroundColor: '#f5f5f5',
@@ -172,6 +185,25 @@ const BookingPage = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 11:00');
   const [currentWeek, setCurrentWeek] = useState(dayjs().startOf('week'));
   const [timeLocationCompleted, setTimeLocationCompleted] = useState(false);
+<<<<<<< Updated upstream
+=======
+  const [openSummary, setOpenSummary] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [periods, setPeriods] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [donationVolume, setDonationVolume] = useState(350);
+  const [userWeight, setUserWeight] = useState(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
+>>>>>>> Stashed changes
 
   // Form states
   const [formData, setFormData] = useState({
@@ -246,6 +278,176 @@ const BookingPage = () => {
     setTimeLocationCompleted(false);
     setTabValue(0);
   };
+<<<<<<< Updated upstream
+=======
+  const handleSubmit = () => {
+    // Kiểm tra validation trước khi cho phép submit
+    const validationResult = validateFormData();
+    if (validationResult) {
+      setValidationError(validationResult);
+      alert(validationResult);
+      return;
+    }
+    setValidationError('');
+    setOpenSummary(true);
+  };
+
+  const handlePeriodChange = (event) => {
+    const periodId = event.target.value;
+    const period = periods.find(p => p.periodId === periodId);
+    setSelectedPeriod(period);
+    setSelectedLocation(period ? period.location : '');
+    setDonationDate(null); // Reset date when period changes
+  };
+
+  const handleHospitalChange = (event) => {
+    const hospitalId = event.target.value;
+    const hospital = hospitals.find(h => h.hospitalId === hospitalId);
+    setSelectedHospital(hospital);
+  };
+
+  // Hàm kiểm tra validation cho phiếu khai báo y tế
+  const validateFormData = () => {
+    // Kiểm tra câu hỏi 1: Anh/chị từng hiến máu chưa?
+    if (!formData['1.1'] && !formData['1.2']) {
+      return 'Bạn chưa trả lời câu hỏi 1: Anh/chị từng hiến máu chưa?';
+    }
+
+    // Kiểm tra câu hỏi 2: Hiện tại, anh/chị có mắc bệnh lý nào không?
+    if (!formData['2.1'] && !formData['2.2']) {
+      return 'Bạn chưa trả lời câu hỏi 2: Hiện tại, anh/chị có mắc bệnh lý nào không?';
+    }
+    if (formData['2.1'] && !formData['2.1_detail'].trim()) {
+      return 'Bạn đã chọn "Có" ở câu hỏi 2 nhưng chưa nhập chi tiết bệnh lý';
+    }
+
+    // Kiểm tra câu hỏi 3: Trước đây, anh/chị có từng mắc một trong các bệnh...
+    if (!formData['3.1'] && !formData['3.2'] && !formData['3.3']) {
+      return 'Bạn chưa trả lời câu hỏi 3: Trước đây, anh/chị có từng mắc một trong các bệnh...';
+    }
+    if (formData['3.3'] && !formData['3.3_detail'].trim()) {
+      return 'Bạn đã chọn "Bệnh khác" ở câu hỏi 3 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 4: Trong 12 tháng gần đây, anh/chị có:
+    if (!formData['4.1'] && !formData['4.2'] && !formData['4.3'] && !formData['4.4']) {
+      return 'Bạn chưa trả lời câu hỏi 4: Trong 12 tháng gần đây, anh/chị có:';
+    }
+    if (formData['4.3'] && !formData['4.3_detail'].trim()) {
+      return 'Bạn đã chọn "Khác" ở câu hỏi 4 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 5: Trong 06 tháng gần đây, anh/chị có:
+    if (!formData['5.1'] && !formData['5.2'] && !formData['5.3'] && !formData['5.4'] && 
+        !formData['5.5'] && !formData['5.6'] && !formData['5.7'] && !formData['5.8'] && 
+        !formData['5.9'] && !formData['5.10'] && !formData['5.11']) {
+      return 'Bạn chưa trả lời câu hỏi 5: Trong 06 tháng gần đây, anh/chị có:';
+    }
+
+    // Kiểm tra câu hỏi 6: Trong 01 tháng gần đây, anh/chị có:
+    if (!formData['6.1'] && !formData['6.2'] && !formData['6.3']) {
+      return 'Bạn chưa trả lời câu hỏi 6: Trong 01 tháng gần đây, anh/chị có:';
+    }
+
+    // Kiểm tra câu hỏi 7: Trong 14 ngày gần đây, anh/chị có:
+    if (!formData['7.1'] && !formData['7.2'] && !formData['7.3']) {
+      return 'Bạn chưa trả lời câu hỏi 7: Trong 14 ngày gần đây, anh/chị có:';
+    }
+    if (formData['7.3'] && !formData['7.3_detail'].trim()) {
+      return 'Bạn đã chọn "Khác" ở câu hỏi 7 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 8: Trong 07 ngày gần đây, anh/chị có:
+    if (!formData['8.1'] && !formData['8.2'] && !formData['8.3']) {
+      return 'Bạn chưa trả lời câu hỏi 8: Trong 07 ngày gần đây, anh/chị có:';
+    }
+    if (formData['8.3'] && !formData['8.3_detail'].trim()) {
+      return 'Bạn đã chọn "Khác" ở câu hỏi 8 nhưng chưa nhập chi tiết';
+    }
+
+    // Kiểm tra câu hỏi 9: Câu hỏi dành cho phụ nữ:
+    if (!formData['9.1'] && !formData['9.2'] && !formData['9.3']) {
+      return 'Bạn chưa trả lời câu hỏi 9: Câu hỏi dành cho phụ nữ:';
+    }
+
+    return null; // Không có lỗi
+  };
+
+  // Thêm hàm gọi API đăng ký hiến máu
+  const handleRegisterDonation = async () => {
+    try {
+      if (!userId) {
+        setSnackbar({
+          open: true,
+          message: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!',
+          severity: 'error'
+        });
+        return;
+      }
+      const periodId = selectedPeriod ? selectedPeriod.periodId : null;
+      const componentId = 1;
+      const responsibleById = 1;
+      const patientCondition = 'Khỏe mạnh';
+      const requestDate = new Date().toISOString();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbar({
+          open: true,
+          message: 'Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!',
+          severity: 'error'
+        });
+        return;
+      }
+      const payload = {
+        donationId: 0,
+        memberId: userId,
+        periodId: periodId,
+        componentId: componentId,
+        preferredDonationDate: donationDate ? dayjs(donationDate).format('YYYY-MM-DD') : null,
+        responsibleById: responsibleById,
+        requestDate: requestDate,
+        approvalDate: null,
+        donationVolume: donationVolume,
+        status: 'Pending',
+        notes: `Địa điểm hiến máu: ${selectedHospital ? selectedHospital.name : 'Chưa chọn'}. Khung giờ: ${selectedTimeSlot}`,
+        patientCondition: patientCondition
+      };
+      const response = await axios.post('/api/DonationRequest', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.status === 200) {
+        setSnackbar({
+          open: true,
+          message: 'Đăng ký của bạn đã được gửi thành công!',
+          severity: 'success'
+        });
+        navigate('/user-profile');
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'Có lỗi xảy ra khi đăng ký!',
+          severity: 'error'
+        });
+      }
+    } catch (error) {
+      if (error.response?.data === "Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.") {
+        setSnackbar({
+          open: true,
+          message: error.response.data,
+          severity: 'warning'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau!',
+          severity: 'error'
+        });
+      }
+    }
+  };
+>>>>>>> Stashed changes
 
   const handleCheckboxChange = (name) => (event) => {
     const isChecked = event.target.checked;
@@ -424,6 +626,10 @@ const BookingPage = () => {
 
   const weekDays = getWeekDays();
   const weekDayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -611,6 +817,7 @@ const BookingPage = () => {
                 </CardContent>
               </Card>
 
+<<<<<<< Updated upstream
               {/* Continue Button */}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
@@ -624,6 +831,18 @@ const BookingPage = () => {
               </Box>
             </Stack>
           </TabPanel>
+=======
+                {/* Time Slot Selection */}
+                {/*
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <AccessTimeIcon sx={{ mr: 2, color: 'primary.main' }} />
+                      <Typography variant="h6" fontWeight="bold">
+                        Chọn khung giờ bạn sẽ đến hiến máu
+                      </Typography>
+                    </Box>
+>>>>>>> Stashed changes
 
           <TabPanel value={tabValue} index={1}>
             {/* Blood Donation Form Tab Content */}
@@ -632,6 +851,7 @@ const BookingPage = () => {
                 Phiếu đăng ký hiến máu
               </Typography>
 
+<<<<<<< Updated upstream
               {/* Question 1 */}
               <QuestionCard>
                 <CardContent>
@@ -648,6 +868,22 @@ const BookingPage = () => {
                   </FormGroup>
                 </CardContent>
               </QuestionCard>
+=======
+                    <Stack direction="row" spacing={2}>
+                      {timeSlots.map((slot) => (
+                        <TimeSlotButton
+                          key={slot}
+                          selected={selectedTimeSlot === slot}
+                          onClick={() => setSelectedTimeSlot(slot)}
+                        >
+                          {slot}
+                        </TimeSlotButton>
+                      ))}
+                    </Stack>
+                  </CardContent>
+                </Card>
+                */}
+>>>>>>> Stashed changes
 
               {/* Question 2 */}
               <QuestionCard>
@@ -675,6 +911,7 @@ const BookingPage = () => {
                 </CardContent>
               </QuestionCard>
 
+<<<<<<< Updated upstream
               {/* Question 3 */}
               <QuestionCard>
                 <CardContent>
@@ -693,6 +930,26 @@ const BookingPage = () => {
                       label="Không"
                     />
                     <OptionContainer>
+=======
+                {/* Question 2 */}
+                <QuestionCard>
+                  <CardContent>
+                    <QuestionTitle>2. Hiện tại, anh/ chị có mắc bệnh lý nào không?</QuestionTitle>
+                    <FormGroup>
+                      <OptionContainer>
+                        <StyledFormControlLabel
+                          control={<Checkbox checked={formData['2.1']} onChange={handleCheckboxChange('2.1')} />}
+                          label="Có"
+                        />
+                        <TextField
+                          size="small"
+                          disabled={!formData['2.1']}
+                          value={formData['2.1_detail']}
+                          onChange={e => handleTextFieldChange('2.1_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết bệnh lý"
+                        />
+                      </OptionContainer>
+>>>>>>> Stashed changes
                       <StyledFormControlLabel
                         control={<Checkbox checked={formData['3.3']} onChange={handleCheckboxChange('3.3')} />}
                         label="Bệnh khác"
@@ -734,6 +991,7 @@ const BookingPage = () => {
                         onChange={handleTextFieldChange('4.3_detail')}
                         placeholder="Loại vacxin"
                       />
+<<<<<<< Updated upstream
                     </OptionContainer>
                     <StyledFormControlLabel
                       control={<Checkbox checked={formData['4.4']} onChange={handleCheckboxChange('4.4')} />}
@@ -795,6 +1053,58 @@ const BookingPage = () => {
                   </FormGroup>
                 </CardContent>
               </QuestionCard>
+=======
+                      <OptionContainer>
+                        <StyledFormControlLabel
+                          control={<Checkbox checked={formData['3.3']} onChange={handleCheckboxChange('3.3')} />}
+                          label="Bệnh khác"
+                        />
+                        <TextField
+                          size="small"
+                          disabled={!formData['3.3']}
+                          value={formData['3.3_detail']}
+                          onChange={e => handleTextFieldChange('3.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết bệnh khác"
+                        />
+                      </OptionContainer>
+                    </FormGroup>
+                  </CardContent>
+                </QuestionCard>
+
+                {/* Question 4 */}
+                <QuestionCard>
+                  <CardContent>
+                    <QuestionTitle>4. Trong 12 tháng gần đây, anh/chị có:</QuestionTitle>
+                    <FormGroup>
+                      <StyledFormControlLabel
+                        control={<Checkbox checked={formData['4.1']} onChange={handleCheckboxChange('4.1')} />}
+                        label="Khỏi bệnh sau khi mắc một trong các bệnh: sốt rét, giang mai, lao, viêm não-màng não, uốn ván, phẫu thuật ngoại khoa?"
+                      />
+                      <StyledFormControlLabel
+                        control={<Checkbox checked={formData['4.2']} onChange={handleCheckboxChange('4.2')} />}
+                        label="Được truyền máu hoặc các chế phẩm máu?"
+                      />
+                      <OptionContainer>
+                        <StyledFormControlLabel
+                          control={<Checkbox checked={formData['4.3']} onChange={handleCheckboxChange('4.3')} />}
+                          label="Tiêm Vacxin?"
+                        />
+                        <TextField
+                          size="small"
+                          disabled={!formData['4.3']}
+                          value={formData['4.3_detail']}
+                          onChange={e => handleTextFieldChange('4.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết khác"
+                        />
+                      </OptionContainer>
+                      <StyledFormControlLabel
+                        control={<Checkbox checked={formData['4.4']} onChange={handleCheckboxChange('4.4')} />}
+                        label="Không"
+                      />
+                    </FormGroup>
+                  </CardContent>
+                </QuestionCard>
+>>>>>>> Stashed changes
 
               {/* Question 6 */}
               <QuestionCard>
@@ -872,6 +1182,7 @@ const BookingPage = () => {
                         onChange={handleTextFieldChange('8.3_detail')}
                         placeholder="Chi tiết"
                       />
+<<<<<<< Updated upstream
                     </OptionContainer>
                   </FormGroup>
                 </CardContent>
@@ -897,6 +1208,54 @@ const BookingPage = () => {
                   </FormGroup>
                 </CardContent>
               </QuestionCard>
+=======
+                      <OptionContainer>
+                        <StyledFormControlLabel
+                          control={<Checkbox checked={formData['7.3']} onChange={handleCheckboxChange('7.3')} />}
+                          label="Khác (cụ thể)"
+                        />
+                        <TextField
+                          size="small"
+                          disabled={!formData['7.3']}
+                          value={formData['7.3_detail']}
+                          onChange={e => handleTextFieldChange('7.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết khác"
+                        />
+                      </OptionContainer>
+                    </FormGroup>
+                  </CardContent>
+                </QuestionCard>
+
+                {/* Question 8 */}
+                <QuestionCard>
+                  <CardContent>
+                    <QuestionTitle>8. Trong 07 ngày gần đây, anh/chị có:</QuestionTitle>
+                    <FormGroup>
+                      <StyledFormControlLabel
+                        control={<Checkbox checked={formData['8.1']} onChange={handleCheckboxChange('8.1')} />}
+                        label="Dùng thuốc kháng sinh, kháng viêm, Aspirin, Corticoid?"
+                      />
+                      <StyledFormControlLabel
+                        control={<Checkbox checked={formData['8.2']} onChange={handleCheckboxChange('8.2')} />}
+                        label="Không"
+                      />
+                      <OptionContainer>
+                        <StyledFormControlLabel
+                          control={<Checkbox checked={formData['8.3']} onChange={handleCheckboxChange('8.3')} />}
+                          label="Khác (cụ thể)"
+                        />
+                        <TextField
+                          size="small"
+                          disabled={!formData['8.3']}
+                          value={formData['8.3_detail']}
+                          onChange={e => handleTextFieldChange('8.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết khác"
+                        />
+                      </OptionContainer>
+                    </FormGroup>
+                  </CardContent>
+                </QuestionCard>
+>>>>>>> Stashed changes
 
               {/* Submit Button */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
@@ -919,8 +1278,197 @@ const BookingPage = () => {
             </Stack>
           </TabPanel>
         </Grid>
+<<<<<<< Updated upstream
       </Grid>
     </Container>
+=======
+      </Container>
+      <Dialog open={openSummary} onClose={() => setOpenSummary(false)} maxWidth="md" fullWidth>
+        <DialogTitle fontWeight="bold" color="primary.main">
+          Xác nhận thông tin đăng ký hiến máu
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Typography variant="subtitle1">
+              <strong>Đợt hiến máu:</strong> {selectedPeriod ? selectedPeriod.periodName : 'Chưa chọn'}
+            </Typography>
+            <Typography variant="subtitle1">
+              <strong>Ngày hiến máu:</strong> {donationDate ? dayjs(donationDate).format('DD/MM/YYYY') : 'Chưa chọn'}
+            </Typography>
+            <Typography variant="subtitle1">
+              <strong>Khung giờ:</strong> {selectedTimeSlot}
+            </Typography>
+            <Typography variant="subtitle1">
+              <strong>Địa điểm hiến máu:</strong> {selectedHospital ? selectedHospital.name : 'Chưa chọn'}
+            </Typography>
+            {selectedHospital && (
+              <Typography variant="subtitle1">
+                <strong>Địa chỉ:</strong> {selectedHospital.address}
+              </Typography>
+            )}
+            <Typography variant="subtitle1">
+              <strong>Địa điểm đợt hiến máu:</strong> {selectedPeriod ? selectedPeriod.location : 'Chưa chọn'}
+            </Typography>
+
+            <Divider />
+
+            <Typography variant="h6" fontWeight="bold" color="primary.main">
+              Phiếu khảo sát đã chọn:
+            </Typography>
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                1. Anh/chị từng hiến máu chưa?
+              </Typography>
+              <Typography pl={2}>
+                {formData['1.1'] && '- Có'}
+                {formData['1.2'] && '- Không'}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                2. Hiện tại, anh/ chị có mắc bệnh lý nào không?
+              </Typography>
+              <Stack pl={2}>
+                {formData['2.1'] && (
+                  <Typography>- Có</Typography>
+                )}
+                {formData['2.1_detail'] && (
+                  <Typography>+ Chi tiết: {formData['2.1_detail']}</Typography>
+                )}
+                {formData['2.2'] && <Typography>- Không</Typography>}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                3. Trước đây, anh/chị có từng mắc một trong các bệnh...
+              </Typography>
+              <Stack pl={2}>
+                {formData['3.1'] && <Typography>- Có</Typography>}
+                {formData['3.2'] && <Typography>- Không</Typography>}
+                {formData['3.3'] && <Typography>- Bệnh khác</Typography>}
+                {formData['3.3_detail'] && (
+                  <Typography>+ Chi tiết: {formData['3.3_detail']}</Typography>
+                )}
+              </Stack>
+            </Box>
+
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                4. Trong 12 tháng gần đây, anh/chị có:
+              </Typography>
+              <Typography pl={2}>
+                {formData['1.1'] && '- Có'}
+                {formData['1.2'] && '- Không'}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                5. Trong 06 tháng gần đây, anh/chị có:
+              </Typography>
+              <Stack pl={2}>
+                {formData['2.1'] && (
+                  <Typography>- Có</Typography>
+                )}
+                {formData['2.1_detail'] && (
+                  <Typography>+ Chi tiết: {formData['2.1_detail']}</Typography>
+                )}
+                {formData['2.2'] && <Typography>- Không</Typography>}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                6. Trong 01 tháng gần đây, anh/chị có:
+              </Typography>
+              <Stack pl={2}>
+                {formData['3.1'] && <Typography>- Có</Typography>}
+                {formData['3.2'] && <Typography>- Không</Typography>}
+                {formData['3.3'] && <Typography>- Bệnh khác</Typography>}
+                {formData['3.3_detail'] && (
+                  <Typography>+ Chi tiết: {formData['3.3_detail']}</Typography>
+                )}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                7. Trong 14 ngày gần đây, anh/chị có:
+              </Typography>
+              <Typography pl={2}>
+                {formData['1.1'] && '- Có'}
+                {formData['1.2'] && '- Không'}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                8. Trong 07 ngày gần đây, anh/chị có:
+              </Typography>
+              <Stack pl={2}>
+                {formData['2.1'] && (
+                  <Typography>- Có</Typography>
+                )}
+                {formData['2.1_detail'] && (
+                  <Typography>+ Chi tiết: {formData['2.1_detail']}</Typography>
+                )}
+                {formData['2.2'] && <Typography>- Không</Typography>}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Typography fontWeight="bold" color="primary.main">
+                9. Câu hỏi dành cho phụ nữ:
+              </Typography>
+              <Stack pl={2}>
+                {formData['3.1'] && <Typography>- Có</Typography>}
+                {formData['3.2'] && <Typography>- Không</Typography>}
+                {formData['3.3'] && <Typography>- Bệnh khác</Typography>}
+                {formData['3.3_detail'] && (
+                  <Typography>+ Chi tiết: {formData['3.3_detail']}</Typography>
+                )}
+              </Stack>
+            </Box>
+
+
+
+
+
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSummary(false)}>Quay lại</Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              setOpenSummary(false);
+              await handleRegisterDonation();
+            }}
+          >
+            Xác nhận gửi
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MuiAlert
+          elevation={6}
+          variant="filled"
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
+    </LocalizationProvider>
+>>>>>>> Stashed changes
   );
 };
 

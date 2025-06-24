@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import React from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Container, Button, Stack } from '@mui/material';
@@ -11,6 +12,64 @@ import { logout } from '../features/auth/authSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '../features/auth/authSlice';
 import Footer from '../components/Footer';
+=======
+import React, { useState, useEffect } from "react";
+import {
+  Outlet,
+  Link as RouterLink,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
+  Button,
+  Stack,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Alert,
+  Avatar,
+} from "@mui/material";
+import axios from 'axios';
+import { styled } from "@mui/material/styles";
+import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
+import HomeIcon from "@mui/icons-material/Home";
+import HistoryIcon from "@mui/icons-material/History";
+import NewsIcon from "@mui/icons-material/Article";
+import ContactIcon from "@mui/icons-material/ContactMail";
+import { logout } from "../features/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
+import Footer from "../components/Footer";
+import PersonIcon from "@mui/icons-material/Person";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import SearchIcon from "@mui/icons-material/Search";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import BloodtypeIcon from "@mui/icons-material/Bloodtype";
+import AssignmentIcon from '@mui/icons-material/Assignment';
+
+// Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const d = R * c; // in metres
+  return d;
+}
+>>>>>>> Stashed changes
 
 const MainContainer = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
@@ -55,6 +114,14 @@ const MainLayout = () => {
   const location = useLocation();
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
+  useEffect(() => {
+    if (currentUser && (currentUser.role === 'Staff' || currentUser.role === 'Admin')) {
+      if (location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/') {
+        navigate('/manage-requests', { replace: true });
+      }
+    }
+  }, [currentUser, location.pathname, navigate]);
+
   const handleLogout = async () => {
     await dispatch(logout());
     navigate('/login');
@@ -68,6 +135,7 @@ const MainLayout = () => {
     navigate('/signup');
   };
 
+<<<<<<< Updated upstream
   const menuItems = [
     { path: '/', label: 'Trang Chủ', icon: <HomeIcon /> },
     { path: '/appointment-history', label: 'Lịch Sử Đặt Hẹn', icon: <HistoryIcon /> },
@@ -75,6 +143,75 @@ const MainLayout = () => {
     { path: '/news', label: 'Tin Tức', icon: <NewsIcon /> },
     { path: '/contact', label: 'Liên Hệ', icon: <ContactIcon /> },
   ];
+=======
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogoutAll = () => {
+    localStorage.removeItem("isTestUser");
+    localStorage.removeItem("isStaff");
+    handleClose();
+    handleLogout();
+  };
+
+  const handleProfile = () => {
+    navigate("/profile");
+  };
+
+  // Kiểm tra trạng thái đăng nhập test user và staff
+  const isTestUser = localStorage.getItem("isTestUser") === "true";
+  const isStaff = localStorage.getItem("isStaff") === "true";
+
+  let menuItems = [];
+  console.log('DEBUG currentUser at menuItems:', currentUser);
+
+  if (currentUser && currentUser.role === 'Staff') {
+    menuItems = [
+      // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Staff
+      { path: "/transfusion-request", label: "Quản Lý Yêu Cầu Truyền Máu", icon: <HistoryIcon /> },
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> },
+      { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> }
+    ];
+  } else if (currentUser && currentUser.role === 'Admin') {
+    menuItems = [
+      // { path: "/", label: "Trang Chủ", icon: <HomeIcon /> }, // Ẩn Trang Chủ cho Admin
+      { path: "/transfusion-request", label: "Quản Lý Yêu Cầu Truyền Máu", icon: <HistoryIcon /> },
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
+      { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+      { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> }
+    ];
+  } else {
+    // Nếu chưa đăng nhập, chỉ hiện các mục cơ bản
+    if (!isAuthenticated && !isTestUser) {
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+        { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
+        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+      ];
+    } else {
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+        { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
+        { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
+        { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
+        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
+      ];
+    }
+  }
+  console.log('DEBUG menuItems render:', menuItems);
+
+  console.log('DEBUG MainLayout mounted');
+>>>>>>> Stashed changes
 
   return (
     <MainContainer>
@@ -93,9 +230,89 @@ const MainLayout = () => {
                 startIcon={item.icon}
                 isActive={location.pathname === item.path}
               >
+<<<<<<< Updated upstream
                 {item.label}
               </NavButton>
             ))}
+=======
+                Hệ Thống Hỗ Trợ Hiến Máu
+              </Typography>
+            </Box>
+            {/* Đăng nhập/Đăng ký hoặc Profile */}
+            <Box>
+              {isAuthenticated || isTestUser ? (
+                <Button
+                  color="primary"
+                  startIcon={
+                    currentUser && currentUser.fullName ? (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                        {currentUser.fullName.charAt(0).toUpperCase()}
+                      </Avatar>
+                    ) : (
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                    )
+                  }
+                  onClick={handleProfile}
+                  sx={{ fontSize: 17, fontWeight: 'bold' }}
+                >
+                  {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                </Button>
+              ) : (
+                <Button
+                  variant="text"
+                  color="primary"
+                  onClick={handleLogin}
+                  startIcon={<PersonIcon />}
+                  sx={{ fontSize: 18 }}
+                >
+                  Đăng nhập
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+
+      {/* PHẦN DƯỚI: menu điều hướng */}
+      <AppBar
+        position="static"
+        sx={{ background: "#202G99", boxShadow: "none" }}
+      >
+        <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }} className="header-menu-font">
+          <Stack direction="row" spacing={4}>
+            {menuItems.map(
+              (item) =>
+                ((item.path === "/certificate" &&
+                  (isAuthenticated || isTestUser)) ||
+                  item.path !== "/certificate") && (
+                  <NavButton
+                    key={item.path}
+                    component={StyledLink}
+                    to={item.path}
+                    isActive={location.pathname === item.path}
+                    className="header-menu-font"
+                    sx={{
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: 18,
+                      letterSpacing: 1,
+                    }}
+                    onClick={(e) => {
+                      if (
+                        item.path === "/booking" &&
+                        !isAuthenticated &&
+                        !isTestUser
+                      ) {
+                        e.preventDefault(); // Prevent default navigation
+                        navigate("/login");
+                      }
+                    }}
+                  >
+                    {item.label}
+                  </NavButton>
+                )
+            )}
+>>>>>>> Stashed changes
           </Stack>
 
           {isAuthenticated ? (

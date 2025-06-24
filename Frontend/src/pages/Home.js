@@ -208,11 +208,11 @@ const Home = () => {
   ];
 
   return (
-    <Box>
+    <Box sx={{ backgroundColor: '#fff', minHeight: '100vh' }}>
       {/* Hero Section - Đặt lịch hiến máu */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #F8FBFD 0%, #F8FBFD 100%)',
+          background: '#fff',
           color: '#333',
           py: 8,
           position: 'relative',
@@ -224,7 +224,7 @@ const Home = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23F8FBFD" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            background: 'none',
           }
         }}
       >
@@ -251,7 +251,7 @@ const Home = () => {
               borderRadius: 3,
               maxWidth: 600,
               mx: 'auto',
-              background: '#F8FBFD',
+              background: '#fff',
               backdropFilter: 'blur(10px)',
               border: '1px solid #333'
             }}
@@ -309,7 +309,7 @@ const Home = () => {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 6, backgroundColor: '#F8FBFD' }}>
+      <Container maxWidth="lg" sx={{ py: 6, backgroundColor: '#fff' }}>
         {/* Section quyền lợi người hiến máu */}
         <Box sx={{ mb: 8 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>

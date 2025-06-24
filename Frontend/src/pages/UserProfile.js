@@ -222,7 +222,7 @@ const UserProfile = () => {
     await dispatch(logout());
     localStorage.removeItem("isTestUser");
     localStorage.removeItem("isStaff");
-    navigate("/login");
+    navigate("/home");
   };
 
   // Hàm mở dialog xác nhận hủy lịch hẹn
@@ -298,20 +298,33 @@ const UserProfile = () => {
       const { latitude, longitude } = position.coords;
       setUserLocation({ latitude, longitude });
 
-      // Gửi vị trí lên server
+      // Gọi API reverse geocoding để lấy địa chỉ từ toạ độ
+      let address = '';
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        address = data.display_name || '';
+      } catch (err) {
+        address = '';
+      }
+
+      // Gửi vị trí và địa chỉ lên server
       const token = localStorage.getItem('token');
-      // Lấy userId từ Redux store (user?.userId)
       if (token && user?.userId) {
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
         await axios.put(`${apiUrl}/User/${user?.userId}/location`, {
           latitude,
-          longitude
+          longitude,
+          address
         }, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
       }
+
+      // Cập nhật địa chỉ vào formData
+      setFormData((prev) => ({ ...prev, address, latitude, longitude }));
 
       setSnackbar({ 
         open: true, 
@@ -321,7 +334,6 @@ const UserProfile = () => {
     } catch (error) {
       console.error('Lỗi khi cập nhật vị trí:', error);
       let errorMessage = 'Không thể lấy vị trí hiện tại.';
-      
       if (error.code === 1) {
         errorMessage = 'Quyền truy cập vị trí bị từ chối. Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt.';
       } else if (error.code === 2) {
@@ -329,7 +341,6 @@ const UserProfile = () => {
       } else if (error.code === 3) {
         errorMessage = 'Hết thời gian chờ lấy vị trí. Vui lòng thử lại.';
       }
-      
       setLocationError(errorMessage);
       setSnackbar({ 
         open: true, 
@@ -378,6 +389,14 @@ const UserProfile = () => {
     // Ngày sinh
     if (!editFormData.dateOfBirth) {
       errors.dateOfBirth = 'Vui lòng nhập ngày sinh.';
+    }
+    // Email: không ký tự đặc biệt ngoài @ và .
+    if (!editFormData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editFormData.email)) {
+      errors.email = 'Email không hợp lệ hoặc chứa ký tự đặc biệt.';
+    }
+    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang
+    if (!editFormData.address || /[^a-zA-Z0-9\s,.-]/.test(editFormData.address)) {
+      errors.address = 'Địa chỉ không được chứa ký tự đặc biệt.';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -555,7 +574,7 @@ const UserProfile = () => {
                   {formData.email}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  <LocationOn sx={{ verticalAlign: 'middle', mr: 0.5 }} /> {formData.address || 'Chưa có địa chỉ'}
+                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
 
@@ -589,6 +608,9 @@ const UserProfile = () => {
                   Thông tin cá nhân
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
+                  Số CMND: {formData.citizenNumber}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
                   <CalendarToday sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
                   Ngày sinh: {formData.dateOfBirth}
                 </Typography>
@@ -600,9 +622,6 @@ const UserProfile = () => {
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   Cân nặng: {formData.weight} kg
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Số CMND: {formData.citizenNumber}
                 </Typography>
                 {formData.medicalHistory && (
                   <Typography variant="body2" sx={{ mb: 1 }}>
@@ -759,10 +778,9 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.fullName || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value.replace(/[^\p{L}\s]/gu, '') })}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
-            error={!!formErrors.fullName}
-            helperText={formErrors.fullName}
           />
           <TextField
             margin="dense"
@@ -775,8 +793,6 @@ const UserProfile = () => {
             disabled
             InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
-            error={!!formErrors.citizenNumber}
-            helperText={formErrors.citizenNumber}
           />
           <TextField
             margin="dense"
@@ -787,23 +803,22 @@ const UserProfile = () => {
             variant="outlined"
             InputLabelProps={{ shrink: true }}
             value={editFormData.dateOfBirth || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
-            error={!!formErrors.dateOfBirth}
-            helperText={formErrors.dateOfBirth}
           />
-          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }} error={!!formErrors.gender}>
+          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
             <InputLabel>Giới tính</InputLabel>
             <Select
               name="gender"
               value={editFormData.gender || ''}
-              onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+              disabled
+              inputProps={{ readOnly: true }}
               label="Giới tính"
             >
               <MenuItem value="male">Nam</MenuItem>
               <MenuItem value="female">Nữ</MenuItem>
             </Select>
-            {formErrors.gender && <Typography color="error" variant="caption">{formErrors.gender}</Typography>}
           </FormControl>
           <TextField
             margin="dense"
@@ -826,8 +841,7 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.email || ''}
-            disabled
-            InputProps={{ readOnly: true }}
+            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value.replace(/[^a-zA-Z0-9@._-]/g, '') })}
             sx={{ mb: 2 }}
             error={!!formErrors.email}
             helperText={formErrors.email}
@@ -840,7 +854,7 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.address || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') })}
             sx={{ mb: 2 }}
             error={!!formErrors.address}
             helperText={formErrors.address}

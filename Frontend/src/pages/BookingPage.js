@@ -40,6 +40,7 @@ import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 
@@ -674,6 +675,16 @@ const BookingPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (userWeight) {
+      if (userWeight <= 50) setDonationVolume(250);
+      else if (userWeight > 50 && userWeight <= 60) setDonationVolume(350);
+      else if (userWeight > 60) setDonationVolume(450);
+    } else {
+      setDonationVolume(350);
+    }
+  }, [userWeight]);
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -719,6 +730,10 @@ const BookingPage = () => {
                         Chọn đợt hiến máu
                       </Typography>
                     </Box>
+                    <Typography variant="body2" sx={{ mb: 2, color: '#e53935', fontStyle: 'italic', display: 'flex', alignItems: 'center', fontWeight: 500 }}>
+                      <WarningIcon sx={{ fontSize: 20, mr: 1, color: '#e53935' }} />
+                      Vui lòng chọn ngày hiện tại để xem các đợt hiến máu phù hợp.
+                    </Typography>
                     <FormControl fullWidth sx={{ mb: 2 }}>
                       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         <DatePicker

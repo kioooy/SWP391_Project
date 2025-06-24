@@ -156,7 +156,7 @@ const MainLayout = () => {
     await dispatch(logout());
     localStorage.removeItem("isTestUser");
     localStorage.removeItem("isStaff");
-    navigate("/login");
+    navigate("/home");
   };
 
   const handleLogin = () => {
@@ -217,15 +217,25 @@ const MainLayout = () => {
       { path: "/manage-requests", label: "Quản lý yêu cầu hiến máu", icon: <AssignmentIcon /> }
     ];
   } else {
-    menuItems = [
-      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-      { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-      { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
-      { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-      { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-      { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-      { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
-    ];
+    // Nếu chưa đăng nhập, chỉ hiện các mục cơ bản
+    if (!isAuthenticated && !isTestUser) {
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+        { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
+        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+      ];
+    } else {
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
+        { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
+        { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
+        { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
+        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
+      ];
+    }
   }
   console.log('DEBUG menuItems render:', menuItems);
 
@@ -269,7 +279,7 @@ const MainLayout = () => {
                   startIcon={<AccountCircleIcon />}
                   onClick={handleProfile}
                 >
-                  {isStaff ? "Staff" : (isTestUser ? "Test User" : "Profile")}
+                  {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
                 </Button>
               ) : (
                 <Button

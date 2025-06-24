@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -11,6 +11,8 @@ import {
   Alert,
   Stack,
   Divider,
+  Snackbar,
+  Alert as MuiAlert,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { login as loginThunk, createTestAccount } from '../../features/auth/authSlice';
@@ -28,9 +30,18 @@ const validationSchema = Yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { error, loading } = useSelector((state) => state.auth);
   const [showLocationAlert, setShowLocationAlert] = React.useState(false); // State để quản lý Alert
+  const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
+
+  // Hiển thị popup nếu có state từ trang Events
+  React.useEffect(() => {
+    if (location.state && location.state.popup) {
+      setSnackbar({ open: true, message: location.state.popupMessage || 'Bạn cần đăng nhập để tiếp tục!' });
+    }
+  }, [location.state]);
 
   const formik = useFormik({
     initialValues: {
@@ -43,6 +54,10 @@ const Login = () => {
         const resultAction = await dispatch(loginThunk(values)).unwrap();
         const userId = resultAction.userId; // Lấy userId từ kết quả đăng nhập
         const token = resultAction.token; // Lấy token từ kết quả đăng nhập
+        // Lưu role vào localStorage
+        if (resultAction.role) {
+          localStorage.setItem('role', resultAction.role);
+        }
 
         // Sau khi đăng nhập thành công, cố gắng lấy và cập nhật vị trí
         if (userId && token) {
@@ -203,6 +218,17 @@ const Login = () => {
           Bạn đã từ chối cấp quyền vị trí. Chức năng tìm kiếm người cần/hiến máu theo khoảng cách có thể không hoạt động chính xác.
         </Alert>
       )}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MuiAlert severity="warning" sx={{ width: '100%' }}>
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </Box>
   );
 };

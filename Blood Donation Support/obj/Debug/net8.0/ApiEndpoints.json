@@ -624,6 +624,52 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetBloodInventoryStats",
+    "RelativePath": "api/Dashboard/blood-inventory",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetDonationAnalytics",
+    "RelativePath": "api/Dashboard/donation-analytics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetRecentActivity",
+    "RelativePath": "api/Dashboard/recent-activity",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "count",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "TotalNumberData",
+    "RelativePath": "api/Dashboard/total-number",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
     "Method": "GetAllDonationRequests",
     "RelativePath": "api/DonationRequest",

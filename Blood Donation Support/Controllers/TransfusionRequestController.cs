@@ -21,7 +21,7 @@ namespace Blood_Donation_Support.Controllers
 
         // POST: api/TransfusionRequest (Luồng thông thường)
         [HttpPost]
-        [Authorize(Roles = "Staff,Admin")]
+        [Authorize(Roles = "Member,Staff,Admin")]
         public async Task<IActionResult> CreateTransfusionRequest([FromBody] CreateTransfusionRequestDTO model)
         {
             if (!ModelState.IsValid)
@@ -41,10 +41,31 @@ namespace Blood_Donation_Support.Controllers
                 return Forbid("Authenticated user not found in the database.");
             }
 
-            var member = await _context.Members.FindAsync(model.MemberId);
+            // Nếu là recipient thì lấy MemberId từ user hiện tại
+            var isMember = User.IsInRole("Member");
+            int memberId;
+            if (isMember)
+            {
+                var memberEntity = await _context.Members.FirstOrDefaultAsync(m => m.UserId == responsibleUser.UserId);
+                if (memberEntity == null)
+                {
+                    return NotFound("Member not found for this recipient user.");
+                }
+                if (memberEntity.IsRecipient != true)
+                {
+                    return Forbid("Only recipients can create a transfusion request.");
+                }
+                memberId = memberEntity.UserId;
+            }
+            else
+            {
+                memberId = model.MemberId;
+            }
+
+            var member = await _context.Members.FindAsync(memberId);
             if (member == null)
             {
-                return NotFound($"Member with ID {model.MemberId} not found.");
+                return NotFound($"Member with ID {memberId} not found.");
             }
             
             var bloodType = await _context.BloodTypes.FindAsync(model.BloodTypeId);
@@ -61,7 +82,7 @@ namespace Blood_Donation_Support.Controllers
 
             var transfusionRequest = new TransfusionRequest
             {
-                MemberId = model.MemberId,
+                MemberId = memberId,
                 BloodTypeId = model.BloodTypeId,
                 ComponentId = model.ComponentId,
                 ResponsibleById = responsibleUser.UserId,
@@ -236,6 +257,7 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
+                    MemberUserId = tr.Member.UserId,
                     MemberName = tr.Member.User.FullName,
                     tr.BloodTypeId,
                     BloodTypeName = tr.BloodType.BloodTypeName,
@@ -263,7 +285,7 @@ namespace Blood_Donation_Support.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-            if (userRole == "Member" && transfusionRequest.MemberId.ToString() != userId)
+            if (userRole == "Member" && transfusionRequest.MemberUserId.ToString() != userId)
             {
                 return Forbid();
             }

@@ -54,35 +54,38 @@ const BookingTransfusion = () => {
     setCanRequest(false);
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      // Map tên nhóm máu sang ID
+      const token = localStorage.getItem('token');
       const bloodTypeId = BLOOD_TYPE_ID_MAP[bloodType];
       if (!bloodTypeId) {
         setError('Nhóm máu không hợp lệ!');
         setLoading(false);
         return;
       }
-      // 1. Gọi API tìm kiếm máu
-      const searchRes = await axios.get(`${API_URL}/BloodSearch/search-with-hospital-location/${bloodTypeId}/${volume}`);
-      setSearchResult(searchRes.data);
-      if (searchRes.data && searchRes.data.availableVolume >= volume) {
-        // Đủ máu, cho phép đặt lịch
-        setCanRequest(true);
-        // Gửi yêu cầu truyền máu
-        await axios.post(`${API_URL}/TransfusionRequest`, {
-          bloodTypeId, // truyền đúng ID
-          componentId: COMPONENT_ID_MAP[component],
-          volume,
-          preferredReceiveDate: date,
-          notes
-        });
-        setSuccess(true);
-      } else {
-        // Không đủ máu, hiển thị nút huy động người hiến
-        setShowRequestDonor(true);
-      }
+
+      // Luôn tạo yêu cầu ở trạng thái Pending, không cần kiểm tra kho
+      await axios.post(`${API_URL}/TransfusionRequest`, {
+        bloodTypeId,
+        componentId: COMPONENT_ID_MAP[component],
+        transfusionVolume: volume, // Đổi tên trường cho đúng với DTO
+        preferredReceiveDate: date,
+        notes,
+        status: 'Pending' // Luôn là Pending
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setSuccess(true);
       setLoading(false);
+
     } catch (err) {
-      setError('Đặt lịch thất bại!');
+      if (err.response && err.response.data && err.response.data.errors) {
+        const errorMessages = Object.values(err.response.data.errors).flat().join(' ');
+        setError(`Đặt lịch thất bại: ${errorMessages}`);
+      } else {
+        setError('Đặt lịch thất bại! Vui lòng kiểm tra lại thông tin.');
+      }
       setLoading(false);
     }
   };

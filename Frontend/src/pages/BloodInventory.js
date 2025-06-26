@@ -79,7 +79,7 @@ const BloodInventory = () => {
       setInventory(res.data);
       setError('');
     } catch (err) {
-      setError('Không thể tải dữ liệu kho máu!');
+      setError(err.response?.data?.message || err.response?.data || 'Không thể tải dữ liệu kho máu!');
     } finally {
       setLoading(false);
     }

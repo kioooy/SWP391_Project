@@ -670,6 +670,16 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetTransfusionAnalytics",
+    "RelativePath": "api/Dashboard/transfusion-analytics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
     "Method": "GetAllDonationRequests",
     "RelativePath": "api/DonationRequest",

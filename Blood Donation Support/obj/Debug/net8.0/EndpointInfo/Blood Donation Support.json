@@ -1103,6 +1103,18 @@
         }
       }
     },
+    "/api/Dashboard/transfusion-analytics": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Dashboard/recent-activity": {
       "get": {
         "tags": [

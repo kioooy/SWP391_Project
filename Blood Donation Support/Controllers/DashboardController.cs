@@ -1,4 +1,5 @@
 using Blood_Donation_Support.Data;
+using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,6 @@ namespace Blood_Donation_Support.Controllers
             var totalBloodUnits = await _context.BloodUnits.CountAsync(bu => bu.BloodStatus == "Available");              // Total of available blood units
             var totalBlogs = await _context.Blogs.CountAsync(b => b.Status == "Published" && b.IsActive == true);         // Total of active blogs 
             var totalArticles = await _context.Articles.CountAsync(a => a.Status == "Published" && a.IsActive == true);   // Total of active articles
-        
             return Ok(new
             {   
                 TotalMembers = totalMember,                         // Total number of members
@@ -56,14 +56,14 @@ namespace Blood_Donation_Support.Controllers
             // Count blood units by type and component
             var bloodByType = await _context.BloodUnits
                 .Where(bu => bu.BloodStatus == "Available")
-                .GroupBy(bu => bu.BloodTypeId)
-                .Select(g => new { BloodTypeId = g.Key, Count = g.Count() })
+                .GroupBy(bu => new { bu.BloodTypeId, bu.BloodType.BloodTypeName })
+                .Select(g => new { g.Key.BloodTypeId,g.Key.BloodTypeName, Count = g.Count() })
                 .ToListAsync();
             // Count blood units by component 
             var bloodByComponent = await _context.BloodUnits
                 .Where(bu => bu.BloodStatus == "Available")
-                .GroupBy(bu => bu.ComponentId)
-                .Select(g => new { ComponentId = g.Key, Count = g.Count() })
+                .GroupBy(bu => new { bu.ComponentId, bu.Component.ComponentName })
+                .Select(g => new { g.Key.ComponentId,g.Key.ComponentName, Count = g.Count() })
                 .ToListAsync();
                 
             return Ok(new { 
@@ -81,14 +81,85 @@ namespace Blood_Donation_Support.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
 
+            // Total volume of blood donated
+            var totalDonationVolume = await _context.DonationRequests
+                .Where(dr => dr.Status == "Completed")
+                .SumAsync(dr => dr.DonationVolume);
             // Count status of donation requests
             var donationByStatus = await _context.DonationRequests
                 .GroupBy(dr => dr.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
-                
-            return Ok(new { 
-                DonationByStatus = donationByStatus 
+            // Count staff take responsible of donation requests
+            var staffResponsible = await _context.DonationRequests
+                .GroupBy(dr => new { dr.ResponsibleById, dr.ResponsibleBy.FullName })
+                .Select(g => new { g.Key.ResponsibleById, g.Key.FullName, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(5) // Get top 5
+                .ToListAsync();
+
+            return Ok(new {
+                TotalDonationVolume = totalDonationVolume,
+                DonationByStatus = donationByStatus,
+                StaffResponsible = staffResponsible
+            });
+        }
+
+        // Get Transfusion Analytics
+        // GET: api/Dashboard/donation-analytics
+        [HttpGet("transfusion-analytics")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetTransfusionAnalytics()
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
+            
+            // Total transfusion volume of blood transfusion
+            var totalDonationVolume = await _context.TransfusionRequests
+                .Where(dr => dr.Status == "Completed")
+                .SumAsync(dr => dr.TransfusionVolume);
+            // Count status of donation requests
+            var donationByStatus = await _context.TransfusionRequests
+                .GroupBy(dr => dr.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+            // Count top 3 staff take most responsible of transfusion requests
+            var staffResponsible = await _context.TransfusionRequests
+                .GroupBy(dr => new { dr.ResponsibleById, dr.ResponsibleBy.FullName })
+                .Select(g => new { g.Key.ResponsibleById,g.Key.FullName, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(5) // Get top 5
+                .ToListAsync();
+            // Count top 3 members who have most of transfusion requests
+            var memberTransfusion = await _context.TransfusionRequests
+                .GroupBy(dr => new { dr.MemberId, dr.Member.User.FullName })
+                .Select(g => new { g.Key.MemberId, g.Key.FullName, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(5) // Get top 5
+                .ToListAsync();
+            // Count staff take responsible of donation requests
+            var bloodType = await _context.TransfusionRequests
+                .GroupBy(dr => new { dr.BloodTypeId, dr.BloodType.BloodTypeName })
+                .Select(g => new { g.Key.BloodTypeId, g.Key.BloodTypeName, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(5) // Get top 5
+                .ToListAsync();
+            // Count component of transfusion requests
+            var componentId = await _context.TransfusionRequests
+                .GroupBy(dr => new { dr.ComponentId, dr.Component.ComponentName })
+                .Select(g => new { g.Key.ComponentId, g.Key.ComponentName, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .Take(5) // Get top 5
+                .ToListAsync();
+
+            return Ok(new
+            {
+                DonationByStatus = donationByStatus,
+                StaffResponsible = staffResponsible,
+                MemberTransfusion = memberTransfusion,
+                BloodType = bloodType,
+                Component = componentId,
+                TotalDonationVolume = totalDonationVolume
             });
         }
 
@@ -113,6 +184,8 @@ namespace Blood_Donation_Support.Controllers
         //    return Ok(activePeriods);
         //}
 
+        // Get Recent Activity From Requests (Top 10 recently each request type)
+        // GET: api/Dashboard/recent-activity
         [HttpGet("recent-activity")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRecentActivity(int count = 10)

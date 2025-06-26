@@ -12,6 +12,25 @@ const COMPONENTS = [
   { value: 'platelet', label: 'Tiểu cầu' },
 ];
 
+// Map tên nhóm máu sang ID
+const BLOOD_TYPE_ID_MAP = {
+  'O-': 1,
+  'O+': 2,
+  'A-': 3,
+  'A+': 4,
+  'B-': 5,
+  'B+': 6,
+  'AB-': 7,
+  'AB+': 8,
+};
+// Map component sang ID (nếu cần cho các API khác)
+const COMPONENT_ID_MAP = {
+  'whole-blood': 1,
+  'red-cell': 2,
+  'plasma': 3,
+  'platelet': 4,
+};
+
 const BookingTransfusion = () => {
   const [bloodType, setBloodType] = useState('A+');
   const [component, setComponent] = useState('whole-blood');
@@ -34,19 +53,24 @@ const BookingTransfusion = () => {
     setShowRequestDonor(false);
     setCanRequest(false);
     try {
-      // 1. Gọi API tìm kiếm máu
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      // Giả sử bloodType là tên, cần map sang id thực tế nếu backend yêu cầu
-      // Ở đây demo truyền trực tiếp tên nhóm máu
-      const searchRes = await axios.get(`${API_URL}/BloodSearch/search-with-hospital-location/${bloodType}/${volume}`);
+      // Map tên nhóm máu sang ID
+      const bloodTypeId = BLOOD_TYPE_ID_MAP[bloodType];
+      if (!bloodTypeId) {
+        setError('Nhóm máu không hợp lệ!');
+        setLoading(false);
+        return;
+      }
+      // 1. Gọi API tìm kiếm máu
+      const searchRes = await axios.get(`${API_URL}/BloodSearch/search-with-hospital-location/${bloodTypeId}/${volume}`);
       setSearchResult(searchRes.data);
       if (searchRes.data && searchRes.data.availableVolume >= volume) {
         // Đủ máu, cho phép đặt lịch
         setCanRequest(true);
         // Gửi yêu cầu truyền máu
         await axios.post(`${API_URL}/TransfusionRequest`, {
-          bloodType,
-          component,
+          bloodTypeId, // truyền đúng ID
+          componentId: COMPONENT_ID_MAP[component],
           volume,
           preferredReceiveDate: date,
           notes
@@ -68,7 +92,8 @@ const BookingTransfusion = () => {
     setLoading(true);
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      await axios.post(`${API_URL}/BloodSearch/request-donors-with-hospital/${bloodType}/${volume}`);
+      const bloodTypeId = BLOOD_TYPE_ID_MAP[bloodType];
+      await axios.post(`${API_URL}/BloodSearch/request-donors-with-hospital/${bloodTypeId}/${volume}`);
       setSuccess(true);
       setShowRequestDonor(false);
     } catch (err) {

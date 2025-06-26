@@ -197,5 +197,26 @@ public class BloodUnitController : ControllerBase
             
         return Ok(bloodUnit); // Return 200 OK with the updated blood unit
     }
+    // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
+    [HttpGet("compatible")]
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> GetCompatibleBloodUnits(int bloodTypeId, int componentId, int minVolume)
+    {
+        var units = await _context.BloodUnits
+            .Where(bu => bu.BloodTypeId == bloodTypeId
+                      && bu.ComponentId == componentId
+                      && bu.BloodStatus == "Available"
+                      && bu.RemainingVolume >= minVolume)
+            .Select(bu => new {
+                bu.BloodUnitId,
+                bu.BloodTypeId,
+                bu.ComponentId,
+                bu.RemainingVolume,
+                bu.BloodStatus,
+                bu.ExpiryDate
+            })
+            .ToListAsync();
 
+        return Ok(units);
+    }
 }

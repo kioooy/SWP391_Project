@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   Container, Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Card, CardContent, Alert
+  Chip, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Card, CardContent, Alert, Button
 } from '@mui/material';
 import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-material';
+import axios from 'axios';
 
 // Dữ liệu ảo cho lịch sử truyền máu
 const mockTransfusionHistory = [
@@ -79,6 +80,8 @@ const TransfusionHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [filteredData, setFilteredData] = useState(mockTransfusionHistory);
+  const [cancelSuccess, setCancelSuccess] = useState('');
+  const [cancelError, setCancelError] = useState('');
 
   // Filter dữ liệu
   const handleFilter = () => {
@@ -141,6 +144,18 @@ const TransfusionHistory = () => {
   };
 
   const stats = getStatistics();
+
+  const handleCancel = async (id) => {
+    setCancelError('');
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      await axios.patch(`${API_URL}/TransfusionRequest/${id}/cancel`);
+      setCancelSuccess('Hủy yêu cầu thành công!');
+      // Cập nhật lại dữ liệu lịch sử (nên fetch lại từ API thực tế)
+    } catch (err) {
+      setCancelError('Hủy yêu cầu thất bại!');
+    }
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -272,6 +287,11 @@ const TransfusionHistory = () => {
                       color={getStatusColor(row.status)}
                       size="small"
                     />
+                    {row.status === 'Pending' && (
+                      <Button size="small" color="error" onClick={() => handleCancel(row.id)} sx={{ ml: 1 }}>
+                        Hủy yêu cầu
+                      </Button>
+                    )}
                   </TableCell>
                   <TableCell>{row.hospital}</TableCell>
                   <TableCell>{row.doctor}</TableCell>
@@ -292,6 +312,9 @@ const TransfusionHistory = () => {
           Không tìm thấy dữ liệu phù hợp với bộ lọc.
         </Alert>
       )}
+
+      {cancelSuccess && <Alert severity="success">{cancelSuccess}</Alert>}
+      {cancelError && <Alert severity="error">{cancelError}</Alert>}
     </Container>
   );
 };

@@ -43,12 +43,40 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ScienceIcon from '@mui/icons-material/Science';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import { useSelector } from 'react-redux';
 
 const Home = () => {
   const navigate = useNavigate();
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
 
+  // Lấy user từ redux
+  const user = useSelector((state) => state.auth.user);
+  // Lấy thông tin member nếu có
+  const isDonor = user && (user.isDonor || (user.member && user.member.isDonor));
+  const isRecipient = user && (user.isRecipient || (user.member && user.member.isRecipient));
+
+  // Nếu là member truyền máu (isRecipient)
+  if (isRecipient) {
+    return (
+      <Box sx={{ backgroundColor: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper elevation={6} sx={{ p: 6, maxWidth: 500, mx: 'auto', textAlign: 'center' }}>
+          <BloodtypeIcon sx={{ fontSize: 60, color: '#e53e3e', mb: 2 }} />
+          <Typography variant="h4" fontWeight="bold" color="#e53e3e" gutterBottom>
+            Xin chào người nhận máu!
+          </Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Tài khoản của bạn là tài khoản truyền máu. Vui lòng liên hệ với bệnh viện hoặc các điểm hiến máu để được hỗ trợ.
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Nếu bạn cần hỗ trợ khẩn cấp, hãy sử dụng chức năng tìm kiếm người hiến máu hoặc liên hệ tổng đài hỗ trợ.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  // Nếu là member hiến máu (isDonor) hoặc chưa đăng nhập, giữ nguyên giao diện cũ
   const handleSearch = () => {
     if (!fromDate || !toDate) return;
     navigate(`/events?from=${dayjs(fromDate).format('YYYY-MM-DD')}&to=${dayjs(toDate).format('YYYY-MM-DD')}`);

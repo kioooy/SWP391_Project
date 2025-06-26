@@ -253,6 +253,100 @@ const MainLayout = () => {
 
   console.log('DEBUG MainLayout mounted');
 
+  // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị header (logo + menu Trang Chủ)
+  if (currentUser && currentUser.isRecipient) {
+    return (
+      <MainContainer>
+        {/* PHẦN TRÊN: logo, ngôn ngữ, đăng nhập */}
+        <Box sx={{ background: "#fff", py: 1 }}>
+          <Container maxWidth="lg">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ width: 80 }} />
+              {/* Logo */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <img
+                  src="/images/logo.png"
+                  alt="logo"
+                  style={{ height: 40, marginRight: 8 }}
+                />
+                <Typography
+                  variant="h5"
+                  fontWeight="bold"
+                  color="primary.main"
+                  sx={{ letterSpacing: 2 }}
+                >
+                  Hệ Thống Hỗ Trợ Hiến Máu
+                </Typography>
+              </Box>
+              {/* Đăng nhập/Đăng ký hoặc Profile */}
+              <Box>
+                {isAuthenticated || isTestUser ? (
+                  <Button
+                    color="primary"
+                    startIcon={
+                      currentUser && currentUser.fullName ? (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                          {currentUser.fullName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      ) : (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                      )
+                    }
+                    onClick={handleProfile}
+                    sx={{ fontSize: 17, fontWeight: 'bold' }}
+                  >
+                    {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="text"
+                    color="primary"
+                    onClick={handleLogin}
+                    startIcon={<PersonIcon />}
+                    sx={{ fontSize: 18 }}
+                  >
+                    Đăng nhập
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Container>
+        </Box>
+
+        {/* PHẦN DƯỚI: menu điều hướng chỉ có Trang Chủ */}
+        <AppBar
+          position="static"
+          sx={{ background: "#202G99", boxShadow: "none" }}
+        >
+          <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }}>
+            <Stack direction="row" spacing={4}>
+              <NavButton
+                key="/"
+                component={StyledLink}
+                to="/"
+                isActive={location.pathname === "/"}
+                sx={{
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  letterSpacing: 1,
+                }}
+              >
+                Trang Chủ
+              </NavButton>
+            </Stack>
+          </Toolbar>
+        </AppBar>
+      </MainContainer>
+    );
+  }
+
   return (
     <MainContainer>
       {/* PHẦN TRÊN: logo, ngôn ngữ, đăng nhập */}

@@ -581,6 +581,53 @@
     ]
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
+    "Method": "RequestDonorsWithHospital",
+    "RelativePath": "api/BloodSearch/request-donors-with-hospital/{recipientBloodTypeId}/{requiredVolume}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "recipientBloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requiredVolume",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Blood_Donation_Support.Controllers.RequestDonorsWithHospitalDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
+    "Method": "SearchBloodWithHospitalLocation",
+    "RelativePath": "api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "recipientBloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requiredVolume",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
     "Method": "GetAllBloodUnits",
     "RelativePath": "api/BloodUnit",
@@ -977,6 +1024,117 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CreateTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.CreateTransfusionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetAllTransfusionRequests",
+    "RelativePath": "api/TransfusionRequest",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetTransfusionRequestById",
+    "RelativePath": "api/TransfusionRequest/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "ApproveTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/{id}/approve",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.ApproveTransfusionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CancelTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CompleteTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/{id}/complete",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CreateAndApproveTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/create-and-approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.CreateTransfusionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",

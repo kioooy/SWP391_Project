@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectUser, selectIsAuthenticated, updateUserLocation } from '../features/auth/authSlice';
+import { selectUser, selectIsAuthenticated, updateUserLocation, logout, setAccountType } from '../features/auth/authSlice';
 import {
   Container,
   Typography,
@@ -48,7 +48,6 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { logout } from '../features/auth/authSlice';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -160,6 +159,11 @@ const UserProfile = () => {
           isDonor: userData.isDonor ?? userData.IsDonor ?? false,
           isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
         });
+        // Đồng bộ loại tài khoản vào Redux
+        dispatch(setAccountType({
+          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
+          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
+        }));
       } else {
         console.warn('Không lấy được userData từ API');
       }

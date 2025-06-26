@@ -35,6 +35,8 @@ import NewsDetail from './pages/NewsDetail';
 import DonationRequestManagement from './pages/DonationRequestManagement';
 import { RequireAuth } from "./components/RequireAuth";
 import BlogPage from "./pages/BlogPage";
+import UserProfileRecipient from "./pages/UserProfileRecipient";
+import RequireRecipient from "./components/RequireRecipient";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -70,6 +72,11 @@ const App = () => {
         <Route path="/booking-transfusion" element={<BookingTransfusion />} />
         <Route path="/transfusion-history" element={<TransfusionHistory />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/user-profile-recipient" element={
+          <RequireRecipient>
+            <UserProfileRecipient />
+          </RequireRecipient>
+        } />
         <Route path="/certificate" element={<BloodDonationCertificate />} />
         <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />

@@ -194,7 +194,6 @@ public class BloodUnitController : ControllerBase
             
         return Ok(bloodUnit);
     }
-<<<<<<< quy
     // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
     [HttpGet("compatible")]
     [Authorize(Roles = "Staff,Admin")]
@@ -217,6 +216,4 @@ public class BloodUnitController : ControllerBase
 
         return Ok(units);
     }
-=======
->>>>>>> main
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Container, Typography, Box, FormControl, InputLabel, Select, MenuItem, TextField, Button, Paper, Alert
 } from '@mui/material';
-// import axios from 'axios'; // Bỏ comment nếu có API thực tế
+import axios from 'axios';
 
 const BLOOD_TYPES = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
 const COMPONENTS = [
@@ -11,6 +11,25 @@ const COMPONENTS = [
   { value: 'plasma', label: 'Huyết tương' },
   { value: 'platelet', label: 'Tiểu cầu' },
 ];
+
+// Map tên nhóm máu sang ID
+const BLOOD_TYPE_ID_MAP = {
+  'O-': 1,
+  'O+': 2,
+  'A-': 3,
+  'A+': 4,
+  'B-': 5,
+  'B+': 6,
+  'AB-': 7,
+  'AB+': 8,
+};
+// Map component sang ID (nếu cần cho các API khác)
+const COMPONENT_ID_MAP = {
+  'whole-blood': 1,
+  'red-cell': 2,
+  'plasma': 3,
+  'platelet': 4,
+};
 
 const BookingTransfusion = () => {
   const [bloodType, setBloodType] = useState('A+');
@@ -21,23 +40,69 @@ const BookingTransfusion = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchResult, setSearchResult] = useState(null);
+  const [canRequest, setCanRequest] = useState(false);
+  const [showRequestDonor, setShowRequestDonor] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
     setLoading(true);
+    setSearchResult(null);
+    setShowRequestDonor(false);
+    setCanRequest(false);
     try {
-      // TODO: Gửi dữ liệu lên API đặt lịch truyền máu
-      // await axios.post('/api/TransfusionRequest', { ... });
-      setTimeout(() => {
-        setSuccess(true);
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const token = localStorage.getItem('token');
+      const bloodTypeId = BLOOD_TYPE_ID_MAP[bloodType];
+      if (!bloodTypeId) {
+        setError('Nhóm máu không hợp lệ!');
         setLoading(false);
-      }, 1000);
+        return;
+      }
+
+      // Luôn tạo yêu cầu ở trạng thái Pending, không cần kiểm tra kho
+      await axios.post(`${API_URL}/TransfusionRequest`, {
+        bloodTypeId,
+        componentId: COMPONENT_ID_MAP[component],
+        transfusionVolume: volume, // Đổi tên trường cho đúng với DTO
+        preferredReceiveDate: date,
+        notes,
+        status: 'Pending' // Luôn là Pending
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setSuccess(true);
+      setLoading(false);
+
     } catch (err) {
-      setError('Đặt lịch thất bại!');
+      if (err.response && err.response.data && err.response.data.errors) {
+        const errorMessages = Object.values(err.response.data.errors).flat().join(' ');
+        setError(`Đặt lịch thất bại: ${errorMessages}`);
+      } else {
+        setError('Đặt lịch thất bại! Vui lòng kiểm tra lại thông tin.');
+      }
       setLoading(false);
     }
+  };
+
+  const handleRequestDonor = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const bloodTypeId = BLOOD_TYPE_ID_MAP[bloodType];
+      await axios.post(`${API_URL}/BloodSearch/request-donors-with-hospital/${bloodTypeId}/${volume}`);
+      setSuccess(true);
+      setShowRequestDonor(false);
+    } catch (err) {
+      setError('Gửi yêu cầu huy động người hiến thất bại!');
+    }
+    setLoading(false);
   };
 
   return (
@@ -100,6 +165,18 @@ const BookingTransfusion = () => {
             {loading ? 'Đang gửi...' : 'Đặt lịch truyền máu'}
           </Button>
         </Box>
+        {searchResult && (
+          <Alert severity={canRequest ? 'success' : 'warning'} sx={{ mt: 2 }}>
+            {canRequest
+              ? 'Đủ máu trong kho, có thể đặt lịch truyền máu.'
+              : 'Không đủ máu trong kho. Bạn có muốn gửi yêu cầu huy động người hiến không?'}
+          </Alert>
+        )}
+        {showRequestDonor && (
+          <Button variant="outlined" color="secondary" onClick={handleRequestDonor} sx={{ mt: 2 }} disabled={loading}>
+            {loading ? 'Đang gửi...' : 'Huy động người hiến máu'}
+          </Button>
+        )}
         {success && <Alert severity="success" sx={{ mt: 2 }}>Đặt lịch truyền máu thành công!</Alert>}
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       </Paper>

@@ -79,7 +79,7 @@ const BloodInventory = () => {
       setInventory(res.data);
       setError('');
     } catch (err) {
-      setError('Không thể tải dữ liệu kho máu!');
+      setError(err.response?.data?.message || err.response?.data || 'Không thể tải dữ liệu kho máu!');
     } finally {
       setLoading(false);
     }
@@ -156,9 +156,13 @@ const BloodInventory = () => {
   const handleDelete = async (blood) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.patch(`/api/BloodUnit/${blood.BloodUnitId}/discard`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // API endpoint để cập nhật trạng thái của đơn vị máu
+      await axios.patch(`/api/BloodUnit/${blood.bloodUnitId}/update-status`, 
+        { status: "Discarded" }, // Truyền trạng thái mới trong body
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
       fetchInventory();
     } catch (err) {
       setError('Xóa thất bại!');
@@ -167,8 +171,8 @@ const BloodInventory = () => {
 
   // Thống kê tổng số lượng máu theo nhóm
   const totalByType = bloodTypes.reduce((acc, type) => {
-    const total = inventory.filter((item) => item.BloodTypeName === type.name && item.BloodStatus === 'Available')
-      .reduce((sum, item) => sum + (item.RemainingVolume || 0), 0);
+    const total = inventory.filter((item) => item.bloodTypeName === type.name && item.bloodStatus === 'Available')
+      .reduce((sum, item) => sum + (item.remainingVolume || 0), 0);
     acc[type.name] = total;
     return acc;
   }, {});
@@ -193,85 +197,88 @@ const BloodInventory = () => {
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading ? <Box textAlign="center"><LinearProgress /></Box> : <>
-      {/* Thống kê tổng quan */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {bloodTypes.map((type) => (
           <Grid item xs={12} sm={6} md={3} key={type.id}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Nhóm máu {type.name}
-                </Typography>
-                <Typography variant="h4" color="primary" gutterBottom>
-                  {totalByType[type.name] || 0}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  đơn vị máu có sẵn
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={(totalByType[type.name] || 0) * 10}
-                  sx={{ mt: 1 }}
-                />
+                 <Typography variant="h6" gutterBottom>
+                   Nhóm máu {type.name}
+                 </Typography>
+                 <Typography variant="h4" color="primary" gutterBottom>
+                   {totalByType[type.name] || 0}
+                 </Typography>
+                 <Typography variant="body2" color="text.secondary">
+                   đơn vị máu có sẵn
+                 </Typography>
+                 <LinearProgress
+                   variant="determinate"
+                   value={(totalByType[type.name] || 0) * 10}
+                   sx={{ mt: 1 }}
+                 />
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
-      {/* Bảng quản lý kho máu */}
-      <Card>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h6">Danh sách đơn vị máu</Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-            >
-              Thêm đơn vị máu
-            </Button>
-          </Box>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nhóm máu</TableCell>
-                  <TableCell>Thành phần</TableCell>
-                  <TableCell>Thể tích (ml)</TableCell>
-                  <TableCell>Ngày thêm</TableCell>
-                  <TableCell>Ngày hết hạn</TableCell>
-                  <TableCell>Trạng thái</TableCell>
-                  <TableCell>Người hiến</TableCell>
-                  <TableCell>Thao tác</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {inventory.map((row) => (
-                  <TableRow key={row.BloodUnitId}>
-                    <TableCell>{row.BloodTypeName}</TableCell>
-                    <TableCell>{row.ComponentName}</TableCell>
-                    <TableCell>{row.Volume}</TableCell>
-                    <TableCell>{row.AddDate}</TableCell>
-                    <TableCell>{row.ExpiryDate}</TableCell>
-                    <TableCell>{getStatusChip(row.BloodStatus)}</TableCell>
-                    <TableCell>{row.FullName}</TableCell>
+       {/* Bảng quản lý kho máu */}
+       <Card>
+         <CardContent>
+           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+             <Typography variant="h6">Danh sách đơn vị máu</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+        >
+          Thêm đơn vị máu
+        </Button>
+           </Box>
+        <TableContainer component={Paper}>
+             <Table>
+            <TableHead>
+              <TableRow>
+                   <TableCell>ID</TableCell>
+                   <TableCell>Nhóm máu</TableCell>
+                   <TableCell>Thành phần</TableCell>
+                   <TableCell>Người hiến</TableCell>
+                   <TableCell>Ngày nhập</TableCell>
+                   <TableCell>Ngày hết hạn</TableCell>
+                   <TableCell>Thể tích (ml)</TableCell>
+                   <TableCell>Còn lại (ml)</TableCell>
+                   <TableCell>Trạng thái</TableCell>
+                   <TableCell>Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+                 {inventory.map((row) => (
+                   <TableRow key={row.bloodUnitId}>
+                     <TableCell>{row.bloodUnitId}</TableCell>
+                     <TableCell>{row.bloodTypeName}</TableCell>
+                     <TableCell>{row.componentName}</TableCell>
+                     <TableCell>{row.fullName}</TableCell>
+                     <TableCell>{row.addDate ? new Date(row.addDate).toLocaleDateString() : ''}</TableCell>
+                     <TableCell>{row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : ''}</TableCell>
+                     <TableCell>{row.volume}</TableCell>
+                     <TableCell>{row.remainingVolume}</TableCell>
+                     <TableCell>{getStatusChip(row.bloodStatus)}</TableCell>
                     <TableCell>
-                      <IconButton size="small" onClick={() => handleOpenDialog(row)}>
+                       <IconButton size="small" onClick={() => handleOpenDialog(row)}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
+                       <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-      </>}
-      {/* Dialog thêm/sửa đơn vị máu */}
+                 ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+         </CardContent>
+       </Card>
+        </>}
+       {/* Dialog thêm/sửa đơn vị máu */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           {selectedBlood ? 'Cập nhật đơn vị máu' : 'Thêm đơn vị máu mới'}

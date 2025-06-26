@@ -989,6 +989,89 @@
         }
       }
     },
+    "/api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}": {
+      "get": {
+        "tags": [
+          "BloodSearch"
+        ],
+        "parameters": [
+          {
+            "name": "recipientBloodTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "requiredVolume",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodSearch/request-donors-with-hospital/{recipientBloodTypeId}/{requiredVolume}": {
+      "post": {
+        "tags": [
+          "BloodSearch"
+        ],
+        "parameters": [
+          {
+            "name": "recipientBloodTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "requiredVolume",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BloodUnit": {
       "get": {
         "tags": [
@@ -1655,6 +1738,189 @@
         }
       }
     },
+    "/api/TransfusionRequest": {
+      "post": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/create-and-approve": {
+      "post": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/{id}": {
+      "get": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/{id}/approve": {
+      "patch": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveTransfusionRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveTransfusionRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveTransfusionRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/{id}/complete": {
+      "patch": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/{id}/cancel": {
+      "patch": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/User/login": {
       "post": {
         "tags": [
@@ -2020,6 +2286,23 @@
   },
   "components": {
     "schemas": {
+      "ApproveTransfusionRequestDTO": {
+        "required": [
+          "bloodUnitId"
+        ],
+        "type": "object",
+        "properties": {
+          "bloodUnitId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ArticleCreateDTO": {
         "type": "object",
         "properties": {
@@ -2458,6 +2741,57 @@
         },
         "additionalProperties": false
       },
+      "CreateTransfusionRequestDTO": {
+        "required": [
+          "bloodTypeId",
+          "componentId",
+          "memberId",
+          "transfusionVolume"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bloodTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transfusionVolume": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "isEmergency": {
+            "type": "boolean"
+          },
+          "preferredReceiveDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "patientCondition": {
+            "type": "string",
+            "nullable": true
+          },
+          "bloodUnitIdToReserve": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateUser": {
         "required": [
           "address",
@@ -2694,6 +3028,16 @@
           },
           "isRecipient": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RequestDonorsWithHospitalDTO": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

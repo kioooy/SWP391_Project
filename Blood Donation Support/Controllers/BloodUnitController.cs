@@ -173,29 +173,25 @@ public class BloodUnitController : ControllerBase
             throw;
         }
     }
-    // Delete blood unit (Soft delete by changing status to Discarded)
-    // PATCH: api/BloodUnit/{id}
-    [HttpPatch("{id}/discard")]
+    // Update blood unit status (e.g., for discarding)
+    // PATCH: api/BloodUnit/{id}/update-status
+    [HttpPatch("{id}/update-status")]
     [Authorize(Roles = "Admin, Staff")]
-    public async Task<IActionResult> DiscardBloodUnit(int id, [FromBody] BloodUnitDelete model)
+    public async Task<IActionResult> UpdateBloodUnitStatus(int id, [FromBody] BloodUnitStatusUpdateDTO model)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
+            return BadRequest(ModelState);
 
-        if (model == null)
-            return BadRequest("Blood unit data is required."); // Status 400 Bad Request if blood unit data is null
-
-        var bloodUnit = await _context.BloodUnits.FindAsync(id); // Find the existing blood unit by ID
+        var bloodUnit = await _context.BloodUnits.FindAsync(id);
         if (bloodUnit == null)
-            return NotFound(); // Status 404 Not Found if blood unit does not exist
+            return NotFound();
 
         // Update the BloodStatus
-        bloodUnit.BloodStatus = "Discarded";
+        bloodUnit.BloodStatus = model.Status;
             
-        _context.BloodUnits.Update(bloodUnit);  // Update blood unit
-        await _context.SaveChangesAsync();      // Save changes to the database
+        _context.BloodUnits.Update(bloodUnit);
+        await _context.SaveChangesAsync();
             
-        return Ok(bloodUnit); // Return 200 OK with the updated blood unit
+        return Ok(bloodUnit);
     }
-
 }

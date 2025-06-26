@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectUser, selectIsAuthenticated, updateUserLocation } from '../features/auth/authSlice';
+import { selectUser, selectIsAuthenticated, updateUserLocation, logout, setAccountType } from '../features/auth/authSlice';
 import {
   Container,
   Typography,
@@ -48,7 +48,6 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { logout } from '../features/auth/authSlice';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -119,6 +118,11 @@ const UserProfile = () => {
   // State cho dữ liệu chỉnh sửa trong dialog
   const [editFormData, setEditFormData] = useState({});
 
+  // Lấy loại tài khoản từ nhiều nguồn
+  const isDonor = user?.isDonor || user?.member?.isDonor || formData?.isDonor;
+  const isRecipient = user?.isRecipient || user?.member?.isRecipient || formData?.isRecipient;
+  console.log('DEBUG loại tài khoản:', { isDonor, isRecipient, user, formData });
+
   // Định nghĩa fetchUserProfile bên ngoài useEffect để có thể gọi lại
   const fetchUserProfile = async () => {
     try {
@@ -150,9 +154,16 @@ const UserProfile = () => {
           address: userData.address || '',
           weight: userData.weight || userData.Weight || '',
           height: userData.height || userData.Height || '',
-          latitude: userData.latitude || '', // Lấy latitude từ API và cập nhật vào formData
-          longitude: userData.longitude || '', // Lấy longitude từ API và cập nhật vào formData
+          latitude: userData.latitude || '',
+          longitude: userData.longitude || '',
+          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
+          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
         });
+        // Đồng bộ loại tài khoản vào Redux
+        dispatch(setAccountType({
+          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
+          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
+        }));
       } else {
         console.warn('Không lấy được userData từ API');
       }
@@ -534,6 +545,16 @@ const UserProfile = () => {
                 <Typography variant="h5" gutterBottom>
                   {formData.fullName}
                 </Typography>
+                {/* Hiển thị loại tài khoản */}
+                {isDonor && (
+                  <Chip label="Tài khoản hiến máu" color="success" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {isRecipient && !isDonor && (
+                  <Chip label="Tài khoản truyền máu" color="info" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {!isDonor && !isRecipient && (
+                  <Chip label="Không xác định loại tài khoản" color="warning" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
                 <Chip
                   icon={<Bloodtype />}
                   label={`Nhóm máu ${formData.bloodType}`}

@@ -13,10 +13,13 @@ import {
   Divider,
   Snackbar,
   Alert as MuiAlert,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { login as loginThunk, createTestAccount } from '../../features/auth/authSlice';
 import { useState } from 'react'; // Import useState
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api'; // Sử dụng cùng API_URL với authSlice
 
@@ -35,6 +38,7 @@ const Login = () => {
   const { error, loading } = useSelector((state) => state.auth);
   const [showLocationAlert, setShowLocationAlert] = React.useState(false); // State để quản lý Alert
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Hiển thị popup nếu có state từ trang Events
   React.useEffect(() => {
@@ -189,12 +193,26 @@ const Login = () => {
           id="password"
           name="password"
           label="Mật khẩu"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           value={formik.values.password}
           onChange={formik.handleChange}
           error={formik.touched.password && Boolean(formik.errors.password)}
           helperText={formik.touched.password && formik.errors.password}
           margin="normal"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={() => setShowPassword((show) => !show)}
+                  onMouseDown={e => e.preventDefault()}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
         <Button
           type="submit"

@@ -26,7 +26,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import HistoryIcon from "@mui/icons-material/History";
 import NewsIcon from "@mui/icons-material/Article";
 import ContactIcon from "@mui/icons-material/ContactMail";
-import { logout } from "../features/auth/authSlice";
+import { logout, fetchUserProfile } from "../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
 import Footer from "../components/Footer";
@@ -103,6 +103,7 @@ const MainLayout = () => {
   const [locationSnackbarMessage, setLocationSnackbarMessage] = useState('');
 
   const { user: currentUser, isAuthenticated, token: authToken } = useSelector((state) => state.auth);
+  // currentUser bây giờ sẽ luôn có isDonor, isRecipient nếu đã vào UserProfile
 
   // Thêm log để kiểm tra user và role
   console.log('DEBUG currentUser:', currentUser);
@@ -160,6 +161,13 @@ const MainLayout = () => {
     }
   }, [currentUser, location.pathname, navigate]);
 
+  useEffect(() => {
+    // Nếu đã đăng nhập, tự động fetch profile để đồng bộ loại tài khoản vào Redux
+    if (authToken && currentUser) {
+      dispatch(fetchUserProfile());
+    }
+  }, [authToken, currentUser, dispatch]);
+
   const handleLogout = async () => {
     await dispatch(logout());
     localStorage.removeItem("isTestUser");
@@ -197,7 +205,11 @@ const MainLayout = () => {
   };
 
   const handleProfile = () => {
-    navigate("/profile");
+    if (currentUser && currentUser.isRecipient) {
+      navigate("/user-profile-recipient");
+    } else {
+      navigate("/profile");
+    }
   };
 
   // Kiểm tra trạng thái đăng nhập test user và staff
@@ -241,8 +253,6 @@ const MainLayout = () => {
         { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
         { path: "/blog", label: "Blog", icon: <NewsIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-        { path: "/booking-transfusion", label: "Đặt lịch truyền máu", icon: <LocalHospitalIcon /> },
-        { path: "/transfusion-history", label: "Lịch sử truyền máu", icon: <HistoryIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
         { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
@@ -252,6 +262,113 @@ const MainLayout = () => {
   console.log('DEBUG menuItems render:', menuItems);
 
   console.log('DEBUG MainLayout mounted');
+
+  // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị menu có 2 mục này
+  if (currentUser && currentUser.isRecipient) {
+    const recipientMenu = [
+      { path: "/", label: "Trang Chủ" },
+      { path: "/faq", label: "Hỏi & Đáp" },
+      { path: "/article", label: "Tài Liệu Máu" },
+      { path: "/blog", label: "Blog" },
+      { path: "/booking-transfusion", label: "Đặt lịch truyền máu" },
+      { path: "/transfusion-history", label: "Lịch Sử Truyền Máu" },
+    ];
+    return (
+      <MainContainer>
+        {/* PHẦN TRÊN: logo, ngôn ngữ, đăng nhập */}
+        <Box sx={{ background: "#fff", py: 1 }}>
+          <Container maxWidth="lg">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ width: 80 }} />
+              {/* Logo */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <img
+                  src="/images/logo.png"
+                  alt="logo"
+                  style={{ height: 40, marginRight: 8 }}
+                />
+                <Typography
+                  variant="h5"
+                  fontWeight="bold"
+                  color="primary.main"
+                  sx={{ letterSpacing: 2 }}
+                >
+                  Hệ Thống Hỗ Trợ Hiến Máu
+                </Typography>
+              </Box>
+              {/* Đăng nhập/Đăng ký hoặc Profile */}
+              <Box>
+                {isAuthenticated || isTestUser ? (
+                  <Button
+                    color="primary"
+                    startIcon={
+                      currentUser && currentUser.fullName ? (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                          {currentUser.fullName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      ) : (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                      )
+                    }
+                    onClick={handleProfile}
+                    sx={{ fontSize: 17, fontWeight: 'bold' }}
+                  >
+                    {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="text"
+                    color="primary"
+                    onClick={handleLogin}
+                    startIcon={<PersonIcon />}
+                    sx={{ fontSize: 18 }}
+                  >
+                    Đăng nhập
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Container>
+        </Box>
+
+        {/* PHẦN DƯỚI: menu điều hướng cho recipient */}
+        <AppBar
+          position="static"
+          sx={{ background: "#202G99", boxShadow: "none" }}
+        >
+          <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }}>
+            <Stack direction="row" spacing={4}>
+              {recipientMenu.map((item) => (
+                <NavButton
+                  key={item.path}
+                  component={StyledLink}
+                  to={item.path}
+                  isActive={location.pathname === item.path}
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontSize: 18,
+                    letterSpacing: 1,
+                  }}
+                >
+                  {item.label}
+                </NavButton>
+              ))}
+            </Stack>
+          </Toolbar>
+        </AppBar>
+        <ContentContainer maxWidth="lg">
+          <Outlet />
+        </ContentContainer>
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer>

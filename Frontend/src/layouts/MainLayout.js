@@ -467,7 +467,7 @@ const MainLayout = () => {
                     MenuListProps={{ 'aria-labelledby': 'news-menu-button' }}
                   >
                     <MenuItem component={RouterLink} to="/article" onClick={handleCloseNewsMenu}>
-                      <MenuBookIcon sx={{ mr: 1 }} /> Bài viết
+                      <MenuBookIcon sx={{ mr: 1 }} /> Thông Tin
                     </MenuItem>
                     <MenuItem component={RouterLink} to="/faq" onClick={handleCloseNewsMenu}>
                       <QuestionAnswerIcon sx={{ mr: 1 }} /> Hỏi & Đáp

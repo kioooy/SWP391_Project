@@ -205,15 +205,11 @@ const UserProfile = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        // Lấy lịch sử hiến máu và lọc chỉ những lịch đã hoàn thành
-        const res = await axios.get(`${apiUrl}/DonationHistory`, {
+        // Lấy lịch sử hiến máu đã hoàn thành từ endpoint mới
+        const res = await axios.get(`${apiUrl}/DonationRequest/history/completed`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // Lọc chỉ những lịch hẹn có status 'completed'
-        const completedHistory = (res.data || []).filter(item => 
-          item.status === 'completed' || item.status === 'Completed'
-        );
-        setCompletedDonationHistory(completedHistory);
+        setCompletedDonationHistory(res.data || []);
       } catch (error) {
         setCompletedDonationHistory([]);
       }
@@ -684,13 +680,13 @@ const UserProfile = () => {
                       </TableHead>
                       <TableBody>
                         {completedDonationHistory.map((row) => (
-                          <TableRow key={row.id}>
-                            <TableCell>{row.date}</TableCell>
+                          <TableRow key={row.donationId}>
+                            <TableCell>{row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : ''}</TableCell>
                             <TableCell>{row.location}</TableCell>
-                            <TableCell>{row.bloodType}</TableCell>
-                            <TableCell>{row.volume}</TableCell>
+                            <TableCell>{formData.bloodType}</TableCell>
+                            <TableCell>{row.donationVolume}</TableCell>
                             <TableCell>{getStatusChip(row.status)}</TableCell>
-                            <TableCell>{row.nextDonationDate}</TableCell>
+                            <TableCell></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

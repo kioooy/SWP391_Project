@@ -23,6 +23,9 @@ const Article = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
+      <Typography variant="h4" fontWeight={700} align="center" gutterBottom sx={{ color: 'primary.main', mb: 4 }}>
+        Thông Tin Các Nhóm Máu
+      </Typography>
       <Box sx={{ mt: 4 }}>
         <Grid container spacing={4}>
           {articles.length === 0 ? (

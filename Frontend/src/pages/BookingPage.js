@@ -414,7 +414,7 @@ const BookingPage = () => {
       });
       if (response.status === 200) {
         setSnackbar({ open: true, message: 'Đăng ký của bạn đã được gửi thành công!', severity: 'success' });
-        setTimeout(() => navigate('/user-profile'), 1500);
+        setTimeout(() => navigate('/'), 1500);
       } else {
         setSnackbar({ open: true, message: 'Có lỗi xảy ra khi đăng ký!', severity: 'error' });
       }

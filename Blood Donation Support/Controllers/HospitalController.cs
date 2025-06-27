@@ -32,7 +32,7 @@ namespace Blood_Donation_Support.Controllers
                     h.HospitalId,
                     h.Name,
                     h.Address,
-                    h.Phone,
+                    Phone = string.IsNullOrEmpty(h.Phone) ? "028 3957 1342" : h.Phone,
                     h.Email,
                     Latitude = h.Location.Y,
                     Longitude = h.Location.X,

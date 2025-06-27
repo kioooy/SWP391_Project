@@ -1218,6 +1218,44 @@
         }
       }
     },
+    "/api/BloodUnit/compatible": {
+      "get": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "parameters": [
+          {
+            "name": "bloodTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "componentId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "minVolume",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/DonationAlert/LastSuccessfulDonation/{memberId}": {
       "get": {
         "tags": [
@@ -1779,37 +1817,6 @@
         }
       }
     },
-    "/api/TransfusionRequest/create-and-approve": {
-      "post": {
-        "tags": [
-          "TransfusionRequest"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTransfusionRequestDTO"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
     "/api/TransfusionRequest/{id}": {
       "get": {
         "tags": [
@@ -1853,17 +1860,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApproveTransfusionRequestDTO"
+                "$ref": "#/components/schemas/ApproveTransfusionRequestInput"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/ApproveTransfusionRequestDTO"
+                "$ref": "#/components/schemas/ApproveTransfusionRequestInput"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/ApproveTransfusionRequestDTO"
+                "$ref": "#/components/schemas/ApproveTransfusionRequestInput"
               }
             }
           }
@@ -1913,6 +1920,18 @@
               "format": "int32"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/pending": {
+      "get": {
+        "tags": [
+          "TransfusionRequest"
         ],
         "responses": {
           "200": {
@@ -2237,56 +2256,11 @@
           }
         }
       }
-    },
-    "/api/User/search-by-distance": {
-      "get": {
-        "tags": [
-          "User"
-        ],
-        "parameters": [
-          {
-            "name": "latitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "longitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "radiusInKm",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "userType",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
     }
   },
   "components": {
     "schemas": {
-      "ApproveTransfusionRequestDTO": {
+      "ApproveTransfusionRequestInput": {
         "required": [
           "bloodUnitId"
         ],

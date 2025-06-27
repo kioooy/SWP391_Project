@@ -195,7 +195,16 @@ const DonationRequestManagement = () => {
     }
   };
 
-  const filteredRequests = requests.filter(
+  // Sắp xếp các yêu cầu mới nhất lên đầu
+  const sortedRequests = [...requests].sort((a, b) => {
+    // Ưu tiên theo requestDate mới nhất, nếu không có thì theo donationId giảm dần
+    if (a.requestDate && b.requestDate) {
+      return new Date(b.requestDate) - new Date(a.requestDate);
+    }
+    return (b.donationId || 0) - (a.donationId || 0);
+  });
+
+  const filteredRequests = sortedRequests.filter(
     (req) => statusFilter === 'All' || req.status === statusFilter
   );
 

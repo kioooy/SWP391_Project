@@ -692,8 +692,8 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
-    "Method": "DiscardBloodUnit",
-    "RelativePath": "api/BloodUnit/{id}/discard",
+    "Method": "UpdateBloodUnitStatus",
+    "RelativePath": "api/BloodUnit/{id}/update-status",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -705,8 +705,34 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.BloodUnitDelete",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitStatusUpdateDTO",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetCompatibleBloodUnits",
+    "RelativePath": "api/BloodUnit/compatible",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "componentId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "minVolume",
+        "Type": "System.Int32",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -1082,7 +1108,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.ApproveTransfusionRequestDTO",
+        "Type": "Blood_Donation_Support.DTO.ApproveTransfusionRequestInput",
         "IsRequired": true
       }
     ],
@@ -1122,18 +1148,12 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
-    "Method": "CreateAndApproveTransfusionRequest",
-    "RelativePath": "api/TransfusionRequest/create-and-approve",
-    "HttpMethod": "POST",
+    "Method": "GetPendingTransfusionRequests",
+    "RelativePath": "api/TransfusionRequest/pending",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [
-      {
-        "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.CreateTransfusionRequestDTO",
-        "IsRequired": true
-      }
-    ],
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -1279,37 +1299,6 @@
         "Name": "model",
         "Type": "Blood_Donation_Support.DTO.RegisterModel",
         "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
-    "Method": "SearchUsersByDistance",
-    "RelativePath": "api/User/search-by-distance",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "latitude",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "longitude",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "radiusInKm",
-        "Type": "System.Double",
-        "IsRequired": false
-      },
-      {
-        "Name": "userType",
-        "Type": "System.String",
-        "IsRequired": false
       }
     ],
     "ReturnTypes": []

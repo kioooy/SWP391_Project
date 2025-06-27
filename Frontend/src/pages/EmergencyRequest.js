@@ -33,6 +33,8 @@ import {
   Warning,
 } from '@mui/icons-material';
 import axios from 'axios';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
@@ -71,6 +73,9 @@ const EmergencyRequest = () => {
   ];
 
   const [selectedComponentId, setSelectedComponentId] = useState(1);
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   const handleChange = (field) => (event) => {
     setFormData({
@@ -205,7 +210,7 @@ const EmergencyRequest = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        alert('Gửi yêu cầu thành công!');
+        setSnackbar({ open: true, message: 'Gửi yêu cầu thành công!', severity: 'success' });
         setActiveStep(0);
         setFormData({
           patientName: '',
@@ -219,7 +224,11 @@ const EmergencyRequest = () => {
           notes: '',
         });
       } catch (error) {
-        alert('Có lỗi khi gửi yêu cầu!');
+        let msg = 'Có lỗi khi gửi yêu cầu!';
+        if (error.response && error.response.data && error.response.data.message) {
+          msg = error.response.data.message;
+        }
+        setSnackbar({ open: true, message: msg, severity: 'error' });
       }
     }
   };
@@ -501,6 +510,12 @@ const EmergencyRequest = () => {
           </Box>
         </CardContent>
       </Card>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </Container>
   );
 };

@@ -1176,7 +1176,7 @@
         }
       }
     },
-    "/api/BloodUnit/{id}/discard": {
+    "/api/BloodUnit/{id}/update-status": {
       "patch": {
         "tags": [
           "BloodUnit"
@@ -1196,17 +1196,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BloodUnitDelete"
+                "$ref": "#/components/schemas/BloodUnitStatusUpdateDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/BloodUnitDelete"
+                "$ref": "#/components/schemas/BloodUnitStatusUpdateDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/BloodUnitDelete"
+                "$ref": "#/components/schemas/BloodUnitStatusUpdateDTO"
               }
             }
           }
@@ -2541,15 +2541,12 @@
         },
         "additionalProperties": false
       },
-      "BloodUnitDelete": {
-        "required": [
-          "bloodStatus"
-        ],
+      "BloodUnitStatusUpdateDTO": {
         "type": "object",
         "properties": {
-          "bloodStatus": {
-            "minLength": 1,
-            "type": "string"
+          "status": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

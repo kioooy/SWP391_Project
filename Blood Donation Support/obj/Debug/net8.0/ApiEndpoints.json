@@ -692,8 +692,8 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
-    "Method": "DiscardBloodUnit",
-    "RelativePath": "api/BloodUnit/{id}/discard",
+    "Method": "UpdateBloodUnitStatus",
+    "RelativePath": "api/BloodUnit/{id}/update-status",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -705,7 +705,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.BloodUnitDelete",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitStatusUpdateDTO",
         "IsRequired": true
       }
     ],

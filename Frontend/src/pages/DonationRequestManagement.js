@@ -144,7 +144,7 @@ const DonationRequestManagement = () => {
     }
     try {
       if (actionMode === 'complete') {
-        await axios.patch(`/api/DonationRequest/update-completed/${actionRequest.donationId}`, {
+        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/update-completed`, {
           MemberId: actionRequest.memberId,
           Status: 'Completed',
           Notes: actionRequest.notes || '',

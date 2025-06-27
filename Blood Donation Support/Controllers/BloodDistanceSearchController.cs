@@ -35,7 +35,8 @@ namespace Blood_Donation_Support.Controllers
             _logger.LogInformation("GetNearbyDonors called with latitude={Latitude}, longitude={Longitude}, radius={Radius} meters. Results count: {Count}", latitude, longitude, radius, 0); 
             var center = new Point(longitude, latitude) { SRID = 4326 };
             var donors = await _context.Members
-                .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius)
+                .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius
+                    && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), DateTime.Now) >= 84))
                 .Include(m => m.User)
                 .Include(m => m.BloodType)
                 .Select(m => new {

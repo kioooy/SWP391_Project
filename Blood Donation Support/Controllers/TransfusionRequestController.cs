@@ -19,7 +19,7 @@ namespace Blood_Donation_Support.Controllers
             _context = context;
         }
 
-        // POST: api/TransfusionRequest (Luồng thông thường)
+        // POST: api/TransfusionRequest (Tạo mới yêu cầu truyền máu - flow thường)
         [HttpPost]
         [Authorize(Roles = "Member,Staff,Admin")]
         public async Task<IActionResult> CreateTransfusionRequest([FromBody] CreateTransfusionRequestDTO model)
@@ -97,116 +97,20 @@ namespace Blood_Donation_Support.Controllers
 
             await _context.TransfusionRequests.AddAsync(transfusionRequest);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetTransfusionRequestById), new { id = transfusionRequest.TransfusionId }, transfusionRequest);
-        }
-
-        // POST: api/TransfusionRequest/create-and-approve (Luồng tắt)
-        [HttpPost("create-and-approve")]
-        [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> CreateAndApproveTransfusionRequest([FromBody] CreateTransfusionRequestDTO model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            
-            if (!model.BloodUnitIdToReserve.HasValue)
-            {
-                return BadRequest("BloodUnitIdToReserve is required for this operation.");
-            }
-
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-            {
-                return Unauthorized("User is not authenticated.");
-            }
-
-            var responsibleUser = await _context.Users.FindAsync(int.Parse(userId));
-            if (responsibleUser == null)
-            {
-                return Forbid("Authenticated user not found in the database.");
-            }
-
-            var member = await _context.Members.FindAsync(model.MemberId);
-            if (member == null)
-            {
-                return NotFound($"Member with ID {model.MemberId} not found.");
-            }
-            
-            var bloodType = await _context.BloodTypes.FindAsync(model.BloodTypeId);
-            if (bloodType == null)
-            {
-                return NotFound($"BloodType with ID {model.BloodTypeId} not found.");
-            }
-
-            var component = await _context.BloodComponents.FindAsync(model.ComponentId);
-            if (component == null)
-            {
-                return NotFound($"BloodComponent with ID {model.ComponentId} not found.");
-            }
-
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var bloodUnit = await _context.BloodUnits.FindAsync(model.BloodUnitIdToReserve.Value);
-                if (bloodUnit == null || bloodUnit.BloodStatus != "Available")
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest("The selected blood unit is not available for reservation.");
-                }
-                if (bloodUnit.RemainingVolume < model.TransfusionVolume)
-                {
-                    await transaction.RollbackAsync();
-                    return BadRequest("Not enough volume in the selected blood unit.");
-                }
-
-
-                // 1. Tạo Yêu cầu Truyền máu với trạng thái "Approved"
-                var transfusionRequest = new TransfusionRequest
-                {
-                    MemberId = model.MemberId,
-                    BloodTypeId = model.BloodTypeId,
-                    ComponentId = model.ComponentId,
-                    ResponsibleById = responsibleUser.UserId,
-                    IsEmergency = model.IsEmergency,
-                    TransfusionVolume = model.TransfusionVolume,
-                    PreferredReceiveDate = model.PreferredReceiveDate,
-                    RequestDate = DateTime.UtcNow,
-                    ApprovalDate = DateTime.UtcNow, // Phê duyệt ngay lập tức
-                    Status = "Approved",
-                    Notes = model.Notes,
-                    PatientCondition = model.PatientCondition,
-                    BloodUnitId = bloodUnit.BloodUnitId
-                };
-                _context.TransfusionRequests.Add(transfusionRequest);
-                await _context.SaveChangesAsync();
-
-                // 2. Cập nhật trạng thái Đơn vị máu
-                bloodUnit.BloodStatus = "Reserved";
-                _context.BloodUnits.Update(bloodUnit);
-
-                // 3. Tạo bản ghi Đặt chỗ máu
-                var reservation = new BloodReservation
-                {
-                    BloodUnitId = bloodUnit.BloodUnitId,
-                    TransfusionId = transfusionRequest.TransfusionId,
-                    ReservedById = responsibleUser.UserId,
-                    ReservedAt = DateTime.UtcNow,
-                    ExpireAt = DateTime.UtcNow.AddHours(24), // Đặt chỗ sẽ hết hạn sau 24 giờ
-                    Status = "Active"
-                };
-                _context.BloodReservations.Add(reservation);
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return CreatedAtAction(nameof(GetTransfusionRequestById), new { id = transfusionRequest.TransfusionId }, transfusionRequest);
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                return StatusCode(500, "Đã xảy ra lỗi nội bộ. Giao dịch đã được khôi phục.");
-            }
+            return CreatedAtAction(nameof(GetTransfusionRequestById), new { id = transfusionRequest.TransfusionId }, new {
+                transfusionRequest.TransfusionId,
+                transfusionRequest.MemberId,
+                transfusionRequest.BloodTypeId,
+                transfusionRequest.ComponentId,
+                transfusionRequest.ResponsibleById,
+                transfusionRequest.IsEmergency,
+                transfusionRequest.TransfusionVolume,
+                transfusionRequest.PreferredReceiveDate,
+                transfusionRequest.RequestDate,
+                transfusionRequest.Status,
+                transfusionRequest.Notes,
+                transfusionRequest.PatientCondition
+            });
         }
 
         // GET: api/TransfusionRequest
@@ -295,7 +199,7 @@ namespace Blood_Donation_Support.Controllers
 
         [HttpPatch("{id}/approve")]
         [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> ApproveTransfusionRequest(int id, [FromBody] ApproveTransfusionRequestDTO model)
+        public async Task<IActionResult> ApproveTransfusionRequest(int id, [FromBody] ApproveTransfusionRequestInput model)
         {
             if (!ModelState.IsValid)
             {
@@ -325,10 +229,38 @@ namespace Blood_Donation_Support.Controllers
                     return BadRequest($"Blood unit {model.BloodUnitId} is not available for reservation.");
                 }
                 
-                if (bloodUnit.RemainingVolume < transfusionRequest.TransfusionVolume)
+                // 1. Kiểm tra hạn sử dụng
+                if (bloodUnit.ExpiryDate < DateOnly.FromDateTime(DateTime.Now))
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Không đủ thể tích trong đơn vị máu {model.BloodUnitId}.");
+                    return BadRequest($"Đơn vị máu {model.BloodUnitId} đã hết hạn sử dụng.");
+                }
+
+                // 2. Kiểm tra thành phần máu
+                var transfusionRequestFull = await _context.TransfusionRequests
+                    .Include(tr => tr.BloodType)
+                    .Include(tr => tr.Component)
+                    .FirstOrDefaultAsync(tr => tr.TransfusionId == id);
+                if (transfusionRequestFull == null)
+                {
+                    await transaction.RollbackAsync();
+                    return NotFound($"Transfusion request with ID {id} not found.");
+                }
+                if (bloodUnit.ComponentId != transfusionRequestFull.ComponentId)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Thành phần máu của đơn vị máu không phù hợp với yêu cầu.");
+                }
+
+                // 3. Kiểm tra tương thích nhóm máu
+                var isCompatible = await _context.BloodCompatibilityRules.AnyAsync(rule =>
+                    rule.BloodGiveId == bloodUnit.BloodTypeId &&
+                    rule.BloodRecieveId == transfusionRequestFull.BloodTypeId &&
+                    rule.IsCompatible == true);
+                if (!isCompatible)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Nhóm máu của đơn vị máu không tương thích với yêu cầu truyền máu.");
                 }
 
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -507,6 +439,40 @@ namespace Blood_Donation_Support.Controllers
                 await transaction.RollbackAsync();
                 return StatusCode(500, "Đã xảy ra lỗi nội bộ trong quá trình hủy bỏ.");
             }
+        }
+
+        // GET: api/TransfusionRequest/pending
+        [HttpGet("pending")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> GetPendingTransfusionRequests()
+        {
+            var pendingRequests = await _context.TransfusionRequests
+                .Include(tr => tr.Member).ThenInclude(m => m.User)
+                .Include(tr => tr.BloodType)
+                .Include(tr => tr.Component)
+                .Where(tr => tr.Status == "Pending")
+                .Select(tr => new
+                {
+                    tr.TransfusionId,
+                    tr.MemberId,
+                    MemberName = tr.Member.User.FullName,
+                    tr.BloodTypeId,
+                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.ComponentId,
+                    ComponentName = tr.Component.ComponentName,
+                    tr.ResponsibleById,
+                    tr.IsEmergency,
+                    tr.TransfusionVolume,
+                    tr.PreferredReceiveDate,
+                    tr.RequestDate,
+                    tr.Status,
+                    tr.Notes,
+                    tr.PatientCondition
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return Ok(pendingRequests);
         }
     }
 } 

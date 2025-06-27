@@ -91,6 +91,11 @@ namespace Blood_Donation_Support.Controllers
                 Notes = model.Notes,                                 // Notes 
                 PatientCondition = model.PatientCondition            // Patient Condition
             };
+            var currentQuantity = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == model.PeriodId)
+                .Select(p => p.CurrentQuantity)
+                .FirstOrDefaultAsync(); // Get the current quantity for the period
+            currentQuantity = (currentQuantity ?? 0) + 1; // Increment the current quantity by 1
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
@@ -224,5 +229,38 @@ namespace Blood_Donation_Support.Controllers
             }
         }
 
+        //  Cancel donation request by id
+        // PATCH: api/DonationRequest/{id}/cancel
+        [HttpPatch("{id}/cancel")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> CancelDonationRequest(int id)
+        {
+            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
+            if (existingRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+            
+            existingRequest.Status = "Cancelled"; // Update the status to "Cancelled"
+            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
+
+            var currentQuantity = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == existingRequest.PeriodId)
+                .Select(p => p.CurrentQuantity)
+                .FirstOrDefaultAsync(); // Get the current quantity for the period
+            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+
+            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            try 
+            {
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
+                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction 
+                throw;  
+            }
+        }
     }
 }

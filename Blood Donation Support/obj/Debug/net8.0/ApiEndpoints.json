@@ -723,6 +723,22 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "CancelDonationRequest",
+    "RelativePath": "api/DonationRequest/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
     "Method": "CompletedDonationRequestStatus",
     "RelativePath": "api/DonationRequest/{id}/update-completed",
     "HttpMethod": "PATCH",

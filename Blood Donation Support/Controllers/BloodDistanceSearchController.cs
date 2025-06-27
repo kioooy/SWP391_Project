@@ -33,7 +33,7 @@ namespace Blood_Donation_Support.Controllers
                 .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius)
                 .Select(m => new {
                     m.UserId,
-                    m.Address,
+                    //m.Address,
                     m.Location,
                     m.BloodTypeId,
                     m.Weight,
@@ -59,7 +59,7 @@ namespace Blood_Donation_Support.Controllers
                 .Where(m => m.IsRecipient == true && m.Location != null && m.Location.Distance(center) <= radius)
                 .Select(m => new {
                     m.UserId,
-                    m.Address,
+                    //m.Address,
                     m.Location,
                     m.BloodTypeId,
                     m.Weight,

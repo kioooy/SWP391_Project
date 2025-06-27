@@ -35,10 +35,91 @@ public class BloodSearchController : ControllerBase
             var hospitalLatitude = hospital.Location.Y;
             var hospitalLongitude = hospital.Location.X;
 
-            // Logic tìm kiếm máu/người hiến được chuyển trực tiếp vào đây
-            // (Có thể copy/paste logic từ SearchBloodWithPriorityLogic cũ, nhưng chỉ dùng hospitalLatitude, hospitalLongitude)
-            // ...
-            return Ok(new { message = "Đã chuyển logic tìm kiếm trực tiếp vào API này. Vui lòng bổ sung logic chi tiết nếu cần." });
+            // 1. Tìm máu phù hợp trong kho
+            var availableBloodUnits = await _context.BloodUnits
+                .Where(bu => bu.BloodTypeId == recipientBloodTypeId
+                          && bu.BloodStatus == "Available"
+                          && bu.RemainingVolume >= requiredVolume
+                          && bu.ExpiryDate >= DateOnly.FromDateTime(DateTime.Now))
+                .Select(bu => new {
+                    bu.BloodUnitId,
+                    bu.BloodTypeId,
+                    bu.ComponentId,
+                    bu.RemainingVolume,
+                    bu.BloodStatus,
+                    bu.ExpiryDate
+                })
+                .ToListAsync();
+
+            if (availableBloodUnits.Any())
+            {
+                // Nếu có máu phù hợp, chỉ trả về máu phù hợp
+                return Ok(new {
+                    availableBloodUnits,
+                    suggestedDonors = new object[0]
+                });
+            }
+
+            // 2. Nếu không có máu phù hợp, tìm người hiến máu phù hợp
+            var hospitalPoint = hospital.Location;
+
+            var now = DateTime.Now;
+            var restPeriod = TimeSpan.FromDays(84); // 12 tuần
+            // Lấy danh sách người hiến máu phù hợp từ DB
+            var donorsFromDb = await _context.Members
+                .Include(m => m.User)
+                .Where(m => m.IsDonor == true && m.BloodTypeId == recipientBloodTypeId
+                    && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84))
+                .Select(m => new
+                {
+                    m.UserId,
+                    m.User.FullName,
+                    m.BloodTypeId,
+                    m.Weight,
+                    m.Height,
+                    m.LastDonationDate,
+                    m.IsDonor,
+                    m.IsRecipient,
+                    m.DonationCount,
+                    m.Location
+                })
+                .ToListAsync();
+
+            // Tính toán khoảng cách và tạo danh sách gợi ý
+            var suggestedDonors = donorsFromDb
+                .Select(m =>
+                {
+                    double? distance = null;
+                    if (m.Location != null)
+                    {
+                        double calculatedDistance = m.Location.Distance(hospitalPoint) * 111;
+                        if (!double.IsNaN(calculatedDistance) && !double.IsInfinity(calculatedDistance) && calculatedDistance >= 0 && calculatedDistance < 1e6)
+                        {
+                            distance = calculatedDistance;
+                        }
+                    }
+                    return new
+                    {
+                        m.UserId,
+                        m.FullName,
+                        m.BloodTypeId,
+                        m.Weight,
+                        m.Height,
+                        m.LastDonationDate,
+                        m.IsDonor,
+                        m.IsRecipient,
+                        m.DonationCount,
+                        DistanceToHospital = distance
+                    };
+                })
+                .Where(d => d.DistanceToHospital == null || (d.DistanceToHospital >= 0 && !double.IsNaN(d.DistanceToHospital.Value) && !double.IsInfinity(d.DistanceToHospital.Value)))
+                .OrderBy(d => d.DistanceToHospital)
+                .ToList();
+
+            return Ok(new {
+                availableBloodUnits = new object[0],
+                suggestedDonors
+            });
         }
         catch (Exception ex)
         {

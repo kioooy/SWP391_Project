@@ -24,7 +24,7 @@ import { styled } from "@mui/material/styles";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import HomeIcon from "@mui/icons-material/Home";
 import HistoryIcon from "@mui/icons-material/History";
-import NewsIcon from "@mui/icons-material/Article";
+import ArticleIcon from "@mui/icons-material/Article";
 import ContactIcon from "@mui/icons-material/ContactMail";
 import { logout, fetchUserProfile } from "../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -37,6 +37,10 @@ import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BloodtypeIcon from "@mui/icons-material/Bloodtype";
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import EventIcon from '@mui/icons-material/Event';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -241,27 +245,31 @@ const MainLayout = () => {
     if (!isAuthenticated && !isTestUser) {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-        { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
-        { path: "/blog", label: "Blog", icon: <NewsIcon /> },
+        { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
+        { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
       ];
     } else {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-        { path: "/article", label: "Tài Liệu Máu", icon: <NewsIcon /> },
-        { path: "/blog", label: "Blog", icon: <NewsIcon /> },
-        { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-        { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
+        { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
+        { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
+        { path: "/booking", label: "Đặt Lịch", icon: <EventIcon /> },
+        { path: "/certificate", label: "Chứng Chỉ", icon: <VerifiedIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
+        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <HistoryIcon /> },
       ];
     }
   }
   console.log('DEBUG menuItems render:', menuItems);
 
   console.log('DEBUG MainLayout mounted');
+
+  // Thêm state cho menu Tin Tức (đặt ngoài mọi if)
+  const [newsAnchorEl, setNewsAnchorEl] = useState(null);
+  const openNewsMenu = Boolean(newsAnchorEl);
+  const handleNewsMenu = (event) => setNewsAnchorEl(event.currentTarget);
+  const handleCloseNewsMenu = () => setNewsAnchorEl(null);
 
   // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị menu có 2 mục này
   if (currentUser && currentUser.isRecipient) {
@@ -441,38 +449,50 @@ const MainLayout = () => {
       >
         <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }}>
           <Stack direction="row" spacing={4}>
-            {menuItems.map(
-              (item) =>
-
-                ((item.path === "/certificate" &&
-                  (isAuthenticated || isTestUser)) ||
-                  item.path !== "/certificate") && (
+            {menuItems.map((item) =>
+              item.isNews ? (
+                <div key="news-menu">
                   <NavButton
-                    key={item.path}
-                    component={StyledLink}
-                    to={item.path}
-                    isActive={location.pathname === item.path}
-                    sx={{
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      letterSpacing: 1,
-                    }}
-                    onClick={(e) => {
-                      if (
-                        item.path === "/booking" &&
-
-                        !isAuthenticated &&
-                        !isTestUser
-                      ) {
-                        e.preventDefault(); // Prevent default navigation
-                        navigate("/login");
-                      }
-                    }}
+                    onClick={handleNewsMenu}
+                    isActive={location.pathname.startsWith('/article') || location.pathname.startsWith('/faq')}
+                    sx={{ color: "white", fontWeight: "bold", fontSize: 18, letterSpacing: 1 }}
+                    startIcon={item.icon}
                   >
-                    {item.label}
+                    Tin Tức
                   </NavButton>
-                )
+                  <Menu
+                    anchorEl={newsAnchorEl}
+                    open={openNewsMenu}
+                    onClose={handleCloseNewsMenu}
+                    MenuListProps={{ 'aria-labelledby': 'news-menu-button' }}
+                  >
+                    <MenuItem component={RouterLink} to="/article" onClick={handleCloseNewsMenu}>
+                      <MenuBookIcon sx={{ mr: 1 }} /> Bài viết
+                    </MenuItem>
+                    <MenuItem component={RouterLink} to="/faq" onClick={handleCloseNewsMenu}>
+                      <QuestionAnswerIcon sx={{ mr: 1 }} /> Hỏi & Đáp
+                    </MenuItem>
+                  </Menu>
+                </div>
+              ) :
+              ((item.path === "/certificate" && (isAuthenticated || isTestUser)) || item.path !== "/certificate") && (
+                <NavButton
+                  key={item.path}
+                  component={StyledLink}
+                  to={item.path}
+                  isActive={location.pathname === item.path}
+                  sx={{ color: "white", fontWeight: "bold", fontSize: 18, letterSpacing: 1 }}
+                  onClick={(e) => {
+                    if (item.path === "/booking" && !isAuthenticated && !isTestUser) {
+                      e.preventDefault();
+                      navigate("/login");
+                    }
+                  }}
+                  startIcon={item.icon}
+                >
+                  {item.label}
+                </NavButton>
+              )
             )}
           </Stack>
         </Toolbar>

@@ -223,19 +223,22 @@ namespace Blood_Donation_Support.Controllers
                 }
 
                 var bloodUnit = await _context.BloodUnits.FindAsync(model.BloodUnitId);
-                if (bloodUnit == null || bloodUnit.BloodStatus != "Available")
+                if (bloodUnit == null)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Blood unit {model.BloodUnitId} is not available for reservation.");
+                    return BadRequest($"Blood unit {model.BloodUnitId} does not exist.");
                 }
-                
+                if (bloodUnit.BloodStatus != "Available")
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Blood unit {model.BloodUnitId} is not available for reservation (current status: {bloodUnit.BloodStatus}).");
+                }
                 // 1. Kiểm tra hạn sử dụng
                 if (bloodUnit.ExpiryDate < DateOnly.FromDateTime(DateTime.Now))
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Đơn vị máu {model.BloodUnitId} đã hết hạn sử dụng.");
+                    return BadRequest($"Blood unit {model.BloodUnitId} has expired (expiry date: {bloodUnit.ExpiryDate:yyyy-MM-dd}).");
                 }
-
                 // 2. Kiểm tra thành phần máu
                 var transfusionRequestFull = await _context.TransfusionRequests
                     .Include(tr => tr.BloodType)
@@ -243,15 +246,13 @@ namespace Blood_Donation_Support.Controllers
                     .FirstOrDefaultAsync(tr => tr.TransfusionId == id);
                 if (transfusionRequestFull == null)
                 {
-                    await transaction.RollbackAsync();
                     return NotFound($"Transfusion request with ID {id} not found.");
                 }
                 if (bloodUnit.ComponentId != transfusionRequestFull.ComponentId)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Thành phần máu của đơn vị máu không phù hợp với yêu cầu.");
+                    return BadRequest($"Blood unit {model.BloodUnitId} component does not match the requested component (required: {transfusionRequestFull.ComponentId}, actual: {bloodUnit.ComponentId}).");
                 }
-
                 // 3. Kiểm tra tương thích nhóm máu
                 var isCompatible = await _context.BloodCompatibilityRules.AnyAsync(rule =>
                     rule.BloodGiveId == bloodUnit.BloodTypeId &&
@@ -260,7 +261,13 @@ namespace Blood_Donation_Support.Controllers
                 if (!isCompatible)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Nhóm máu của đơn vị máu không tương thích với yêu cầu truyền máu.");
+                    return BadRequest($"Blood unit {model.BloodUnitId} blood type is not compatible with the requested blood type (unit: {bloodUnit.BloodTypeId}, request: {transfusionRequestFull.BloodTypeId}).");
+                }
+                // 4. Kiểm tra thể tích còn lại
+                if (bloodUnit.RemainingVolume < transfusionRequestFull.TransfusionVolume)
+                {
+                    await transaction.RollbackAsync();
+                    return BadRequest($"Blood unit {model.BloodUnitId} does not have enough remaining volume (required: {transfusionRequestFull.TransfusionVolume}, available: {bloodUnit.RemainingVolume}).");
                 }
 
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

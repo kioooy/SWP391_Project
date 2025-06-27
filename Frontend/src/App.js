@@ -37,6 +37,7 @@ import { RequireAuth } from "./components/RequireAuth";
 import BlogPage from "./pages/BlogPage";
 import UserProfileRecipient from "./pages/UserProfileRecipient";
 import RequireRecipient from "./components/RequireRecipient";
+import BlogDetail from "./pages/BlogDetail";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -93,6 +94,7 @@ const App = () => {
         <Route path="blood-search" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><BloodSearch /></RequireAuth>} />
         <Route path="search-distance" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><SearchByDistance/></RequireAuth>} />
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:postId" element={<BlogDetail />} />
       </Route>
 
       {/* Fallback Route */}

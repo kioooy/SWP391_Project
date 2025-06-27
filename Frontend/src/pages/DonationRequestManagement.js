@@ -88,9 +88,14 @@ const DonationRequestManagement = () => {
     const newStatus = actionType === 'Approve' ? 'Approved' : 'Rejected';
     const responsibleById = user.userId;
 
+    // Nếu duyệt và chưa có ghi chú, tự động thêm tên staff/admin
+    let autoNote = notes;
+    if (actionType === 'Approve' && !notes.trim()) {
+      autoNote = `Đã duyệt bởi ${user.fullName || user.username || 'Staff/Admin'}`;
+    }
     const payload = {
       Status: newStatus,
-      Notes: notes,
+      Notes: autoNote,
       ResponsibleById: responsibleById,
       MemberId: selectedRequest.memberId, // Cần memberId để backend xác thực
     };
@@ -108,7 +113,7 @@ const DonationRequestManagement = () => {
       setRequests(
         requests.map((req) =>
           req.donationId === selectedRequest.donationId
-            ? { ...req, status: newStatus, notes: notes, responsibleById: responsibleById }
+            ? { ...req, status: newStatus, notes: autoNote, responsibleById: responsibleById }
             : req
         )
       );
@@ -195,14 +200,8 @@ const DonationRequestManagement = () => {
     }
   };
 
-  // Sắp xếp các yêu cầu mới nhất lên đầu
-  const sortedRequests = [...requests].sort((a, b) => {
-    // Ưu tiên theo requestDate mới nhất, nếu không có thì theo donationId giảm dần
-    if (a.requestDate && b.requestDate) {
-      return new Date(b.requestDate) - new Date(a.requestDate);
-    }
-    return (b.donationId || 0) - (a.donationId || 0);
-  });
+  // Sắp xếp các yêu cầu theo ID mới nhất lên đầu
+  const sortedRequests = [...requests].sort((a, b) => (b.donationId || 0) - (a.donationId || 0));
 
   const filteredRequests = sortedRequests.filter(
     (req) => statusFilter === 'All' || req.status === statusFilter
@@ -328,18 +327,20 @@ const DonationRequestManagement = () => {
         <DialogContent>
           <DialogContentText>
             Bạn có chắc chắn muốn {actionType === 'Approve' ? 'duyệt' : 'từ chối'} yêu cầu hiến máu
-            này không? Vui lòng thêm ghi chú (nếu cần).
+            này không?{actionType === 'Reject' ? ' Vui lòng thêm ghi chú (nếu cần).' : ''}
           </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Ghi chú"
-            type="text"
-            fullWidth
-            variant="standard"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
+          {actionType === 'Reject' && (
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Ghi chú"
+              type="text"
+              fullWidth
+              variant="standard"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Hủy</Button>

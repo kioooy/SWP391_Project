@@ -376,6 +376,48 @@ const BookingPage = () => {
     return null; // Không có lỗi
   };
 
+  // Thêm hàm tổng hợp PatientCondition từ formData
+  function buildPatientCondition(formData) {
+    let result = [];
+    // 1. Hiến máu chưa
+    if (formData['1.1']) result.push('Đã từng hiến máu');
+    if (formData['1.2']) result.push('Chưa từng hiến máu');
+    // 2. Bệnh lý
+    if (formData['2.1']) result.push('Có bệnh lý' + (formData['2.1_detail'] ? ` (${formData['2.1_detail']})` : ''));
+    if (formData['2.2']) result.push('Không có bệnh lý');
+    // 3. Bệnh truyền nhiễm
+    if (formData['3.1']) result.push('Từng mắc bệnh truyền nhiễm');
+    if (formData['3.2']) result.push('Không mắc bệnh truyền nhiễm');
+    if (formData['3.3']) result.push('Bệnh khác' + (formData['3.3_detail'] ? ` (${formData['3.3_detail']})` : ''));
+    // 4. 12 tháng gần đây
+    if (formData['4.1']) result.push('Có truyền máu/tiêm chích');
+    if (formData['4.2']) result.push('Có phẫu thuật');
+    if (formData['4.3']) result.push('Khác' + (formData['4.3_detail'] ? ` (${formData['4.3_detail']})` : ''));
+    if (formData['4.4']) result.push('Không');
+    // 5. 6 tháng gần đây
+    for (let i = 1; i <= 10; i++) {
+      if (formData[`5.${i}`]) result.push(`5.${i}`);
+    }
+    if (formData['5.11']) result.push('Không (6 tháng gần đây)');
+    // 6. 1 tháng gần đây
+    if (formData['6.1']) result.push('Khỏi bệnh sau viêm nhiễm');
+    if (formData['6.2']) result.push('Đi vùng dịch');
+    if (formData['6.3']) result.push('Không (1 tháng gần đây)');
+    // 7. 14 ngày gần đây
+    if (formData['7.1']) result.push('Bị cúm/cảm/sốt/đau họng');
+    if (formData['7.2']) result.push('Không (14 ngày gần đây)');
+    if (formData['7.3']) result.push('Khác (14 ngày gần đây)' + (formData['7.3_detail'] ? ` (${formData['7.3_detail']})` : ''));
+    // 8. 7 ngày gần đây
+    if (formData['8.1']) result.push('Dùng thuốc kháng sinh/kháng viêm');
+    if (formData['8.2']) result.push('Không (7 ngày gần đây)');
+    if (formData['8.3']) result.push('Khác (7 ngày gần đây)' + (formData['8.3_detail'] ? ` (${formData['8.3_detail']})` : ''));
+    // 9. Phụ nữ
+    if (formData['9.1']) result.push('Đang mang thai/nuôi con nhỏ');
+    if (formData['9.2']) result.push('Chấm dứt thai kỳ 12 tháng gần đây');
+    if (formData['9.3']) result.push('Không (phụ nữ)');
+    return result.join('; ');
+  }
+
   // Thêm hàm gọi API đăng ký hiến máu
   const handleRegisterDonation = async () => {
     try {
@@ -386,7 +428,7 @@ const BookingPage = () => {
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
       const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
       const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
-      const patientCondition = 'Khỏe mạnh'; // hoặc lấy từ form
+      const patientCondition = buildPatientCondition(formData); // tổng hợp từ form
       const requestDate = new Date().toISOString();
       const token = localStorage.getItem('token');
       if (!token) {

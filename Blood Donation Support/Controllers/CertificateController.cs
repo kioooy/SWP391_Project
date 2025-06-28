@@ -1,6 +1,4 @@
 using Blood_Donation_Support.Data;
-using Blood_Donation_Support.DTO;
-using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

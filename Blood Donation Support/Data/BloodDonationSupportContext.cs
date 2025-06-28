@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Blood_Donation_Support.Model;
 using Microsoft.EntityFrameworkCore;
 

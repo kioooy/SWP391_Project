@@ -308,6 +308,7 @@ namespace Blood_Donation_Support.Controllers
 
         //  Cancel donation request by id
         // PATCH: api/DonationRequest/{id}/cancel
+        /*
         [HttpPatch("{id}/cancel")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> CancelDonationRequest(int id)
@@ -339,5 +340,6 @@ namespace Blood_Donation_Support.Controllers
                 throw;  
             }
         }
+        */
     }
 }

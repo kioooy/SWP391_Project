@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Linq;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -20,6 +19,20 @@ namespace Blood_Donation_Support.Controllers
         {
             _context = context;
             _configuration = configuration;
+        }
+
+        // get donation request history by id (Member View)
+        // api/DonationRequest/{id}
+        [HttpGet("{memberId}/history")]
+        [Authorize(Roles = "Member")] 
+        public async Task<IActionResult> GetDonationRequestHistory(int memberId)
+        {
+            var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync( dr => dr.MemberId == memberId && dr.Status == "Completed" ); // Fetch the donation request by ID
+            if (donationRequest == null)
+            {
+                return NotFound(); // Return 404 if not found
+            }
+            return Ok(donationRequest);
         }
 
         // get donation request by id
@@ -49,13 +62,12 @@ namespace Blood_Donation_Support.Controllers
                 .Select(dr => new
                 {
                     dr.DonationId,
-                    MemberId = dr.MemberId,
-                    MemberName = dr.Member.User.FullName,
+                    dr.MemberId,
+                    dr.Member.User.FullName,
                     dr.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
                     dr.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
-
                     dr.PeriodId,
-                    PeriodName = dr.Period.PeriodName,
+                    dr.Period.PeriodName,
                     dr.ComponentId,
                     dr.PreferredDonationDate,
                     dr.ResponsibleById,
@@ -64,9 +76,6 @@ namespace Blood_Donation_Support.Controllers
                     dr.Status,
                     dr.RequestDate,
                     dr.ApprovalDate
-
-                                 // Approval Date (date approved) 
-
                 })
                 .ToListAsync();
 
@@ -103,7 +112,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 return BadRequest("Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.");
             }
-
+            // Add new donation request
             var donationRequest = new DonationRequest
             {
                 MemberId = member.UserId,                            // Member Id ( UserId of role the member )
@@ -114,7 +123,7 @@ namespace Blood_Donation_Support.Controllers
                 RequestDate = DateTime.Now,                          // Request Date (current date)
                 ApprovalDate = null,                                 // Approval Date (default null)
                 DonationVolume = model.DonationVolume,               // Donation Volume
-                Status = "Pending",                                  // Status (default "Pending")
+                Status = "Approved",                                 // Status (default "Approved")
                 Notes = model.Notes,                                 // Notes 
                 PatientCondition = model.PatientCondition            // Patient Condition
             };
@@ -197,17 +206,63 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> CompletedDonationRequestStatus(int id, [FromBody] CompletedDonationRequest model)
         {
-            // Logic giống hủy: kiểm tra tồn tại DonationId, chỉ cho phép hoàn thành khi status là Pending hoặc Approved
-            var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync(dr => dr.DonationId == id);
-            if (donationRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}.");
-            if (donationRequest.Status != "Pending" && donationRequest.Status != "Approved")
-                return BadRequest("Chỉ có thể hoàn thành yêu cầu ở trạng thái chờ duyệt hoặc đã duyệt.");
+            var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id && u.Status == "Approved");
+            if (existingRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
 
-            donationRequest.Status = "Completed";
-            _context.Entry(donationRequest).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Donation request marked as completed." });
+            var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
+            if (member == null)
+                return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
+
+            // Update the status Donation request 
+            existingRequest.Status = model.Status;
+            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
+
+            // Update member's data 
+            member.LastDonationDate = DateOnly.FromDateTime(DateTime.Now); // Update the member's last donation date
+            member.DonationCount = (member.DonationCount ?? 0) + 1;        // Increment the donation count (+1)
+            _context.Entry(member).State = EntityState.Modified;           // Mark the member entity as modified
+
+            // Add Blood Unit
+            // Calculate the expiry date
+            var shelfLifeDays = await _context.BloodComponents
+                .Where(c => c.ComponentId == existingRequest.ComponentId)
+                .Select(c => c.ShelfLifeDays)
+                .FirstOrDefaultAsync();
+            if (shelfLifeDays <= 0)
+                return BadRequest("Invalid shelf life for the blood component."); // Return 400 Bad Request if shelf life is invalid
+
+            var bloodUnit = new BloodUnit
+            {
+                BloodTypeId = member.BloodTypeId ?? 0,                  // Blood Type Id from member
+                ComponentId = existingRequest.ComponentId,              // Component Id from existing request
+                AddDate = DateOnly.FromDateTime(DateTime.Now),          // Add Date (current date)
+                ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)), // Expiry Date (current date + shelf life days)
+                Volume = existingRequest.DonationVolume ?? 0,           // Volume from existing request
+                RemainingVolume = existingRequest.DonationVolume ?? 0,  // Remaining Volume (initially equals Volume)
+                BloodStatus = "Available",                              // Blood Status (default "Available")
+                MemberId = model.MemberId                               // Member Id  
+            };
+
+            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            try
+            {
+                await _context.AddAsync(bloodUnit); // Add the new blood unit to the context
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
+
+                return StatusCode(201, new // Return 201 Created with success messages
+                {
+                    memberMessage = "Member updatd successfully.",
+                    donationRequestMessage = "Donation request created successfully.",
+                    bloodUnitMessage = "Blood unit added successfully.",
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction 
+                throw;
+            }
         }
 
         // get upcoming donation requests for member
@@ -225,7 +280,8 @@ namespace Blood_Donation_Support.Controllers
                 // member chỉ được xem lịch của chính mình
                 memberId = currentUserId;
             }
-
+            
+            // Kiểm tra member có lịch hẹn sắp tới chưa
             var today = DateOnly.FromDateTime(DateTime.Today);
 
             IQueryable<DonationRequest> query = _context.DonationRequests
@@ -250,7 +306,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.MemberId,
                     dr.PreferredDonationDate,
                     dr.Status,
-                    PeriodId = dr.Period.PeriodId,
+                    dr.Period.PeriodId,
                     dr.Period.PeriodName,
                     dr.Period.Location,
                     dr.Period.PeriodDateFrom,
@@ -265,58 +321,23 @@ namespace Blood_Donation_Support.Controllers
             return Ok(list);
         }
 
-        // cancel donation request by id
+        // Cancel donation request by id
         // PATCH: api/DonationRequest/{id}/cancel
         [HttpPatch("{id}/cancel")]
-        [Authorize(Roles = "Member,Staff,Admin")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> CancelDonationRequest(int id)
         {
             // Determine caller's role and id
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
-            // Get the donation request
-            var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync(dr => dr.DonationId == id);
-            if (donationRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}.");
-
-            // Check if the user has permission to cancel this request
-            if (role == "Member" && donationRequest.MemberId != currentUserId)
-                return Forbid();
-
-            // Check if the request can be cancelled
-            if (donationRequest.Status != "Pending" && donationRequest.Status != "Approved")
-                return BadRequest("Chỉ có thể hủy lịch hẹn ở trạng thái chờ duyệt hoặc đã duyệt.");
-
-            // Update the request status to Cancelled
-            donationRequest.Status = "Cancelled";
-            donationRequest.Notes = "Đã hủy bởi người dùng";
-
-            var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return Ok(new { message = "Hủy lịch hẹn thành công." });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-        }
-
-        //  Cancel donation request by id
-        // PATCH: api/DonationRequest/{id}/cancel
-        [HttpPatch("{id}/cancel")]
-        [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> CancelDonationRequest(int id)
-        {
             var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-            
+
             existingRequest.Status = "Cancelled"; // Update the status to "Cancelled"
+            existingRequest.Notes = "Đã hủy bởi người dùng";
+
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
             var currentQuantity = await _context.BloodDonationPeriods
@@ -327,7 +348,7 @@ namespace Blood_Donation_Support.Controllers
             _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
-            try 
+            try
             {
                 await _context.SaveChangesAsync();  // Save changes to the database
                 await transaction.CommitAsync();    // Commit the transaction
@@ -336,7 +357,7 @@ namespace Blood_Donation_Support.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 await transaction.RollbackAsync(); // Rollback the transaction 
-                throw;  
+                throw;
             }
         }
     }

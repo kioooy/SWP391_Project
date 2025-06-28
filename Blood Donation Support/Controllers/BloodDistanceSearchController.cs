@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Blood_Donation_Support.Model;
 using NetTopologySuite.Geometries;
 using Blood_Donation_Support.Data;
-using Microsoft.Extensions.Logging;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -21,13 +19,8 @@ namespace Blood_Donation_Support.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Tìm kiếm người hiến máu theo khoảng cách (Donor)
-        /// </summary>
-        /// <param name="latitude">Vĩ độ (lat)</param>
-        /// <param name="longitude">Kinh độ (lng)</param>
-        /// <param name="radius">Bán kính (mét)</param>
-        /// <returns>Danh sách member là donor trong bán kính</returns>
+        // Tìm kiếm người hiến máu theo khoảng cách (Donor)
+        // GET: api/BloodDistanceSearch/donors-nearby
         [HttpGet("donors-nearby")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetNearbyDonors([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radius)
@@ -41,11 +34,11 @@ namespace Blood_Donation_Support.Controllers
                 .Include(m => m.BloodType)
                 .Select(m => new {
                     m.UserId,
-                    FullName = m.User.FullName,
+                    m.User.FullName,
                     Phone = m.User.PhoneNumber,
-                    Email = m.User.Email,
+                    m.User.Email,
                     BloodType = m.BloodType.BloodTypeName,
-                    Address = m.User.Address,
+                    m.User.Address,
                     Latitude = m.Location.Y,
                     Longitude = m.Location.X,
                     Distance = m.Location.Distance(center),
@@ -57,13 +50,8 @@ namespace Blood_Donation_Support.Controllers
             return Ok(donors);
         }
 
-        /// <summary>
-        /// Tìm kiếm người cần máu theo khoảng cách (Recipient)
-        /// </summary>
-        /// <param name="latitude">Vĩ độ (lat)</param>
-        /// <param name="longitude">Kinh độ (lng)</param>
-        /// <param name="radius">Bán kính (mét)</param>
-        /// <returns>Danh sách member là recipient trong bán kính</returns>
+        // Tìm kiếm người cần máu theo khoảng cách (Recipient)
+        // GET: api/BloodDistanceSearch/recipients-nearby
         [HttpGet("recipients-nearby")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetNearbyRecipients([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radius)
@@ -76,11 +64,11 @@ namespace Blood_Donation_Support.Controllers
                 .Include(m => m.BloodType)
                 .Select(m => new {
                     m.UserId,
-                    FullName = m.User.FullName,
+                    m.User.FullName,
                     Phone = m.User.PhoneNumber,
-                    Email = m.User.Email,
+                    m.User.Email,
                     BloodType = m.BloodType.BloodTypeName,
-                    Address = m.User.Address,
+                    m.User.Address,
                     Latitude = m.Location.Y,
                     Longitude = m.Location.X,
                     Distance = m.Location.Distance(center),
@@ -92,9 +80,8 @@ namespace Blood_Donation_Support.Controllers
             return Ok(recipients);
         }
 
-        /// <summary>
-        /// Lấy danh sách bệnh viện với tọa độ.
-        /// </summary>
+        // Lấy danh sách bệnh viện với tọa độ.
+        // GET: api/BloodDistanceSearch/hospitals
         [HttpGet("hospitals")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetHospitals()

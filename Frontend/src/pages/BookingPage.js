@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
@@ -21,18 +21,18 @@ import {
   FormControlLabel,
   Checkbox,
   TextField,
+<<<<<<< Updated upstream
+  Divider
+=======
   Divider,
-  Alert
+  Alert,
+  Snackbar
+>>>>>>> Stashed changes
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import dayjs from 'dayjs';
-import { useNavigate } from 'react-router-dom';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -40,12 +40,13 @@ import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+<<<<<<< Updated upstream
+=======
 import WarningIcon from '@mui/icons-material/Warning';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import Snackbar from '@mui/material/Snackbar';
-import MuiAlert from '@mui/material/Alert';
-import BookingTransfusion from './BookingTransfusion';
+import { Alert as MuiAlert } from '@mui/material';
+>>>>>>> Stashed changes
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   backgroundColor: '#f5f5f5',
@@ -177,14 +178,15 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 const BookingPage = () => {
-  const navigate = useNavigate();
-  const userId = useSelector(state => state.auth.user?.userId);
   const [tabValue, setTabValue] = useState(0);
-  const [donationDate, setDonationDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(dayjs().add(1, 'day'));
   const [selectedCity, setSelectedCity] = useState('Hồ Chí Minh');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('07:00 - 11:00');
+  const [currentWeek, setCurrentWeek] = useState(dayjs().startOf('week'));
   const [timeLocationCompleted, setTimeLocationCompleted] = useState(false);
+<<<<<<< Updated upstream
+=======
   const [openSummary, setOpenSummary] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [periods, setPeriods] = useState([]);
@@ -196,7 +198,12 @@ const BookingPage = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [donationVolume, setDonationVolume] = useState(350);
   const [userWeight, setUserWeight] = useState(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
+>>>>>>> Stashed changes
 
   // Form states
   const [formData, setFormData] = useState({
@@ -263,18 +270,6 @@ const BookingPage = () => {
   };
 
   const handleContinue = () => {
-    // Validation cho ngày hiến máu
-    if (donationDate && selectedPeriod) {
-      const selectedDate = dayjs(donationDate);
-      const periodFrom = dayjs(selectedPeriod.periodDateFrom);
-      const periodTo = dayjs(selectedPeriod.periodDateTo);
-      
-      if (selectedDate.isBefore(periodFrom, 'day') || selectedDate.isAfter(periodTo, 'day')) {
-        alert('Ngày hiến máu phải nằm trong khoảng thời gian của đợt hiến máu!');
-        return;
-      }
-    }
-    
     setTimeLocationCompleted(true);
     setTabValue(1);
   };
@@ -283,6 +278,8 @@ const BookingPage = () => {
     setTimeLocationCompleted(false);
     setTabValue(0);
   };
+<<<<<<< Updated upstream
+=======
   const handleSubmit = () => {
     // Kiểm tra validation trước khi cho phép submit
     const validationResult = validateFormData();
@@ -376,71 +373,37 @@ const BookingPage = () => {
     return null; // Không có lỗi
   };
 
-  // Thêm hàm tổng hợp PatientCondition từ formData
-  function buildPatientCondition(formData) {
-    let result = [];
-    // 1. Hiến máu chưa
-    if (formData['1.1']) result.push('Đã từng hiến máu');
-    if (formData['1.2']) result.push('Chưa từng hiến máu');
-    // 2. Bệnh lý
-    if (formData['2.1']) result.push('Có bệnh lý' + (formData['2.1_detail'] ? ` (${formData['2.1_detail']})` : ''));
-    if (formData['2.2']) result.push('Không có bệnh lý');
-    // 3. Bệnh truyền nhiễm
-    if (formData['3.1']) result.push('Từng mắc bệnh truyền nhiễm');
-    if (formData['3.2']) result.push('Không mắc bệnh truyền nhiễm');
-    if (formData['3.3']) result.push('Bệnh khác' + (formData['3.3_detail'] ? ` (${formData['3.3_detail']})` : ''));
-    // 4. 12 tháng gần đây
-    if (formData['4.1']) result.push('Có truyền máu/tiêm chích');
-    if (formData['4.2']) result.push('Có phẫu thuật');
-    if (formData['4.3']) result.push('Khác' + (formData['4.3_detail'] ? ` (${formData['4.3_detail']})` : ''));
-    if (formData['4.4']) result.push('Không');
-    // 5. 6 tháng gần đây
-    for (let i = 1; i <= 10; i++) {
-      if (formData[`5.${i}`]) result.push(`5.${i}`);
-    }
-    if (formData['5.11']) result.push('Không (6 tháng gần đây)');
-    // 6. 1 tháng gần đây
-    if (formData['6.1']) result.push('Khỏi bệnh sau viêm nhiễm');
-    if (formData['6.2']) result.push('Đi vùng dịch');
-    if (formData['6.3']) result.push('Không (1 tháng gần đây)');
-    // 7. 14 ngày gần đây
-    if (formData['7.1']) result.push('Bị cúm/cảm/sốt/đau họng');
-    if (formData['7.2']) result.push('Không (14 ngày gần đây)');
-    if (formData['7.3']) result.push('Khác (14 ngày gần đây)' + (formData['7.3_detail'] ? ` (${formData['7.3_detail']})` : ''));
-    // 8. 7 ngày gần đây
-    if (formData['8.1']) result.push('Dùng thuốc kháng sinh/kháng viêm');
-    if (formData['8.2']) result.push('Không (7 ngày gần đây)');
-    if (formData['8.3']) result.push('Khác (7 ngày gần đây)' + (formData['8.3_detail'] ? ` (${formData['8.3_detail']})` : ''));
-    // 9. Phụ nữ
-    if (formData['9.1']) result.push('Đang mang thai/nuôi con nhỏ');
-    if (formData['9.2']) result.push('Chấm dứt thai kỳ 12 tháng gần đây');
-    if (formData['9.3']) result.push('Không (phụ nữ)');
-    return result.join('; ');
-  }
-
   // Thêm hàm gọi API đăng ký hiến máu
   const handleRegisterDonation = async () => {
     try {
       if (!userId) {
-        setSnackbar({ open: true, message: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!',
+          severity: 'error'
+        });
         return;
       }
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
-      const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
-      const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
-      const patientCondition = buildPatientCondition(formData); // tổng hợp từ form
+      const componentId = 1;
+      const responsibleById = 1;
+      const patientCondition = 'Khỏe mạnh';
       const requestDate = new Date().toISOString();
       const token = localStorage.getItem('token');
       if (!token) {
-        setSnackbar({ open: true, message: 'Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: 'Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!',
+          severity: 'error'
+        });
         return;
       }
       const payload = {
-        donationId: 0, // để backend tự sinh
+        donationId: 0,
         memberId: userId,
         periodId: periodId,
         componentId: componentId,
-        preferredDonationDate: donationDate ? dayjs(donationDate).format('YYYY-MM-DD') : null, // Sử dụng ngày đã chọn
+        preferredDonationDate: donationDate ? dayjs(donationDate).format('YYYY-MM-DD') : null,
         responsibleById: responsibleById,
         requestDate: requestDate,
         approvalDate: null,
@@ -455,23 +418,36 @@ const BookingPage = () => {
         },
       });
       if (response.status === 200) {
-        setSnackbar({ open: true, message: 'Đăng ký của bạn đã được gửi thành công!', severity: 'success' });
-        setTimeout(() => navigate('/'), 1500);
+        setSnackbar({
+          open: true,
+          message: 'Đăng ký của bạn đã được gửi thành công!',
+          severity: 'success'
+        });
+        navigate('/user-profile');
       } else {
-        setSnackbar({ open: true, message: 'Có lỗi xảy ra khi đăng ký!', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: 'Có lỗi xảy ra khi đăng ký!',
+          severity: 'error'
+        });
       }
     } catch (error) {
-      let msg = 'Lỗi kết nối server hoặc thiếu thông tin!';
-      if (error.response && error.response.data) {
-        if (typeof error.response.data === 'object' && error.response.data.message) {
-          msg = error.response.data.message;
-        } else if (typeof error.response.data === 'string') {
-          msg = error.response.data;
-        }
+      if (error.response?.data === "Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.") {
+        setSnackbar({
+          open: true,
+          message: error.response.data,
+          severity: 'warning'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau!',
+          severity: 'error'
+        });
       }
-      setSnackbar({ open: true, message: msg, severity: 'error' });
     }
   };
+>>>>>>> Stashed changes
 
   const handleCheckboxChange = (name) => (event) => {
     const isChecked = event.target.checked;
@@ -519,6 +495,7 @@ const BookingPage = () => {
         '8.3_detail': name === '8.3' ? prev['8.3_detail'] : '',
       }));
     }
+    // Handle multiple choice questions with "Không" logic
     else if (name.startsWith('4.')) {
       if (name === '4.4' && isChecked) {
         // If "Không" is selected, uncheck all others
@@ -627,410 +604,234 @@ const BookingPage = () => {
     'Nha Trang',
   ];
 
+  const locations = [
+    'Hiến máu - Trung Tâm Hiến Máu Nhân Đạo Tp.HCM',
+    'Hiến máu - 466 Nguyễn Thị Minh Khai',
+    'Hiến máu - Bệnh viện Chợ Rẫy',
+    'Hiến máu - Bệnh viện Bình Dân',
+  ];
+
   const timeSlots = [
     '07:00 - 11:00',
     '13:00 - 16:00',
   ];
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    axios.get('/api/BloodDonationPeriod', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
-      setPeriods(res.data);
-    })
-    .catch(() => {
-      setPeriods([]);
-      setSelectedPeriod(null);
-    });
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    axios.get('/api/Hospital', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
-      // Đảm bảo hospitals luôn là array
-      const data = res.data;
-      if (Array.isArray(data)) {
-        setHospitals(data);
-      } else if (data && typeof data === 'object') {
-        // Nếu API trả về object, chuyển thành array
-        setHospitals([data]);
-      } else {
-        setHospitals([]);
-      }
-    })
-    .catch(() => {
-      setHospitals([]);
-    });
-  }, []);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('selectedPeriodInfo');
-    if (stored) {
-      const info = JSON.parse(stored);
-      if (info.period) {
-        setSelectedPeriod(info.period);
-        setSelectedLocation(info.period.location);
-      }
-      if (info.fromDate) setFromDate(dayjs(info.fromDate));
-      if (info.toDate) setToDate(dayjs(info.toDate));
-      localStorage.removeItem('selectedPeriodInfo');
+  const getWeekDays = () => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(currentWeek.add(i, 'day'));
     }
-  }, []);
+    return days;
+  };
 
-  useEffect(() => {
-    if (selectedPeriod) {
-      const start = dayjs(selectedPeriod.periodDateFrom);
-      const end = dayjs(selectedPeriod.periodDateTo);
-      const dates = [];
-      let currentDate = start;
-      while (currentDate.isBefore(end) || currentDate.isSame(end)) {
-        dates.push(currentDate);
-        currentDate = currentDate.add(1, 'day');
-      }
-      setAvailableDates(dates);
-    } else {
-      setAvailableDates([]);
-    }
-    setDonationDate(null); // Reset ngày đã chọn khi đổi đợt
-  }, [selectedPeriod]);
+  const weekDays = getWeekDays();
+  const weekDayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.get('/api/User/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => {
-        console.log('User profile API response:', res.data); // log dữ liệu trả về
-        const userData = Array.isArray(res.data) ? res.data[0] : res.data;
-        if (userData && userData.weight) {
-          setUserWeight(userData.weight);
-        } else {
-          setUserWeight(null);
-        }
-      }).catch(err => {
-        setUserWeight(null);
-        console.error('Lỗi lấy thông tin cân nặng:', err);
-      });
-    } else {
-      setUserWeight(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (userWeight) {
-      if (userWeight <= 50) setDonationVolume(250);
-      else if (userWeight > 50 && userWeight <= 60) setDonationVolume(350);
-      else if (userWeight > 60) setDonationVolume(450);
-    } else {
-      setDonationVolume(350);
-    }
-  }, [userWeight]);
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
-          Đặt lịch hiến máu
-        </Typography>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
+        Đặt lịch hiến máu
+      </Typography>
 
-        <Grid container spacing={4}>
-          {/* Left Sidebar - Tabs */}
-          <Grid item xs={12} md={3}>
-            <StyledTabs
-              orientation="vertical"
-              value={tabValue}
-              onChange={handleTabChange}
-              variant="fullWidth"
-            >
-              <StyledTab
-                icon={timeLocationCompleted ? <CheckCircleIcon /> : <CalendarTodayIcon />}
-                label="Thời gian & địa điểm"
-                iconPosition="start"
-                className={timeLocationCompleted ? 'completed' : ''}
-                disabled={timeLocationCompleted}
-              />
-              <StyledTab
-                icon={<BloodtypeIcon />}
-                label="Phiếu đăng ký hiến máu"
-                iconPosition="start"
-              />
-            </StyledTabs>
-          </Grid>
+      <Grid container spacing={4}>
+        {/* Left Sidebar - Tabs */}
+        <Grid item xs={12} md={3}>
+          <StyledTabs
+            orientation="vertical"
+            value={tabValue}
+            onChange={handleTabChange}
+            variant="fullWidth"
+          >
+            <StyledTab
+              icon={timeLocationCompleted ? <CheckCircleIcon /> : <CalendarTodayIcon />}
+              label="Thời gian & địa điểm"
+              iconPosition="start"
+              className={timeLocationCompleted ? 'completed' : ''}
+              disabled={timeLocationCompleted}
+            />
+            <StyledTab
+              icon={<BloodtypeIcon />}
+              label="Phiếu đăng ký hiến máu"
+              iconPosition="start"
+            />
+          </StyledTabs>
+        </Grid>
 
-          {/* Right Content */}
-          <Grid item xs={12} md={9}>
-            <TabPanel value={tabValue} index={0}>
-              {/* Time & Location Tab Content */}
-              <Stack spacing={4}>
-                {/* Location Selection */}
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <LocationOnIcon sx={{ mr: 2, color: 'primary.main' }} />
-                      <Typography variant="h6" fontWeight="bold">
-                        Chọn đợt hiến máu
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ mb: 2, color: '#e53935', fontStyle: 'italic', display: 'flex', alignItems: 'center', fontWeight: 500 }}>
-                      <WarningIcon sx={{ fontSize: 20, mr: 1, color: '#e53935' }} />
-                      Vui lòng chọn ngày hiện tại để xem các đợt hiến máu phù hợp.
+        {/* Right Content */}
+        <Grid item xs={12} md={9}>
+          <TabPanel value={tabValue} index={0}>
+            {/* Time & Location Tab Content */}
+            <Stack spacing={4}>
+              {/* Date Selection */}
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <CalendarTodayIcon sx={{ mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h6" fontWeight="bold">
+                      Chọn ngày - 05/06/2025
                     </Typography>
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <DatePicker
-                          label="Từ ngày"
-                          value={fromDate}
-                          onChange={setFromDate}
-                          renderInput={(params) => <TextField {...params} size="small" fullWidth />}
-                          maxDate={toDate}
-                        />
-                        <DatePicker
-                          label="Đến ngày"
-                          value={toDate}
-                          onChange={setToDate}
-                          renderInput={(params) => <TextField {...params} size="small" fullWidth />}
-                          minDate={fromDate}
-                        />
+                    <Button size="small" sx={{ ml: 'auto' }}>
+                      Xem lịch
+                    </Button>
+                  </Box>
+
+                  <WeekCalendar elevation={0} sx={{ border: '1px solid #e0e0e0' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <IconButton onClick={() => setCurrentWeek(currentWeek.subtract(1, 'week'))}>
+                        <ChevronLeftIcon />
+                      </IconButton>
+                      <Box sx={{ display: 'flex', gap: 1, flex: 1, justifyContent: 'center' }}>
+                        {weekDays.map((day, index) => (
+                          <DayButton
+                            key={index}
+                            selected={day.isSame(selectedDate, 'day')}
+                            onClick={() => setSelectedDate(day)}
+                          >
+                            <Typography variant="caption" sx={{ mb: 0.5 }}>
+                              {weekDayLabels[index]}
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold">
+                              {day.format('D')}
+                            </Typography>
+                          </DayButton>
+                        ))}
                       </Box>
-                    </FormControl>
-                    <FormControl fullWidth>
-                      <InputLabel>Chọn đợt hiến máu</InputLabel>
-                      <Select
-                        value={selectedPeriod ? selectedPeriod.periodId : ''}
-                        onChange={handlePeriodChange}
-                        label="Chọn đợt hiến máu"
-                        MenuProps={{
-                          PaperProps: {
-                            style: {
-                              maxHeight: 300,
-                            },
-                          },
-                        }}
-                        disabled={!fromDate || !toDate}
-                      >
-                        {fromDate && toDate && periods
-                          .filter(period => {
-                            const from = dayjs(fromDate).startOf('day');
-                            const to = dayjs(toDate).endOf('day');
-                            const periodFrom = dayjs(period.periodDateFrom);
-                            const periodTo = dayjs(period.periodDateTo);
-                            return periodTo.isSameOrAfter(from) && periodFrom.isSameOrBefore(to);
-                          })
-                          .map((period) => (
-                            <MenuItem key={period.periodId} value={period.periodId}>
+                      <IconButton onClick={() => setCurrentWeek(currentWeek.add(1, 'week'))}>
+                        <ChevronRightIcon />
+                      </IconButton>
+                    </Box>
+                  </WeekCalendar>
+                </CardContent>
+              </Card>
+
+              {/* Location Selection */}
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <LocationOnIcon sx={{ mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h6" fontWeight="bold">
+                      Chọn địa điểm hiến máu
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>Tỉnh/Thành phố</InputLabel>
+                        <Select
+                          value={selectedCity}
+                          label="Tỉnh/Thành phố"
+                          onChange={(e) => setSelectedCity(e.target.value)}
+                        >
+                          {cities.map((city) => (
+                            <MenuItem key={city} value={city}>
+                              {city}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <FormControl fullWidth>
+                        <InputLabel>Địa điểm</InputLabel>
+                        <Select
+                          value={selectedLocation}
+                          label="Địa điểm"
+                          onChange={(e) => setSelectedLocation(e.target.value)}
+                        >
+                          {locations.map((location) => (
+                            <MenuItem key={location} value={location}>
                               <Box>
-                                <Typography variant="body1" fontWeight="bold">
-                                  {period.periodName}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {period.location}
+                                <Typography variant="body2" color="primary" fontWeight="bold">
+                                  {location}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  {dayjs(period.periodDateFrom).format('DD/MM/YYYY')} - {dayjs(period.periodDateTo).format('DD/MM/YYYY')}
+                                  106 Thiên Phước, Phường 9, Quận Tân Bình, TP.HCM
                                 </Typography>
                               </Box>
                             </MenuItem>
                           ))}
-                        {(!fromDate || !toDate) && (
-                          <MenuItem disabled>Vui lòng chọn khoảng ngày trước.</MenuItem>
-                        )}
-                        {fromDate && toDate && periods.length === 0 && (
-                          <MenuItem disabled>Không có đợt hiến máu nào đang diễn ra.</MenuItem>
-                        )}
-                      </Select>
-                    </FormControl>
-                  </CardContent>
-                </Card>
-
-                {/* Date and Hospital Selection */}
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <CalendarTodayIcon sx={{ mr: 2, color: 'primary.main' }} />
-                      <Typography variant="h6" fontWeight="bold">
-                        Chọn ngày hiến máu và địa điểm
-                      </Typography>
-                    </Box>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Vui lòng chọn ngày hiến máu và địa điểm bệnh viện phù hợp với lịch trình của bạn.
-                    </Typography>
-                    
-                    {selectedPeriod && (
-                      <Alert severity="info" sx={{ mb: 3 }}>
-                        <Typography variant="body2">
-                          <strong>Khoảng thời gian hiến máu:</strong> Từ {dayjs(selectedPeriod.periodDateFrom).format('DD/MM/YYYY')} đến {dayjs(selectedPeriod.periodDateTo).format('DD/MM/YYYY')}
-                        </Typography>
-                      </Alert>
-                    )}
-                    
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Ngày hiến máu</InputLabel>
-                          <Select
-                            value={donationDate ? dayjs(donationDate).format('DD/MM/YYYY') : ''}
-                            onChange={(e) => setDonationDate(dayjs(e.target.value, 'DD/MM/YYYY'))}
-                            label="Ngày hiến máu"
-                            disabled={!selectedPeriod}
-                          >
-                            {availableDates.map((date) => (
-                              <MenuItem key={date.toString()} value={date.format('DD/MM/YYYY')}>
-                                {date.format('DD/MM/YYYY')}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      
-                      <Grid item xs={12} md={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Chọn địa điểm hiến máu</InputLabel>
-                          <Select
-                            value={selectedHospital ? selectedHospital.hospitalId : ''}
-                            onChange={handleHospitalChange}
-                            label="Chọn địa điểm hiến máu"
-                            MenuProps={{
-                              PaperProps: {
-                                style: {
-                                  maxHeight: 300,
-                                },
-                              },
-                            }}
-                          >
-                            {Array.isArray(hospitals) && hospitals.map((hospital) => (
-                              <MenuItem key={hospital.hospitalId} value={hospital.hospitalId}>
-                                <Box>
-                                  <Typography variant="body1" fontWeight="bold">
-                                    {hospital.name}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {hospital.address}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    Điện thoại: {hospital.phone}
-                                  </Typography>
-                                </Box>
-                              </MenuItem>
-                            ))}
-                            {(!Array.isArray(hospitals) || hospitals.length === 0) && (
-                              <MenuItem disabled>Không có địa điểm hiến máu nào.</MenuItem>
-                            )}
-                          </Select>
-                        </FormControl>
-                      </Grid>
+                        </Select>
+                      </FormControl>
                     </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
 
-                    {selectedHospital && (
-                      <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="bold" color="primary.main" gutterBottom>
-                          Thông tin địa điểm đã chọn:
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Tên bệnh viện:</strong> {selectedHospital.name}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Địa chỉ:</strong> {selectedHospital.address}
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Điện thoại:</strong> {selectedHospital.phone}
-                        </Typography>
-                        {selectedHospital.email && (
-                          <Typography variant="body2">
-                            <strong>Email:</strong> {selectedHospital.email}
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
+              {/* Blood Type Information */}
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                    Nhóm máu cần hiến
+                  </Typography>
 
-                {/* Blood Type Information */}
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                      Nhóm máu cần hiến
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Các nhóm máu đang có nhu cầu hiến máu cao tại địa điểm này:
+                  </Typography>
+
+                  <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+                    {bloodTypes.map((blood) => (
+                      <BloodTypeChip
+                        key={blood.type}
+                        label={`Nhóm máu ${blood.type}`}
+                        sx={{
+                          backgroundColor: blood.color,
+                          color: 'white',
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              {/* Time Slot Selection */}
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <AccessTimeIcon sx={{ mr: 2, color: 'primary.main' }} />
+                    <Typography variant="h6" fontWeight="bold">
+                      Chọn khung giờ bạn sẽ đến hiến máu
                     </Typography>
+                  </Box>
 
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Các nhóm máu đang có nhu cầu hiến máu cao tại địa điểm này:
-                    </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Thời gian nhận hồ sơ
+                  </Typography>
 
-                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                      {bloodTypes.map((blood) => (
-                        <BloodTypeChip
-                          key={blood.type}
-                          label={`Nhóm máu ${blood.type}`}
-                          sx={{
-                            backgroundColor: blood.color,
-                            color: 'white',
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </CardContent>
-                </Card>
-
-                {/* Lượng máu muốn hiến */}
-                <Card>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                      <BloodtypeIcon sx={{ mr: 2, color: 'primary.main' }} />
-                      <Typography variant="h6" fontWeight="bold">
-                        Chọn lượng máu bạn muốn hiến
-                      </Typography>
-                    </Box>
-                    <FormControl fullWidth>
-                      <InputLabel>Lượng máu muốn hiến</InputLabel>
-                      <Select
-                        value={donationVolume}
-                        onChange={(e) => setDonationVolume(e.target.value)}
-                        label="Lượng máu muốn hiến"
+                  <Stack direction="row" spacing={2}>
+                    {timeSlots.map((slot) => (
+                      <TimeSlotButton
+                        key={slot}
+                        selected={selectedTimeSlot === slot}
+                        onClick={() => setSelectedTimeSlot(slot)}
                       >
-                        <MenuItem value={250}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                            <span>250 ml</span>
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                              {userWeight && userWeight <= 50 ? "(Khuyến nghị)" : ""}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value={350}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                            <span>350 ml</span>
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                              {userWeight && userWeight > 50 && userWeight <= 60 ? "(Khuyến nghị)" : ""}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                        <MenuItem value={450}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                            <span>450 ml</span>
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                              {userWeight && userWeight > 60 ? "(Khuyến nghị)" : ""}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                      </Select>
-                      {userWeight && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          Cân nặng hiện tại của bạn: {userWeight} kg
-                        </Typography>
-                      )}
-                      {userWeight === null && (
-                        <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-                          Không lấy được cân nặng từ hồ sơ. Vui lòng cập nhật cân nặng trong tài khoản để nhận khuyến nghị!
-                        </Typography>
-                      )}
-                    </FormControl>
-                  </CardContent>
-                </Card>
+                        {slot}
+                      </TimeSlotButton>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
 
+<<<<<<< Updated upstream
+              {/* Continue Button */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleContinue}
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Tiếp tục
+                </Button>
+              </Box>
+            </Stack>
+          </TabPanel>
+=======
                 {/* Time Slot Selection */}
                 {/*
                 <Card>
@@ -1041,9 +842,33 @@ const BookingPage = () => {
                         Chọn khung giờ bạn sẽ đến hiến máu
                       </Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Thời gian nhận hồ sơ
-                    </Typography>
+>>>>>>> Stashed changes
+
+          <TabPanel value={tabValue} index={1}>
+            {/* Blood Donation Form Tab Content */}
+            <Stack spacing={3}>
+              <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 3 }}>
+                Phiếu đăng ký hiến máu
+              </Typography>
+
+<<<<<<< Updated upstream
+              {/* Question 1 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>1. Anh/chị từng hiến máu chưa?</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['1.1']} onChange={handleCheckboxChange('1.1')} />}
+                      label="Có"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['1.2']} onChange={handleCheckboxChange('1.2')} />}
+                      label="Không"
+                    />
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
+=======
                     <Stack direction="row" spacing={2}>
                       {timeSlots.map((slot) => (
                         <TimeSlotButton
@@ -1058,58 +883,54 @@ const BookingPage = () => {
                   </CardContent>
                 </Card>
                 */}
+>>>>>>> Stashed changes
 
-                {/* Continue Button */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleContinue}
-                    disabled={!selectedPeriod || !donationDate || !selectedHospital}
-                    sx={{ px: 4, py: 1.5 }}
-                  >
-                    Tiếp tục
-                  </Button>
-                </Box>
-              </Stack>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={1}>
-              {/* Blood Donation Form Tab Content */}
-              <Stack spacing={3}>
-                <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 3 }}>
-                  Phiếu đăng ký hiến máu
-                </Typography>
-
-                {/* Hiển thị thông báo lỗi validation */}
-                {validationError && (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    <Typography variant="body1" fontWeight="bold">
-                      {validationError}
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      Vui lòng hoàn thành tất cả các câu hỏi trước khi tiếp tục.
-                    </Typography>
-                  </Alert>
-                )}
-
-                {/* Question 1 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>1. Anh/chị từng hiến máu chưa?</QuestionTitle>
-                    <FormGroup>
+              {/* Question 2 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>2. Hiện tại, anh/ chị có mắc bệnh lý nào không?</QuestionTitle>
+                  <FormGroup>
+                    <OptionContainer>
                       <StyledFormControlLabel
-                        control={<Checkbox checked={formData['1.1']} onChange={handleCheckboxChange('1.1')} />}
+                        control={<Checkbox checked={formData['2.1']} onChange={handleCheckboxChange('2.1')} />}
                         label="Có"
                       />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['1.2']} onChange={handleCheckboxChange('1.2')} />}
-                        label="Không"
+                      <TextField
+                        size="small"
+                        disabled={!formData['2.1']}
+                        value={formData['2.1_detail']}
+                        onChange={handleTextFieldChange('2.1_detail')}
+                        placeholder="Chi tiết bệnh lý"
                       />
-                    </FormGroup>
-                  </CardContent>
-                </QuestionCard>
+                    </OptionContainer>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['2.2']} onChange={handleCheckboxChange('2.2')} />}
+                      label="Không"
+                    />
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
 
+<<<<<<< Updated upstream
+              {/* Question 3 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>
+                    3. Trước đây, anh/chị có từng mắc một trong các bệnh: viêm gan siêu vi B, C, HIV, vảy nến,
+                    phì đại tiền liệt tuyến, sốc phản vệ, tai biến mạch máu não, nhồi máu cơ tim, lupus ban đỏ,
+                    động kinh, ung thư, hen, được cấy ghép mô tạng?
+                  </QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['3.1']} onChange={handleCheckboxChange('3.1')} />}
+                      label="Có"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['3.2']} onChange={handleCheckboxChange('3.2')} />}
+                      label="Không"
+                    />
+                    <OptionContainer>
+=======
                 {/* Question 2 */}
                 <QuestionCard>
                   <CardContent>
@@ -1124,35 +945,115 @@ const BookingPage = () => {
                           size="small"
                           disabled={!formData['2.1']}
                           value={formData['2.1_detail']}
-                          onChange={handleTextFieldChange('2.1_detail')}
+                          onChange={e => handleTextFieldChange('2.1_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
                           placeholder="Chi tiết bệnh lý"
                         />
                       </OptionContainer>
+>>>>>>> Stashed changes
                       <StyledFormControlLabel
-                        control={<Checkbox checked={formData['2.2']} onChange={handleCheckboxChange('2.2')} />}
-                        label="Không"
+                        control={<Checkbox checked={formData['3.3']} onChange={handleCheckboxChange('3.3')} />}
+                        label="Bệnh khác"
                       />
-                    </FormGroup>
-                  </CardContent>
-                </QuestionCard>
+                      <TextField
+                        size="small"
+                        disabled={!formData['3.3']}
+                        value={formData['3.3_detail']}
+                        onChange={handleTextFieldChange('3.3_detail')}
+                        placeholder="Chi tiết bệnh khác"
+                      />
+                    </OptionContainer>
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
 
-                {/* Question 3 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>
-                      3. Trước đây, anh/chị có từng mắc một trong các bệnh: viêm gan siêu vi B, C, HIV, vảy nến,
-                      phì đại tiền liệt tuyến, sốc phản vệ, tai biến mạch máu não, nhồi máu cơ tim, lupus ban đỏ,
-                      động kinh, ung thư, hen, được cấy ghép mô tạng?
-                    </QuestionTitle>
-                    <FormGroup>
+              {/* Question 4 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>4. Trong 12 tháng gần đây, anh/chị có:</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['4.1']} onChange={handleCheckboxChange('4.1')} />}
+                      label="Khỏi bệnh sau khi mắc một trong các bệnh: sốt rét, giang mai, lao, viêm não-màng não, uốn ván, phẫu thuật ngoại khoa?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['4.2']} onChange={handleCheckboxChange('4.2')} />}
+                      label="Được truyền máu hoặc các chế phẩm máu?"
+                    />
+                    <OptionContainer>
                       <StyledFormControlLabel
-                        control={<Checkbox checked={formData['3.1']} onChange={handleCheckboxChange('3.1')} />}
-                        label="Có"
+                        control={<Checkbox checked={formData['4.3']} onChange={handleCheckboxChange('4.3')} />}
+                        label="Tiêm Vacxin?"
                       />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['3.2']} onChange={handleCheckboxChange('3.2')} />}
-                        label="Không"
+                      <TextField
+                        size="small"
+                        disabled={!formData['4.3']}
+                        value={formData['4.3_detail']}
+                        onChange={handleTextFieldChange('4.3_detail')}
+                        placeholder="Loại vacxin"
                       />
+<<<<<<< Updated upstream
+                    </OptionContainer>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['4.4']} onChange={handleCheckboxChange('4.4')} />}
+                      label="Không"
+                    />
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
+
+              {/* Question 5 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>5. Trong 06 tháng gần đây, anh/chị có:</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.1']} onChange={handleCheckboxChange('5.1')} />}
+                      label="Khỏi bệnh sau khi mắc một trong các bệnh: thương hàn, nhiễm trùng máu, bị rắn cắn, viêm tắc động mạch, viêm tắc tĩnh mạch, viêm tụy, viêm tủy xương?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.2']} onChange={handleCheckboxChange('5.2')} />}
+                      label="Sút cân nhanh không rõ nguyên nhân?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.3']} onChange={handleCheckboxChange('5.3')} />}
+                      label="Nổi hạch kéo dài?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.4']} onChange={handleCheckboxChange('5.4')} />}
+                      label="Thực hiện thủ thuật y tế xâm lấn (chữa răng, châm cứu, lăn kim, nội soi,…)?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.5']} onChange={handleCheckboxChange('5.5')} />}
+                      label="Xăm, xỏ lỗ tai, lỗ mũi hoặc các vị trí khác trên cơ thể?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.6']} onChange={handleCheckboxChange('5.6')} />}
+                      label="Sử dụng ma túy?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.7']} onChange={handleCheckboxChange('5.7')} />}
+                      label="Tiếp xúc trực tiếp với máu, dịch tiết của người khác hoặc bị thương bởi kim tiêm?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.8']} onChange={handleCheckboxChange('5.8')} />}
+                      label="Sinh sống chung với người nhiễm bệnh Viêm gan siêu vi B?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.9']} onChange={handleCheckboxChange('5.9')} />}
+                      label="Quan hệ tình dục với người nhiễm viêm gan siêu vi B, C, HIV, giang mai hoặc người có nguy cơ nhiễm viêm gan siêu vi B, C, HIV, giang mai?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.10']} onChange={handleCheckboxChange('5.10')} />}
+                      label="Quan hệ tình dục với người cùng giới?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['5.11']} onChange={handleCheckboxChange('5.11')} />}
+                      label="Không"
+                    />
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
+=======
                       <OptionContainer>
                         <StyledFormControlLabel
                           control={<Checkbox checked={formData['3.3']} onChange={handleCheckboxChange('3.3')} />}
@@ -1162,7 +1063,7 @@ const BookingPage = () => {
                           size="small"
                           disabled={!formData['3.3']}
                           value={formData['3.3_detail']}
-                          onChange={handleTextFieldChange('3.3_detail')}
+                          onChange={e => handleTextFieldChange('3.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
                           placeholder="Chi tiết bệnh khác"
                         />
                       </OptionContainer>
@@ -1192,8 +1093,8 @@ const BookingPage = () => {
                           size="small"
                           disabled={!formData['4.3']}
                           value={formData['4.3_detail']}
-                          onChange={handleTextFieldChange('4.3_detail')}
-                          placeholder="Loại vacxin"
+                          onChange={e => handleTextFieldChange('4.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết khác"
                         />
                       </OptionContainer>
                       <StyledFormControlLabel
@@ -1203,94 +1104,111 @@ const BookingPage = () => {
                     </FormGroup>
                   </CardContent>
                 </QuestionCard>
+>>>>>>> Stashed changes
 
-                {/* Question 5 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>5. Trong 06 tháng gần đây, anh/chị có:</QuestionTitle>
-                    <FormGroup>
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.1']} onChange={handleCheckboxChange('5.1')} />}
-                        label="Khỏi bệnh sau khi mắc một trong các bệnh: thương hàn, nhiễm trùng máu, bị rắn cắn, viêm tắc động mạch, viêm tắc tĩnh mạch, viêm tủy, viêm tủy xương?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.2']} onChange={handleCheckboxChange('5.2')} />}
-                        label="Sút cân nhanh không rõ nguyên nhân?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.3']} onChange={handleCheckboxChange('5.3')} />}
-                        label="Nổi hạch kéo dài?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.4']} onChange={handleCheckboxChange('5.4')} />}
-                        label="Thực hiện thủ thuật y tế xâm lấn (chữa răng, châm cứu, lăn kim, nội soi,…)?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.5']} onChange={handleCheckboxChange('5.5')} />}
-                        label="Xăm, xỏ lỗ tai, lỗ mũi hoặc các vị trí khác trên cơ thể?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.6']} onChange={handleCheckboxChange('5.6')} />}
-                        label="Sử dụng ma túy?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.7']} onChange={handleCheckboxChange('5.7')} />}
-                        label="Tiếp xúc trực tiếp với máu, dịch tiết của người khác hoặc bị thương bởi kim tiêm?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.8']} onChange={handleCheckboxChange('5.8')} />}
-                        label="Sinh sống chung với người nhiễm bệnh Viêm gan siêu vi B?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.9']} onChange={handleCheckboxChange('5.9')} />}
-                        label="Quan hệ tình dục với người nhiễm viêm gan siêu vi B, C, HIV, giang mai hoặc người có nguy cơ nhiễm viêm gan siêu vi B, C, HIV, giang mai?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.10']} onChange={handleCheckboxChange('5.10')} />}
-                        label="Quan hệ tình dục với người cùng giới?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['5.11']} onChange={handleCheckboxChange('5.11')} />}
-                        label="Không"
-                      />
-                    </FormGroup>
-                  </CardContent>
-                </QuestionCard>
+              {/* Question 6 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>6. Trong 01 tháng gần đây, anh/chị có:</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['6.1']} onChange={handleCheckboxChange('6.1')} />}
+                      label="Khỏi bệnh sau khi mắc bệnh viêm đường tiết niệu, viêm da nhiễm trùng, viêm phế quản, viêm phổi, sởi, ho gà, quai bị, sốt xuất huyết, kiết lỵ, tả, Rubella?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['6.2']} onChange={handleCheckboxChange('6.2')} />}
+                      label="Đi vào vùng có dịch bệnh lưu hành (sốt rét, sốt xuất huyết, Zika,…)?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['6.3']} onChange={handleCheckboxChange('6.3')} />}
+                      label="Không"
+                    />
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
 
-                {/* Question 6 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>6. Trong 01 tháng gần đây, anh/chị có:</QuestionTitle>
-                    <FormGroup>
+              {/* Question 7 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>7. Trong 14 ngày gần đây, anh/chị có:</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['7.1']} onChange={handleCheckboxChange('7.1')} />}
+                      label="Bị cúm, cảm lạnh, ho, nhức đầu, sốt, đau họng?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['7.2']} onChange={handleCheckboxChange('7.2')} />}
+                      label="Không"
+                    />
+                    <OptionContainer>
                       <StyledFormControlLabel
-                        control={<Checkbox checked={formData['6.1']} onChange={handleCheckboxChange('6.1')} />}
-                        label="Khỏi bệnh sau khi mắc bệnh viêm đường tiết niệu, viêm da nhiễm trùng, viêm phế quản, viêm phổi, sởi, ho gà, quai bị, sốt xuất huyết, kiết lỵ, tả, Rubella?"
+                        control={<Checkbox checked={formData['7.3']} onChange={handleCheckboxChange('7.3')} />}
+                        label="Khác (cụ thể)"
                       />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['6.2']} onChange={handleCheckboxChange('6.2')} />}
-                        label="Đi vào vùng có dịch bệnh lưu hành (sốt rét, sốt xuất huyết, Zika,…)?"
+                      <TextField
+                        size="small"
+                        disabled={!formData['7.3']}
+                        value={formData['7.3_detail']}
+                        onChange={handleTextFieldChange('7.3_detail')}
+                        placeholder="Chi tiết"
                       />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['6.3']} onChange={handleCheckboxChange('6.3')} />}
-                        label="Không"
-                      />
-                    </FormGroup>
-                  </CardContent>
-                </QuestionCard>
+                    </OptionContainer>
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
 
-                {/* Question 7 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>7. Trong 14 ngày gần đây, anh/chị có:</QuestionTitle>
-                    <FormGroup>
+              {/* Question 8 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>8. Trong 07 ngày gần đây, anh/chị có:</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['8.1']} onChange={handleCheckboxChange('8.1')} />}
+                      label="Dùng thuốc kháng sinh, kháng viêm, Aspirin, Corticoid?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['8.2']} onChange={handleCheckboxChange('8.2')} />}
+                      label="Không"
+                    />
+                    <OptionContainer>
                       <StyledFormControlLabel
-                        control={<Checkbox checked={formData['7.1']} onChange={handleCheckboxChange('7.1')} />}
-                        label="Bị cúm, cảm lạnh, ho, nhức đầu, sốt, đau họng?"
+                        control={<Checkbox checked={formData['8.3']} onChange={handleCheckboxChange('8.3')} />}
+                        label="Khác (cụ thể)"
                       />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['7.2']} onChange={handleCheckboxChange('7.2')} />}
-                        label="Không"
+                      <TextField
+                        size="small"
+                        disabled={!formData['8.3']}
+                        value={formData['8.3_detail']}
+                        onChange={handleTextFieldChange('8.3_detail')}
+                        placeholder="Chi tiết"
                       />
+<<<<<<< Updated upstream
+                    </OptionContainer>
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
+
+              {/* Question 9 */}
+              <QuestionCard>
+                <CardContent>
+                  <QuestionTitle>9. Câu hỏi dành cho phụ nữ:</QuestionTitle>
+                  <FormGroup>
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['9.1']} onChange={handleCheckboxChange('9.1')} />}
+                      label="Hiện chị đang mang thai hoặc nuôi con dưới 12 tháng tuổi?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['9.2']} onChange={handleCheckboxChange('9.2')} />}
+                      label="Chấm dứt thai kỳ trong 12 tháng gần đây (sảy thai, phá thai, thai ngoài tử cung)?"
+                    />
+                    <StyledFormControlLabel
+                      control={<Checkbox checked={formData['9.3']} onChange={handleCheckboxChange('9.3')} />}
+                      label="Không"
+                    />
+                  </FormGroup>
+                </CardContent>
+              </QuestionCard>
+=======
                       <OptionContainer>
                         <StyledFormControlLabel
                           control={<Checkbox checked={formData['7.3']} onChange={handleCheckboxChange('7.3')} />}
@@ -1300,8 +1218,8 @@ const BookingPage = () => {
                           size="small"
                           disabled={!formData['7.3']}
                           value={formData['7.3_detail']}
-                          onChange={handleTextFieldChange('7.3_detail')}
-                          placeholder="Chi tiết"
+                          onChange={e => handleTextFieldChange('7.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết khác"
                         />
                       </OptionContainer>
                     </FormGroup>
@@ -1330,59 +1248,40 @@ const BookingPage = () => {
                           size="small"
                           disabled={!formData['8.3']}
                           value={formData['8.3_detail']}
-                          onChange={handleTextFieldChange('8.3_detail')}
-                          placeholder="Chi tiết"
+                          onChange={e => handleTextFieldChange('8.3_detail')({ target: { value: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') } })}
+                          placeholder="Chi tiết khác"
                         />
                       </OptionContainer>
                     </FormGroup>
                   </CardContent>
                 </QuestionCard>
+>>>>>>> Stashed changes
 
-                {/* Question 9 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>9. Câu hỏi dành cho phụ nữ:</QuestionTitle>
-                    <FormGroup>
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['9.1']} onChange={handleCheckboxChange('9.1')} />}
-                        label="Hiện chị đang mang thai hoặc nuôi con dưới 12 tháng tuổi?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['9.2']} onChange={handleCheckboxChange('9.2')} />}
-                        label="Chấm dứt thai kỳ trong 12 tháng gần đây (sảy thai, phá thai, thai ngoài tử cung)?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['9.3']} onChange={handleCheckboxChange('9.3')} />}
-                        label="Không"
-                      />
-                    </FormGroup>
-                  </CardContent>
-                </QuestionCard>
-
-                {/* Submit Button */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    onClick={handleBackToFirstTab}
-                    sx={{ px: 4, py: 1.5 }}
-                  >
-                    Quay lại
-                  </Button>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    sx={{ px: 4, py: 1.5 }}
-                    onClick={handleSubmit}
-                  >
-                    Hoàn thành đăng ký
-                  </Button>
-
-                </Box>
-              </Stack>
-            </TabPanel>
-          </Grid>
+              {/* Submit Button */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={handleBackToFirstTab}
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Quay lại
+                </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Hoàn thành đăng ký
+                </Button>
+              </Box>
+            </Stack>
+          </TabPanel>
         </Grid>
+<<<<<<< Updated upstream
+      </Grid>
+    </Container>
+=======
       </Container>
       <Dialog open={openSummary} onClose={() => setOpenSummary(false)} maxWidth="md" fullWidth>
         <DialogTitle fontWeight="bold" color="primary.main">
@@ -1553,12 +1452,23 @@ const BookingPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <MuiAlert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MuiAlert
+          elevation={6}
+          variant="filled"
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+        >
           {snackbar.message}
         </MuiAlert>
       </Snackbar>
     </LocalizationProvider>
+>>>>>>> Stashed changes
   );
 };
 

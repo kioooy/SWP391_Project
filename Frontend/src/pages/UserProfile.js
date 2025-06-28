@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectUser, selectIsAuthenticated, updateUserLocation, logout, setAccountType } from '../features/auth/authSlice';
+import { selectUser, selectIsAuthenticated, updateUserLocation } from '../features/auth/authSlice';
 import {
   Container,
   Typography,
@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { logout } from '../features/auth/authSlice';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -74,13 +75,13 @@ const UserProfile = () => {
   const { user, token: authToken } = useSelector((state) => state.auth);
   const userId = user?.userId;
 
+  const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState(null);
-  const [tabValue, setTabValue] = useState(0);
   const [formData, setFormData] = useState({
     fullName: '',
     citizenNumber: '',
@@ -106,11 +107,9 @@ const UserProfile = () => {
     severity: 'success'
   });
 
+
   // State cho lịch hẹn sắp tới
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
-
-  // State cho lịch sử hiến máu (chỉ những lịch đã hoàn thành)
-  const [completedDonationHistory, setCompletedDonationHistory] = useState([]);
 
   // State cho lỗi form
   const [formErrors, setFormErrors] = useState({});
@@ -118,10 +117,8 @@ const UserProfile = () => {
   // State cho dữ liệu chỉnh sửa trong dialog
   const [editFormData, setEditFormData] = useState({});
 
-  // Lấy loại tài khoản từ nhiều nguồn
-  const isDonor = user?.isDonor || user?.member?.isDonor || formData?.isDonor;
-  const isRecipient = user?.isRecipient || user?.member?.isRecipient || formData?.isRecipient;
-  console.log('DEBUG loại tài khoản:', { isDonor, isRecipient, user, formData });
+  // State cho lịch sử hiến máu
+  const [donationHistory, setDonationHistory] = useState([]);
 
   // Định nghĩa fetchUserProfile bên ngoài useEffect để có thể gọi lại
   const fetchUserProfile = async () => {
@@ -154,16 +151,9 @@ const UserProfile = () => {
           address: userData.address || '',
           weight: userData.weight || userData.Weight || '',
           height: userData.height || userData.Height || '',
-          latitude: userData.latitude || '',
-          longitude: userData.longitude || '',
-          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
-          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
+          latitude: userData.latitude || '', // Lấy latitude từ API và cập nhật vào formData
+          longitude: userData.longitude || '', // Lấy longitude từ API và cập nhật vào formData
         });
-        // Đồng bộ loại tài khoản vào Redux
-        dispatch(setAccountType({
-          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
-          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
-        }));
       } else {
         console.warn('Không lấy được userData từ API');
       }
@@ -198,23 +188,28 @@ const UserProfile = () => {
     reloadUpcomingAppointments();
   }, []);
 
-  // useEffect lấy lịch sử hiến máu đã hoàn thành từ backend
+  // Nếu muốn reload khi chuyển tab, có thể thêm:
   useEffect(() => {
-    const fetchCompletedDonationHistory = async () => {
+    if (tabValue === 1) reloadUpcomingAppointments();
+  }, [tabValue]);
+
+  // useEffect lấy lịch sử hiến máu từ backend
+  useEffect(() => {
+    const fetchDonationHistory = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        // Lấy lịch sử hiến máu đã hoàn thành từ endpoint mới
-        const res = await axios.get(`${apiUrl}/DonationRequest/history/completed`, {
+        // Giả sử API trả về lịch sử hiến máu của user
+        const res = await axios.get(`${apiUrl}/DonationHistory`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setCompletedDonationHistory(res.data || []);
+        setDonationHistory(res.data || []);
       } catch (error) {
-        setCompletedDonationHistory([]);
+        setDonationHistory([]);
       }
     };
-    fetchCompletedDonationHistory();
+    fetchDonationHistory();
   }, []);
 
   // Hàm đóng Snackbar
@@ -266,6 +261,10 @@ const UserProfile = () => {
   const handleCloseCancelDialog = () => {
     setOpenCancelDialog(false);
     setAppointmentToCancel(null);
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
   const handleOpenDialog = () => {
@@ -490,10 +489,6 @@ const UserProfile = () => {
     }
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
   // Component TabPanel để hiển thị nội dung tab
   function TabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -541,16 +536,6 @@ const UserProfile = () => {
                 <Typography variant="h5" gutterBottom>
                   {formData.fullName}
                 </Typography>
-                {/* Hiển thị loại tài khoản */}
-                {isDonor && (
-                  <Chip label="Tài khoản hiến máu" color="success" sx={{ mb: 1, fontWeight: 'bold' }} />
-                )}
-                {isRecipient && !isDonor && (
-                  <Chip label="Tài khoản truyền máu" color="info" sx={{ mb: 1, fontWeight: 'bold' }} />
-                )}
-                {!isDonor && !isRecipient && (
-                  <Chip label="Không xác định loại tài khoản" color="warning" sx={{ mb: 1, fontWeight: 'bold' }} />
-                )}
                 <Chip
                   icon={<Bloodtype />}
                   label={`Nhóm máu ${formData.bloodType}`}
@@ -653,7 +638,7 @@ const UserProfile = () => {
           </Card>
         </Grid>
 
-        {/* Lịch sử hiến máu và lịch hẹn sắp tới */} 
+        {/* Lịch sử hiến máu và lịch hẹn */} 
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
@@ -664,8 +649,8 @@ const UserProfile = () => {
                 </Tabs>
               </Box>
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch sử hiến máu đã hoàn thành</Typography>
-                {completedDonationHistory.length > 0 ? (
+                <Typography variant="h6" gutterBottom>Lịch sử hiến máu</Typography>
+                {donationHistory.length > 0 ? (
                   <TableContainer component={Paper}>
                     <Table>
                       <TableHead>
@@ -679,14 +664,14 @@ const UserProfile = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {completedDonationHistory.map((row) => (
-                          <TableRow key={row.donationId}>
-                            <TableCell>{row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : ''}</TableCell>
+                        {donationHistory.map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell>{row.date}</TableCell>
                             <TableCell>{row.location}</TableCell>
-                            <TableCell>{formData.bloodType}</TableCell>
-                            <TableCell>{row.donationVolume}</TableCell>
+                            <TableCell>{row.bloodType}</TableCell>
+                            <TableCell>{row.volume}</TableCell>
                             <TableCell>{getStatusChip(row.status)}</TableCell>
-                            <TableCell></TableCell>
+                            <TableCell>{row.nextDonationDate}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -694,7 +679,7 @@ const UserProfile = () => {
                   </TableContainer>
                 ) : (
                   <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                    Chưa có lịch sử hiến máu đã hoàn thành.
+                    Chưa có lịch sử hiến máu.
                   </Typography>
                 )}
               </TabPanel>
@@ -734,7 +719,7 @@ const UserProfile = () => {
                             <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
                             <Typography variant="body1" fontWeight="bold">{dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY')}</Typography>
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid item xs={12}>
                             <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                             <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
                           </Grid>
@@ -921,6 +906,9 @@ const UserProfile = () => {
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 <strong>Ngày hẹn:</strong> {appointmentToCancel.detail?.appointmentDate}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Khung giờ:</strong> {appointmentToCancel.detail?.appointmentTime}
               </Typography>
               <Typography variant="body2">
                 <strong>Địa điểm:</strong> {appointmentToCancel.detail?.donationCenter}

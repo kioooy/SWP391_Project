@@ -24,7 +24,6 @@ import {
   Select,
   MenuItem,
   TextField,
-  Snackbar,
 } from '@mui/material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -46,8 +45,6 @@ const DonationRequestManagement = () => {
   const [openActionDialog, setOpenActionDialog] = useState(false);
   const [actionRequest, setActionRequest] = useState(null);
   const [actionMode, setActionMode] = useState(''); // 'complete' hoặc 'cancel'
-
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchRequests = async () => {
     try {
@@ -88,14 +85,9 @@ const DonationRequestManagement = () => {
     const newStatus = actionType === 'Approve' ? 'Approved' : 'Rejected';
     const responsibleById = user.userId;
 
-    // Nếu duyệt và chưa có ghi chú, tự động thêm tên staff/admin
-    let autoNote = notes;
-    if (actionType === 'Approve' && !notes.trim()) {
-      autoNote = `Đã duyệt bởi ${user.fullName || user.username || 'Staff/Admin'}`;
-    }
     const payload = {
       Status: newStatus,
-      Notes: autoNote,
+      Notes: notes,
       ResponsibleById: responsibleById,
       MemberId: selectedRequest.memberId, // Cần memberId để backend xác thực
     };
@@ -113,16 +105,16 @@ const DonationRequestManagement = () => {
       setRequests(
         requests.map((req) =>
           req.donationId === selectedRequest.donationId
-            ? { ...req, status: newStatus, notes: autoNote, responsibleById: responsibleById }
+            ? { ...req, status: newStatus, notes: notes, responsibleById: responsibleById }
             : req
         )
       );
 
       handleCloseDialog();
-      setSnackbar({ open: true, message: `Yêu cầu đã được ${newStatus === 'Approved' ? 'duyệt' : 'từ chối'}.`, severity: 'success' });
+      alert(`Yêu cầu đã được ${newStatus === 'Approved' ? 'duyệt' : 'từ chối'}.`);
     } catch (error) {
       console.error('Error updating status:', error);
-      setSnackbar({ open: true, message: 'Cập nhật trạng thái thất bại!', severity: 'error' });
+      alert('Cập nhật trạng thái thất bại!');
     }
   };
 
@@ -141,18 +133,12 @@ const DonationRequestManagement = () => {
   const handleConfirmActionRequest = async () => {
     if (!actionRequest) return;
     const token = localStorage.getItem('token');
-    console.log('Gọi hoàn thành:', actionRequest.donationId, actionRequest.memberId);
-    if (!actionRequest.donationId || isNaN(actionRequest.donationId)) {
-      setSnackbar({ open: true, message: 'ID yêu cầu không hợp lệ!', severity: 'error' });
-      handleCloseActionDialog();
-      return;
-    }
     try {
       if (actionMode === 'complete') {
-        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/update-completed`, {
+        // Gọi API hoàn thành
+        await axios.patch(`/api/DonationRequest/update-completed/${actionRequest.donationId}`, {
           MemberId: actionRequest.memberId,
           Status: 'Completed',
-          Notes: actionRequest.notes || '',
         }, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -163,24 +149,23 @@ const DonationRequestManagement = () => {
               : req
           )
         );
-        setSnackbar({ open: true, message: 'Đã hoàn thành yêu cầu!', severity: 'success' });
+        alert('Đã hoàn thành yêu cầu!');
       } else if (actionMode === 'cancel') {
-        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/cancel`, {
-          notes: 'Đã hủy bởi nhân viên',
-        }, {
+        // Gọi API hủy
+        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/cancel`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setRequests(
           requests.map((req) =>
             req.donationId === actionRequest.donationId
-              ? { ...req, status: 'Cancelled', notes: 'Đã hủy bởi nhân viên' }
+              ? { ...req, status: 'Cancelled' }
               : req
           )
         );
-        setSnackbar({ open: true, message: 'Đã hủy yêu cầu!', severity: 'success' });
+        alert('Đã hủy yêu cầu!');
       }
     } catch (err) {
-      setSnackbar({ open: true, message: 'Có lỗi xảy ra!', severity: 'error' });
+      alert('Có lỗi xảy ra!');
     } finally {
       handleCloseActionDialog();
     }
@@ -200,10 +185,7 @@ const DonationRequestManagement = () => {
     }
   };
 
-  // Sắp xếp các yêu cầu theo ID mới nhất lên đầu
-  const sortedRequests = [...requests].sort((a, b) => (b.donationId || 0) - (a.donationId || 0));
-
-  const filteredRequests = sortedRequests.filter(
+  const filteredRequests = requests.filter(
     (req) => statusFilter === 'All' || req.status === statusFilter
   );
 
@@ -269,7 +251,7 @@ const DonationRequestManagement = () => {
                   </TableCell>
                   <TableCell>{`${req.periodId} - ${req.periodName}`}</TableCell>
                   <TableCell>{getStatusChip(req.status)}</TableCell>
-                  <TableCell>{req.status === 'Cancelled' && req.notes ? <b>{req.notes}</b> : req.notes}</TableCell>
+                  <TableCell>{req.notes}</TableCell>
                   <TableCell>
                     {req.status === 'Pending' && (
                       <Box sx={{ display: 'flex', gap: 1 }}>
@@ -327,20 +309,18 @@ const DonationRequestManagement = () => {
         <DialogContent>
           <DialogContentText>
             Bạn có chắc chắn muốn {actionType === 'Approve' ? 'duyệt' : 'từ chối'} yêu cầu hiến máu
-            này không?{actionType === 'Reject' ? ' Vui lòng thêm ghi chú (nếu cần).' : ''}
+            này không? Vui lòng thêm ghi chú (nếu cần).
           </DialogContentText>
-          {actionType === 'Reject' && (
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Ghi chú"
-              type="text"
-              fullWidth
-              variant="standard"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          )}
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Ghi chú"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Hủy</Button>
@@ -367,21 +347,6 @@ const DonationRequestManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

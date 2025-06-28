@@ -50,10 +50,6 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "Microsoft.AspNetCore.Authentication.JwtBearer": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[8.0.1, )"
@@ -68,10 +64,6 @@
               "target": "Package",
               "version": "[8.0.1, )"
             },
-            "Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite": {
-              "target": "Package",
-              "version": "[8.0.1, )"
-            },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
@@ -81,14 +73,6 @@
             "Microsoft.Extensions.Configuration.Json": {
               "target": "Package",
               "version": "[9.0.2, )"
-            },
-            "Microsoft.SqlServer.Types": {
-              "target": "Package",
-              "version": "[160.1000.6, )"
-            },
-            "NetTopologySuite": {
-              "target": "Package",
-              "version": "[2.5.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",

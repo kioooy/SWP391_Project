@@ -32,13 +32,12 @@ import {
   LocationOn,
   Warning,
 } from '@mui/icons-material';
-import axios from 'axios';
-import Snackbar from '@mui/material/Snackbar';
-import MuiAlert from '@mui/material/Alert';
 
 const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
+    requestType: 'individual', // Luôn là 'individual'
+    hospitalName: '',
     patientName: '',
     bloodType: '',
     quantity: '',
@@ -54,28 +53,7 @@ const EmergencyRequest = () => {
 
   const steps = ['Thông tin cơ bản', 'Thông tin liên hệ', 'Xác nhận'];
 
-  const bloodTypes = [
-    { id: 1, name: 'A+' },
-    { id: 2, name: 'A-' },
-    { id: 3, name: 'B+' },
-    { id: 4, name: 'B-' },
-    { id: 5, name: 'AB+' },
-    { id: 6, name: 'AB-' },
-    { id: 7, name: 'O+' },
-    { id: 8, name: 'O-' },
-  ];
-
-  const components = [
-    { id: 1, name: 'Máu toàn phần' },
-    { id: 2, name: 'Hồng cầu' },
-    { id: 3, name: 'Huyết tương' },
-    { id: 4, name: 'Tiểu cầu' },
-  ];
-
-  const [selectedComponentId, setSelectedComponentId] = useState(1);
-
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+  const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   const handleChange = (field) => (event) => {
     setFormData({
@@ -144,13 +122,10 @@ const EmergencyRequest = () => {
     }
   };
 
-  const handleComponentChange = (event) => {
-    setSelectedComponentId(event.target.value);
-  };
-
   const validateStep = () => {
     const newErrors = {};
     if (activeStep === 0) {
+      // Bỏ kiểm tra requestType và hospitalName
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
       if (!formData.quantity) newErrors.quantity = 'Vui lòng nhập số lượng máu cần';
@@ -184,52 +159,25 @@ const EmergencyRequest = () => {
     setActiveStep((prevStep) => prevStep - 1);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (validateStep()) {
-      try {
-        // Ánh xạ BloodTypeId từ tên sang id
-        const selectedBloodType = bloodTypes.find(b => b.name === formData.bloodType);
-        if (!selectedBloodType) {
-          setErrors({ ...errors, bloodType: 'Nhóm máu không hợp lệ' });
-          return;
-        }
-        // Chuẩn bị payload
-        const payload = {
-          BloodTypeId: selectedBloodType.id,
-          ComponentId: selectedComponentId,
-          TransfusionVolume: Number(formData.quantity),
-          IsEmergency: true,
-          PreferredReceiveDate: null,
-          Notes: formData.notes,
-          PatientCondition: formData.reason,
-        };
-        // Lấy token từ localStorage (hoặc redux)
-        const token = localStorage.getItem('token');
-        await axios.post('/api/TransfusionRequest', payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setSnackbar({ open: true, message: 'Gửi yêu cầu thành công!', severity: 'success' });
-        setActiveStep(0);
-        setFormData({
-          patientName: '',
-          bloodType: '',
-          quantity: '',
-          contactName: '',
-          contactPhone: '',
-          contactEmail: '',
-          location: '',
-          reason: '',
-          notes: '',
-        });
-      } catch (error) {
-        let msg = 'Có lỗi khi gửi yêu cầu!';
-        if (error.response && error.response.data && error.response.data.message) {
-          msg = error.response.data.message;
-        }
-        setSnackbar({ open: true, message: msg, severity: 'error' });
-      }
+      // Xử lý gửi form
+      console.log('Form submitted:', formData);
+      // Reset form và chuyển về bước đầu
+      setActiveStep(0);
+      setFormData({
+        requestType: 'individual',
+        hospitalName: '',
+        patientName: '',
+        bloodType: '',
+        quantity: '',
+        contactName: '',
+        contactPhone: '',
+        contactEmail: '',
+        location: '',
+        reason: '',
+        notes: '',
+      });
     }
   };
 
@@ -238,23 +186,6 @@ const EmergencyRequest = () => {
       case 0:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Thành phần máu</InputLabel>
-                <Select
-                  value={selectedComponentId}
-                  label="Thành phần máu"
-                  onChange={handleComponentChange}
-                >
-                  {components.map((comp) => (
-                    <MenuItem key={comp.id} value={comp.id}>
-                      {comp.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -275,8 +206,8 @@ const EmergencyRequest = () => {
                   onChange={handleChange('bloodType')}
                 >
                   {bloodTypes.map((type) => (
-                    <MenuItem key={type.id} value={type.name}>
-                      {type.name}
+                    <MenuItem key={type} value={type}>
+                      {type}
                     </MenuItem>
                   ))}
                 </Select>
@@ -387,6 +318,15 @@ const EmergencyRequest = () => {
                   Thông tin yêu cầu
                 </Typography>
                 <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Loại yêu cầu
+                    </Typography>
+                    <Typography>
+                      Cá nhân
+                    </Typography>
+                  </Grid>
+
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Tên bệnh nhân
@@ -510,12 +450,6 @@ const EmergencyRequest = () => {
           </Box>
         </CardContent>
       </Card>
-
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
-          {snackbar.message}
-        </MuiAlert>
-      </Snackbar>
     </Container>
   );
 };

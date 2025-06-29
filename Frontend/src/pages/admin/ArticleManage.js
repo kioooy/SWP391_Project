@@ -90,7 +90,6 @@ const ArticleManage = () => {
     setEditArticle({ ...found });
     setIsEditOpen(true);
   };
-
   const handleUpdate = () => {
     if (!editArticle.Title || !editArticle.Content || !editArticle.Status) {
       alert("Vui lòng nhập đầy đủ thông tin!");
@@ -107,6 +106,7 @@ const ArticleManage = () => {
     setFilteredArticles(updated);
     setIsEditOpen(false);
     setEditArticle(null);
+    alert("✅ Cập nhật bài viết thành công!");
   };
 
   const handleCreate = () => {

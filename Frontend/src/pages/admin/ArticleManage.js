@@ -142,18 +142,19 @@ const ArticleManage = () => {
   };
 
   const handleToggleStatus = (id) => {
-    const updated = articles.map((a) =>
-      a.ArticleId === id
-        ? {
-            ...a,
-            Status: a.Status === "Published" ? "Draft" : "Published",
-            UpdatedDate: new Date().toISOString().split("T")[0],
-          }
-        : a
-    );
+    const updated = articles.map((a) => {
+      if (a.ArticleId === id) {
+        const newStatus = a.Status === "Published" ? "Draft" : "Published";
+        return {
+          ...a,
+          Status: newStatus,
+          UpdatedDate: new Date().toISOString().split("T")[0],
+        };
+      }
+      return a;
+    });
     setArticles(updated);
     setFilteredArticles(updated);
-    alert("🔄 Đã đổi trạng thái bài viết!");
   };
 
   return (
@@ -217,7 +218,7 @@ const ArticleManage = () => {
                       variant="outlined"
                       onClick={() => handleViewDetail(article.ArticleId)}
                     >
-                      Xem chi tiết
+                      Xem
                     </Button>
                     <Button
                       size="small"
@@ -233,7 +234,9 @@ const ArticleManage = () => {
                       color="secondary"
                       onClick={() => handleToggleStatus(article.ArticleId)}
                     >
-                      Đổi trạng thái
+                      {article.Status === "Published"
+                        ? "Chuyển thành Draft"
+                        : "Xuất bản"}
                     </Button>
                     <Button
                       size="small"
@@ -257,6 +260,148 @@ const ArticleManage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {selectedArticle && (
+        <Card
+          style={{
+            marginTop: 24,
+            padding: 16,
+            backgroundColor: "#f0f4f8",
+            borderRadius: 12,
+          }}
+        >
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              📝 Chi tiết bài viết
+            </Typography>
+            <div style={{ display: "grid", rowGap: 12 }}>
+              <div>
+                <strong>🆔 ID:</strong> {selectedArticle.ArticleId}
+              </div>
+              <div>
+                <strong>👤 User ID:</strong> {selectedArticle.UserId}
+              </div>
+              <div>
+                <strong>📌 Tiêu đề:</strong> {selectedArticle.Title}
+              </div>
+              <div>
+                <strong>📝 Nội dung:</strong> {selectedArticle.Content}
+              </div>
+              <div>
+                <strong>📊 Trạng thái:</strong> {selectedArticle.Status}
+              </div>
+              <div>
+                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate}
+              </div>
+              <div>
+                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal tạo bài viết */}
+      <Dialog
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Tạo bài viết mới</DialogTitle>
+        <DialogContent dividers>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <TextField
+              label="Tiêu đề"
+              fullWidth
+              value={newArticle.Title}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, Title: e.target.value })
+              }
+            />
+            <TextField
+              label="Nội dung"
+              fullWidth
+              multiline
+              rows={3}
+              value={newArticle.Content}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, Content: e.target.value })
+              }
+            />
+            <FormControl fullWidth>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={newArticle.Status}
+                label="Trạng thái"
+                onChange={(e) =>
+                  setNewArticle({ ...newArticle, Status: e.target.value })
+                }
+              >
+                <MenuItem value="Published">Published</MenuItem>
+                <MenuItem value="Draft">Draft</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleCreate}>
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal cập nhật bài viết */}
+      <Dialog
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Cập nhật bài viết</DialogTitle>
+        <DialogContent dividers>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <TextField
+              label="Tiêu đề"
+              fullWidth
+              value={editArticle?.Title || ""}
+              onChange={(e) =>
+                setEditArticle({ ...editArticle, Title: e.target.value })
+              }
+            />
+            <TextField
+              label="Nội dung"
+              fullWidth
+              multiline
+              rows={3}
+              value={editArticle?.Content || ""}
+              onChange={(e) =>
+                setEditArticle({ ...editArticle, Content: e.target.value })
+              }
+            />
+            <FormControl fullWidth>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={editArticle?.Status || ""}
+                label="Trạng thái"
+                onChange={(e) =>
+                  setEditArticle({ ...editArticle, Status: e.target.value })
+                }
+              >
+                <MenuItem value="Published">Published</MenuItem>
+                <MenuItem value="Draft">Draft</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleUpdate}>
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

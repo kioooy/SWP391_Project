@@ -158,7 +158,7 @@ const BloodStorageManage = () => {
         }}
       >
         <TextField
-          label="Tìm kiếm theo tên người hiến"
+          label="Tìm kiếm theo tên người hiến, đơn vị máu"
           variant="outlined"
           size="small"
           value={searchTerm}

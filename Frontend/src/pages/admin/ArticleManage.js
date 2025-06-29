@@ -22,8 +22,11 @@ import {
   MenuItem,
   TablePagination,
 } from "@mui/material";
+import axios from "axios";
 
 const ArticleManage = () => {
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
+  const token = localStorage.getItem("token");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [articles, setArticles] = useState([]);
@@ -42,55 +45,28 @@ const ArticleManage = () => {
   const [articleToDelete, setArticleToDelete] = useState(null);
 
   useEffect(() => {
-    const fakeData = [
-      {
-        ArticleId: "1",
-        UserId: "201",
-        Title: "Lợi ích của việc hiến máu tình nguyện",
-        Content:
-          "Hiến máu không chỉ cứu người mà còn giúp cải thiện sức khỏe người hiến, kích thích tái tạo máu mới.",
-        Status: "Published",
-        IsActive: true,
-        PublishedDate: "2025-01-10",
-        UpdatedDate: "2025-01-12",
-      },
-      {
-        ArticleId: "2",
-        UserId: "202",
-        Title: "Những điều cần biết trước khi hiến máu",
-        Content:
-          "Trước khi hiến máu, cần ăn nhẹ, ngủ đủ giấc, không uống bia rượu và mang theo giấy tờ tùy thân.",
-        Status: "Draft",
-        IsActive: true,
-        PublishedDate: "2025-02-01",
-        UpdatedDate: "2025-02-05",
-      },
-      {
-        ArticleId: "3",
-        UserId: "203",
-        Title: "Ai không đủ điều kiện hiến máu?",
-        Content:
-          "Người mắc các bệnh truyền nhiễm, thiếu máu nặng, huyết áp quá cao/thấp, phụ nữ mang thai không được hiến máu.",
-        Status: "Published",
-        IsActive: false,
-        PublishedDate: "2025-03-01",
-        UpdatedDate: "2025-03-10",
-      },
-      {
-        ArticleId: "4",
-        UserId: "204",
-        Title: "Quy trình hiến máu diễn ra như thế nào?",
-        Content:
-          "Quy trình hiến máu bao gồm đăng ký, kiểm tra sức khỏe, lấy máu và nghỉ ngơi sau khi hiến.",
-        Status: "Draft",
-        IsActive: true,
-        PublishedDate: "2025-04-05",
-        UpdatedDate: "2025-04-06",
-      },
-    ];
+    const fetchArticles = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/Article/admin`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    setArticles(fakeData);
-    setFilteredArticles(fakeData);
+        const data = res.data.map((a) => ({
+          ...a,
+          Status: "Published",
+          IsActive: true,
+        }));
+
+        setArticles(data);
+        setFilteredArticles(data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách bài viết:", error);
+      }
+    };
+
+    fetchArticles();
   }, []);
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -135,7 +111,7 @@ const ArticleManage = () => {
     setIsEditOpen(true);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editArticle.Title || !editArticle.Content || !editArticle.Status) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
@@ -147,6 +123,15 @@ const ArticleManage = () => {
         ? { ...editArticle, UpdatedDate: now }
         : a
     );
+    await axios.put(
+      `${API_URL}/Article/${editArticle.ArticleId}`,
+      editArticle,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
     setArticles(updated);
     setFilteredArticles(updated);
     setIsEditOpen(false);
@@ -154,7 +139,7 @@ const ArticleManage = () => {
     alert("✅ Cập nhật bài viết thành công!");
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const { Title, Content, Status } = newArticle;
     if (!Title || !Content || !Status) {
       alert("Vui lòng nhập đầy đủ thông tin!");
@@ -177,6 +162,11 @@ const ArticleManage = () => {
       UpdatedDate: now,
     };
 
+    await axios.post(`${API_URL}/Article`, item, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     const updated = [item, ...articles];
     setArticles(updated);
     setFilteredArticles(updated);
@@ -185,35 +175,72 @@ const ArticleManage = () => {
     setNewArticle({ Title: "", Content: "", Status: "" });
   };
 
-  const handleToggleStatus = (id) => {
+  const handleToggleStatus = async (id) => {
     const updated = articles.map((a) => {
       if (a.ArticleId === id) {
         const newStatus = a.Status === "Published" ? "Draft" : "Published";
-        return {
-          ...a,
-          Status: newStatus,
-          UpdatedDate: new Date().toISOString().split("T")[0],
-        };
+
+        axios
+          .patch(
+            `${API_URL}/Article/${id}/status`,
+            { status: newStatus },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+          .then(() => {
+            const newArticles = articles.map((article) =>
+              article.ArticleId === id
+                ? {
+                    ...article,
+                    Status: newStatus,
+                    UpdatedDate: new Date().toISOString().split("T")[0],
+                  }
+                : article
+            );
+            setArticles(newArticles);
+            setFilteredArticles(newArticles);
+          })
+          .catch((error) => {
+            console.error("Lỗi cập nhật trạng thái:", error);
+          });
+
+        return a;
       }
       return a;
     });
-    setArticles(updated);
-    setFilteredArticles(updated);
   };
 
-  const handleToggleActive = (id) => {
-    const updated = articles.map((a) => {
-      if (a.ArticleId === id) {
-        return {
-          ...a,
-          IsActive: !a.IsActive,
-          UpdatedDate: new Date().toISOString().split("T")[0],
-        };
-      }
-      return a;
-    });
-    setArticles(updated);
-    setFilteredArticles(updated);
+  const handleToggleActive = async (id) => {
+    try {
+      await axios.patch(
+        `${API_URL}/Article/${id}/deactivate`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updated = articles.map((a) => {
+        if (a.ArticleId === id) {
+          return {
+            ...a,
+            IsActive: false,
+            UpdatedDate: new Date().toISOString().split("T")[0],
+          };
+        }
+        return a;
+      });
+
+      setArticles(updated);
+      setFilteredArticles(updated);
+    } catch (error) {
+      console.error("Lỗi khi deactivate bài viết:", error);
+    }
   };
 
   return (

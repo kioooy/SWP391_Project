@@ -45,26 +45,50 @@ const ArticleManage = () => {
     const fakeData = [
       {
         ArticleId: "1",
-        UserId: "101",
-        Title: "Giới thiệu về TypeScript",
-        Content: "TypeScript là một phần mở rộng của JavaScript.",
+        UserId: "201",
+        Title: "Lợi ích của việc hiến máu tình nguyện",
+        Content:
+          "Hiến máu không chỉ cứu người mà còn giúp cải thiện sức khỏe người hiến, kích thích tái tạo máu mới.",
         Status: "Published",
         IsActive: true,
-        PublishedDate: "2024-01-01",
-        UpdatedDate: "2024-02-01",
+        PublishedDate: "2025-01-10",
+        UpdatedDate: "2025-01-12",
       },
       {
         ArticleId: "2",
-        UserId: "102",
-        Title: "React Hooks là gì?",
+        UserId: "202",
+        Title: "Những điều cần biết trước khi hiến máu",
         Content:
-          "Hooks cho phép dùng state và lifecycle trong function component.",
+          "Trước khi hiến máu, cần ăn nhẹ, ngủ đủ giấc, không uống bia rượu và mang theo giấy tờ tùy thân.",
         Status: "Draft",
+        IsActive: true,
+        PublishedDate: "2025-02-01",
+        UpdatedDate: "2025-02-05",
+      },
+      {
+        ArticleId: "3",
+        UserId: "203",
+        Title: "Ai không đủ điều kiện hiến máu?",
+        Content:
+          "Người mắc các bệnh truyền nhiễm, thiếu máu nặng, huyết áp quá cao/thấp, phụ nữ mang thai không được hiến máu.",
+        Status: "Published",
         IsActive: false,
-        PublishedDate: "2024-03-15",
-        UpdatedDate: "2024-04-10",
+        PublishedDate: "2025-03-01",
+        UpdatedDate: "2025-03-10",
+      },
+      {
+        ArticleId: "4",
+        UserId: "204",
+        Title: "Quy trình hiến máu diễn ra như thế nào?",
+        Content:
+          "Quy trình hiến máu bao gồm đăng ký, kiểm tra sức khỏe, lấy máu và nghỉ ngơi sau khi hiến.",
+        Status: "Draft",
+        IsActive: true,
+        PublishedDate: "2025-04-05",
+        UpdatedDate: "2025-04-06",
       },
     ];
+
     setArticles(fakeData);
     setFilteredArticles(fakeData);
   }, []);

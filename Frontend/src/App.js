@@ -29,24 +29,25 @@ import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
 import BloodSearch from "./pages/BloodSearch";
-import BloodDonationPeriodManagement from './pages/BloodDonationPeriodManagement';
-import News from './pages/News';
-import NewsDetail from './pages/NewsDetail';
-import DonationRequestManagement from './pages/DonationRequestManagement';
+import BloodDonationPeriodManagement from "./pages/BloodDonationPeriodManagement";
+import News from "./pages/News";
+import NewsDetail from "./pages/NewsDetail";
+import DonationRequestManagement from "./pages/DonationRequestManagement";
 import { RequireAuth } from "./components/RequireAuth";
 import BlogPage from "./pages/BlogPage";
 import UserProfileRecipient from "./pages/UserProfileRecipient";
 import RequireRecipient from "./components/RequireRecipient";
 import BlogDetail from "./pages/BlogDetail";
+import ArticleManage from "./pages/admin/ArticleManage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 const App = () => {
-  console.log('DEBUG App.js loaded');
+  console.log("DEBUG App.js loaded");
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const role = useSelector(state => state.auth.user?.role);
-  console.log('isAuthenticated in App.js:', isAuthenticated);
+  const role = useSelector((state) => state.auth.user?.role);
+  console.log("isAuthenticated in App.js:", isAuthenticated);
 
   return (
     <Routes>
@@ -73,11 +74,14 @@ const App = () => {
         <Route path="/booking-transfusion" element={<BookingTransfusion />} />
         <Route path="/transfusion-history" element={<TransfusionHistory />} />
         <Route path="/profile" element={<UserProfile />} />
-        <Route path="/user-profile-recipient" element={
-          <RequireRecipient>
-            <UserProfileRecipient />
-          </RequireRecipient>
-        } />
+        <Route
+          path="/user-profile-recipient"
+          element={
+            <RequireRecipient>
+              <UserProfileRecipient />
+            </RequireRecipient>
+          }
+        />
         <Route path="/certificate" element={<BloodDonationCertificate />} />
         <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />
@@ -88,11 +92,47 @@ const App = () => {
         <Route path="/history" element={<AppointmentHistory />} />
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
-        <Route path="manage-blood-periods" element={<RequireAuth roles={['Admin', 'Staff']}><BloodDonationPeriodManagement /></RequireAuth>} />
-        <Route path="manage-requests" element={<RequireAuth roles={['Admin', 'Staff']}><DonationRequestManagement /></RequireAuth>} />
-        <Route path="transfusion-management" element={<RequireAuth roles={['Admin', 'Staff']}><TransfusionManagement/></RequireAuth>} />
-        <Route path="blood-search" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><BloodSearch /></RequireAuth>} />
-        <Route path="search-distance" element={<RequireAuth roles={['Admin', 'Staff', 'Member']}><SearchByDistance/></RequireAuth>} />
+        <Route path="/manage-article" element={<ArticleManage />} />
+        <Route
+          path="manage-blood-periods"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodDonationPeriodManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="manage-requests"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <DonationRequestManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="transfusion-management"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <TransfusionManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="blood-search"
+          element={
+            <RequireAuth roles={["Admin", "Staff", "Member"]}>
+              <BloodSearch />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="search-distance"
+          element={
+            <RequireAuth roles={["Admin", "Staff", "Member"]}>
+              <SearchByDistance />
+            </RequireAuth>
+          }
+        />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:postId" element={<BlogDetail />} />
       </Route>

@@ -11,13 +11,15 @@ import {
   Typography,
   Card,
   CardContent,
+  TextField,
 } from "@mui/material";
 
 const ArticleManage = () => {
   const [articles, setArticles] = useState([]);
+  const [filteredArticles, setFilteredArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ Fake data - bạn có thể thay bằng gọi API ở đây
   useEffect(() => {
     // TODO: Gọi API lấy danh sách bài viết tại đây (GET /api/articles)
     const fakeData = [
@@ -36,8 +38,16 @@ const ArticleManage = () => {
         PublishedDate: "2024-03-15",
         UpdatedDate: "2024-04-10",
       },
+      {
+        ArticleId: "3",
+        Title: "State và Props trong React",
+        Content: "Giải thích sự khác nhau giữa state và props.",
+        PublishedDate: "2024-05-01",
+        UpdatedDate: "2024-05-02",
+      },
     ];
     setArticles(fakeData);
+    setFilteredArticles(fakeData); // ✅ ban đầu hiển thị tất cả
   }, []);
 
   const handleEdit = (id) => {
@@ -49,7 +59,8 @@ const ArticleManage = () => {
     // TODO: Gọi API xóa bài viết (DELETE /api/articles/:id)
     const newArticles = articles.filter((a) => a.ArticleId !== id);
     setArticles(newArticles);
-    // Nếu đang xem chi tiết bài này thì ẩn luôn
+    const newFiltered = filteredArticles.filter((a) => a.ArticleId !== id);
+    setFilteredArticles(newFiltered);
     if (selectedArticle?.ArticleId === id) {
       setSelectedArticle(null);
     }
@@ -61,11 +72,30 @@ const ArticleManage = () => {
     setSelectedArticle(article);
   };
 
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    const filtered = articles.filter((article) =>
+      article.Title.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredArticles(filtered);
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" style={{ marginBottom: 16 }}>
         Quản lý bài viết
       </Typography>
+
+      <TextField
+        label="Tìm kiếm theo tiêu đề"
+        variant="outlined"
+        size="small"
+        fullWidth
+        value={searchTerm}
+        onChange={handleSearch}
+        style={{ marginBottom: 16 }}
+      />
 
       <TableContainer component={Paper}>
         <Table>
@@ -89,7 +119,7 @@ const ArticleManage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {articles.map((article) => (
+            {filteredArticles.map((article) => (
               <TableRow key={article.ArticleId}>
                 <TableCell>{article.Title}</TableCell>
                 <TableCell>{article.Content}</TableCell>
@@ -124,10 +154,10 @@ const ArticleManage = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {articles.length === 0 && (
+            {filteredArticles.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  Không có bài viết nào.
+                  Không tìm thấy bài viết nào.
                 </TableCell>
               </TableRow>
             )}

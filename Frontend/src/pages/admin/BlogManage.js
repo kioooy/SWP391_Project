@@ -169,6 +169,7 @@ const BlogManage = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Hình ảnh</TableCell>
               <TableCell>Tiêu đề</TableCell>
               <TableCell>Trạng thái</TableCell>
               <TableCell>Kích hoạt</TableCell>
@@ -178,6 +179,18 @@ const BlogManage = () => {
           <TableBody>
             {filteredBlogs.map((b) => (
               <TableRow key={b.PostId}>
+                <TableCell>
+                  <img
+                    src={b.ImageUrl}
+                    alt={b.Title}
+                    style={{
+                      width: 80,
+                      height: 50,
+                      objectFit: "cover",
+                      borderRadius: 4,
+                    }}
+                  />
+                </TableCell>
                 <TableCell>{b.Title}</TableCell>
                 <TableCell>{b.Status}</TableCell>
                 <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>

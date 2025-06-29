@@ -16,10 +16,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
-  Select,
-  InputLabel,
   FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 
 const ArticleManage = () => {
@@ -33,8 +33,8 @@ const ArticleManage = () => {
     Content: "",
     Status: "",
   });
-
-  const DEFAULT_USER_ID = "admin123";
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editArticle, setEditArticle] = useState(null);
 
   useEffect(() => {
     const fakeData = [
@@ -86,7 +86,27 @@ const ArticleManage = () => {
   };
 
   const handleEdit = (id) => {
-    alert("Chỉnh sửa bài viết ID: " + id);
+    const found = articles.find((a) => a.ArticleId === id);
+    setEditArticle({ ...found });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdate = () => {
+    if (!editArticle.Title || !editArticle.Content || !editArticle.Status) {
+      alert("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
+    const now = new Date().toISOString().split("T")[0];
+    const updated = articles.map((a) =>
+      a.ArticleId === editArticle.ArticleId
+        ? { ...editArticle, UpdatedDate: now }
+        : a
+    );
+    setArticles(updated);
+    setFilteredArticles(updated);
+    setIsEditOpen(false);
+    setEditArticle(null);
   };
 
   const handleCreate = () => {
@@ -103,7 +123,7 @@ const ArticleManage = () => {
 
     const item = {
       ArticleId: newId,
-      UserId: DEFAULT_USER_ID,
+      UserId: "999", // mặc định giả lập
       Title,
       Content,
       Status,
@@ -261,6 +281,7 @@ const ArticleManage = () => {
         </Card>
       )}
 
+      {/* Modal tạo bài viết */}
       <Dialog
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -306,6 +327,57 @@ const ArticleManage = () => {
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleCreate}>
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal chỉnh sửa bài viết */}
+      <Dialog
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Cập nhật bài viết</DialogTitle>
+        <DialogContent dividers>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <TextField
+              label="Tiêu đề"
+              fullWidth
+              value={editArticle?.Title || ""}
+              onChange={(e) =>
+                setEditArticle({ ...editArticle, Title: e.target.value })
+              }
+            />
+            <TextField
+              label="Nội dung"
+              fullWidth
+              multiline
+              rows={3}
+              value={editArticle?.Content || ""}
+              onChange={(e) =>
+                setEditArticle({ ...editArticle, Content: e.target.value })
+              }
+            />
+            <FormControl fullWidth>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={editArticle?.Status || ""}
+                label="Trạng thái"
+                onChange={(e) =>
+                  setEditArticle({ ...editArticle, Status: e.target.value })
+                }
+              >
+                <MenuItem value="Published">Published</MenuItem>
+                <MenuItem value="Draft">Draft</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleUpdate}>
             Lưu
           </Button>
         </DialogActions>

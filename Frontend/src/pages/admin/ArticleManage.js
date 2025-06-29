@@ -136,6 +136,7 @@ const ArticleManage = () => {
     setArticles(updated);
     setFilteredArticles(updated);
     setIsCreateOpen(false);
+    alert("✅ Tạo bài viết thành công!");
     setNewArticle({ Title: "", Content: "", Status: "" });
   };
 

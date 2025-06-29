@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   TextField,
@@ -29,6 +29,9 @@ const BloodStorageManage = () => {
     Volume: "",
     BloodStatus: "Available",
   });
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editBlood, setEditBlood] = useState(null);
 
   useEffect(() => {
     const fakeData = [
@@ -106,6 +109,22 @@ const BloodStorageManage = () => {
     alert("✅ Thêm đơn vị máu thành công!");
   };
 
+  const handleEdit = (unit) => {
+    setEditBlood({ ...unit });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdate = () => {
+    const updated = bloodUnits.map((u) =>
+      u.BloodUnitId === editBlood.BloodUnitId ? editBlood : u
+    );
+    setBloodUnits(updated);
+    setFilteredUnits(updated);
+    setIsEditOpen(false);
+    setEditBlood(null);
+    alert("✅ Cập nhật đơn vị máu thành công!");
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" gutterBottom>
@@ -159,13 +178,16 @@ const BloodStorageManage = () => {
                 <strong>Hạn sử dụng</strong>
               </TableCell>
               <TableCell>
-                <strong>Thể tích (mL)</strong>
+                <strong>Thể tích</strong>
               </TableCell>
               <TableCell>
-                <strong>Còn lại (mL)</strong>
+                <strong>Còn lại</strong>
               </TableCell>
               <TableCell>
                 <strong>Trạng thái</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Hành động</strong>
               </TableCell>
             </TableRow>
           </TableHead>
@@ -181,11 +203,20 @@ const BloodStorageManage = () => {
                 <TableCell>{unit.Volume}</TableCell>
                 <TableCell>{unit.RemainingVolume}</TableCell>
                 <TableCell>{unit.BloodStatus}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleEdit(unit)}
+                  >
+                    Sửa
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
             {filteredUnits.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={10} align="center">
                   Không tìm thấy đơn vị máu nào.
                 </TableCell>
               </TableRow>
@@ -194,7 +225,7 @@ const BloodStorageManage = () => {
         </Table>
       </TableContainer>
 
-      {/* Modal thêm đơn vị máu */}
+      {/* Modal tạo */}
       <Dialog
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -220,7 +251,7 @@ const BloodStorageManage = () => {
             }
           />
           <TextField
-            label="Họ tên người hiến"
+            label="Người hiến"
             fullWidth
             value={newBlood.FullName}
             onChange={(e) =>
@@ -249,6 +280,74 @@ const BloodStorageManage = () => {
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleCreate}>
             Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal sửa */}
+      <Dialog
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>✏️ Cập nhật đơn vị máu</DialogTitle>
+        <DialogContent style={{ display: "grid", gap: 12, marginTop: 8 }}>
+          <TextField
+            label="Loại máu"
+            fullWidth
+            value={editBlood?.BloodTypeName || ""}
+            onChange={(e) =>
+              setEditBlood({ ...editBlood, BloodTypeName: e.target.value })
+            }
+          />
+          <TextField
+            label="Thành phần"
+            fullWidth
+            value={editBlood?.ComponentName || ""}
+            onChange={(e) =>
+              setEditBlood({ ...editBlood, ComponentName: e.target.value })
+            }
+          />
+          <TextField
+            label="Người hiến"
+            fullWidth
+            value={editBlood?.FullName || ""}
+            onChange={(e) =>
+              setEditBlood({ ...editBlood, FullName: e.target.value })
+            }
+          />
+          <TextField
+            label="Thể tích"
+            fullWidth
+            type="number"
+            value={editBlood?.Volume || ""}
+            onChange={(e) =>
+              setEditBlood({ ...editBlood, Volume: +e.target.value })
+            }
+          />
+          <TextField
+            label="Còn lại"
+            fullWidth
+            type="number"
+            value={editBlood?.RemainingVolume || ""}
+            onChange={(e) =>
+              setEditBlood({ ...editBlood, RemainingVolume: +e.target.value })
+            }
+          />
+          <TextField
+            label="Trạng thái"
+            fullWidth
+            value={editBlood?.BloodStatus || ""}
+            onChange={(e) =>
+              setEditBlood({ ...editBlood, BloodStatus: e.target.value })
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleUpdate}>
+            Cập nhật
           </Button>
         </DialogActions>
       </Dialog>

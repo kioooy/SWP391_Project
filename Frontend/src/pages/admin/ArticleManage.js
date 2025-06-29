@@ -19,6 +19,11 @@ const ArticleManage = () => {
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [newArticle, setNewArticle] = useState({
+    Title: "",
+    Content: "",
+    PublishedDate: "",
+  });
 
   useEffect(() => {
     // TODO: Gọi API lấy danh sách bài viết tại đây (GET /api/articles)
@@ -47,7 +52,7 @@ const ArticleManage = () => {
       },
     ];
     setArticles(fakeData);
-    setFilteredArticles(fakeData); // ✅ ban đầu hiển thị tất cả
+    setFilteredArticles(fakeData);
   }, []);
 
   const handleEdit = (id) => {
@@ -81,12 +86,89 @@ const ArticleManage = () => {
     setFilteredArticles(filtered);
   };
 
+  const handleCreate = () => {
+    if (!newArticle.Title || !newArticle.Content || !newArticle.PublishedDate) {
+      alert("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    const newId = (
+      Math.max(...articles.map((a) => +a.ArticleId), 0) + 1
+    ).toString();
+    const newItem = {
+      ...newArticle,
+      ArticleId: newId,
+      UpdatedDate: newArticle.PublishedDate,
+    };
+
+    const updatedList = [newItem, ...articles];
+    setArticles(updatedList);
+    setFilteredArticles(updatedList);
+    setNewArticle({ Title: "", Content: "", PublishedDate: "" });
+
+    // TODO: Gọi API POST /api/articles tại đây nếu có
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" style={{ marginBottom: 16 }}>
         Quản lý bài viết
       </Typography>
 
+      {/* Form tạo mới bài viết */}
+      <Card
+        style={{
+          marginBottom: 24,
+          padding: 16,
+          backgroundColor: "#ffffff",
+          borderRadius: 12,
+          boxShadow: "0 1px 6px rgba(0,0,0,0.1)",
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          ➕ Tạo bài viết mới
+        </Typography>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <TextField
+            label="Tiêu đề"
+            fullWidth
+            size="small"
+            value={newArticle.Title}
+            onChange={(e) =>
+              setNewArticle({ ...newArticle, Title: e.target.value })
+            }
+          />
+          <TextField
+            label="Nội dung"
+            fullWidth
+            multiline
+            rows={3}
+            size="small"
+            value={newArticle.Content}
+            onChange={(e) =>
+              setNewArticle({ ...newArticle, Content: e.target.value })
+            }
+          />
+          <TextField
+            label="Ngày đăng"
+            type="date"
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            value={newArticle.PublishedDate}
+            onChange={(e) =>
+              setNewArticle({
+                ...newArticle,
+                PublishedDate: e.target.value,
+              })
+            }
+          />
+          <Button variant="contained" color="success" onClick={handleCreate}>
+            Tạo bài viết
+          </Button>
+        </div>
+      </Card>
+
+      {/* Thanh tìm kiếm */}
       <TextField
         label="Tìm kiếm theo tiêu đề"
         variant="outlined"
@@ -97,6 +179,7 @@ const ArticleManage = () => {
         style={{ marginBottom: 16 }}
       />
 
+      {/* Bảng danh sách bài viết */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead style={{ backgroundColor: "#f5f5f5" }}>
@@ -165,6 +248,7 @@ const ArticleManage = () => {
         </Table>
       </TableContainer>
 
+      {/* Chi tiết bài viết */}
       {selectedArticle && (
         <Card
           style={{

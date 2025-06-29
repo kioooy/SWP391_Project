@@ -14,9 +14,12 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TablePagination,
 } from "@mui/material";
 
 const BlogManage = () => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,7 +64,14 @@ const BlogManage = () => {
     setBlogs(fakeData);
     setFilteredBlogs(fakeData);
   }, []);
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
 
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -179,61 +189,73 @@ const BlogManage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBlogs.map((b) => (
-              <TableRow key={b.PostId}>
-                <TableCell>
-                  <img
-                    src={b.ImageUrl}
-                    alt={b.Title}
-                    style={{
-                      width: 80,
-                      height: 50,
-                      objectFit: "cover",
-                      borderRadius: 4,
-                    }}
-                  />
-                </TableCell>
-                <TableCell>{b.Title}</TableCell>
-                <TableCell>{b.Status}</TableCell>
-                <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={() => handleViewDetail(b)}
-                  >
-                    👁 Xem
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleEdit(b)}
-                    style={{ margin: "0 4px" }}
-                  >
-                    ✏️ Sửa
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleToggleStatus(b.PostId)}
-                  >
-                    Đổi trạng thái
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleToggleActive(b.PostId)}
-                    color="error"
-                    style={{ marginLeft: 4 }}
-                  >
-                    {b.IsActive ? "Vô hiệu hóa" : "Kích hoạt"}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredBlogs
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((b) => (
+                <TableRow key={b.PostId}>
+                  <TableCell>
+                    <img
+                      src={b.ImageUrl}
+                      alt={b.Title}
+                      style={{
+                        width: 80,
+                        height: 50,
+                        objectFit: "cover",
+                        borderRadius: 4,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>{b.Title}</TableCell>
+                  <TableCell>{b.Status}</TableCell>
+                  <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => handleViewDetail(b)}
+                    >
+                      👁 Xem
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleEdit(b)}
+                      style={{ margin: "0 4px" }}
+                    >
+                      ✏️ Sửa
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleToggleStatus(b.PostId)}
+                    >
+                      Đổi trạng thái
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleToggleActive(b.PostId)}
+                      color="error"
+                      style={{ marginLeft: 4 }}
+                    >
+                      {b.IsActive ? "Vô hiệu hóa" : "Kích hoạt"}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>
+      <TablePagination
+        component="div"
+        count={filteredBlogs.length}
+        page={page}
+        onPageChange={handleChangePage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        labelRowsPerPage="Số blog/trang"
+        rowsPerPageOptions={[5, 10, 25]}
+      />
 
       {/* Modal tạo */}
       <Dialog

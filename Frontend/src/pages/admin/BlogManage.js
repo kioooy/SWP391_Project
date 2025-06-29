@@ -41,7 +41,8 @@ const BlogManage = () => {
         Content: "Đây là nội dung bài viết đầu tiên.",
         PublishedDate: "2024-01-01",
         UpdatedDate: "2024-01-02",
-        ImageUrl: "https://via.placeholder.com/400x200",
+        ImageUrl:
+          "https://benhviendakhoatinhphutho.vn/wp-content/uploads/2023/02/Loi-ich-hien-mau.jpg.webp",
         Status: "Published",
         IsActive: true,
       },
@@ -51,7 +52,8 @@ const BlogManage = () => {
         Content: "Chi tiết quy trình đăng ký và quy định.",
         PublishedDate: "2024-02-01",
         UpdatedDate: "2024-02-10",
-        ImageUrl: "https://via.placeholder.com/400x200",
+        ImageUrl:
+          "https://vienhuyethoc.vn/wp-content/uploads/2020/01/Untitled-1.jpg",
         Status: "Draft",
         IsActive: true,
       },
@@ -169,6 +171,7 @@ const BlogManage = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Hình ảnh</TableCell>
               <TableCell>Tiêu đề</TableCell>
               <TableCell>Trạng thái</TableCell>
               <TableCell>Kích hoạt</TableCell>
@@ -178,6 +181,18 @@ const BlogManage = () => {
           <TableBody>
             {filteredBlogs.map((b) => (
               <TableRow key={b.PostId}>
+                <TableCell>
+                  <img
+                    src={b.ImageUrl}
+                    alt={b.Title}
+                    style={{
+                      width: 80,
+                      height: 50,
+                      objectFit: "cover",
+                      borderRadius: 4,
+                    }}
+                  />
+                </TableCell>
                 <TableCell>{b.Title}</TableCell>
                 <TableCell>{b.Status}</TableCell>
                 <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>

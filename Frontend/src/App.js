@@ -39,6 +39,7 @@ import UserProfileRecipient from "./pages/UserProfileRecipient";
 import RequireRecipient from "./components/RequireRecipient";
 import BlogDetail from "./pages/BlogDetail";
 import ArticleManage from "./pages/admin/ArticleManage";
+import BloodStorageManage from "./pages/admin/BloodStorageManage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -93,6 +94,7 @@ const App = () => {
         <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
         <Route path="/manage-article" element={<ArticleManage />} />
+        <Route path="/manage-blood-storage" element={<BloodStorageManage />} />
         <Route
           path="manage-blood-periods"
           element={

@@ -16,6 +16,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 
 const ArticleManage = () => {
@@ -25,14 +29,14 @@ const ArticleManage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newArticle, setNewArticle] = useState({
-    UserId: "",
     Title: "",
     Content: "",
     Status: "",
   });
 
+  const DEFAULT_USER_ID = "admin123";
+
   useEffect(() => {
-    // TODO: Gọi API lấy danh sách bài viết tại đây (GET /api/articles)
     const fakeData = [
       {
         ArticleId: "1",
@@ -70,13 +74,11 @@ const ArticleManage = () => {
   };
 
   const handleViewDetail = (id) => {
-    // TODO: Gọi API GET /api/articles/:id
     const found = articles.find((a) => a.ArticleId === id);
     setSelectedArticle(found);
   };
 
   const handleDelete = (id) => {
-    // TODO: Gọi API DELETE /api/articles/:id
     const updated = articles.filter((a) => a.ArticleId !== id);
     setArticles(updated);
     setFilteredArticles(updated);
@@ -88,8 +90,8 @@ const ArticleManage = () => {
   };
 
   const handleCreate = () => {
-    const { UserId, Title, Content, Status } = newArticle;
-    if (!UserId || !Title || !Content || !Status) {
+    const { Title, Content, Status } = newArticle;
+    if (!Title || !Content || !Status) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
@@ -101,7 +103,7 @@ const ArticleManage = () => {
 
     const item = {
       ArticleId: newId,
-      UserId,
+      UserId: DEFAULT_USER_ID,
       Title,
       Content,
       Status,
@@ -114,7 +116,7 @@ const ArticleManage = () => {
     setArticles(updated);
     setFilteredArticles(updated);
     setIsCreateOpen(false);
-    setNewArticle({ UserId: "", Title: "", Content: "", Status: "" });
+    setNewArticle({ Title: "", Content: "", Status: "" });
   };
 
   return (
@@ -267,15 +269,7 @@ const ArticleManage = () => {
       >
         <DialogTitle>Tạo bài viết mới</DialogTitle>
         <DialogContent dividers>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <TextField
-              label="User ID"
-              fullWidth
-              value={newArticle.UserId}
-              onChange={(e) =>
-                setNewArticle({ ...newArticle, UserId: e.target.value })
-              }
-            />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <TextField
               label="Tiêu đề"
               fullWidth
@@ -294,14 +288,19 @@ const ArticleManage = () => {
                 setNewArticle({ ...newArticle, Content: e.target.value })
               }
             />
-            <TextField
-              label="Trạng thái"
-              fullWidth
-              value={newArticle.Status}
-              onChange={(e) =>
-                setNewArticle({ ...newArticle, Status: e.target.value })
-              }
-            />
+            <FormControl fullWidth>
+              <InputLabel>Trạng thái</InputLabel>
+              <Select
+                value={newArticle.Status}
+                label="Trạng thái"
+                onChange={(e) =>
+                  setNewArticle({ ...newArticle, Status: e.target.value })
+                }
+              >
+                <MenuItem value="Published">Published</MenuItem>
+                <MenuItem value="Draft">Draft</MenuItem>
+              </Select>
+            </FormControl>
           </div>
         </DialogContent>
         <DialogActions>

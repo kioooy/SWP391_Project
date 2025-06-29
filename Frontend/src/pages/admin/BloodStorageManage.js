@@ -1,24 +1,34 @@
 import React, { useState, useEffect } from "react";
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
   Typography,
   TextField,
   Button,
-  Card,
-  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 
 const BloodStorageManage = () => {
   const [bloodUnits, setBloodUnits] = useState([]);
   const [filteredUnits, setFilteredUnits] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedUnit, setSelectedUnit] = useState(null);
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newBlood, setNewBlood] = useState({
+    BloodTypeName: "",
+    ComponentName: "",
+    FullName: "",
+    Volume: "",
+    BloodStatus: "Available",
+  });
 
   useEffect(() => {
     const fakeData = [
@@ -27,22 +37,22 @@ const BloodStorageManage = () => {
         BloodTypeName: "O+",
         ComponentName: "Hồng cầu",
         FullName: "Nguyễn Văn A",
-        AddDate: "2025-06-01",
-        ExpiryDate: "2025-07-01",
+        AddDate: "2024-06-01",
+        ExpiryDate: "2024-07-01",
         Volume: 450,
-        BloodStatus: "Lưu trữ",
-        RemainingVolume: 400,
+        RemainingVolume: 450,
+        BloodStatus: "Available",
       },
       {
         BloodUnitId: "BU002",
         BloodTypeName: "A-",
-        ComponentName: "Tiểu cầu",
+        ComponentName: "Huyết tương",
         FullName: "Trần Thị B",
-        AddDate: "2025-06-10",
-        ExpiryDate: "2025-06-30",
-        Volume: 350,
-        BloodStatus: "Đã sử dụng",
-        RemainingVolume: 0,
+        AddDate: "2024-06-05",
+        ExpiryDate: "2024-07-05",
+        Volume: 250,
+        RemainingVolume: 200,
+        BloodStatus: "Used",
       },
     ];
     setBloodUnits(fakeData);
@@ -50,25 +60,56 @@ const BloodStorageManage = () => {
   }, []);
 
   const handleSearch = (e) => {
-    const val = e.target.value.toLowerCase();
-    setSearchTerm(val);
-    const filtered = bloodUnits.filter(
-      (b) =>
-        b.BloodTypeName.toLowerCase().includes(val) ||
-        b.ComponentName.toLowerCase().includes(val) ||
-        b.FullName.toLowerCase().includes(val)
+    const value = e.target.value;
+    setSearchTerm(value);
+    const filtered = bloodUnits.filter((unit) =>
+      unit.FullName.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredUnits(filtered);
   };
 
-  const handleView = (unit) => {
-    setSelectedUnit(unit);
+  const handleCreate = () => {
+    const { BloodTypeName, ComponentName, FullName, Volume, BloodStatus } =
+      newBlood;
+
+    if (!BloodTypeName || !ComponentName || !FullName || !Volume) {
+      alert("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    const now = new Date();
+    const newUnit = {
+      BloodUnitId: "BU" + (bloodUnits.length + 1).toString().padStart(3, "0"),
+      BloodTypeName,
+      ComponentName,
+      FullName,
+      AddDate: now.toISOString().split("T")[0],
+      ExpiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 ngày
+        .toISOString()
+        .split("T")[0],
+      Volume: +Volume,
+      RemainingVolume: +Volume,
+      BloodStatus: BloodStatus || "Available",
+    };
+
+    const updated = [newUnit, ...bloodUnits];
+    setBloodUnits(updated);
+    setFilteredUnits(updated);
+    setIsCreateOpen(false);
+    setNewBlood({
+      BloodTypeName: "",
+      ComponentName: "",
+      FullName: "",
+      Volume: "",
+      BloodStatus: "Available",
+    });
+    alert("✅ Thêm đơn vị máu thành công!");
   };
 
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" gutterBottom>
-        Quản lý kho máu 🩸
+        🩸 Quản lý kho máu
       </Typography>
 
       <div
@@ -79,13 +120,20 @@ const BloodStorageManage = () => {
         }}
       >
         <TextField
-          label="Tìm theo loại máu / thành phần / người hiến"
+          label="Tìm kiếm theo tên người hiến"
           variant="outlined"
           size="small"
-          fullWidth
           value={searchTerm}
           onChange={handleSearch}
+          style={{ width: "70%" }}
         />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          ➕ Thêm đơn vị máu
+        </Button>
       </div>
 
       <TableContainer component={Paper}>
@@ -119,38 +167,25 @@ const BloodStorageManage = () => {
               <TableCell>
                 <strong>Trạng thái</strong>
               </TableCell>
-              <TableCell>
-                <strong>Hành động</strong>
-              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredUnits.length ? (
-              filteredUnits.map((unit) => (
-                <TableRow key={unit.BloodUnitId}>
-                  <TableCell>{unit.BloodUnitId}</TableCell>
-                  <TableCell>{unit.BloodTypeName}</TableCell>
-                  <TableCell>{unit.ComponentName}</TableCell>
-                  <TableCell>{unit.FullName}</TableCell>
-                  <TableCell>{unit.AddDate}</TableCell>
-                  <TableCell>{unit.ExpiryDate}</TableCell>
-                  <TableCell>{unit.Volume}</TableCell>
-                  <TableCell>{unit.RemainingVolume}</TableCell>
-                  <TableCell>{unit.BloodStatus}</TableCell>
-                  <TableCell>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => handleView(unit)}
-                    >
-                      Xem
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+            {filteredUnits.map((unit) => (
+              <TableRow key={unit.BloodUnitId}>
+                <TableCell>{unit.BloodUnitId}</TableCell>
+                <TableCell>{unit.BloodTypeName}</TableCell>
+                <TableCell>{unit.ComponentName}</TableCell>
+                <TableCell>{unit.FullName}</TableCell>
+                <TableCell>{unit.AddDate}</TableCell>
+                <TableCell>{unit.ExpiryDate}</TableCell>
+                <TableCell>{unit.Volume}</TableCell>
+                <TableCell>{unit.RemainingVolume}</TableCell>
+                <TableCell>{unit.BloodStatus}</TableCell>
+              </TableRow>
+            ))}
+            {filteredUnits.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={9} align="center">
                   Không tìm thấy đơn vị máu nào.
                 </TableCell>
               </TableRow>
@@ -159,51 +194,64 @@ const BloodStorageManage = () => {
         </Table>
       </TableContainer>
 
-      {selectedUnit && (
-        <Card
-          style={{
-            marginTop: 24,
-            padding: 16,
-            backgroundColor: "#e3f2fd",
-            borderRadius: 12,
-          }}
-        >
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              🧾 Chi tiết đơn vị máu
-            </Typography>
-            <div style={{ display: "grid", rowGap: 8 }}>
-              <div>
-                <strong>ID:</strong> {selectedUnit.BloodUnitId}
-              </div>
-              <div>
-                <strong>Loại máu:</strong> {selectedUnit.BloodTypeName}
-              </div>
-              <div>
-                <strong>Thành phần:</strong> {selectedUnit.ComponentName}
-              </div>
-              <div>
-                <strong>Người hiến:</strong> {selectedUnit.FullName}
-              </div>
-              <div>
-                <strong>Ngày nhập:</strong> {selectedUnit.AddDate}
-              </div>
-              <div>
-                <strong>Hạn sử dụng:</strong> {selectedUnit.ExpiryDate}
-              </div>
-              <div>
-                <strong>Thể tích:</strong> {selectedUnit.Volume} mL
-              </div>
-              <div>
-                <strong>Còn lại:</strong> {selectedUnit.RemainingVolume} mL
-              </div>
-              <div>
-                <strong>Trạng thái:</strong> {selectedUnit.BloodStatus}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Modal thêm đơn vị máu */}
+      <Dialog
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>➕ Thêm đơn vị máu</DialogTitle>
+        <DialogContent style={{ display: "grid", gap: 12, marginTop: 8 }}>
+          <TextField
+            label="Loại máu"
+            fullWidth
+            value={newBlood.BloodTypeName}
+            onChange={(e) =>
+              setNewBlood({ ...newBlood, BloodTypeName: e.target.value })
+            }
+          />
+          <TextField
+            label="Thành phần"
+            fullWidth
+            value={newBlood.ComponentName}
+            onChange={(e) =>
+              setNewBlood({ ...newBlood, ComponentName: e.target.value })
+            }
+          />
+          <TextField
+            label="Họ tên người hiến"
+            fullWidth
+            value={newBlood.FullName}
+            onChange={(e) =>
+              setNewBlood({ ...newBlood, FullName: e.target.value })
+            }
+          />
+          <TextField
+            label="Thể tích (mL)"
+            fullWidth
+            type="number"
+            value={newBlood.Volume}
+            onChange={(e) =>
+              setNewBlood({ ...newBlood, Volume: e.target.value })
+            }
+          />
+          <TextField
+            label="Trạng thái"
+            fullWidth
+            value={newBlood.BloodStatus}
+            onChange={(e) =>
+              setNewBlood({ ...newBlood, BloodStatus: e.target.value })
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleCreate}>
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

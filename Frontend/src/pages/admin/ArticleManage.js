@@ -169,29 +169,38 @@ const ArticleManage = () => {
         <Card
           style={{
             marginTop: 24,
-            backgroundColor: "#f9f9f9",
-            border: "1px solid #ccc",
+            padding: 16,
+            backgroundColor: "#f0f4f8",
+            borderRadius: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
           }}
         >
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Chi tiết bài viết
+            <Typography variant="h6" gutterBottom style={{ marginBottom: 16 }}>
+              📝 Chi tiết bài viết
             </Typography>
-            <Typography>
-              <strong>ID:</strong> {selectedArticle.ArticleId}
-            </Typography>
-            <Typography>
-              <strong>Tiêu đề:</strong> {selectedArticle.Title}
-            </Typography>
-            <Typography>
-              <strong>Nội dung:</strong> {selectedArticle.Content}
-            </Typography>
-            <Typography>
-              <strong>Ngày đăng:</strong> {selectedArticle.PublishedDate}
-            </Typography>
-            <Typography>
-              <strong>Ngày cập nhật:</strong> {selectedArticle.UpdatedDate}
-            </Typography>
+            <div style={{ display: "grid", rowGap: 12 }}>
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>🆔 ID:</strong>
+                <span>{selectedArticle.ArticleId}</span>
+              </div>
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📌 Tiêu đề:</strong>
+                <span>{selectedArticle.Title}</span>
+              </div>
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📝 Nội dung:</strong>
+                <span>{selectedArticle.Content}</span>
+              </div>
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📅 Ngày đăng:</strong>
+                <span>{selectedArticle.PublishedDate}</span>
+              </div>
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>🔄 Ngày cập nhật:</strong>
+                <span>{selectedArticle.UpdatedDate}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

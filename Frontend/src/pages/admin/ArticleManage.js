@@ -36,6 +36,9 @@ const ArticleManage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editArticle, setEditArticle] = useState(null);
 
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [articleToDelete, setArticleToDelete] = useState(null);
+
   useEffect(() => {
     const fakeData = [
       {
@@ -76,13 +79,6 @@ const ArticleManage = () => {
   const handleViewDetail = (id) => {
     const found = articles.find((a) => a.ArticleId === id);
     setSelectedArticle(found);
-  };
-
-  const handleDelete = (id) => {
-    const updated = articles.filter((a) => a.ArticleId !== id);
-    setArticles(updated);
-    setFilteredArticles(updated);
-    if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
   };
 
   const handleEdit = (id) => {
@@ -137,24 +133,22 @@ const ArticleManage = () => {
     setArticles(updated);
     setFilteredArticles(updated);
     setIsCreateOpen(false);
-    alert("✅ Tạo bài viết thành công!");
     setNewArticle({ Title: "", Content: "", Status: "" });
+    alert("✅ Tạo bài viết thành công!");
   };
 
-  const handleToggleStatus = (id) => {
-    const updated = articles.map((a) => {
-      if (a.ArticleId === id) {
-        const newStatus = a.Status === "Published" ? "Draft" : "Published";
-        return {
-          ...a,
-          Status: newStatus,
-          UpdatedDate: new Date().toISOString().split("T")[0],
-        };
-      }
-      return a;
-    });
+  const confirmDeleteArticle = () => {
+    const updated = articles.filter(
+      (a) => a.ArticleId !== articleToDelete.ArticleId
+    );
     setArticles(updated);
     setFilteredArticles(updated);
+    if (selectedArticle?.ArticleId === articleToDelete.ArticleId) {
+      setSelectedArticle(null);
+    }
+    setConfirmDeleteOpen(false);
+    setArticleToDelete(null);
+    alert("🗑️ Đã xóa bài viết thành công!");
   };
 
   return (
@@ -218,7 +212,7 @@ const ArticleManage = () => {
                       variant="outlined"
                       onClick={() => handleViewDetail(article.ArticleId)}
                     >
-                      Xem
+                      Xem chi tiết
                     </Button>
                     <Button
                       size="small"
@@ -231,18 +225,11 @@ const ArticleManage = () => {
                     <Button
                       size="small"
                       variant="outlined"
-                      color="secondary"
-                      onClick={() => handleToggleStatus(article.ArticleId)}
-                    >
-                      {article.Status === "Published"
-                        ? "Chuyển thành Draft"
-                        : "Xuất bản"}
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
                       color="error"
-                      onClick={() => handleDelete(article.ArticleId)}
+                      onClick={() => {
+                        setArticleToDelete(article);
+                        setConfirmDeleteOpen(true);
+                      }}
                     >
                       Xóa
                     </Button>
@@ -268,33 +255,41 @@ const ArticleManage = () => {
             padding: 16,
             backgroundColor: "#f0f4f8",
             borderRadius: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
           }}
         >
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom style={{ marginBottom: 16 }}>
               📝 Chi tiết bài viết
             </Typography>
             <div style={{ display: "grid", rowGap: 12 }}>
-              <div>
-                <strong>🆔 ID:</strong> {selectedArticle.ArticleId}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>🆔 ID:</strong>
+                <span>{selectedArticle.ArticleId}</span>
               </div>
-              <div>
-                <strong>👤 User ID:</strong> {selectedArticle.UserId}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>👤 User ID:</strong>
+                <span>{selectedArticle.UserId}</span>
               </div>
-              <div>
-                <strong>📌 Tiêu đề:</strong> {selectedArticle.Title}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📌 Tiêu đề:</strong>
+                <span>{selectedArticle.Title}</span>
               </div>
-              <div>
-                <strong>📝 Nội dung:</strong> {selectedArticle.Content}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📝 Nội dung:</strong>
+                <span>{selectedArticle.Content}</span>
               </div>
-              <div>
-                <strong>📊 Trạng thái:</strong> {selectedArticle.Status}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📊 Trạng thái:</strong>
+                <span>{selectedArticle.Status}</span>
               </div>
-              <div>
-                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📅 Ngày đăng:</strong>
+                <span>{selectedArticle.PublishedDate}</span>
               </div>
-              <div>
-                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate}
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>🔄 Cập nhật:</strong>
+                <span>{selectedArticle.UpdatedDate}</span>
               </div>
             </div>
           </CardContent>
@@ -352,7 +347,7 @@ const ArticleManage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Modal cập nhật bài viết */}
+      {/* Modal chỉnh sửa */}
       <Dialog
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
@@ -399,6 +394,30 @@ const ArticleManage = () => {
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleUpdate}>
             Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal xác nhận xóa */}
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+      >
+        <DialogTitle>Xác nhận xóa bài viết</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Bạn có chắc chắn muốn xóa bài viết{" "}
+            <strong>{articleToDelete?.Title}</strong> không?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)}>Hủy</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={confirmDeleteArticle}
+          >
+            Xóa
           </Button>
         </DialogActions>
       </Dialog>

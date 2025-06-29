@@ -25,25 +25,33 @@ const ArticleManage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newArticle, setNewArticle] = useState({
+    UserId: "",
     Title: "",
     Content: "",
-    PublishedDate: "",
+    Status: "",
   });
 
   useEffect(() => {
+    // TODO: Gọi API lấy danh sách bài viết tại đây (GET /api/articles)
     const fakeData = [
       {
         ArticleId: "1",
+        UserId: "101",
         Title: "Giới thiệu về TypeScript",
         Content: "TypeScript là một phần mở rộng của JavaScript.",
+        Status: "Published",
+        IsActive: true,
         PublishedDate: "2024-01-01",
         UpdatedDate: "2024-02-01",
       },
       {
         ArticleId: "2",
+        UserId: "102",
         Title: "React Hooks là gì?",
         Content:
           "Hooks cho phép dùng state và lifecycle trong function component.",
+        Status: "Draft",
+        IsActive: true,
         PublishedDate: "2024-03-15",
         UpdatedDate: "2024-04-10",
       },
@@ -51,22 +59,6 @@ const ArticleManage = () => {
     setArticles(fakeData);
     setFilteredArticles(fakeData);
   }, []);
-
-  const handleEdit = (id) => {
-    alert(`Chỉnh sửa bài viết ID: ${id}`);
-  };
-
-  const handleDelete = (id) => {
-    const newArticles = articles.filter((a) => a.ArticleId !== id);
-    setArticles(newArticles);
-    setFilteredArticles(newArticles);
-    if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
-  };
-
-  const handleViewDetail = (id) => {
-    const article = articles.find((a) => a.ArticleId === id);
-    setSelectedArticle(article);
-  };
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -77,26 +69,52 @@ const ArticleManage = () => {
     setFilteredArticles(filtered);
   };
 
+  const handleViewDetail = (id) => {
+    // TODO: Gọi API GET /api/articles/:id
+    const found = articles.find((a) => a.ArticleId === id);
+    setSelectedArticle(found);
+  };
+
+  const handleDelete = (id) => {
+    // TODO: Gọi API DELETE /api/articles/:id
+    const updated = articles.filter((a) => a.ArticleId !== id);
+    setArticles(updated);
+    setFilteredArticles(updated);
+    if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
+  };
+
+  const handleEdit = (id) => {
+    alert("Chỉnh sửa bài viết ID: " + id);
+  };
+
   const handleCreate = () => {
-    if (!newArticle.Title || !newArticle.Content || !newArticle.PublishedDate) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+    const { UserId, Title, Content, Status } = newArticle;
+    if (!UserId || !Title || !Content || !Status) {
+      alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
 
     const newId = (
-      Math.max(...articles.map((a) => +a.ArticleId), 0) + 1
+      Math.max(...articles.map((a) => +a.ArticleId || 0), 0) + 1
     ).toString();
+    const now = new Date().toISOString().split("T")[0];
+
     const item = {
-      ...newArticle,
       ArticleId: newId,
-      UpdatedDate: newArticle.PublishedDate,
+      UserId,
+      Title,
+      Content,
+      Status,
+      IsActive: true,
+      PublishedDate: now,
+      UpdatedDate: now,
     };
 
     const updated = [item, ...articles];
     setArticles(updated);
     setFilteredArticles(updated);
     setIsCreateOpen(false);
-    setNewArticle({ Title: "", Content: "", PublishedDate: "" });
+    setNewArticle({ UserId: "", Title: "", Content: "", Status: "" });
   };
 
   return (
@@ -118,13 +136,9 @@ const ArticleManage = () => {
           size="small"
           value={searchTerm}
           onChange={handleSearch}
-          style={{ flexGrow: 1, marginRight: 8 }}
+          style={{ width: "70%" }}
         />
-        <Button
-          variant="contained"
-          color="success"
-          onClick={() => setIsCreateOpen(true)}
-        >
+        <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
           ➕ Tạo bài viết
         </Button>
       </div>
@@ -143,7 +157,7 @@ const ArticleManage = () => {
                 <strong>Ngày đăng</strong>
               </TableCell>
               <TableCell>
-                <strong>Cập nhật</strong>
+                <strong>Ngày cập nhật</strong>
               </TableCell>
               <TableCell>
                 <strong>Hành động</strong>
@@ -160,24 +174,24 @@ const ArticleManage = () => {
                 <TableCell>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button
-                      variant="outlined"
                       size="small"
+                      variant="outlined"
                       onClick={() => handleViewDetail(article.ArticleId)}
                     >
-                      Xem
+                      Xem chi tiết
                     </Button>
                     <Button
+                      size="small"
                       variant="contained"
                       color="primary"
-                      size="small"
                       onClick={() => handleEdit(article.ArticleId)}
                     >
                       Sửa
                     </Button>
                     <Button
+                      size="small"
                       variant="outlined"
                       color="error"
-                      size="small"
                       onClick={() => handleDelete(article.ArticleId)}
                     >
                       Xóa
@@ -208,13 +222,17 @@ const ArticleManage = () => {
           }}
         >
           <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom style={{ marginBottom: 16 }}>
               📝 Chi tiết bài viết
             </Typography>
             <div style={{ display: "grid", rowGap: 12 }}>
               <div style={{ display: "flex" }}>
                 <strong style={{ width: 150 }}>🆔 ID:</strong>
                 <span>{selectedArticle.ArticleId}</span>
+              </div>
+              <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>👤 User ID:</strong>
+                <span>{selectedArticle.UserId}</span>
               </div>
               <div style={{ display: "flex" }}>
                 <strong style={{ width: 150 }}>📌 Tiêu đề:</strong>
@@ -225,11 +243,15 @@ const ArticleManage = () => {
                 <span>{selectedArticle.Content}</span>
               </div>
               <div style={{ display: "flex" }}>
+                <strong style={{ width: 150 }}>📊 Trạng thái:</strong>
+                <span>{selectedArticle.Status}</span>
+              </div>
+              <div style={{ display: "flex" }}>
                 <strong style={{ width: 150 }}>📅 Ngày đăng:</strong>
                 <span>{selectedArticle.PublishedDate}</span>
               </div>
               <div style={{ display: "flex" }}>
-                <strong style={{ width: 150 }}>🔄 Ngày cập nhật:</strong>
+                <strong style={{ width: 150 }}>🔄 Cập nhật:</strong>
                 <span>{selectedArticle.UpdatedDate}</span>
               </div>
             </div>
@@ -237,7 +259,6 @@ const ArticleManage = () => {
         </Card>
       )}
 
-      {/* Modal tạo mới */}
       <Dialog
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -247,6 +268,14 @@ const ArticleManage = () => {
         <DialogTitle>Tạo bài viết mới</DialogTitle>
         <DialogContent dividers>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <TextField
+              label="User ID"
+              fullWidth
+              value={newArticle.UserId}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, UserId: e.target.value })
+              }
+            />
             <TextField
               label="Tiêu đề"
               fullWidth
@@ -266,20 +295,19 @@ const ArticleManage = () => {
               }
             />
             <TextField
-              label="Ngày đăng"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={newArticle.PublishedDate}
+              label="Trạng thái"
+              fullWidth
+              value={newArticle.Status}
               onChange={(e) =>
-                setNewArticle({ ...newArticle, PublishedDate: e.target.value })
+                setNewArticle({ ...newArticle, Status: e.target.value })
               }
             />
           </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
-          <Button variant="contained" color="success" onClick={handleCreate}>
-            Tạo
+          <Button variant="contained" onClick={handleCreate}>
+            Lưu
           </Button>
         </DialogActions>
       </Dialog>

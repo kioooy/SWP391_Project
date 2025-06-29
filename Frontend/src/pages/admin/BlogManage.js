@@ -16,8 +16,11 @@ import {
   Paper,
   TablePagination,
 } from "@mui/material";
+import axios from "axios";
 
 const BlogManage = () => {
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
+  const token = localStorage.getItem("token");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [blogs, setBlogs] = useState([]);
@@ -37,32 +40,28 @@ const BlogManage = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   useEffect(() => {
-    const fakeData = [
-      {
-        PostId: "1",
-        Title: "Giới thiệu hệ thống hiến máu",
-        Content: "Đây là nội dung bài viết đầu tiên.",
-        PublishedDate: "2024-01-01",
-        UpdatedDate: "2024-01-02",
-        ImageUrl:
-          "https://benhviendakhoatinhphutho.vn/wp-content/uploads/2023/02/Loi-ich-hien-mau.jpg.webp",
-        Status: "Published",
-        IsActive: true,
-      },
-      {
-        PostId: "2",
-        Title: "Hướng dẫn đăng ký hiến máu",
-        Content: "Chi tiết quy trình đăng ký và quy định.",
-        PublishedDate: "2024-02-01",
-        UpdatedDate: "2024-02-10",
-        ImageUrl:
-          "https://vienhuyethoc.vn/wp-content/uploads/2020/01/Untitled-1.jpg",
-        Status: "Draft",
-        IsActive: true,
-      },
-    ];
-    setBlogs(fakeData);
-    setFilteredBlogs(fakeData);
+    const fetchBlogs = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/blogs/admin`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = res.data.map((blog) => ({
+          ...blog,
+          Status: "Published",
+          IsActive: true,
+        }));
+
+        setBlogs(data);
+        setFilteredBlogs(data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách blogs:", error);
+      }
+    };
+
+    fetchBlogs();
   }, []);
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -81,34 +80,59 @@ const BlogManage = () => {
     setFilteredBlogs(filtered);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const { Title, Content, ImageUrl, Status, IsActive } = newBlog;
+
     if (!Title || !Content || !ImageUrl) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-    const now = new Date().toISOString().split("T")[0];
-    const newPost = {
-      PostId: (blogs.length + 1).toString(),
-      Title,
-      Content,
-      ImageUrl,
-      Status,
-      IsActive,
-      PublishedDate: now,
-      UpdatedDate: now,
-    };
-    const updated = [newPost, ...blogs];
-    setBlogs(updated);
-    setFilteredBlogs(updated);
-    setNewBlog({
-      Title: "",
-      Content: "",
-      ImageUrl: "",
-      Status: "Draft",
-      IsActive: true,
-    });
-    setIsCreateOpen(false);
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/blogs`,
+        {
+          // userId: currentUserId,
+          title: Title,
+          content: Content,
+          imageUrl: ImageUrl,
+          status: Status,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const created = res.data;
+
+      const newPost = {
+        PostId: created.postId,
+        Title: created.title,
+        Content: created.content,
+        ImageUrl: created.imageUrl,
+        Status: created.status,
+        IsActive: true,
+        PublishedDate: created.publishedDate,
+        UpdatedDate: created.updatedDate ?? created.publishedDate,
+      };
+
+      const updated = [newPost, ...blogs];
+      setBlogs(updated);
+      setFilteredBlogs(updated);
+      setNewBlog({
+        Title: "",
+        Content: "",
+        ImageUrl: "",
+        Status: "Draft",
+        IsActive: true,
+      });
+      setIsCreateOpen(false);
+    } catch (error) {
+      console.error("Lỗi tạo blog:", error);
+      alert("Tạo bài viết thất bại.");
+    }
   };
 
   const handleEdit = (b) => {
@@ -116,34 +140,119 @@ const BlogManage = () => {
     setIsEditOpen(true);
   };
 
-  const handleUpdate = () => {
-    const updated = blogs.map((b) =>
-      b.PostId === editBlog.PostId
-        ? { ...editBlog, UpdatedDate: new Date().toISOString().split("T")[0] }
-        : b
-    );
-    setBlogs(updated);
-    setFilteredBlogs(updated);
-    setIsEditOpen(false);
-    setEditBlog(null);
+  const handleUpdate = async () => {
+    const { PostId, Title, Content, ImageUrl, Status } = editBlog;
+
+    if (!Title || !Content || !ImageUrl) {
+      alert("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API_URL}/blogs/${PostId}`,
+        {
+          title: Title,
+          content: Content,
+          imageUrl: ImageUrl,
+          status: Status,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updated = blogs.map((b) =>
+        b.PostId === PostId
+          ? {
+              ...b,
+              Title,
+              Content,
+              ImageUrl,
+              Status,
+              UpdatedDate: new Date().toISOString().split("T")[0],
+            }
+          : b
+      );
+
+      setBlogs(updated);
+      setFilteredBlogs(updated);
+      setIsEditOpen(false);
+      setEditBlog(null);
+    } catch (error) {
+      console.error("Lỗi khi cập nhật blog:", error);
+      alert("Cập nhật blog thất bại.");
+    }
   };
 
-  const handleToggleStatus = (id) => {
-    const updated = blogs.map((b) =>
-      b.PostId === id
-        ? { ...b, Status: b.Status === "Published" ? "Draft" : "Published" }
-        : b
-    );
-    setBlogs(updated);
-    setFilteredBlogs(updated);
+  const handleToggleStatus = async (id) => {
+    const targetBlog = blogs.find((b) => b.PostId === id);
+    if (!targetBlog) return;
+
+    const newStatus = targetBlog.Status === "Published" ? "Draft" : "Published";
+
+    try {
+      await axios.patch(
+        `${API_URL}/blogs/${id}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updated = blogs.map((b) =>
+        b.PostId === id
+          ? {
+              ...b,
+              Status: newStatus,
+              UpdatedDate: new Date().toISOString().split("T")[0],
+            }
+          : b
+      );
+
+      setBlogs(updated);
+      setFilteredBlogs(updated);
+    } catch (error) {
+      console.error("Lỗi khi đổi trạng thái blog:", error);
+      alert("Đổi trạng thái thất bại.");
+    }
   };
 
-  const handleToggleActive = (id) => {
-    const updated = blogs.map((b) =>
-      b.PostId === id ? { ...b, IsActive: !b.IsActive } : b
-    );
-    setBlogs(updated);
-    setFilteredBlogs(updated);
+  const handleToggleActive = async (id) => {
+    const blog = blogs.find((b) => b.PostId === id);
+    if (!blog || !blog.IsActive) return;
+
+    try {
+      await axios.patch(
+        `${API_URL}/blogs/${id}/deactivate`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updated = blogs.map((b) =>
+        b.PostId === id
+          ? {
+              ...b,
+              IsActive: false,
+              UpdatedDate: new Date().toISOString().split("T")[0],
+            }
+          : b
+      );
+
+      setBlogs(updated);
+      setFilteredBlogs(updated);
+    } catch (error) {
+      console.error("Lỗi khi deactivate blog:", error);
+      alert("Không thể vô hiệu hóa bài viết.");
+    }
   };
 
   const handleViewDetail = (b) => {

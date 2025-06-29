@@ -15,8 +15,11 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
+import axios from "axios";
 
 const BloodStorageManage = () => {
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
+  const token = localStorage.getItem("token");
   const [bloodUnits, setBloodUnits] = useState([]);
   const [filteredUnits, setFilteredUnits] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,32 +37,22 @@ const BloodStorageManage = () => {
   const [editBlood, setEditBlood] = useState(null);
 
   useEffect(() => {
-    const fakeData = [
-      {
-        BloodUnitId: "BU001",
-        BloodTypeName: "O+",
-        ComponentName: "Hồng cầu",
-        FullName: "Nguyễn Văn A",
-        AddDate: "2024-06-01",
-        ExpiryDate: "2024-07-01",
-        Volume: 450,
-        RemainingVolume: 450,
-        BloodStatus: "Available",
-      },
-      {
-        BloodUnitId: "BU002",
-        BloodTypeName: "A-",
-        ComponentName: "Huyết tương",
-        FullName: "Trần Thị B",
-        AddDate: "2024-06-05",
-        ExpiryDate: "2024-07-05",
-        Volume: 250,
-        RemainingVolume: 200,
-        BloodStatus: "Used",
-      },
-    ];
-    setBloodUnits(fakeData);
-    setFilteredUnits(fakeData);
+    const fetchBloodUnits = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/BloodUnit`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setBloodUnits(res.data);
+        setFilteredUnits(res.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách đơn vị máu:", error);
+      }
+    };
+
+    fetchBloodUnits();
   }, []);
 
   const handleSearch = (e) => {
@@ -70,43 +63,71 @@ const BloodStorageManage = () => {
     );
     setFilteredUnits(filtered);
   };
+  const handleCreate = async () => {
+    const {
+      BloodTypeId,
+      ComponentId,
+      MemberId,
+      Volume,
+      BloodStatus = "Available",
+    } = newBlood;
 
-  const handleCreate = () => {
-    const { BloodTypeName, ComponentName, FullName, Volume, BloodStatus } =
-      newBlood;
-
-    if (!BloodTypeName || !ComponentName || !FullName || !Volume) {
+    if (!BloodTypeId || !ComponentId || !MemberId || !Volume) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
 
-    const now = new Date();
-    const newUnit = {
-      BloodUnitId: "BU" + (bloodUnits.length + 1).toString().padStart(3, "0"),
-      BloodTypeName,
-      ComponentName,
-      FullName,
-      AddDate: now.toISOString().split("T")[0],
-      ExpiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      Volume: +Volume,
-      RemainingVolume: +Volume,
-      BloodStatus: BloodStatus || "Available",
-    };
+    try {
+      const res = await axios.post(
+        `${API_URL}/BloodUnit`,
+        {
+          bloodTypeId: BloodTypeId,
+          componentId: ComponentId,
+          memberId: MemberId,
+          volume: +Volume,
+          bloodStatus: BloodStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    const updated = [newUnit, ...bloodUnits];
-    setBloodUnits(updated);
-    setFilteredUnits(updated);
-    setIsCreateOpen(false);
-    setNewBlood({
-      BloodTypeName: "",
-      ComponentName: "",
-      FullName: "",
-      Volume: "",
-      BloodStatus: "Available",
-    });
-    alert("✅ Thêm đơn vị máu thành công!");
+      const created = res.data;
+      const now = new Date();
+      const newUnit = {
+        BloodUnitId: "BU" + (bloodUnits.length + 1).toString().padStart(3, "0"),
+        BloodTypeName: BloodTypeId,
+        ComponentName: ComponentId,
+        FullName: MemberId,
+        AddDate: now.toISOString().split("T")[0],
+        ExpiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        Volume: +Volume,
+        RemainingVolume: +Volume,
+        BloodStatus: BloodStatus || "Available",
+      };
+
+      const updated = [newUnit, ...bloodUnits];
+      setBloodUnits(updated);
+      setFilteredUnits(updated);
+      setIsCreateOpen(false);
+
+      setNewBlood({
+        BloodTypeId: "",
+        ComponentId: "",
+        MemberId: "",
+        Volume: "",
+        BloodStatus: "Available",
+      });
+
+      alert("✅ Thêm đơn vị máu thành công!");
+    } catch (error) {
+      console.error("Lỗi khi tạo đơn vị máu:", error);
+      alert("❌ Tạo đơn vị máu thất bại!");
+    }
   };
 
   const handleEdit = (unit) => {
@@ -114,34 +135,106 @@ const BloodStorageManage = () => {
     setIsEditOpen(true);
   };
 
-  const handleUpdate = () => {
-    const updated = bloodUnits.map((u) =>
-      u.BloodUnitId === editBlood.BloodUnitId ? editBlood : u
-    );
-    setBloodUnits(updated);
-    setFilteredUnits(updated);
-    setIsEditOpen(false);
-    setEditBlood(null);
-    alert("✅ Cập nhật đơn vị máu thành công!");
+  const handleUpdate = async () => {
+    const {
+      BloodUnitId,
+      BloodTypeId,
+      ComponentId,
+      MemberId,
+      Volume,
+      RemainingVolume,
+      BloodStatus,
+      AddDate,
+    } = editBlood;
+
+    if (!BloodUnitId || !BloodTypeId || !ComponentId || !MemberId || !Volume) {
+      alert("Vui lòng nhập đầy đủ thông tin.");
+      return;
+    }
+
+    try {
+      await axios.patch(
+        `${API_URL}/BloodUnit/${BloodUnitId}`,
+        {
+          bloodTypeId: BloodTypeId,
+          componentId: ComponentId,
+          memberId: MemberId,
+          volume: +Volume,
+          remainingVolume: +RemainingVolume,
+          bloodStatus: BloodStatus,
+          addDate: AddDate,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const updated = bloodUnits.map((u) =>
+        u.BloodUnitId === BloodUnitId
+          ? {
+              ...editBlood,
+              UpdatedDate: new Date().toISOString().split("T")[0],
+            }
+          : u
+      );
+
+      setBloodUnits(updated);
+      setFilteredUnits(updated);
+      setIsEditOpen(false);
+      setEditBlood(null);
+      alert("✅ Cập nhật đơn vị máu thành công!");
+    } catch (error) {
+      console.error("❌ Lỗi cập nhật đơn vị máu:", error);
+      alert("❌ Cập nhật đơn vị máu thất bại!");
+    }
   };
 
-  const handleToggleStatus = (unit) => {
-    const updated = bloodUnits.map((u) => {
-      if (u.BloodUnitId === unit.BloodUnitId) {
-        if (u.BloodStatus === "Available") {
-          return { ...u, BloodStatus: "Used" };
-        } else if (u.BloodStatus === "Used") {
-          if (
-            window.confirm("Bạn có chắc muốn loại bỏ đơn vị máu này không?")
-          ) {
-            return { ...u, BloodStatus: "Removed", RemainingVolume: 0 };
-          }
+  const handleToggleStatus = async (unit) => {
+    let newStatus = unit.BloodStatus;
+    let newRemaining = unit.RemainingVolume;
+
+    if (unit.BloodStatus === "Available") {
+      newStatus = "Used";
+    } else if (unit.BloodStatus === "Used") {
+      const confirm = window.confirm(
+        "Bạn có chắc muốn loại bỏ đơn vị máu này không?"
+      );
+      if (!confirm) return;
+      newStatus = "Removed";
+      newRemaining = 0;
+    } else {
+      return;
+    }
+
+    try {
+      await axios.patch(
+        `${API_URL}/BloodUnit/${unit.BloodUnitId}/update-status`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      }
-      return u;
-    });
-    setBloodUnits(updated);
-    setFilteredUnits(updated);
+      );
+
+      const updated = bloodUnits.map((u) =>
+        u.BloodUnitId === unit.BloodUnitId
+          ? {
+              ...u,
+              BloodStatus: newStatus,
+              RemainingVolume: newRemaining,
+            }
+          : u
+      );
+      setBloodUnits(updated);
+      setFilteredUnits(updated);
+      alert("✅ Cập nhật trạng thái đơn vị máu thành công!");
+    } catch (error) {
+      console.error("❌ Lỗi cập nhật trạng thái:", error);
+      alert("❌ Không thể cập nhật trạng thái đơn vị máu!");
+    }
   };
 
   return (

@@ -12,6 +12,10 @@ import {
   Card,
   CardContent,
   TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
 const ArticleManage = () => {
@@ -19,6 +23,7 @@ const ArticleManage = () => {
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newArticle, setNewArticle] = useState({
     Title: "",
     Content: "",
@@ -26,7 +31,6 @@ const ArticleManage = () => {
   });
 
   useEffect(() => {
-    // TODO: Gọi API lấy danh sách bài viết tại đây (GET /api/articles)
     const fakeData = [
       {
         ArticleId: "1",
@@ -43,36 +47,23 @@ const ArticleManage = () => {
         PublishedDate: "2024-03-15",
         UpdatedDate: "2024-04-10",
       },
-      {
-        ArticleId: "3",
-        Title: "State và Props trong React",
-        Content: "Giải thích sự khác nhau giữa state và props.",
-        PublishedDate: "2024-05-01",
-        UpdatedDate: "2024-05-02",
-      },
     ];
     setArticles(fakeData);
     setFilteredArticles(fakeData);
   }, []);
 
   const handleEdit = (id) => {
-    // TODO: Mở modal hoặc chuyển trang sửa bài viết
     alert(`Chỉnh sửa bài viết ID: ${id}`);
   };
 
   const handleDelete = (id) => {
-    // TODO: Gọi API xóa bài viết (DELETE /api/articles/:id)
     const newArticles = articles.filter((a) => a.ArticleId !== id);
     setArticles(newArticles);
-    const newFiltered = filteredArticles.filter((a) => a.ArticleId !== id);
-    setFilteredArticles(newFiltered);
-    if (selectedArticle?.ArticleId === id) {
-      setSelectedArticle(null);
-    }
+    setFilteredArticles(newArticles);
+    if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
   };
 
   const handleViewDetail = (id) => {
-    // TODO: Gọi API lấy chi tiết bài viết tại đây (GET /api/articles/:id)
     const article = articles.find((a) => a.ArticleId === id);
     setSelectedArticle(article);
   };
@@ -80,33 +71,32 @@ const ArticleManage = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    const filtered = articles.filter((article) =>
-      article.Title.toLowerCase().includes(value.toLowerCase())
+    const filtered = articles.filter((a) =>
+      a.Title.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredArticles(filtered);
   };
 
   const handleCreate = () => {
     if (!newArticle.Title || !newArticle.Content || !newArticle.PublishedDate) {
-      alert("Vui lòng điền đầy đủ thông tin");
+      alert("Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
     const newId = (
       Math.max(...articles.map((a) => +a.ArticleId), 0) + 1
     ).toString();
-    const newItem = {
+    const item = {
       ...newArticle,
       ArticleId: newId,
       UpdatedDate: newArticle.PublishedDate,
     };
 
-    const updatedList = [newItem, ...articles];
-    setArticles(updatedList);
-    setFilteredArticles(updatedList);
+    const updated = [item, ...articles];
+    setArticles(updated);
+    setFilteredArticles(updated);
+    setIsCreateOpen(false);
     setNewArticle({ Title: "", Content: "", PublishedDate: "" });
-
-    // TODO: Gọi API POST /api/articles tại đây nếu có
   };
 
   return (
@@ -115,71 +105,30 @@ const ArticleManage = () => {
         Quản lý bài viết
       </Typography>
 
-      {/* Form tạo mới bài viết */}
-      <Card
+      <div
         style={{
-          marginBottom: 24,
-          padding: 16,
-          backgroundColor: "#ffffff",
-          borderRadius: 12,
-          boxShadow: "0 1px 6px rgba(0,0,0,0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 16,
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          ➕ Tạo bài viết mới
-        </Typography>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <TextField
-            label="Tiêu đề"
-            fullWidth
-            size="small"
-            value={newArticle.Title}
-            onChange={(e) =>
-              setNewArticle({ ...newArticle, Title: e.target.value })
-            }
-          />
-          <TextField
-            label="Nội dung"
-            fullWidth
-            multiline
-            rows={3}
-            size="small"
-            value={newArticle.Content}
-            onChange={(e) =>
-              setNewArticle({ ...newArticle, Content: e.target.value })
-            }
-          />
-          <TextField
-            label="Ngày đăng"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={newArticle.PublishedDate}
-            onChange={(e) =>
-              setNewArticle({
-                ...newArticle,
-                PublishedDate: e.target.value,
-              })
-            }
-          />
-          <Button variant="contained" color="success" onClick={handleCreate}>
-            Tạo bài viết
-          </Button>
-        </div>
-      </Card>
+        <TextField
+          label="Tìm kiếm theo tiêu đề"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={handleSearch}
+          style={{ flexGrow: 1, marginRight: 8 }}
+        />
+        <Button
+          variant="contained"
+          color="success"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          ➕ Tạo bài viết
+        </Button>
+      </div>
 
-      {/* Thanh tìm kiếm */}
-      <TextField
-        label="Tìm kiếm theo tiêu đề"
-        variant="outlined"
-        size="small"
-        fullWidth
-        value={searchTerm}
-        onChange={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
-
-      {/* Bảng danh sách bài viết */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead style={{ backgroundColor: "#f5f5f5" }}>
@@ -215,7 +164,7 @@ const ArticleManage = () => {
                       size="small"
                       onClick={() => handleViewDetail(article.ArticleId)}
                     >
-                      Xem chi tiết
+                      Xem
                     </Button>
                     <Button
                       variant="contained"
@@ -248,7 +197,6 @@ const ArticleManage = () => {
         </Table>
       </TableContainer>
 
-      {/* Chi tiết bài viết */}
       {selectedArticle && (
         <Card
           style={{
@@ -260,7 +208,7 @@ const ArticleManage = () => {
           }}
         >
           <CardContent>
-            <Typography variant="h6" gutterBottom style={{ marginBottom: 16 }}>
+            <Typography variant="h6" gutterBottom>
               📝 Chi tiết bài viết
             </Typography>
             <div style={{ display: "grid", rowGap: 12 }}>
@@ -288,6 +236,53 @@ const ArticleManage = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal tạo mới */}
+      <Dialog
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Tạo bài viết mới</DialogTitle>
+        <DialogContent dividers>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <TextField
+              label="Tiêu đề"
+              fullWidth
+              value={newArticle.Title}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, Title: e.target.value })
+              }
+            />
+            <TextField
+              label="Nội dung"
+              fullWidth
+              multiline
+              rows={3}
+              value={newArticle.Content}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, Content: e.target.value })
+              }
+            />
+            <TextField
+              label="Ngày đăng"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              value={newArticle.PublishedDate}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, PublishedDate: e.target.value })
+              }
+            />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
+          <Button variant="contained" color="success" onClick={handleCreate}>
+            Tạo
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

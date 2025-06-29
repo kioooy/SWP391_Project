@@ -14,19 +14,12 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Switch,
-  FormControlLabel,
 } from "@mui/material";
 
 const BlogManage = () => {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newBlog, setNewBlog] = useState({
     Title: "",
@@ -35,31 +28,32 @@ const BlogManage = () => {
     Status: "Draft",
     IsActive: true,
   });
-
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editBlog, setEditBlog] = useState(null);
+  const [selectedBlog, setSelectedBlog] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   useEffect(() => {
     const fakeData = [
       {
-        PostId: "P001",
-        Title: "Lợi ích của việc hiến máu",
-        Content: "Hiến máu giúp cứu sống nhiều người...",
-        PublishedDate: "2024-06-01",
-        UpdatedDate: "2024-06-01",
-        ImageUrl: "https://via.placeholder.com/100",
+        PostId: "1",
+        Title: "Giới thiệu hệ thống hiến máu",
+        Content: "Đây là nội dung bài viết đầu tiên.",
+        PublishedDate: "2024-01-01",
+        UpdatedDate: "2024-01-02",
+        ImageUrl: "https://via.placeholder.com/400x200",
         Status: "Published",
         IsActive: true,
       },
       {
-        PostId: "P002",
-        Title: "Các nhóm máu phổ biến",
-        Content: "Các nhóm máu bao gồm A, B, AB, O...",
-        PublishedDate: "2024-06-05",
-        UpdatedDate: "2024-06-06",
-        ImageUrl: "https://via.placeholder.com/100",
+        PostId: "2",
+        Title: "Hướng dẫn đăng ký hiến máu",
+        Content: "Chi tiết quy trình đăng ký và quy định.",
+        PublishedDate: "2024-02-01",
+        UpdatedDate: "2024-02-10",
+        ImageUrl: "https://via.placeholder.com/400x200",
         Status: "Draft",
-        IsActive: false,
+        IsActive: true,
       },
     ];
     setBlogs(fakeData);
@@ -78,26 +72,23 @@ const BlogManage = () => {
   const handleCreate = () => {
     const { Title, Content, ImageUrl, Status, IsActive } = newBlog;
     if (!Title || !Content || !ImageUrl) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-
     const now = new Date().toISOString().split("T")[0];
     const newPost = {
-      PostId: "P" + (blogs.length + 1).toString().padStart(3, "0"),
+      PostId: (blogs.length + 1).toString(),
       Title,
       Content,
+      ImageUrl,
+      Status,
+      IsActive,
       PublishedDate: now,
       UpdatedDate: now,
-      ImageUrl,
-      Status: Status || "Draft",
-      IsActive,
     };
-
     const updated = [newPost, ...blogs];
     setBlogs(updated);
     setFilteredBlogs(updated);
-    setIsCreateOpen(false);
     setNewBlog({
       Title: "",
       Content: "",
@@ -105,45 +96,53 @@ const BlogManage = () => {
       Status: "Draft",
       IsActive: true,
     });
-    alert("✅ Đã thêm bài viết!");
+    setIsCreateOpen(false);
   };
 
-  const handleEdit = (blog) => {
-    setEditBlog({ ...blog });
+  const handleEdit = (b) => {
+    setEditBlog({ ...b });
     setIsEditOpen(true);
   };
 
   const handleUpdate = () => {
-    const now = new Date().toISOString().split("T")[0];
     const updated = blogs.map((b) =>
-      b.PostId === editBlog.PostId ? { ...editBlog, UpdatedDate: now } : b
+      b.PostId === editBlog.PostId
+        ? { ...editBlog, UpdatedDate: new Date().toISOString().split("T")[0] }
+        : b
     );
     setBlogs(updated);
     setFilteredBlogs(updated);
     setIsEditOpen(false);
-    alert("✅ Cập nhật thành công!");
+    setEditBlog(null);
   };
 
-  const handleChangeStatus = (postId, newStatus) => {
+  const handleToggleStatus = (id) => {
     const updated = blogs.map((b) =>
-      b.PostId === postId ? { ...b, Status: newStatus } : b
+      b.PostId === id
+        ? { ...b, Status: b.Status === "Published" ? "Draft" : "Published" }
+        : b
     );
     setBlogs(updated);
     setFilteredBlogs(updated);
   };
 
-  const toggleActive = (postId) => {
+  const handleToggleActive = (id) => {
     const updated = blogs.map((b) =>
-      b.PostId === postId ? { ...b, IsActive: !b.IsActive } : b
+      b.PostId === id ? { ...b, IsActive: !b.IsActive } : b
     );
     setBlogs(updated);
     setFilteredBlogs(updated);
+  };
+
+  const handleViewDetail = (b) => {
+    setSelectedBlog(b);
+    setIsDetailOpen(true);
   };
 
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" gutterBottom>
-        📚 Quản lý Blog
+        📝 Quản lý blog
       </Typography>
 
       <div
@@ -161,97 +160,75 @@ const BlogManage = () => {
           onChange={handleSearch}
           style={{ width: "70%" }}
         />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setIsCreateOpen(true)}
-        >
-          ➕ Thêm bài viết
+        <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
+          ➕ Thêm blog
         </Button>
       </div>
 
       <TableContainer component={Paper}>
         <Table>
-          <TableHead style={{ backgroundColor: "#f5f5f5" }}>
+          <TableHead>
             <TableRow>
-              <TableCell>
-                <strong>ID</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Tiêu đề</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Trạng thái</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Kích hoạt</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Hành động</strong>
-              </TableCell>
+              <TableCell>Tiêu đề</TableCell>
+              <TableCell>Trạng thái</TableCell>
+              <TableCell>Kích hoạt</TableCell>
+              <TableCell>Hành động</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredBlogs.map((b) => (
               <TableRow key={b.PostId}>
-                <TableCell>{b.PostId}</TableCell>
                 <TableCell>{b.Title}</TableCell>
+                <TableCell>{b.Status}</TableCell>
+                <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>
                 <TableCell>
-                  <Select
+                  <Button
+                    variant="text"
                     size="small"
-                    value={b.Status}
-                    onChange={(e) =>
-                      handleChangeStatus(b.PostId, e.target.value)
-                    }
+                    onClick={() => handleViewDetail(b)}
                   >
-                    <MenuItem value="Published">Published</MenuItem>
-                    <MenuItem value="Draft">Draft</MenuItem>
-                    <MenuItem value="Archived">Archived</MenuItem>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={b.IsActive}
-                        onChange={() => toggleActive(b.PostId)}
-                        color="success"
-                      />
-                    }
-                    label={b.IsActive ? "Hoạt động" : "Vô hiệu hóa"}
-                  />
-                </TableCell>
-                <TableCell>
+                    👁 Xem
+                  </Button>
                   <Button
                     variant="outlined"
                     size="small"
                     onClick={() => handleEdit(b)}
+                    style={{ margin: "0 4px" }}
                   >
                     ✏️ Sửa
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleToggleStatus(b.PostId)}
+                  >
+                    Đổi trạng thái
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleToggleActive(b.PostId)}
+                    color="error"
+                    style={{ marginLeft: 4 }}
+                  >
+                    {b.IsActive ? "Vô hiệu hóa" : "Kích hoạt"}
                   </Button>
                 </TableCell>
               </TableRow>
             ))}
-            {filteredBlogs.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  Không tìm thấy bài viết nào.
-                </TableCell>
-              </TableRow>
-            )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Modal Tạo */}
+      {/* Modal tạo */}
       <Dialog
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        fullWidth
         maxWidth="sm"
+        fullWidth
       >
-        <DialogTitle>➕ Thêm bài viết</DialogTitle>
-        <DialogContent style={{ display: "grid", gap: 12, marginTop: 8 }}>
+        <DialogTitle>Thêm blog</DialogTitle>
+        <DialogContent style={{ display: "grid", gap: 12 }}>
           <TextField
             label="Tiêu đề"
             fullWidth
@@ -269,56 +246,31 @@ const BlogManage = () => {
             }
           />
           <TextField
-            label="Ảnh (URL)"
+            label="URL ảnh"
             fullWidth
             value={newBlog.ImageUrl}
             onChange={(e) =>
               setNewBlog({ ...newBlog, ImageUrl: e.target.value })
             }
           />
-          <FormControl fullWidth>
-            <InputLabel>Trạng thái</InputLabel>
-            <Select
-              value={newBlog.Status}
-              onChange={(e) =>
-                setNewBlog({ ...newBlog, Status: e.target.value })
-              }
-              label="Trạng thái"
-            >
-              <MenuItem value="Published">Published</MenuItem>
-              <MenuItem value="Draft">Draft</MenuItem>
-              <MenuItem value="Archived">Archived</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={newBlog.IsActive}
-                onChange={() =>
-                  setNewBlog((prev) => ({ ...prev, IsActive: !prev.IsActive }))
-                }
-              />
-            }
-            label="Kích hoạt"
-          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleCreate}>
-            Tạo
+            Lưu
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal Sửa */}
+      {/* Modal sửa */}
       <Dialog
         open={isEditOpen}
         onClose={() => setIsEditOpen(false)}
-        fullWidth
         maxWidth="sm"
+        fullWidth
       >
-        <DialogTitle>✏️ Cập nhật bài viết</DialogTitle>
-        <DialogContent style={{ display: "grid", gap: 12, marginTop: 8 }}>
+        <DialogTitle>Cập nhật blog</DialogTitle>
+        <DialogContent style={{ display: "grid", gap: 12 }}>
           <TextField
             label="Tiêu đề"
             fullWidth
@@ -338,40 +290,12 @@ const BlogManage = () => {
             }
           />
           <TextField
-            label="Ảnh (URL)"
+            label="URL ảnh"
             fullWidth
             value={editBlog?.ImageUrl || ""}
             onChange={(e) =>
               setEditBlog({ ...editBlog, ImageUrl: e.target.value })
             }
-          />
-          <FormControl fullWidth>
-            <InputLabel>Trạng thái</InputLabel>
-            <Select
-              value={editBlog?.Status || ""}
-              onChange={(e) =>
-                setEditBlog({ ...editBlog, Status: e.target.value })
-              }
-              label="Trạng thái"
-            >
-              <MenuItem value="Published">Published</MenuItem>
-              <MenuItem value="Draft">Draft</MenuItem>
-              <MenuItem value="Archived">Archived</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={editBlog?.IsActive || false}
-                onChange={() =>
-                  setEditBlog((prev) => ({
-                    ...prev,
-                    IsActive: !prev.IsActive,
-                  }))
-                }
-              />
-            }
-            label="Kích hoạt"
           />
         </DialogContent>
         <DialogActions>
@@ -379,6 +303,46 @@ const BlogManage = () => {
           <Button variant="contained" onClick={handleUpdate}>
             Cập nhật
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal chi tiết */}
+      <Dialog
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>👁 Chi tiết bài viết</DialogTitle>
+        <DialogContent style={{ paddingTop: 12 }}>
+          {selectedBlog && (
+            <div style={{ display: "grid", gap: 12 }}>
+              <Typography variant="h6">{selectedBlog.Title}</Typography>
+              <img
+                src={selectedBlog.ImageUrl}
+                alt="Ảnh blog"
+                style={{ width: "100%", borderRadius: 4 }}
+              />
+              <Typography variant="body1" style={{ whiteSpace: "pre-line" }}>
+                {selectedBlog.Content}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                📅 Xuất bản: {selectedBlog.PublishedDate}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                📝 Cập nhật: {selectedBlog.UpdatedDate}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                ⚙️ Trạng thái: {selectedBlog.Status}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                ✅ Kích hoạt: {selectedBlog.IsActive ? "Có" : "Không"}
+              </Typography>
+            </div>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsDetailOpen(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
     </div>

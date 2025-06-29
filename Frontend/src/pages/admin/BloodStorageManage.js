@@ -87,7 +87,7 @@ const BloodStorageManage = () => {
       ComponentName,
       FullName,
       AddDate: now.toISOString().split("T")[0],
-      ExpiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 ngày
+      ExpiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
       Volume: +Volume,
@@ -125,6 +125,25 @@ const BloodStorageManage = () => {
     alert("✅ Cập nhật đơn vị máu thành công!");
   };
 
+  const handleToggleStatus = (unit) => {
+    const updated = bloodUnits.map((u) => {
+      if (u.BloodUnitId === unit.BloodUnitId) {
+        if (u.BloodStatus === "Available") {
+          return { ...u, BloodStatus: "Used" };
+        } else if (u.BloodStatus === "Used") {
+          if (
+            window.confirm("Bạn có chắc muốn loại bỏ đơn vị máu này không?")
+          ) {
+            return { ...u, BloodStatus: "Removed", RemainingVolume: 0 };
+          }
+        }
+      }
+      return u;
+    });
+    setBloodUnits(updated);
+    setFilteredUnits(updated);
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" gutterBottom>
@@ -159,36 +178,22 @@ const BloodStorageManage = () => {
         <Table>
           <TableHead style={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell>
-                <strong>ID</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Loại máu</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Thành phần</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Người hiến</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Ngày nhập</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Hạn sử dụng</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Thể tích</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Còn lại</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Trạng thái</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Hành động</strong>
-              </TableCell>
+              {[
+                "ID",
+                "Loại máu",
+                "Thành phần",
+                "Người hiến",
+                "Ngày nhập",
+                "Hạn sử dụng",
+                "Thể tích",
+                "Còn lại",
+                "Trạng thái",
+                "Hành động",
+              ].map((h) => (
+                <TableCell key={h}>
+                  <strong>{h}</strong>
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -211,6 +216,19 @@ const BloodStorageManage = () => {
                   >
                     Sửa
                   </Button>
+                  {unit.BloodStatus !== "Removed" && (
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      size="small"
+                      style={{ marginLeft: 8 }}
+                      onClick={() => handleToggleStatus(unit)}
+                    >
+                      {unit.BloodStatus === "Available"
+                        ? "Đánh dấu đã dùng"
+                        : "Loại bỏ"}
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -234,47 +252,27 @@ const BloodStorageManage = () => {
       >
         <DialogTitle>➕ Thêm đơn vị máu</DialogTitle>
         <DialogContent style={{ display: "grid", gap: 12, marginTop: 8 }}>
-          <TextField
-            label="Loại máu"
-            fullWidth
-            value={newBlood.BloodTypeName}
-            onChange={(e) =>
-              setNewBlood({ ...newBlood, BloodTypeName: e.target.value })
-            }
-          />
-          <TextField
-            label="Thành phần"
-            fullWidth
-            value={newBlood.ComponentName}
-            onChange={(e) =>
-              setNewBlood({ ...newBlood, ComponentName: e.target.value })
-            }
-          />
-          <TextField
-            label="Người hiến"
-            fullWidth
-            value={newBlood.FullName}
-            onChange={(e) =>
-              setNewBlood({ ...newBlood, FullName: e.target.value })
-            }
-          />
-          <TextField
-            label="Thể tích (mL)"
-            fullWidth
-            type="number"
-            value={newBlood.Volume}
-            onChange={(e) =>
-              setNewBlood({ ...newBlood, Volume: e.target.value })
-            }
-          />
-          <TextField
-            label="Trạng thái"
-            fullWidth
-            value={newBlood.BloodStatus}
-            onChange={(e) =>
-              setNewBlood({ ...newBlood, BloodStatus: e.target.value })
-            }
-          />
+          {[
+            "Loại máu",
+            "Thành phần",
+            "Người hiến",
+            "Thể tích (mL)",
+            "Trạng thái",
+          ].map((label, i) => (
+            <TextField
+              key={i}
+              label={label}
+              fullWidth
+              type={label.includes("Thể tích") ? "number" : "text"}
+              value={newBlood[Object.keys(newBlood)[i]]}
+              onChange={(e) =>
+                setNewBlood({
+                  ...newBlood,
+                  [Object.keys(newBlood)[i]]: e.target.value,
+                })
+              }
+            />
+          ))}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -293,56 +291,29 @@ const BloodStorageManage = () => {
       >
         <DialogTitle>✏️ Cập nhật đơn vị máu</DialogTitle>
         <DialogContent style={{ display: "grid", gap: 12, marginTop: 8 }}>
-          <TextField
-            label="Loại máu"
-            fullWidth
-            value={editBlood?.BloodTypeName || ""}
-            onChange={(e) =>
-              setEditBlood({ ...editBlood, BloodTypeName: e.target.value })
-            }
-          />
-          <TextField
-            label="Thành phần"
-            fullWidth
-            value={editBlood?.ComponentName || ""}
-            onChange={(e) =>
-              setEditBlood({ ...editBlood, ComponentName: e.target.value })
-            }
-          />
-          <TextField
-            label="Người hiến"
-            fullWidth
-            value={editBlood?.FullName || ""}
-            onChange={(e) =>
-              setEditBlood({ ...editBlood, FullName: e.target.value })
-            }
-          />
-          <TextField
-            label="Thể tích"
-            fullWidth
-            type="number"
-            value={editBlood?.Volume || ""}
-            onChange={(e) =>
-              setEditBlood({ ...editBlood, Volume: +e.target.value })
-            }
-          />
-          <TextField
-            label="Còn lại"
-            fullWidth
-            type="number"
-            value={editBlood?.RemainingVolume || ""}
-            onChange={(e) =>
-              setEditBlood({ ...editBlood, RemainingVolume: +e.target.value })
-            }
-          />
-          <TextField
-            label="Trạng thái"
-            fullWidth
-            value={editBlood?.BloodStatus || ""}
-            onChange={(e) =>
-              setEditBlood({ ...editBlood, BloodStatus: e.target.value })
-            }
-          />
+          {editBlood &&
+            Object.keys(editBlood)
+              .filter(
+                (k) =>
+                  k !== "BloodUnitId" && k !== "AddDate" && k !== "ExpiryDate"
+              )
+              .map((key, i) => (
+                <TextField
+                  key={i}
+                  label={key}
+                  fullWidth
+                  type={key.includes("Volume") ? "number" : "text"}
+                  value={editBlood[key] || ""}
+                  onChange={(e) =>
+                    setEditBlood({
+                      ...editBlood,
+                      [key]: key.includes("Volume")
+                        ? +e.target.value
+                        : e.target.value,
+                    })
+                  }
+                />
+              ))}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>

@@ -14,6 +14,10 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 
 const BlogManage = () => {
@@ -26,6 +30,7 @@ const BlogManage = () => {
     Title: "",
     Content: "",
     ImageUrl: "",
+    Status: "Draft",
   });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -40,6 +45,7 @@ const BlogManage = () => {
         PublishedDate: "2024-06-01",
         UpdatedDate: "2024-06-01",
         ImageUrl: "https://via.placeholder.com/100",
+        Status: "Published",
       },
       {
         PostId: "P002",
@@ -48,6 +54,7 @@ const BlogManage = () => {
         PublishedDate: "2024-06-05",
         UpdatedDate: "2024-06-06",
         ImageUrl: "https://via.placeholder.com/100",
+        Status: "Draft",
       },
     ];
     setBlogs(fakeData);
@@ -64,7 +71,7 @@ const BlogManage = () => {
   };
 
   const handleCreate = () => {
-    const { Title, Content, ImageUrl } = newBlog;
+    const { Title, Content, ImageUrl, Status } = newBlog;
     if (!Title || !Content || !ImageUrl) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
@@ -78,13 +85,14 @@ const BlogManage = () => {
       PublishedDate: now,
       UpdatedDate: now,
       ImageUrl,
+      Status: Status || "Draft",
     };
 
     const updated = [newPost, ...blogs];
     setBlogs(updated);
     setFilteredBlogs(updated);
     setIsCreateOpen(false);
-    setNewBlog({ Title: "", Content: "", ImageUrl: "" });
+    setNewBlog({ Title: "", Content: "", ImageUrl: "", Status: "Draft" });
     alert("✅ Đã thêm bài viết!");
   };
 
@@ -107,6 +115,15 @@ const BlogManage = () => {
     setFilteredBlogs(updated);
     setIsEditOpen(false);
     alert("✅ Cập nhật thành công!");
+  };
+
+  const handleChangeStatus = (postId, newStatus) => {
+    const updated = blogs.map((b) =>
+      b.PostId === postId ? { ...b, Status: newStatus } : b
+    );
+    setBlogs(updated);
+    setFilteredBlogs(updated);
+    alert("✅ Đã cập nhật trạng thái!");
   };
 
   return (
@@ -162,6 +179,9 @@ const BlogManage = () => {
                 <strong>Ảnh</strong>
               </TableCell>
               <TableCell>
+                <strong>Trạng thái</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Hành động</strong>
               </TableCell>
             </TableRow>
@@ -178,6 +198,19 @@ const BlogManage = () => {
                   <img src={b.ImageUrl} alt="thumb" width={60} />
                 </TableCell>
                 <TableCell>
+                  <Select
+                    size="small"
+                    value={b.Status}
+                    onChange={(e) =>
+                      handleChangeStatus(b.PostId, e.target.value)
+                    }
+                  >
+                    <MenuItem value="Published">Published</MenuItem>
+                    <MenuItem value="Draft">Draft</MenuItem>
+                    <MenuItem value="Archived">Archived</MenuItem>
+                  </Select>
+                </TableCell>
+                <TableCell>
                   <Button
                     variant="outlined"
                     size="small"
@@ -190,7 +223,7 @@ const BlogManage = () => {
             ))}
             {filteredBlogs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   Không tìm thấy bài viết nào.
                 </TableCell>
               </TableRow>
@@ -232,6 +265,20 @@ const BlogManage = () => {
               setNewBlog({ ...newBlog, ImageUrl: e.target.value })
             }
           />
+          <FormControl fullWidth>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={newBlog.Status}
+              onChange={(e) =>
+                setNewBlog({ ...newBlog, Status: e.target.value })
+              }
+              label="Trạng thái"
+            >
+              <MenuItem value="Published">Published</MenuItem>
+              <MenuItem value="Draft">Draft</MenuItem>
+              <MenuItem value="Archived">Archived</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -276,6 +323,20 @@ const BlogManage = () => {
               setEditBlog({ ...editBlog, ImageUrl: e.target.value })
             }
           />
+          <FormControl fullWidth>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={editBlog?.Status || ""}
+              onChange={(e) =>
+                setEditBlog({ ...editBlog, Status: e.target.value })
+              }
+              label="Trạng thái"
+            >
+              <MenuItem value="Published">Published</MenuItem>
+              <MenuItem value="Draft">Draft</MenuItem>
+              <MenuItem value="Archived">Archived</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>

@@ -9,10 +9,13 @@ import {
   Paper,
   Button,
   Typography,
+  Card,
+  CardContent,
 } from "@mui/material";
 
 const ArticleManage = () => {
   const [articles, setArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
   // ✅ Fake data - bạn có thể thay bằng gọi API ở đây
   useEffect(() => {
@@ -46,6 +49,16 @@ const ArticleManage = () => {
     // TODO: Gọi API xóa bài viết (DELETE /api/articles/:id)
     const newArticles = articles.filter((a) => a.ArticleId !== id);
     setArticles(newArticles);
+    // Nếu đang xem chi tiết bài này thì ẩn luôn
+    if (selectedArticle?.ArticleId === id) {
+      setSelectedArticle(null);
+    }
+  };
+
+  const handleViewDetail = (id) => {
+    // TODO: Gọi API lấy chi tiết bài viết tại đây (GET /api/articles/:id)
+    const article = articles.find((a) => a.ArticleId === id);
+    setSelectedArticle(article);
   };
 
   return (
@@ -53,6 +66,7 @@ const ArticleManage = () => {
       <Typography variant="h5" style={{ marginBottom: 16 }}>
         Quản lý bài viết
       </Typography>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead style={{ backgroundColor: "#f5f5f5" }}>
@@ -82,7 +96,14 @@ const ArticleManage = () => {
                 <TableCell>{article.PublishedDate}</TableCell>
                 <TableCell>{article.UpdatedDate}</TableCell>
                 <TableCell>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleViewDetail(article.ArticleId)}
+                    >
+                      Xem chi tiết
+                    </Button>
                     <Button
                       variant="contained"
                       color="primary"
@@ -113,6 +134,37 @@ const ArticleManage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {selectedArticle && (
+        <Card
+          style={{
+            marginTop: 24,
+            backgroundColor: "#f9f9f9",
+            border: "1px solid #ccc",
+          }}
+        >
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Chi tiết bài viết
+            </Typography>
+            <Typography>
+              <strong>ID:</strong> {selectedArticle.ArticleId}
+            </Typography>
+            <Typography>
+              <strong>Tiêu đề:</strong> {selectedArticle.Title}
+            </Typography>
+            <Typography>
+              <strong>Nội dung:</strong> {selectedArticle.Content}
+            </Typography>
+            <Typography>
+              <strong>Ngày đăng:</strong> {selectedArticle.PublishedDate}
+            </Typography>
+            <Typography>
+              <strong>Ngày cập nhật:</strong> {selectedArticle.UpdatedDate}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

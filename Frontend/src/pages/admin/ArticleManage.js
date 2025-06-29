@@ -57,7 +57,7 @@ const ArticleManage = () => {
         Content:
           "Hooks cho phép dùng state và lifecycle trong function component.",
         Status: "Draft",
-        IsActive: true,
+        IsActive: false,
         PublishedDate: "2024-03-15",
         UpdatedDate: "2024-04-10",
       },
@@ -163,6 +163,21 @@ const ArticleManage = () => {
     setFilteredArticles(updated);
   };
 
+  const handleToggleActive = (id) => {
+    const updated = articles.map((a) => {
+      if (a.ArticleId === id) {
+        return {
+          ...a,
+          IsActive: !a.IsActive,
+          UpdatedDate: new Date().toISOString().split("T")[0],
+        };
+      }
+      return a;
+    });
+    setArticles(updated);
+    setFilteredArticles(updated);
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" style={{ marginBottom: 16 }}>
@@ -197,7 +212,10 @@ const ArticleManage = () => {
                 <strong>Tiêu đề</strong>
               </TableCell>
               <TableCell>
-                <strong>Nội dung</strong>
+                <strong>Trạng thái</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Kích hoạt</strong>
               </TableCell>
               <TableCell>
                 <strong>Ngày đăng</strong>
@@ -214,7 +232,8 @@ const ArticleManage = () => {
             {filteredArticles.map((article) => (
               <TableRow key={article.ArticleId}>
                 <TableCell>{article.Title}</TableCell>
-                <TableCell>{article.Content}</TableCell>
+                <TableCell>{article.Status}</TableCell>
+                <TableCell>{article.IsActive ? "✅" : "⛔"}</TableCell>
                 <TableCell>{article.PublishedDate}</TableCell>
                 <TableCell>{article.UpdatedDate}</TableCell>
                 <TableCell>
@@ -247,6 +266,14 @@ const ArticleManage = () => {
                     <Button
                       size="small"
                       variant="outlined"
+                      color={article.IsActive ? "warning" : "success"}
+                      onClick={() => handleToggleActive(article.ArticleId)}
+                    >
+                      {article.IsActive ? "Vô hiệu hóa" : "Kích hoạt"}
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
                       color="error"
                       onClick={() => {
                         setArticleToDelete(article);
@@ -261,7 +288,7 @@ const ArticleManage = () => {
             ))}
             {filteredArticles.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   Không tìm thấy bài viết nào.
                 </TableCell>
               </TableRow>
@@ -270,7 +297,51 @@ const ArticleManage = () => {
         </Table>
       </TableContainer>
 
-      {/* Confirm Delete Modal */}
+      {selectedArticle && (
+        <Card
+          style={{
+            marginTop: 24,
+            padding: 16,
+            backgroundColor: "#f0f4f8",
+            borderRadius: 12,
+          }}
+        >
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              📝 Chi tiết bài viết
+            </Typography>
+            <div style={{ display: "grid", rowGap: 12 }}>
+              <div>
+                <strong>🆔 ID:</strong> {selectedArticle.ArticleId}
+              </div>
+              <div>
+                <strong>👤 User ID:</strong> {selectedArticle.UserId}
+              </div>
+              <div>
+                <strong>📌 Tiêu đề:</strong> {selectedArticle.Title}
+              </div>
+              <div>
+                <strong>📝 Nội dung:</strong> {selectedArticle.Content}
+              </div>
+              <div>
+                <strong>📊 Trạng thái:</strong> {selectedArticle.Status}
+              </div>
+              <div>
+                <strong>🔒 Kích hoạt:</strong>{" "}
+                {selectedArticle.IsActive ? "Có" : "Không"}
+              </div>
+              <div>
+                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate}
+              </div>
+              <div>
+                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Xác nhận xóa */}
       <Dialog
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
@@ -290,8 +361,97 @@ const ArticleManage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Modal tạo và cập nhật giữ nguyên - không cần sửa lại */}
-      {/* ... phần Modal tạo và cập nhật của bạn giữ nguyên như bạn đã viết ở trên ... */}
+      {/* Modal tạo */}
+      <Dialog open={isCreateOpen} onClose={() => setIsCreateOpen(false)}>
+        <DialogTitle>Tạo bài viết mới</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Tiêu đề"
+            fullWidth
+            margin="normal"
+            value={newArticle.Title}
+            onChange={(e) =>
+              setNewArticle({ ...newArticle, Title: e.target.value })
+            }
+          />
+          <TextField
+            label="Nội dung"
+            fullWidth
+            multiline
+            rows={4}
+            margin="normal"
+            value={newArticle.Content}
+            onChange={(e) =>
+              setNewArticle({ ...newArticle, Content: e.target.value })
+            }
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={newArticle.Status}
+              onChange={(e) =>
+                setNewArticle({ ...newArticle, Status: e.target.value })
+              }
+              label="Trạng thái"
+            >
+              <MenuItem value="Draft">Draft</MenuItem>
+              <MenuItem value="Published">Published</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleCreate}>
+            Tạo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal chỉnh sửa */}
+      <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)}>
+        <DialogTitle>Chỉnh sửa bài viết</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Tiêu đề"
+            fullWidth
+            margin="normal"
+            value={editArticle?.Title || ""}
+            onChange={(e) =>
+              setEditArticle({ ...editArticle, Title: e.target.value })
+            }
+          />
+          <TextField
+            label="Nội dung"
+            fullWidth
+            multiline
+            rows={4}
+            margin="normal"
+            value={editArticle?.Content || ""}
+            onChange={(e) =>
+              setEditArticle({ ...editArticle, Content: e.target.value })
+            }
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={editArticle?.Status || ""}
+              onChange={(e) =>
+                setEditArticle({ ...editArticle, Status: e.target.value })
+              }
+              label="Trạng thái"
+            >
+              <MenuItem value="Draft">Draft</MenuItem>
+              <MenuItem value="Published">Published</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
+          <Button variant="contained" onClick={handleUpdate}>
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

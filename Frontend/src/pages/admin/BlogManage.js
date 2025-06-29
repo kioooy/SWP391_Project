@@ -18,6 +18,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 
 const BlogManage = () => {
@@ -31,6 +33,7 @@ const BlogManage = () => {
     Content: "",
     ImageUrl: "",
     Status: "Draft",
+    IsActive: true,
   });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -46,6 +49,7 @@ const BlogManage = () => {
         UpdatedDate: "2024-06-01",
         ImageUrl: "https://via.placeholder.com/100",
         Status: "Published",
+        IsActive: true,
       },
       {
         PostId: "P002",
@@ -55,6 +59,7 @@ const BlogManage = () => {
         UpdatedDate: "2024-06-06",
         ImageUrl: "https://via.placeholder.com/100",
         Status: "Draft",
+        IsActive: false,
       },
     ];
     setBlogs(fakeData);
@@ -71,7 +76,7 @@ const BlogManage = () => {
   };
 
   const handleCreate = () => {
-    const { Title, Content, ImageUrl, Status } = newBlog;
+    const { Title, Content, ImageUrl, Status, IsActive } = newBlog;
     if (!Title || !Content || !ImageUrl) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
@@ -86,13 +91,20 @@ const BlogManage = () => {
       UpdatedDate: now,
       ImageUrl,
       Status: Status || "Draft",
+      IsActive,
     };
 
     const updated = [newPost, ...blogs];
     setBlogs(updated);
     setFilteredBlogs(updated);
     setIsCreateOpen(false);
-    setNewBlog({ Title: "", Content: "", ImageUrl: "", Status: "Draft" });
+    setNewBlog({
+      Title: "",
+      Content: "",
+      ImageUrl: "",
+      Status: "Draft",
+      IsActive: true,
+    });
     alert("✅ Đã thêm bài viết!");
   };
 
@@ -102,11 +114,6 @@ const BlogManage = () => {
   };
 
   const handleUpdate = () => {
-    if (!editBlog.Title || !editBlog.Content || !editBlog.ImageUrl) {
-      alert("Vui lòng nhập đủ thông tin");
-      return;
-    }
-
     const now = new Date().toISOString().split("T")[0];
     const updated = blogs.map((b) =>
       b.PostId === editBlog.PostId ? { ...editBlog, UpdatedDate: now } : b
@@ -123,7 +130,14 @@ const BlogManage = () => {
     );
     setBlogs(updated);
     setFilteredBlogs(updated);
-    alert("✅ Đã cập nhật trạng thái!");
+  };
+
+  const toggleActive = (postId) => {
+    const updated = blogs.map((b) =>
+      b.PostId === postId ? { ...b, IsActive: !b.IsActive } : b
+    );
+    setBlogs(updated);
+    setFilteredBlogs(updated);
   };
 
   return (
@@ -167,19 +181,10 @@ const BlogManage = () => {
                 <strong>Tiêu đề</strong>
               </TableCell>
               <TableCell>
-                <strong>Nội dung</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Ngày đăng</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Ngày cập nhật</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Ảnh</strong>
-              </TableCell>
-              <TableCell>
                 <strong>Trạng thái</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Kích hoạt</strong>
               </TableCell>
               <TableCell>
                 <strong>Hành động</strong>
@@ -191,12 +196,6 @@ const BlogManage = () => {
               <TableRow key={b.PostId}>
                 <TableCell>{b.PostId}</TableCell>
                 <TableCell>{b.Title}</TableCell>
-                <TableCell>{b.Content}</TableCell>
-                <TableCell>{b.PublishedDate}</TableCell>
-                <TableCell>{b.UpdatedDate}</TableCell>
-                <TableCell>
-                  <img src={b.ImageUrl} alt="thumb" width={60} />
-                </TableCell>
                 <TableCell>
                   <Select
                     size="small"
@@ -211,6 +210,18 @@ const BlogManage = () => {
                   </Select>
                 </TableCell>
                 <TableCell>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={b.IsActive}
+                        onChange={() => toggleActive(b.PostId)}
+                        color="success"
+                      />
+                    }
+                    label={b.IsActive ? "Hoạt động" : "Vô hiệu hóa"}
+                  />
+                </TableCell>
+                <TableCell>
                   <Button
                     variant="outlined"
                     size="small"
@@ -223,7 +234,7 @@ const BlogManage = () => {
             ))}
             {filteredBlogs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={5} align="center">
                   Không tìm thấy bài viết nào.
                 </TableCell>
               </TableRow>
@@ -279,6 +290,17 @@ const BlogManage = () => {
               <MenuItem value="Archived">Archived</MenuItem>
             </Select>
           </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={newBlog.IsActive}
+                onChange={() =>
+                  setNewBlog((prev) => ({ ...prev, IsActive: !prev.IsActive }))
+                }
+              />
+            }
+            label="Kích hoạt"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -337,6 +359,20 @@ const BlogManage = () => {
               <MenuItem value="Archived">Archived</MenuItem>
             </Select>
           </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={editBlog?.IsActive || false}
+                onChange={() =>
+                  setEditBlog((prev) => ({
+                    ...prev,
+                    IsActive: !prev.IsActive,
+                  }))
+                }
+              />
+            }
+            label="Kích hoạt"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>

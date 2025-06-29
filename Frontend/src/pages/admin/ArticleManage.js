@@ -20,9 +20,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TablePagination,
 } from "@mui/material";
 
 const ArticleManage = () => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -65,7 +68,18 @@ const ArticleManage = () => {
     setArticles(fakeData);
     setFilteredArticles(fakeData);
   }, []);
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
 
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+  const paginatedArticles = filteredArticles.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -229,7 +243,7 @@ const ArticleManage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredArticles.map((article) => (
+            {paginatedArticles.map((article) => (
               <TableRow key={article.ArticleId}>
                 <TableCell>{article.Title}</TableCell>
                 <TableCell>{article.Status}</TableCell>
@@ -296,7 +310,15 @@ const ArticleManage = () => {
           </TableBody>
         </Table>
       </TableContainer>
-
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={filteredArticles.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
       {selectedArticle && (
         <Card
           style={{

@@ -82,6 +82,7 @@ public partial class BloodDonationSupportContext : DbContext
             entity.ToTable("Article");
 
             entity.Property(e => e.Content).HasColumnType("ntext");
+            entity.Property(e => e.ImageUrl).HasMaxLength(255);
             entity.Property(e => e.PublishedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -163,6 +164,7 @@ public partial class BloodDonationSupportContext : DbContext
             entity.Property(e => e.BloodStatus)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.Notes).HasColumnType("nvarchar(max)");
 
             entity.HasOne(d => d.BloodType).WithMany(p => p.BloodUnits)
                 .HasForeignKey(d => d.BloodTypeId)
@@ -184,7 +186,9 @@ public partial class BloodDonationSupportContext : DbContext
         {
             entity.HasKey(e => e.DonationId).HasName("PK__Donation__C5082EFBE2E54925");
 
-            entity.Property(e => e.ApprovalDate).HasColumnType("datetime");
+            entity.Property(e => e.CompletionDate).HasColumnType("datetime");
+            entity.Property(e => e.CancelledDate).HasColumnType("datetime");
+            entity.Property(e => e.RejectedDate).HasColumnType("datetime");
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PatientCondition).HasMaxLength(500);
             entity.Property(e => e.RequestDate)
@@ -279,6 +283,8 @@ public partial class BloodDonationSupportContext : DbContext
 
             entity.Property(e => e.ApprovalDate).HasColumnType("datetime");
             entity.Property(e => e.CompletionDate).HasColumnType("datetime");
+            entity.Property(e => e.CancelledDate).HasColumnType("datetime");
+            entity.Property(e => e.RejectedDate).HasColumnType("datetime");
             entity.Property(e => e.IsEmergency).HasDefaultValue(false);
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PatientCondition).HasMaxLength(500);

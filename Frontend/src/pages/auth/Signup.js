@@ -76,6 +76,59 @@ const districts = {
   'Đồng Nai': ['Thành phố Biên Hòa', 'Thành phố Long Khánh', 'Huyện Cẩm Mỹ', 'Huyện Định Quán', 'Huyện Long Thành', 'Huyện Nhơn Trạch', 'Huyện Tân Phú', 'Huyện Thống Nhất', 'Huyện Trảng Bom', 'Huyện Vĩnh Cửu', 'Huyện Xuân Lộc'],
   'Nghệ An': ['Thành phố Vinh', 'Thị xã Cửa Lò', 'Thị xã Thái Hòa', 'Huyện Anh Sơn', 'Huyện Con Cuông', 'Huyện Diễn Châu', 'Huyện Đô Lương', 'Huyện Hưng Nguyên', 'Huyện Kỳ Sơn', 'Huyện Nam Đàn', 'Huyện Nghi Lộc', 'Huyện Nghĩa Đàn', 'Huyện Quế Phong', 'Huyện Quỳ Châu', 'Huyện Quỳ Hợp', 'Huyện Quỳnh Lưu', 'Huyện Tân Kỳ', 'Huyện Thanh Chương', 'Huyện Tương Dương', 'Huyện Yên Thành'],
   'Thanh Hóa': ['Thành phố Thanh Hóa', 'Thị xã Bỉm Sơn', 'Thị xã Sầm Sơn', 'Huyện Bá Thước', 'Huyện Cẩm Thủy', 'Huyện Đông Sơn', 'Huyện Hà Trung', 'Huyện Hậu Lộc', 'Huyện Hoằng Hóa', 'Huyện Lang Chánh', 'Huyện Mường Lát', 'Huyện Nga Sơn', 'Huyện Ngọc Lặc', 'Huyện Như Thanh', 'Huyện Như Xuân', 'Huyện Nông Cống', 'Huyện Quan Hóa', 'Huyện Quan Sơn', 'Huyện Quảng Xương', 'Huyện Thạch Thành', 'Huyện Thiệu Hóa', 'Huyện Thọ Xuân', 'Huyện Thường Xuân', 'Huyện Tĩnh Gia', 'Huyện Triệu Sơn', 'Huyện Vĩnh Lộc', 'Huyện Yên Định'],
+  'Bà Rịa - Vũng Tàu': ['Thành phố Vũng Tàu', 'Huyện Long Điền', 'Huyện Đất Đỏ'],
+  'Bắc Giang': ['Thành phố Bắc Giang', 'Huyện Lục Nam'],
+  'Bắc Kạn': ['Thành phố Bắc Kạn', 'Huyện Ba Bể'],
+  'Bạc Liêu': ['Thành phố Bạc Liêu', 'Huyện Hòa Bình'],
+  'Bắc Ninh': ['Thành phố Bắc Ninh', 'Huyện Quế Võ'],
+  'Bến Tre': ['Thành phố Bến Tre', 'Huyện Châu Thành'],
+  'Bình Định': ['Thành phố Quy Nhơn', 'Huyện Tuy Phước'],
+  'Bình Phước': ['Thị xã Đồng Xoài', 'Huyện Bù Đăng'],
+  'Bình Thuận': ['Thành phố Phan Thiết', 'Huyện Hàm Thuận Bắc'],
+  'Cà Mau': ['Thành phố Cà Mau', 'Huyện Đầm Dơi'],
+  'Cao Bằng': ['Thành phố Cao Bằng', 'Huyện Trùng Khánh'],
+  'Đắk Lắk': ['Thành phố Buôn Ma Thuột', 'Huyện Krông Pắc'],
+  'Đắk Nông': ['Thị xã Gia Nghĩa', 'Huyện Đắk Mil'],
+  'Điện Biên': ['Thành phố Điện Biên Phủ', 'Huyện Mường Nhé'],
+  'Đồng Tháp': ['Thành phố Cao Lãnh', 'Huyện Lai Vung'],
+  'Gia Lai': ['Thành phố Pleiku', 'Huyện Chư Sê'],
+  'Hà Giang': ['Thành phố Hà Giang', 'Huyện Đồng Văn'],
+  'Hà Nam': ['Thành phố Phủ Lý', 'Huyện Kim Bảng'],
+  'Hà Tĩnh': ['Thành phố Hà Tĩnh', 'Huyện Cẩm Xuyên'],
+  'Hải Dương': ['Thành phố Hải Dương', 'Huyện Gia Lộc'],
+  'Hậu Giang': ['Thành phố Vị Thanh', 'Huyện Châu Thành A'],
+  'Hòa Bình': ['Thành phố Hòa Bình', 'Huyện Lương Sơn'],
+  'Hưng Yên': ['Thành phố Hưng Yên', 'Huyện Văn Lâm'],
+  'Khánh Hòa': ['Thành phố Nha Trang', 'Huyện Diên Khánh'],
+  'Kiên Giang': ['Thành phố Rạch Giá', 'Huyện Phú Quốc'],
+  'Kon Tum': ['Thành phố Kon Tum', 'Huyện Đắk Hà'],
+  'Lai Châu': ['Thành phố Lai Châu', 'Huyện Phong Thổ'],
+  'Lâm Đồng': ['Thành phố Đà Lạt', 'Huyện Đức Trọng'],
+  'Lạng Sơn': ['Thành phố Lạng Sơn', 'Huyện Cao Lộc'],
+  'Lào Cai': ['Thành phố Lào Cai', 'Huyện Sa Pa'],
+  'Long An': ['Thành phố Tân An', 'Huyện Đức Hòa'],
+  'Nam Định': ['Thành phố Nam Định', 'Huyện Hải Hậu'],
+  'Ninh Bình': ['Thành phố Ninh Bình', 'Huyện Gia Viễn'],
+  'Ninh Thuận': ['Thành phố Phan Rang-Tháp Chàm', 'Huyện Ninh Phước'],
+  'Phú Thọ': ['Thành phố Việt Trì', 'Huyện Lâm Thao'],
+  'Phú Yên': ['Thành phố Tuy Hòa', 'Huyện Đông Hòa'],
+  'Quảng Bình': ['Thành phố Đồng Hới', 'Huyện Bố Trạch'],
+  'Quảng Nam': ['Thành phố Tam Kỳ', 'Huyện Thăng Bình'],
+  'Quảng Ngãi': ['Thành phố Quảng Ngãi', 'Huyện Bình Sơn'],
+  'Quảng Ninh': ['Thành phố Hạ Long', 'Huyện Đông Triều'],
+  'Quảng Trị': ['Thành phố Đông Hà', 'Huyện Triệu Phong'],
+  'Sóc Trăng': ['Thành phố Sóc Trăng', 'Huyện Mỹ Xuyên'],
+  'Sơn La': ['Thành phố Sơn La', 'Huyện Mộc Châu'],
+  'Tây Ninh': ['Thành phố Tây Ninh', 'Huyện Hòa Thành'],
+  'Thái Bình': ['Thành phố Thái Bình', 'Huyện Quỳnh Phụ'],
+  'Thái Nguyên': ['Thành phố Thái Nguyên', 'Huyện Phổ Yên'],
+  'Thừa Thiên Huế': ['Thành phố Huế', 'Huyện Phú Vang'],
+  'Tiền Giang': ['Thành phố Mỹ Tho', 'Huyện Cai Lậy'],
+  'Trà Vinh': ['Thành phố Trà Vinh', 'Huyện Càng Long'],
+  'Tuyên Quang': ['Thành phố Tuyên Quang', 'Huyện Sơn Dương'],
+  'Vĩnh Long': ['Thành phố Vĩnh Long', 'Huyện Long Hồ'],
+  'Vĩnh Phúc': ['Thành phố Vĩnh Yên', 'Huyện Yên Lạc'],
+  'Yên Bái': ['Thành phố Yên Bái', 'Huyện Lục Yên']
 };
 
 const occupations = [
@@ -526,8 +579,8 @@ const Signup = () => {
                 <Grid container spacing={2}>
                   {/* Tỉnh/Thành phố */}
                   <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Tỉnh/Thành phố</InputLabel>
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel shrink={true}>Tỉnh/Thành phố</InputLabel>
                       <Select
                         name="city"
                         value={formik.values.city}
@@ -536,6 +589,8 @@ const Signup = () => {
                           formik.setFieldValue('district', '');
                         }}
                         error={formik.touched.city && Boolean(formik.errors.city)}
+                        label="Tỉnh/Thành phố"
+                        variant="outlined"
                       >
                         {cities.map((city) => (
                           <MenuItem key={city} value={city}>
@@ -547,14 +602,16 @@ const Signup = () => {
                   </Grid>
 
                   {/* Quận/Huyện */}
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth disabled={!formik.values.city}>
-                      <InputLabel>Quận/Huyện</InputLabel>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth variant="outlined" disabled={!formik.values.city}>
+                      <InputLabel shrink={true}>Quận/Huyện</InputLabel>
                       <Select
                         name="district"
                         value={formik.values.district}
                         onChange={formik.handleChange}
                         error={formik.touched.district && Boolean(formik.errors.district)}
+                        label="Quận/Huyện"
+                        variant="outlined"
                       >
                         {districts[formik.values.city]?.map((district) => (
                           <MenuItem key={district} value={district}>
@@ -717,13 +774,15 @@ const Signup = () => {
 
               {/* Nhóm máu */}
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Nhóm máu (*)</InputLabel>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel shrink={true}>Nhóm máu (*)</InputLabel>
                   <Select
                     name="bloodTypeId"
                     value={formik.values.bloodTypeId}
                     onChange={formik.handleChange}
                     error={formik.touched.bloodTypeId && Boolean(formik.errors.bloodTypeId)}
+                    label="Nhóm máu (*)"
+                    variant="outlined"
                   >
                     {bloodTypes.map((type) => (
                       <MenuItem key={type.id} value={type.id}>{type.label}</MenuItem>

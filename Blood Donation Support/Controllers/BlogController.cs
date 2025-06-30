@@ -33,7 +33,7 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -53,7 +53,7 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -73,7 +73,7 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .FirstOrDefaultAsync();
             if (blog == null)

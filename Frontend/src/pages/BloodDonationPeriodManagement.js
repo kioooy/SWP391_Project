@@ -25,7 +25,8 @@ import {
   MenuItem,
   InputLabel,
   TextField,
-  Grid
+  Grid,
+  Tooltip
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
@@ -306,24 +307,25 @@ const BloodDonationPeriodManagement = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleEdit(period)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    {isAdmin && (
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => {
-                        setSelectedPeriod(period);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    {(isAdmin || isStaff) && (
+                      <Box>
+                        <Tooltip title="Chỉnh sửa đợt hiến máu">
+                          <IconButton onClick={() => handleEdit(period)}>
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa đợt hiến máu">
+                          <IconButton
+                            onClick={() => {
+                              setSelectedPeriod(period);
+                              setDeleteDialogOpen(true);
+                            }}
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     )}
                   </TableCell>
                 </TableRow>

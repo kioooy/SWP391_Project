@@ -231,6 +231,9 @@ const MainLayout = () => {
       { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
       { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
       { path: "/transfusion-management", label: "Quản lý truyền máu", icon: <LocalHospitalIcon /> },
+      { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
+      { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
+      { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
     ];
   } else if (currentUser && currentUser.role === 'Admin') {
     menuItems = [
@@ -240,6 +243,9 @@ const MainLayout = () => {
       { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
       { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
       { path: "/transfusion-management", label: "Quản lý truyền máu", icon: <LocalHospitalIcon /> },
+      { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
+      { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
+      { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
     ];
   } else {
     // Nếu chưa đăng nhập, chỉ hiện các mục cơ bản

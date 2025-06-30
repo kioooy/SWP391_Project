@@ -2,17 +2,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Blood_Donation_Support.DTO
 {
-    public class BlogDTO
+    public class ArticleDTO
     {
-        public int PostId { get; set; }
+        public int ArticleId { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
-        public required string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
+
     }
 
-    public class BlogCreateDTO
+    public class ArticleCreateDTO
     {
         public int UserId { get; set; }
         [Required(ErrorMessage = "Title is required")]
@@ -22,19 +23,20 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "Status is required")]
         public required string Status { get; set; }
         public string? ImageUrl { get; set; }
+
     }
 
-    public class BlogUpdateDTO
+    public class ArticleUpdateDTO
     {
+        [Required(ErrorMessage = "Title is required")]
         public required string Title { get; set; }
         [Required(ErrorMessage = "Content is required")]
         public required string Content { get; set; }
         [Required(ErrorMessage = "Status is required")]
         public required string Status { get; set; }
-        public string? ImageUrl { get; set; }
     }
 
-    public class BlogStatusDTO
+    public class ArticleStatusDTO
     {
         [Required(ErrorMessage = "Status is required")]
         public required string Status { get; set; }

@@ -28,4 +28,11 @@ namespace Blood_Donation_Support.DTO
         // Optional: For the "Shortcut Flow" where a staff creates and approves in one step
         public int? BloodUnitIdToReserve { get; set; }
     }
-} 
+    public class ApproveTransfusionRequestInput
+    {
+        [Required]
+        public int BloodUnitId { get; set; }
+        public string? Notes { get; set; }
+    }
+
+}

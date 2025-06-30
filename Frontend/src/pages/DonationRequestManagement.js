@@ -207,6 +207,12 @@ const DonationRequestManagement = () => {
     (req) => statusFilter === 'All' || req.status === statusFilter
   );
 
+  // Tính toán số lượng từng trạng thái
+  const pendingCount = requests.filter(r => r.status === 'Pending').length;
+  const approvedCount = requests.filter(r => r.status === 'Approved').length;
+  const completedCount = requests.filter(r => r.status === 'Completed').length;
+  const rejectedCount = requests.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length;
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -221,25 +227,60 @@ const DonationRequestManagement = () => {
         Quản Lý Yêu Cầu Hiến Máu
       </Typography>
 
+      {/* Tổng hợp trạng thái căn giữa, bỏ lọc theo trạng thái */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #1976d2' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
+          onClick={() => setStatusFilter('All')}
+          elevation={statusFilter === 'All' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Tất cả</Typography>
+          <Typography variant="h4" fontWeight="bold">{requests.length}</Typography>
+          <Chip label="Tất cả" color="primary" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Pending')}
+          elevation={statusFilter === 'Pending' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
+          <Typography variant="h4" fontWeight="bold">{pendingCount}</Typography>
+          <Chip label="Chờ duyệt" color="warning" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #0288d1' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Approved')}
+          elevation={statusFilter === 'Approved' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
+          <Typography variant="h4" fontWeight="bold">{approvedCount}</Typography>
+          <Chip label="Đã duyệt" color="info" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Completed')}
+          elevation={statusFilter === 'Completed' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Hoàn thành</Typography>
+          <Typography variant="h4" fontWeight="bold">{completedCount}</Typography>
+          <Chip label="Hoàn thành" color="success" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 4 : 1 }}
+          onClick={() => setStatusFilter('Rejected')}
+          elevation={(statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã từ chối</Typography>
+          <Typography variant="h4" fontWeight="bold">{rejectedCount}</Typography>
+          <Chip label="Đã từ chối" color="error" sx={{ mt: 1 }} />
+        </Paper>
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-
-      <FormControl sx={{ minWidth: 200, mb: 2 }}>
-        <InputLabel>Lọc theo trạng thái</InputLabel>
-        <Select
-          value={statusFilter}
-          label="Lọc theo trạng thái"
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <MenuItem value="All">Tất cả</MenuItem>
-          <MenuItem value="Pending">Chờ duyệt</MenuItem>
-          <MenuItem value="Approved">Đã duyệt</MenuItem>
-          <MenuItem value="Rejected">Đã từ chối</MenuItem>
-        </Select>
-      </FormControl>
 
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer>

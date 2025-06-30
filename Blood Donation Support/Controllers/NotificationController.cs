@@ -54,23 +54,14 @@ namespace Blood_Donation_Support.Controllers
         [HttpPost("CreateRecoveryReminder/{userId}")]
         public async Task<IActionResult> CreateRecoveryReminder(int userId)
         {
-            // Lấy ngày hiến máu gần nhất của user:
-            // Toán tử ?. (null-conditional): Kiểm tra lastDonation có null không trước khi truy cập thuộc tính
-            // Toán tử ?? (null-coalescing): Nếu vế trái là null, sử dụng giá trị vế phải
-            // Logic: 
-            // 1. lastDonation?.CompletionDate: Nếu lastDonation khác null, lấy CompletionDate; nếu null thì trả về null
-            // 2. Nếu CompletionDate là null, kiểm tra PreferredDonationDate:
-            //    - lastDonation?.PreferredDonationDate.HasValue: Kiểm tra PreferredDonationDate có giá trị không
-            //    - Nếu có giá trị, chuyển sang DateTime bằng ToDateTime(TimeOnly.MinValue)
-            //    - Nếu không có giá trị, gán null
             var lastDonation = await _context.DonationRequests
                 .Where(d => d.MemberId == userId && d.Status == "Completed")
-                .OrderByDescending(d => d.CompletionDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
+                .OrderByDescending(d => d.CompletionDate)
                 .FirstOrDefaultAsync();
 
             string title, message, notificationType;
-            DateTime? lastDonationDate = lastDonation?.CompletionDate ?? (lastDonation?.PreferredDonationDate.HasValue == true ? lastDonation.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null);
-            if (lastDonation == null)
+            DateTime? lastDonationDate = lastDonation?.CompletionDate;
+            if (lastDonation == null || lastDonationDate == null)
             {
                 title = "🎉 Chào mừng bạn!";
                 message = "Bạn chưa hiến máu lần nào. Hãy đăng ký hiến máu để cứu người!";

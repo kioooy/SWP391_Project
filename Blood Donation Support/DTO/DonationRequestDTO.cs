@@ -15,7 +15,6 @@ namespace Blood_Donation_Support.DTO
         public DateOnly? PreferredDonationDate { get; set; }
         [Required]
         public DateTime RequestDate { get; set; }
-        public DateTime? ApprovalDate { get; set; }
         [Required]
         public required int DonationVolume { get; set; }
         public string? Notes { get; set; }

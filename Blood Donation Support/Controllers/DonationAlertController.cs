@@ -27,17 +27,17 @@ namespace Blood_Donation_Support.Controllers
 
             var lastDonation = await _context.DonationRequests
                 .Where(d => d.MemberId == memberId && d.Status == "Completed")
-                .OrderByDescending(d => d.ApprovalDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
+                .OrderByDescending(d => d.CompletionDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
                 .FirstOrDefaultAsync();
 
             if (lastDonation == null)
                 return NotFound(new { message = "Chưa có lịch sử hiến máu thành công." });
 
-            DateTime? approvalDate = lastDonation.ApprovalDate;
+            DateTime? completionDate = lastDonation.CompletionDate;
             DateTime? preferredDate = lastDonation.PreferredDonationDate.HasValue
                 ? lastDonation.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue)
                 : (DateTime?)null;
-            var lastDate = approvalDate ?? preferredDate;
+            var lastDate = completionDate ?? preferredDate;
             return Ok(new { lastDate });
         }
 
@@ -51,7 +51,7 @@ namespace Blood_Donation_Support.Controllers
 
             var lastDonation = await _context.DonationRequests
                 .Where(d => d.MemberId == memberId && d.Status == "Completed")
-                .OrderByDescending(d => d.ApprovalDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
+                .OrderByDescending(d => d.CompletionDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
                 .FirstOrDefaultAsync();
 
             if (lastDonation == null)
@@ -66,11 +66,11 @@ namespace Blood_Donation_Support.Controllers
                 });
             }
 
-            DateTime? approvalDate = lastDonation.ApprovalDate;
+            DateTime? completionDate = lastDonation.CompletionDate;
             DateTime? preferredDate = lastDonation.PreferredDonationDate.HasValue
                 ? lastDonation.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue)
                 : (DateTime?)null;
-            var lastDonationDate = approvalDate ?? preferredDate;
+            var lastDonationDate = completionDate ?? preferredDate;
 
             // Tính ngày phục hồi (84 ngày = 12 tuần)
             var recoveryDate = lastDonationDate.Value.AddDays(84);
@@ -107,7 +107,7 @@ namespace Blood_Donation_Support.Controllers
 
             var lastDonation = await _context.DonationRequests
                 .Where(d => d.MemberId == memberId && d.Status == "Completed")
-                .OrderByDescending(d => d.ApprovalDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
+                .OrderByDescending(d => d.CompletionDate ?? (d.PreferredDonationDate.HasValue ? d.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
                 .FirstOrDefaultAsync();
 
             if (lastDonation == null)
@@ -121,11 +121,11 @@ namespace Blood_Donation_Support.Controllers
                 });
             }
 
-            DateTime? approvalDate = lastDonation.ApprovalDate;
+            DateTime? completionDate = lastDonation.CompletionDate;
             DateTime? preferredDate = lastDonation.PreferredDonationDate.HasValue
                 ? lastDonation.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue)
                 : (DateTime?)null;
-            var lastDonationDate = approvalDate ?? preferredDate;
+            var lastDonationDate = completionDate ?? preferredDate;
             var recoveryDate = lastDonationDate.Value.AddDays(84);
             var currentDate = DateTime.Now;
             var daysUntilRecovery = (recoveryDate - currentDate).Days;

@@ -74,8 +74,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.DonationVolume,
                     dr.Notes,
                     dr.Status,
-                    dr.RequestDate,
-                    dr.ApprovalDate
+                    dr.RequestDate
                 })
                 .ToListAsync();
 
@@ -121,9 +120,8 @@ namespace Blood_Donation_Support.Controllers
                 PreferredDonationDate = model.PreferredDonationDate, // Preferred Donation Date 
                 ResponsibleById = model.ResponsibleById,             // Responsible By Id 
                 RequestDate = DateTime.Now,                          // Request Date (current date)
-                ApprovalDate = null,                                 // Approval Date (default null)
                 DonationVolume = model.DonationVolume,               // Donation Volume
-                Status = "Approved",                                 // Status (default "Approved")
+                Status = "Approved",                                 // Status (default "Approved" as per new business logic)
                 Notes = model.Notes,                                 // Notes 
                 PatientCondition = model.PatientCondition            // Patient Condition
             };
@@ -149,7 +147,6 @@ namespace Blood_Donation_Support.Controllers
                     donationRequest.PreferredDonationDate,
                     donationRequest.ResponsibleById,
                     donationRequest.RequestDate,
-                    donationRequest.ApprovalDate,
                     donationRequest.DonationVolume,
                     donationRequest.Status,
                     donationRequest.Notes,
@@ -181,9 +178,18 @@ namespace Blood_Donation_Support.Controllers
 
             // Update the existing request 
             existingRequest.ResponsibleById = model.ResponsibleById;
-            existingRequest.ApprovalDate = DateTime.Now;
             existingRequest.Status = model.Status;
             existingRequest.Notes = model.Notes;
+
+            if (model.Status == "Rejected")
+            {
+                existingRequest.RejectedDate = DateTime.Now;
+            }
+            // If the status is approved, ApprovalDate is already set at request creation,
+            // but for clarity or if manual approval might be introduced later,
+            // we can explicitly update it here as well if needed.
+            // For now, based on auto-approve on creation, it's not strictly necessary to update here.
+            // existingRequest.ApprovalDate = DateTime.Now;
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
@@ -216,6 +222,7 @@ namespace Blood_Donation_Support.Controllers
 
             // Update the status Donation request 
             existingRequest.Status = model.Status;
+            existingRequest.CompletionDate = DateTime.Now;
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
             // Update member's data 
@@ -337,6 +344,7 @@ namespace Blood_Donation_Support.Controllers
 
             existingRequest.Status = "Cancelled"; // Update the status to "Cancelled"
             existingRequest.Notes = "Đã hủy bởi người dùng";
+            existingRequest.CancelledDate = DateTime.Now; // Thêm dòng này để cập nhật CancelledDate
 
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 

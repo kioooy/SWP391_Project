@@ -41,6 +41,7 @@ public class BloodUnitController : ControllerBase
                 bu.Volume,                  // Volume (mL)
                 bu.BloodStatus,             // Blood Status
                 bu.RemainingVolume,         // Remaining Volume (mL)
+                bu.Notes,                   // Notes (if any)
             })
             .ToListAsync();
 
@@ -72,6 +73,7 @@ public class BloodUnitController : ControllerBase
                 bu.Volume,                  // Volume (mL)
                 bu.BloodStatus,             // Blood Status
                 bu.RemainingVolume,         // Remaining Volume (mL)
+                bu.Notes,                   // Notes (if any)
             })
             .FirstOrDefaultAsync();
 

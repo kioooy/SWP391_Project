@@ -738,54 +738,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
-    "Method": "CheckDonationEligibility",
-    "RelativePath": "api/DonationAlert/CheckDonationEligibility/{memberId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "memberId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
-    "Method": "GetLastSuccessfulDonation",
-    "RelativePath": "api/DonationAlert/LastSuccessfulDonation/{memberId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "memberId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
-    "Method": "GetLoginNotification",
-    "RelativePath": "api/DonationAlert/LoginNotification/{memberId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "memberId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
     "Method": "GetBloodInventoryStats",
     "RelativePath": "api/Dashboard/blood-inventory",
@@ -839,6 +791,54 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
+    "Method": "CheckDonationEligibility",
+    "RelativePath": "api/DonationAlert/CheckDonationEligibility/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
+    "Method": "GetLastSuccessfulDonation",
+    "RelativePath": "api/DonationAlert/LastSuccessfulDonation/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
+    "Method": "GetLoginNotification",
+    "RelativePath": "api/DonationAlert/LoginNotification/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {

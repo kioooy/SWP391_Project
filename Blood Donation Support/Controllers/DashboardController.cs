@@ -163,27 +163,6 @@ namespace Blood_Donation_Support.Controllers
             });
         }
 
-        //[HttpGet("donation-periods")]
-        //[Authorize(Roles = "Admin")]
-        //public async Task<IActionResult> GetDonationPeriodStats()
-        //{
-        //    var activePeriods = await _context.BloodDonationPeriods
-        //        .Where(p => p.Status == "Active")
-        //        .Select(p => new {
-        //            p.PeriodId,
-        //            p.PeriodName,
-        //            p.Location,
-        //            p.TargetQuantity,
-        //            p.CurrentQuantity,
-        //            Progress = p.CurrentQuantity.HasValue ?
-        //                (int)((float)p.CurrentQuantity.Value / p.TargetQuantity * 100) : 0,
-        //            DaysRemaining = EF.Functions.DateDiffDay(DateTime.Now, p.PeriodDateTo)
-        //        })
-        //        .ToListAsync();
-
-        //    return Ok(activePeriods);
-        //}
-
         // Get Recent Activity From Requests (Top 10 recently each request type)
         // GET: api/Dashboard/recent-activity
         [HttpGet("recent-activity")]

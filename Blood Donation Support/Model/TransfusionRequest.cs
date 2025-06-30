@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Blood_Donation_Support.Model;
+﻿namespace Blood_Donation_Support.Model;
 
 public partial class TransfusionRequest
 {
@@ -29,6 +26,10 @@ public partial class TransfusionRequest
 
     public DateTime? CompletionDate { get; set; }
 
+    public DateTime? CancelledDate { get; set; }
+
+    public DateTime? RejectedDate { get; set; }
+
     public string Status { get; set; } = null!;
 
     public string? Notes { get; set; }
@@ -43,5 +44,5 @@ public partial class TransfusionRequest
 
     public virtual Member Member { get; set; } = null!;
 
-    public virtual User? ResponsibleBy { get; set; }
+    public virtual User ResponsibleBy { get; set; } = null!;
 }

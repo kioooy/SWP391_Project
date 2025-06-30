@@ -16,9 +16,8 @@ export const RequireAuth = ({ children, roles }) => {
   const userHasRequiredRole = user && roles?.includes(user.role);
 
   if (!userHasRequiredRole) {
-    // Nếu không có quyền, bạn có thể chuyển hướng về trang chủ hoặc trang "Unauthorized"
-    // Ở đây, chúng ta chuyển hướng về trang chủ
-    return <Navigate to="/" state={{ from: location }} replace />;
+    // Nếu không có quyền, chuyển hướng về trang /unauthorized
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
   }
 
   // Nếu có đủ quyền, hiển thị component con (trang được bảo vệ)

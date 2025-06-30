@@ -542,13 +542,19 @@ const UserProfile = () => {
                   {formData.fullName}
                 </Typography>
                 {/* Hiển thị loại tài khoản */}
+                {user?.role && user.role.toString().toLowerCase() === 'staff' && (
+                  <Chip label="Nhân viên" color="secondary" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {user?.role && user.role.toString().toLowerCase() === 'admin' && (
+                  <Chip label="Quản trị viên" color="secondary" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
                 {isDonor && (
                   <Chip label="Tài khoản hiến máu" color="success" sx={{ mb: 1, fontWeight: 'bold' }} />
                 )}
                 {isRecipient && !isDonor && (
                   <Chip label="Tài khoản truyền máu" color="info" sx={{ mb: 1, fontWeight: 'bold' }} />
                 )}
-                {!isDonor && !isRecipient && (
+                {!isDonor && !isRecipient && !user?.role && (
                   <Chip label="Không xác định loại tài khoản" color="warning" sx={{ mb: 1, fontWeight: 'bold' }} />
                 )}
                 <Chip

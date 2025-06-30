@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Blood_Donation_Support.Data;
-using Blood_Donation_Support.Model;
-using Blood_Donation_Support.DTO;
 using NetTopologySuite.Geometries;
 
 namespace Blood_Donation_Support.Controllers;

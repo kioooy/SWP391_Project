@@ -67,9 +67,6 @@ const EmergencyRequest = () => {
 
   const components = [
     { id: 1, name: 'Máu toàn phần' },
-    { id: 2, name: 'Hồng cầu' },
-    { id: 3, name: 'Huyết tương' },
-    { id: 4, name: 'Tiểu cầu' },
   ];
 
   const [selectedComponentId, setSelectedComponentId] = useState(1);
@@ -99,18 +96,6 @@ const EmergencyRequest = () => {
     });
     if (errors.patientName) {
       setErrors({ ...errors, patientName: '' });
-    }
-  };
-
-  const handleQuantityChange = (event) => {
-    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 4); // chỉ cho nhập tối đa 4 số
-    if (value !== '' && Number(value) > 1000) value = '1000'; // không cho nhập quá 1000
-    setFormData({
-      ...formData,
-      quantity: value,
-    });
-    if (errors.quantity) {
-      setErrors({ ...errors, quantity: '' });
     }
   };
 
@@ -144,16 +129,11 @@ const EmergencyRequest = () => {
     }
   };
 
-  const handleComponentChange = (event) => {
-    setSelectedComponentId(event.target.value);
-  };
-
   const validateStep = () => {
     const newErrors = {};
     if (activeStep === 0) {
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
-      if (!formData.quantity) newErrors.quantity = 'Vui lòng nhập số lượng máu cần';
     } else if (activeStep === 1) {
       if (!formData.contactName) newErrors.contactName = 'Vui lòng nhập tên người liên hệ';
       // Kiểm tra số điện thoại Việt Nam
@@ -197,7 +177,7 @@ const EmergencyRequest = () => {
         const payload = {
           BloodTypeId: selectedBloodType.id,
           ComponentId: selectedComponentId,
-          TransfusionVolume: Number(formData.quantity),
+          TransfusionVolume: 500, // Giá trị mặc định 500ml cho yêu cầu khẩn cấp
           IsEmergency: true,
           PreferredReceiveDate: null,
           Notes: formData.notes,
@@ -239,23 +219,6 @@ const EmergencyRequest = () => {
         return (
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Thành phần máu</InputLabel>
-                <Select
-                  value={selectedComponentId}
-                  label="Thành phần máu"
-                  onChange={handleComponentChange}
-                >
-                  {components.map((comp) => (
-                    <MenuItem key={comp.id} value={comp.id}>
-                      {comp.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Tên bệnh nhân"
@@ -284,19 +247,6 @@ const EmergencyRequest = () => {
                   <FormHelperText>{errors.bloodType}</FormHelperText>
                 )}
               </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số lượng máu cần (ml)"
-                type="text"
-                value={formData.quantity}
-                onChange={handleQuantityChange}
-                error={!!errors.quantity}
-                helperText={errors.quantity}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 4 }}
-              />
             </Grid>
 
             <Grid item xs={12}>
@@ -406,13 +356,6 @@ const EmergencyRequest = () => {
                         size="small"
                       />
                     </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Số lượng máu
-                    </Typography>
-                    <Typography>{formData.quantity} ml</Typography>
                   </Grid>
                 </Grid>
               </CardContent>

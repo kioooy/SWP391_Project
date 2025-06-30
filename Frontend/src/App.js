@@ -41,6 +41,7 @@ import BlogDetail from "./pages/BlogDetail";
 import ArticleManage from "./pages/admin/ArticleManage";
 import BloodStorageManage from "./pages/admin/BloodStorageManage";
 import BlogManage from "./pages/admin/BlogManage";
+import Unauthorized from "./pages/Unauthorized";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -87,12 +88,28 @@ const App = () => {
         <Route path="/certificate" element={<BloodDonationCertificate />} />
         <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />
-        <Route path="/blood-inventory" element={<BloodInventory />} />
+        <Route path="/blood-inventory" element={
+          <RequireAuth roles={["Admin", "Staff"]}>
+            <BloodInventory />
+          </RequireAuth>
+        } />
         <Route path="/user-profile" element={<UserProfile />} />
-        <Route path="/search-distance" element={<SearchDistance />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/search-distance" element={
+          <RequireAuth roles={["Admin", "Staff"]}>
+            <SearchDistance />
+          </RequireAuth>
+        } />
+        <Route path="/dashboard" element={
+          <RequireAuth roles={["Admin", "Staff"]}>
+            <Dashboard />
+          </RequireAuth>
+        } />
         <Route path="/history" element={<AppointmentHistory />} />
-        <Route path="/hospital-location" element={<HospitalLocationEdit />} />
+        <Route path="/hospital-location" element={
+          <RequireAuth roles={["Admin", "Staff"]}>
+            <HospitalLocationEdit />
+          </RequireAuth>
+        } />
         <Route path="/blood-search" element={<BloodSearch />} />
         <Route path="/manage-article" element={<ArticleManage />} />
         <Route path="/manage-blood-storage" element={<BloodStorageManage />} />
@@ -139,6 +156,7 @@ const App = () => {
         />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:postId" element={<BlogDetail />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
       </Route>
 
       {/* Fallback Route */}

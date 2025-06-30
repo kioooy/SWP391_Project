@@ -189,12 +189,14 @@ const DonationRequestManagement = () => {
   const getStatusChip = (status) => {
     switch (status) {
       case 'Approved':
-        return <Chip label="Đã duyệt" color="success" />;
+        return <Chip label="Đã duyệt" color="warning" />;
       case 'Pending':
-        return <Chip label="Chờ duyệt" color="warning" />;
+        return <Chip label="Chờ duyệt" sx={{ backgroundColor: '#795548', color: 'white' }} />;
       case 'Rejected':
       case 'Cancelled':
         return <Chip label="Đã từ chối" color="error" />;
+      case 'Completed':
+        return <Chip label="Hoàn Thành" color="success" />;
       default:
         return <Chip label={status} />;
     }
@@ -230,31 +232,31 @@ const DonationRequestManagement = () => {
       {/* Tổng hợp trạng thái căn giữa, bỏ lọc theo trạng thái */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #1976d2' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #9e9e9e' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
           onClick={() => setStatusFilter('All')}
           elevation={statusFilter === 'All' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Tất cả</Typography>
           <Typography variant="h4" fontWeight="bold">{requests.length}</Typography>
-          <Chip label="Tất cả" color="primary" sx={{ mt: 1 }} />
+          <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
         </Paper>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
           onClick={() => setStatusFilter('Pending')}
           elevation={statusFilter === 'Pending' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
           <Typography variant="h4" fontWeight="bold">{pendingCount}</Typography>
-          <Chip label="Chờ duyệt" color="warning" sx={{ mt: 1 }} />
+          <Chip label="Chờ duyệt" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
         </Paper>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #0288d1' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
           onClick={() => setStatusFilter('Approved')}
           elevation={statusFilter === 'Approved' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
           <Typography variant="h4" fontWeight="bold">{approvedCount}</Typography>
-          <Chip label="Đã duyệt" color="info" sx={{ mt: 1 }} />
+          <Chip label="Đã duyệt" color="warning" sx={{ mt: 1 }} />
         </Paper>
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}

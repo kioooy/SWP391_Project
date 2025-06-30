@@ -45,6 +45,11 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
   Delete as DeleteIcon,
+  Badge,
+  Cake,
+  Wc,
+  Height,
+  MonitorWeight,
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -342,22 +347,36 @@ const UserProfileRecipient = () => {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Thông tin cá nhân
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Số CMND: {formData.citizenNumber}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <CalendarToday sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
-                  Ngày sinh: {formData.dateOfBirth}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Giới tính: {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Không xác định'}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Chiều cao: {formData.height} cm
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Cân nặng: {formData.weight} kg
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Số CMND:</strong> {formData.citizenNumber || 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Ngày sinh:</strong> {formData.dateOfBirth || 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Giới tính:</strong> {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Height sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Chiều cao:</strong> {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Cân nặng:</strong> {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
                 {formData.medicalHistory && (
                   <Typography variant="body2" sx={{ mb: 1 }}>
                     Tiền sử bệnh án: {formData.medicalHistory}

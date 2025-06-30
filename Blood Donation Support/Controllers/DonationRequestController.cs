@@ -61,21 +61,22 @@ namespace Blood_Donation_Support.Controllers
                 .Include(dr => dr.Period)
                 .Select(dr => new
                 {
-                    dr.DonationId,
-                    dr.MemberId,
-                    dr.Member.User.FullName,
+                    dr.DonationId,                     // Donation Id                    
+                    dr.MemberId,                       // Member Id (UserId of role the member)
+                    dr.Member.User.FullName,           // FullName from User
                     dr.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
                     dr.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
-                    dr.PeriodId,
-                    dr.Period.PeriodName,
-                    dr.ComponentId,
-                    dr.PreferredDonationDate,
-                    dr.ResponsibleById,
-                    dr.DonationVolume,
-                    dr.Notes,
-                    dr.Status,
-                    dr.RequestDate,
-                    dr.ApprovalDate
+                    dr.PeriodId,                       // Period Id
+                    dr.Period.PeriodName,              // Period Name
+                    dr.Period.Hospital.Address,        // Period Address
+                    dr.ComponentId,                    // Component Id
+                    dr.PreferredDonationDate,          // Preferred Donation Date
+                    dr.ResponsibleById,                // Responsible By Id (staff responsible)
+                    dr.DonationVolume,                 // Donation Volume
+                    dr.Notes,                          // Notes 
+                    dr.Status,                         // Status of the donation request
+                    dr.RequestDate,                    // Request Date
+                    dr.ApprovalDate                    // Approval Date
                 })
                 .ToListAsync();
 
@@ -96,7 +97,7 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound(); // Return 404 Not Found if member not found
 
-            // Kiểm tra member có lịch hẹn sắp tới chưa
+            // Check if the member has an upcoming donation request
             var today = DateOnly.FromDateTime(DateTime.Today);
             var hasUpcoming = await _context.DonationRequests
                 .Include(dr => dr.Period)
@@ -121,7 +122,7 @@ namespace Blood_Donation_Support.Controllers
                 PreferredDonationDate = model.PreferredDonationDate, // Preferred Donation Date 
                 ResponsibleById = model.ResponsibleById,             // Responsible By Id 
                 RequestDate = DateTime.Now,                          // Request Date (current date)
-                ApprovalDate = null,                                 // Approval Date (default null)
+                ApprovalDate = DateTime.Now,                         // Approval Date (current date)
                 DonationVolume = model.DonationVolume,               // Donation Volume
                 Status = "Approved",                                 // Status (default "Approved")
                 Notes = model.Notes,                                 // Notes 
@@ -145,6 +146,8 @@ namespace Blood_Donation_Support.Controllers
                     donationRequest.DonationId,
                     donationRequest.MemberId,
                     donationRequest.PeriodId,
+                    donationRequest.Period.PeriodName,
+                    donationRequest.Period.Hospital.Address,
                     donationRequest.ComponentId,
                     donationRequest.PreferredDonationDate,
                     donationRequest.ResponsibleById,
@@ -265,7 +268,7 @@ namespace Blood_Donation_Support.Controllers
             }
         }
 
-        // get upcoming donation requests for member
+        // Cập nhật donation request (sắp tới) theo role
         // GET: api/DonationRequest/upcoming/all-role
         [HttpGet("upcoming/all-role")]
         [Authorize(Roles = "Member,Staff,Admin")]
@@ -320,6 +323,47 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(list);
         }
+        // Reject donation request by id
+        // PATCH: api/DonationRequest/{id}/cancel
+        [HttpPatch("{id}/reject")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> RejectDonationRequest(int id)
+        {
+
+            var roleName = User.FindFirst(ClaimTypes.Role); // Get the role of the user
+            var name = User.FindFirst(ClaimTypes.Name)?.Value; // Get the name of the user
+
+            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
+            if (existingRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+
+            existingRequest.RejectedDate = DateTime.Now;    // Set the cancellation date
+            existingRequest.Status = "Rejected";            // Update the status to "Cancelled"
+            existingRequest.Notes = $"Rejected By {roleName} {name}"; // Add a note indicating cancellation by the user
+
+            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
+
+            var currentQuantity = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == existingRequest.PeriodId)
+                .Select(p => p.CurrentQuantity)
+                .FirstOrDefaultAsync(); // Get the current quantity for the period
+            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+
+            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            try
+            {
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
+                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction 
+                throw;
+            }
+        }
+
 
         // Cancel donation request by id
         // PATCH: api/DonationRequest/{id}/cancel
@@ -335,8 +379,9 @@ namespace Blood_Donation_Support.Controllers
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
 
-            existingRequest.Status = "Cancelled"; // Update the status to "Cancelled"
-            existingRequest.Notes = "Đã hủy bởi người dùng";
+            existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
+            existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
+            existingRequest.Notes = "Đã hủy bởi người dùng"; // Add a note indicating cancellation by the user
 
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 

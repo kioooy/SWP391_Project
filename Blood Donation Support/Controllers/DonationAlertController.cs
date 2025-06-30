@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Blood_Donation_Support.Data;
 using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace Blood_Donation_Support.Controllers
 {

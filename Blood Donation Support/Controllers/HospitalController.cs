@@ -4,10 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using Blood_Donation_Support.Data;
 using Blood_Donation_Support.DTO;
-using Blood_Donation_Support.Model;
-using System;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace Blood_Donation_Support.Controllers
 {

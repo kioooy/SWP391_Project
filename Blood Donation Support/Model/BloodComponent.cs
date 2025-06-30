@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Blood_Donation_Support.Model;
+﻿namespace Blood_Donation_Support.Model;
 
 public partial class BloodComponent
 {

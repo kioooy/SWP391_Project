@@ -3,9 +3,6 @@ using Blood_Donation_Support.Model;
 using Blood_Donation_Support.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System.Linq;
-using System;
 
 namespace Blood_Donation_Support.Controllers
 {

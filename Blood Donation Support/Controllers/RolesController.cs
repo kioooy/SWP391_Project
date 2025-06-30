@@ -1,11 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Blood_Donation_Support.Model;
 using Blood_Donation_Support.DTO;
-using System.Collections.Generic;
-using System.Linq;
 using Blood_Donation_Support.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 
 namespace Blood_Donation_Support.Controllers
 {

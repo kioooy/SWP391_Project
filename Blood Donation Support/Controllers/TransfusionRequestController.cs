@@ -126,11 +126,11 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
-                    MemberName = tr.Member.User.FullName,
+                    tr.Member.User.FullName,
                     tr.BloodTypeId,
-                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.BloodType.BloodTypeName,
                     tr.ComponentId,
-                    ComponentName = tr.Component.ComponentName,
+                    tr.Component.ComponentName,
                     tr.ResponsibleById,
                     tr.IsEmergency,
                     tr.TransfusionVolume,
@@ -161,12 +161,11 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
-                    MemberUserId = tr.Member.UserId,
-                    MemberName = tr.Member.User.FullName,
+                    tr.Member.User.FullName,
                     tr.BloodTypeId,
-                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.BloodType.BloodTypeName,
                     tr.ComponentId,
-                    ComponentName = tr.Component.ComponentName,
+                    tr.Component.ComponentName,
                     tr.ResponsibleById,
                     tr.IsEmergency,
                     tr.TransfusionVolume,
@@ -189,7 +188,7 @@ namespace Blood_Donation_Support.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-            if (userRole == "Member" && transfusionRequest.MemberUserId.ToString() != userId)
+            if (userRole == "Member" && transfusionRequest.MemberId.ToString() != userId)
             {
                 return Forbid();
             }
@@ -462,11 +461,11 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
-                    MemberName = tr.Member.User.FullName,
+                    tr.Member.User.FullName,
                     tr.BloodTypeId,
-                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.BloodType.BloodTypeName,
                     tr.ComponentId,
-                    ComponentName = tr.Component.ComponentName,
+                    tr.Component.ComponentName,
                     tr.ResponsibleById,
                     tr.IsEmergency,
                     tr.TransfusionVolume,

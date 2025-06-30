@@ -41,6 +41,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import EventIcon from '@mui/icons-material/Event';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import EditNoteIcon from '@mui/icons-material/EditNote';
+import NotificationBell from "../components/NotificationBell";
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -311,24 +312,30 @@ const MainLayout = () => {
                 </Typography>
               </Box>
               {/* Đăng nhập/Đăng ký hoặc Profile */}
-              <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {isAuthenticated || isTestUser ? (
-                  <Button
-                    color="primary"
-                    startIcon={
-                      currentUser && currentUser.fullName ? (
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
-                          {currentUser.fullName.charAt(0).toUpperCase()}
-                        </Avatar>
-                      ) : (
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
-                      )
-                    }
-                    onClick={handleProfile}
-                    sx={{ fontSize: 17, fontWeight: 'bold' }}
-                  >
-                    {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
-                  </Button>
+                  <>
+                    {/* Notification Bell - chỉ hiển thị cho Member */}
+                    {currentUser && currentUser.role === 'Member' && (
+                      <NotificationBell userId={currentUser.userId} />
+                    )}
+                    <Button
+                      color="primary"
+                      startIcon={
+                        currentUser && currentUser.fullName ? (
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                            {currentUser.fullName.charAt(0).toUpperCase()}
+                          </Avatar>
+                        ) : (
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                        )
+                      }
+                      onClick={handleProfile}
+                      sx={{ fontSize: 17, fontWeight: 'bold' }}
+                    >
+                      {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     variant="text"
@@ -408,24 +415,30 @@ const MainLayout = () => {
               </Typography>
             </Box>
             {/* Đăng nhập/Đăng ký hoặc Profile */}
-            <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {isAuthenticated || isTestUser ? (
-                <Button
-                  color="primary"
-                  startIcon={
-                    currentUser && currentUser.fullName ? (
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
-                        {currentUser.fullName.charAt(0).toUpperCase()}
-                      </Avatar>
-                    ) : (
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
-                    )
-                  }
-                  onClick={handleProfile}
-                  sx={{ fontSize: 17, fontWeight: 'bold' }}
-                >
-                  {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
-                </Button>
+                <>
+                  {/* Notification Bell - chỉ hiển thị cho Member */}
+                  {currentUser && currentUser.role === 'Member' && (
+                    <NotificationBell userId={currentUser.userId} />
+                  )}
+                  <Button
+                    color="primary"
+                    startIcon={
+                      currentUser && currentUser.fullName ? (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                          {currentUser.fullName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      ) : (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                      )
+                    }
+                    onClick={handleProfile}
+                    sx={{ fontSize: 17, fontWeight: 'bold' }}
+                  >
+                    {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="text"

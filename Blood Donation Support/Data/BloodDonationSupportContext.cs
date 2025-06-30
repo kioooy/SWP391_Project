@@ -39,6 +39,7 @@ public partial class BloodDonationSupportContext : DbContext
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
+
     public virtual DbSet<Hospital> Hospitals { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -129,7 +130,12 @@ public partial class BloodDonationSupportContext : DbContext
 
             entity.Property(e => e.CurrentQuantity).HasDefaultValue(0);
             entity.Property(e => e.ImageUrl).HasMaxLength(255);
-            entity.Property(e => e.Location).HasMaxLength(255);
+
+            entity.HasOne(d => d.Hospital).WithMany(p => p.BloodDonationPeriod)
+                .HasForeignKey(d => d.HospitalId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__BloodDona__Hospi__43D61337");
+
             entity.Property(e => e.PeriodDateFrom).HasColumnType("datetime");
             entity.Property(e => e.PeriodDateTo).HasColumnType("datetime");
             entity.Property(e => e.PeriodName).HasMaxLength(100);

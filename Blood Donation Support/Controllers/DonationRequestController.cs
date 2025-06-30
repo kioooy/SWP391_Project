@@ -24,7 +24,7 @@ namespace Blood_Donation_Support.Controllers
         // get donation request history by id (Member View)
         // api/DonationRequest/{id}
         [HttpGet("{memberId}/history")]
-        [Authorize(Roles = "Member")] 
+        [Authorize(Roles = "Member,Admin")] 
         public async Task<IActionResult> GetDonationRequestHistory(int memberId)
         {
             var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync( dr => dr.MemberId == memberId && dr.Status == "Completed" ); // Fetch the donation request by ID
@@ -308,7 +308,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.Status,
                     dr.Period.PeriodId,
                     dr.Period.PeriodName,
-                    dr.Period.Location,
+                    dr.Period.Hospital.Name,
                     dr.Period.PeriodDateFrom,
                     dr.Period.PeriodDateTo
                 })

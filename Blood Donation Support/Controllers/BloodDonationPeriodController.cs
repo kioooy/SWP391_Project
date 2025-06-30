@@ -28,7 +28,7 @@ namespace Blood_Donation_Support.Controllers
             var period = new BloodDonationPeriod
             {
                 PeriodName = dto.PeriodName,
-                Location = dto.Location,
+                HospitalId = 1, // Default to 1 ( Primary Hospital ID 1 )
                 Status = dto.Status,
                 PeriodDateFrom = dto.PeriodDateFrom,
                 PeriodDateTo = dto.PeriodDateTo,
@@ -37,8 +37,8 @@ namespace Blood_Donation_Support.Controllers
                 ImageUrl = dto.ImageUrl
             };
 
-            _context.BloodDonationPeriods.Add(period);
-            _context.SaveChanges();
+            await _context.BloodDonationPeriods.AddAsync(period);
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetBloodDonationPeriodById), new { id = period.PeriodId }, period);
         }
@@ -51,9 +51,19 @@ namespace Blood_Donation_Support.Controllers
             var period = await _context.BloodDonationPeriods.FindAsync(id);
             if (period == null)
                 return NotFound();
-            return Ok(period);
+            return Ok(new {
+                period.PeriodId,
+                period.PeriodName,
+                period.HospitalId,
+                period.Hospital.Name,
+                period.Status,
+                period.PeriodDateFrom,
+                period.PeriodDateTo,
+                period.CurrentQuantity,
+                period.TargetQuantity,
+                period.ImageUrl,
+            });
         }
-
 
         // GET: api/BloodDonationPeriod
         [HttpGet]
@@ -119,12 +129,13 @@ namespace Blood_Donation_Support.Controllers
             var period = await _context.BloodDonationPeriods.FindAsync(id);
             if (period == null)
             {
-                return NotFound(new { message = "Donation period not found" });
+                return NotFound(new { message = "Không Tìm Thấy Lịch Đợt Hiến" });
             }
-            var progress = new BloodDonationPeriodProgressDto
+            var progress = new BloodDonationPeriodProgressDTO
             {
                 PeriodId = period.PeriodId,
                 PeriodName = period.PeriodName,
+                HospitalName = period.Hospital.Name,
                 TargetQuantity = period.TargetQuantity,
                 CurrentQuantity = period.CurrentQuantity ?? 0,
                 ProgressPercent = period.TargetQuantity > 0 ? (int)(period.CurrentQuantity ?? 0) * 100 / period.TargetQuantity : 0,
@@ -163,7 +174,6 @@ namespace Blood_Donation_Support.Controllers
             }
 
             period.PeriodName = dto.PeriodName;
-            period.Location = dto.Location;
             period.PeriodDateFrom = dto.PeriodDateFrom;
             period.PeriodDateTo = dto.PeriodDateTo;
             period.TargetQuantity = dto.TargetQuantity;

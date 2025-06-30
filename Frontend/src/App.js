@@ -43,6 +43,8 @@ import BloodStorageManage from "./pages/admin/BloodStorageManage";
 import BlogManage from "./pages/admin/BlogManage";
 import Unauthorized from "./pages/Unauthorized";
 import SidebarLayout from "./layouts/SidebarLayout";
+import AdminProfile from "./pages/admin/AdminProfile";
+import StaffProfile from "./pages/StaffProfile";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -98,6 +100,8 @@ const App = () => {
       {/* Sidebar Layout cho các trang quản lý */}
       <Route element={<SidebarLayout />}>
         <Route path="/profile" element={<RequireAuth roles={["Admin", "Staff"]}><UserProfile /></RequireAuth>} />
+        <Route path="/profile-admin" element={<RequireAuth roles={["Admin"]}><AdminProfile /></RequireAuth>} />
+        <Route path="/profile-staff" element={<RequireAuth roles={["Staff"]}><StaffProfile /></RequireAuth>} />
         <Route path="/dashboard" element={<RequireAuth roles={["Admin", "Staff"]}><Dashboard /></RequireAuth>} />
         <Route path="/manage-requests" element={<RequireAuth roles={["Admin", "Staff"]}><DonationRequestManagement /></RequireAuth>} />
         <Route path="/manage-blood-periods" element={<RequireAuth roles={["Admin", "Staff"]}><BloodDonationPeriodManagement /></RequireAuth>} />

@@ -21,7 +21,7 @@ const SidebarLayout = () => {
 
   // Các mục sidebar cho Staff/Admin
   const menuItems = [
-    { path: "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
+    { path: user?.role === 'Admin' ? "/profile-admin" : user?.role === 'Staff' ? "/profile-staff" : "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
     { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
     { path: "/manage-blood-periods", label: "Đợt hiến máu", icon: <BloodtypeIcon /> },

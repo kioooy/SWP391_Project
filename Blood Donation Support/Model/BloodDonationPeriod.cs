@@ -6,7 +6,7 @@ public partial class BloodDonationPeriod
 
     public string PeriodName { get; set; } = null!;
 
-    public string Location { get; set; } = null!;
+    public int HospitalId { get; set; }
 
     public string Status { get; set; } = null!;
 
@@ -23,4 +23,7 @@ public partial class BloodDonationPeriod
     public bool IsActive { get; set; } = true;
 
     public virtual ICollection<DonationRequest> DonationRequests { get; set; } = new List<DonationRequest>();
+
+    public virtual Hospital Hospital { get; set; } = null!;
+
 }

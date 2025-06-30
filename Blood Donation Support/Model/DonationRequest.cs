@@ -20,6 +20,12 @@ public partial class DonationRequest
 
     public DateTime? ApprovalDate { get; set; }
 
+    public DateTime? CompletionDate { get; set; }
+
+    public DateTime? CancelledDate { get; set; }
+
+    public DateTime? RejectedDate { get; set; }
+
     public int? DonationVolume { get; set; }
 
     public string Status { get; set; } = null!;
@@ -35,5 +41,7 @@ public partial class DonationRequest
 
     public virtual BloodDonationPeriod Period { get; set; } = null!;
 
-    public virtual User? ResponsibleBy { get; set; }
+    public virtual User ResponsibleBy { get; set; } = null!;
+
+    public virtual ICollection<Hospital> Hospital { get; set; } = new List<Hospital>();
 }

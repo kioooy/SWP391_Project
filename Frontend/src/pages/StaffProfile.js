@@ -6,7 +6,7 @@ import {
   Container, Typography, Box, Card, CardContent, Grid, Avatar, Button, Chip, Divider, Snackbar, Alert
 } from '@mui/material';
 import {
-  LocationOn, Phone, Email, Bloodtype
+  LocationOn, Phone, Email, Bloodtype, Badge, Cake, Wc, Height, MonitorWeight
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -94,11 +94,26 @@ const StaffProfile = () => {
               <Divider sx={{ my: 2 }} />
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>Thông tin cá nhân</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>Số CMND: {formData.citizenNumber}</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>Ngày sinh: {formData.dateOfBirth}</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>Giới tính: {formData.gender}</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>Chiều cao: {formData.height} cm</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>Cân nặng: {formData.weight} kg</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                  <Typography variant="body2">Số CMND: {formData.citizenNumber || 'Chưa cập nhật'}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                  <Typography variant="body2">Ngày sinh: {formData.dateOfBirth || 'Chưa cập nhật'}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                  <Typography variant="body2">Giới tính: {formData.gender || 'Chưa cập nhật'}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Height sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                  <Typography variant="body2">Chiều cao: {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                  <Typography variant="body2">Cân nặng: {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}</Typography>
+                </Box>
               </Box>
             </CardContent>
           </Card>

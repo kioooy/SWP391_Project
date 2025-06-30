@@ -13,8 +13,12 @@ public partial class Article
     public DateTime? PublishedDate { get; set; }
 
     public DateTime? UpdatedDate { get; set; }
+
+    public string? ImageUrl { get; set; }
+
     public string Status { get; set; } = null!;
 
     public bool IsActive { get; set; }
+
     public virtual User User { get; set; } = null!;
 }

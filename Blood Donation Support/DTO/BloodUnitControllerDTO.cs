@@ -1,4 +1,3 @@
-
 using System.ComponentModel.DataAnnotations;
 
 namespace Blood_Donation_Support.DTO;
@@ -38,4 +37,8 @@ public class BloodUnitDelete
 {
     [Required]
     public required string BloodStatus { get; set; }
+}
+public class BloodUnitStatusUpdateDTO
+{
+    public string Status { get; set; }
 }

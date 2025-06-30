@@ -113,60 +113,6 @@ namespace Blood_Donation_Support.Controllers
             });
         }
 
-        // POST: api/TransfusionRequest (Tạo mới yêu cầu truyền máu - flow thường)
-        [HttpPost]
-        public async Task<IActionResult> CreateEmergencyTransfusionRequest([FromBody] CreateTransfusionRequestDTO model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var responsibleUser = await _context.Users.FindAsync(int.Parse(userId));
-            if (responsibleUser == null)
-            {
-                return Forbid("Authenticated user not found in the database.");
-            }
-
-            var bloodType = await _context.BloodTypes.FindAsync(model.BloodTypeId);
-            if (bloodType == null)
-            {
-                return NotFound($"BloodType with ID {model.BloodTypeId} not found.");
-            }
-
-            var transfusionRequest = new TransfusionRequest
-            {
-                //MemberId = null,
-                BloodTypeId = model.BloodTypeId,
-                ComponentId = model.ComponentId,
-                ResponsibleById = responsibleUser.UserId,
-                IsEmergency = true,
-                TransfusionVolume = model.TransfusionVolume,
-                PreferredReceiveDate = DateTime.UtcNow,
-                RequestDate = DateTime.UtcNow,
-                Status = "Pending",
-                Notes = model.Notes,
-            };
-
-            await _context.TransfusionRequests.AddAsync(transfusionRequest);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetTransfusionRequestById), new { id = transfusionRequest.TransfusionId }, new
-            {
-                transfusionRequest.TransfusionId,
-                transfusionRequest.MemberId,
-                transfusionRequest.BloodTypeId,
-                transfusionRequest.ComponentId,
-                transfusionRequest.ResponsibleById,
-                transfusionRequest.IsEmergency,
-                transfusionRequest.TransfusionVolume,
-                transfusionRequest.PreferredReceiveDate,
-                transfusionRequest.RequestDate,
-                transfusionRequest.Status,
-                transfusionRequest.Notes,
-                transfusionRequest.PatientCondition
-            });
-        }
-
         // GET: api/TransfusionRequest
         [HttpGet]
         [Authorize(Roles = "Staff,Admin")]
@@ -180,11 +126,11 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
-                    MemberName = tr.Member.User.FullName,
+                    tr.Member.User.FullName,
                     tr.BloodTypeId,
-                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.BloodType.BloodTypeName,
                     tr.ComponentId,
-                    ComponentName = tr.Component.ComponentName,
+                    tr.Component.ComponentName,
                     tr.ResponsibleById,
                     tr.IsEmergency,
                     tr.TransfusionVolume,
@@ -215,12 +161,11 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
-                    MemberUserId = tr.Member.UserId,
-                    MemberName = tr.Member.User.FullName,
+                    tr.Member.User.FullName,
                     tr.BloodTypeId,
-                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.BloodType.BloodTypeName,
                     tr.ComponentId,
-                    ComponentName = tr.Component.ComponentName,
+                    tr.Component.ComponentName,
                     tr.ResponsibleById,
                     tr.IsEmergency,
                     tr.TransfusionVolume,
@@ -243,7 +188,7 @@ namespace Blood_Donation_Support.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-            if (userRole == "Member" && transfusionRequest.MemberUserId.ToString() != userId)
+            if (userRole == "Member" && transfusionRequest.MemberId.ToString() != userId)
             {
                 return Forbid();
             }
@@ -516,11 +461,11 @@ namespace Blood_Donation_Support.Controllers
                 {
                     tr.TransfusionId,
                     tr.MemberId,
-                    MemberName = tr.Member.User.FullName,
+                    tr.Member.User.FullName,
                     tr.BloodTypeId,
-                    BloodTypeName = tr.BloodType.BloodTypeName,
+                    tr.BloodType.BloodTypeName,
                     tr.ComponentId,
-                    ComponentName = tr.Component.ComponentName,
+                    tr.Component.ComponentName,
                     tr.ResponsibleById,
                     tr.IsEmergency,
                     tr.TransfusionVolume,

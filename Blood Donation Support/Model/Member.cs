@@ -23,11 +23,11 @@ public partial class Member
     public int? DonationCount { get; set; }
 
     // Vị trí địa lý (tọa độ) sử dụng NetTopologySuite Point (SRID 4326)
-    public Point? Location { get; set; }
+    public Point Location { get; set; } = null!;
 
     public DateOnly? LastCheckupDate { get; set; }
 
-    public virtual BloodType? BloodType { get; set; }
+    public virtual BloodType BloodType { get; set; } = null!;
 
     public virtual ICollection<BloodUnit> BloodUnits { get; set; } = new List<BloodUnit>();
 

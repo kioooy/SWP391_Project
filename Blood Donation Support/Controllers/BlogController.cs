@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Blood_Donation_Support.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -37,7 +33,7 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -57,7 +53,7 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -77,7 +73,7 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .FirstOrDefaultAsync();
             if (blog == null)

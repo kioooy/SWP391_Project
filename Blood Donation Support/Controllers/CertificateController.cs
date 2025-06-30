@@ -1,6 +1,4 @@
 using Blood_Donation_Support.Data;
-using Blood_Donation_Support.DTO;
-using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +34,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.Member.User.FullName, // Họ và tên
                     dr.Member.User.DateOfBirth, // Ngày sinh
                     dr.Member.User.Address,  // Địa chỉ
-                    dr.Period.Location,  // Địa điểm hiến máu
+                    dr.Period.Hospital.Name,  // Địa điểm hiến máu
                     dr.DonationVolume,  // Thể tích máu hiến
                     dr.PreferredDonationDate, // Ngày hiến máu
                     dr.Member.BloodType.BloodTypeName // Nhóm máu
@@ -63,7 +61,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.Member.User.FullName, // Họ và tên
                     dr.Member.User.DateOfBirth, // Ngày sinh
                     dr.Member.User.Address,  // Địa chỉ
-                    dr.Period.Location,  // Địa điểm hiến máu
+                    dr.Period.Hospital.Name,  // Địa điểm hiến máu
                     dr.DonationVolume,  // Thể tích máu hiến
                     dr.PreferredDonationDate, // Ngày hiến máu
                     dr.Member.BloodType.BloodTypeName // Nhóm máu
@@ -107,7 +105,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.Member.User.FullName, // Họ và tên
                     dr.Member.User.DateOfBirth, // Ngày sinh
                     dr.Member.User.Address,  // Địa chỉ
-                    dr.Period.Location,  // Địa điểm hiến máu
+                    dr.Period.Hospital.Name,  // Địa điểm hiến máu
                     dr.DonationVolume,  // Thể tích máu hiến
                     dr.PreferredDonationDate, // Ngày hiến máu
                     dr.Member.BloodType.BloodTypeName // Nhóm máu

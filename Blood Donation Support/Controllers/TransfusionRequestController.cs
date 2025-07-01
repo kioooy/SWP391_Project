@@ -67,6 +67,9 @@ namespace Blood_Donation_Support.Controllers
             {
                 return NotFound($"Member with ID {memberId} not found.");
             }
+            // Khi tạo yêu cầu truyền máu mới, gán IsRecipient = true
+            member.IsRecipient = true;
+            _context.Members.Update(member);
             
             var bloodType = await _context.BloodTypes.FindAsync(model.BloodTypeId);
             if (bloodType == null)
@@ -300,6 +303,14 @@ namespace Blood_Donation_Support.Controllers
                 };
                 _context.BloodReservations.Add(reservation);
 
+                var member = await _context.Members.FindAsync(transfusionRequest.MemberId);
+                if (member != null)
+                {
+                    // Khi duyệt yêu cầu truyền máu, gán IsRecipient = true
+                    member.IsRecipient = true;
+                    _context.Members.Update(member);
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -375,11 +386,13 @@ namespace Blood_Donation_Support.Controllers
                 transfusionRequest.CompletionDate = DateTime.UtcNow;
                 _context.TransfusionRequests.Update(transfusionRequest);
 
-                // Cập nhật trạng thái IsRecipient của Thành viên
                 var member = await _context.Members.FindAsync(transfusionRequest.MemberId);
                 if (member != null)
                 {
-                    member.IsRecipient = true;
+                    // Khi hoàn thành truyền máu, kiểm tra member còn yêu cầu truyền máu nào chưa hoàn thành không
+                    var stillNeedsBlood = await _context.TransfusionRequests
+                        .AnyAsync(tr => tr.MemberId == member.UserId && (tr.Status == "Pending" || tr.Status == "Approved"));
+                    member.IsRecipient = stillNeedsBlood;
                     _context.Members.Update(member);
                 }
 
@@ -437,6 +450,16 @@ namespace Blood_Donation_Support.Controllers
                             _context.BloodUnits.Update(bloodUnit);
                         }
                     }
+                }
+                
+                var member = await _context.Members.FindAsync(transfusionRequest.MemberId);
+                if (member != null)
+                {
+                    // Khi hủy yêu cầu truyền máu, kiểm tra member còn yêu cầu truyền máu nào chưa hoàn thành không
+                    var stillNeedsBlood = await _context.TransfusionRequests
+                        .AnyAsync(tr => tr.MemberId == member.UserId && (tr.Status == "Pending" || tr.Status == "Approved"));
+                    member.IsRecipient = stillNeedsBlood;
+                    _context.Members.Update(member);
                 }
                 
                 await _context.SaveChangesAsync();

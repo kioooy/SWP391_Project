@@ -520,6 +520,11 @@ const UserProfile = () => {
     );
   }
 
+  // Thêm biến lọc các lịch đã lên lịch
+  const scheduledAppointments = upcomingAppointments.filter(
+    (a) => a.status === 'Approved' || a.status === 'scheduled'
+  );
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -674,49 +679,13 @@ const UserProfile = () => {
             <CardContent>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={handleTabChange} aria-label="donation history tabs">
-                  <Tab label="Lịch sử hiến máu" />
                   <Tab label="Lịch hẹn sắp tới" />
                 </Tabs>
               </Box>
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch sử hiến máu đã hoàn thành</Typography>
-                {completedDonationHistory.length > 0 ? (
-                  <TableContainer component={Paper}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Ngày</TableCell>
-                          <TableCell>Địa điểm</TableCell>
-                          <TableCell>Nhóm máu</TableCell>
-                          <TableCell>Thể tích (ml)</TableCell>
-                          <TableCell>Trạng thái</TableCell>
-                          <TableCell>Ngày hiến máu tiếp theo</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {completedDonationHistory.map((row) => (
-                          <TableRow key={row.donationId}>
-                            <TableCell>{row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : ''}</TableCell>
-                            <TableCell>{row.location}</TableCell>
-                            <TableCell>{formData.bloodType}</TableCell>
-                            <TableCell>{row.donationVolume}</TableCell>
-                            <TableCell>{getStatusChip(row.status)}</TableCell>
-                            <TableCell></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                    Chưa có lịch sử hiến máu đã hoàn thành.
-                  </Typography>
-                )}
-              </TabPanel>
-              <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
-                {upcomingAppointments.length > 0 ? (
-                  upcomingAppointments.map((appointment, index) => {
+                {scheduledAppointments.length > 0 ? (
+                  scheduledAppointments.map((appointment, index) => {
                     // Cố gắng parse "notes" để lấy giờ và địa điểm bệnh viện
                     let hospitalName = '';
                     let timeSlot = 'Không xác định';

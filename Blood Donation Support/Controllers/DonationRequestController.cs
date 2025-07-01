@@ -330,24 +330,25 @@ namespace Blood_Donation_Support.Controllers
         // Cancel donation request by id
         // PATCH: api/DonationRequest/{id}/cancel
         [HttpPatch("{id}/cancel")]
-        [Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member,Staff,Admin")]
         public async Task<IActionResult> CancelDonationRequest(int id)
         {
-            // Determine caller's role and id
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value; // Get the role of the user
-            var name = User.FindFirst(ClaimTypes.Name)?.Value; // Get the name of the current user
+            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
+            var name = User.FindFirst(ClaimTypes.Name)?.Value;
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
-            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
+            var existingRequest = await _context.DonationRequests.FindAsync(id);
             if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-            if (existingRequest.MemberId != currentUserId)
-                return BadRequest("You are not authorized to cancel this request."); // Chỉ cho phép member hủy lịch của chính mình
+                return NotFound($"Not Found DonationRequestsId: {id}.");
 
-            existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
-            existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
-            existingRequest.Notes = $"Hủy Lịch";             // Custom Note indicating cancellation by the user
-            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
+            // Member chỉ được hủy của chính mình, Staff/Admin được hủy bất kỳ
+            if (roleName == "Member" && existingRequest.MemberId != currentUserId)
+                return BadRequest("You are not authorized to cancel this request.");
+
+            existingRequest.CancelledDate = DateTime.Now;
+            existingRequest.Status = "Cancelled";
+            existingRequest.Notes = $"Hủy lịch bởi {roleName} {name}";
+            _context.Entry(existingRequest).State = EntityState.Modified;
 
             // Cập nhật số lượng hiện tại của đợt hiến máu
             var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == existingRequest.PeriodId);
@@ -357,16 +358,16 @@ namespace Blood_Donation_Support.Controllers
                 _context.Entry(period).State = EntityState.Modified;
             }
 
-            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                await _context.SaveChangesAsync();  // Save changes to the database
-                await transaction.CommitAsync();    // Commit the transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
                 return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
             }
             catch (DbUpdateConcurrencyException)
             {
-                await transaction.RollbackAsync(); // Rollback the transaction 
+                await transaction.RollbackAsync();
                 throw;
             }
         }
@@ -395,11 +396,8 @@ namespace Blood_Donation_Support.Controllers
             IQueryable<DonationRequest> query = _context.DonationRequests
                 .Include(dr => dr.Period)
                 .Where(dr =>
-                    (dr.Status == "Pending" || dr.Status == "Approved") &&
-                    (
-                        (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
-                        dr.Period.PeriodDateFrom >= DateTime.Today
-                    )
+                    (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                    dr.Period.PeriodDateFrom >= DateTime.Today
                 );
 
             if (memberId.HasValue)
@@ -418,7 +416,8 @@ namespace Blood_Donation_Support.Controllers
                     dr.Period.PeriodName,
                     dr.Period.Hospital.Name,
                     dr.Period.PeriodDateFrom,
-                    dr.Period.PeriodDateTo
+                    dr.Period.PeriodDateTo,
+                    dr.RequestDate
                 })
                 .ToListAsync();
 

@@ -129,6 +129,7 @@ const AppointmentHistory = () => {
   const [openDetailDialog, setOpenDetailDialog] = React.useState(false);
   const [selectedAppointment, setSelectedAppointment] = React.useState(null);
   const [upcomingAppointments, setUpcomingAppointments] = React.useState([]);
+  const [hospitalLocation, setHospitalLocation] = React.useState({ name: '', address: '' });
 
   // Lấy nhóm máu từ profile (Redux)
   const user = useSelector(state => state.auth.user);
@@ -157,13 +158,32 @@ const AppointmentHistory = () => {
     console.log(`Clicked appointment ${appointmentId}`);
   };
 
-  const handleDetailClick = (appointmentId) => {
-    const appointment = upcomingAppointments.find(app => app.id === appointmentId);
+  const handleDetailClick = async (appointmentId) => {
+    const appointment = upcomingAppointments.find(app => app.donationId === appointmentId);
     if (appointment) {
       setSelectedAppointment({
         ...appointment,
-        detail: appointment.detail || {} // Đảm bảo detail luôn là một object
+        detail: appointment.detail || {}
       });
+      // Gọi API lấy địa điểm bệnh viện theo periodId
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const res = await fetch(`${apiUrl}/Hospital/location?periodId=${appointment.periodId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setHospitalLocation({
+            name: data?.name || '',
+            address: data?.address || data?.location || 'Chưa có thông tin'
+          });
+        } else {
+          setHospitalLocation({ name: '', address: 'Chưa có thông tin' });
+        }
+      } catch {
+        setHospitalLocation({ name: '', address: 'Chưa có thông tin' });
+      }
       setOpenDetailDialog(true);
     }
   };
@@ -189,7 +209,7 @@ const AppointmentHistory = () => {
         return (
           <Chip
             label="Đã lên lịch"
-            color="primary"
+            color="success"
             size="small"
           />
         );
@@ -229,15 +249,27 @@ const AppointmentHistory = () => {
         upcomingAppointments.map((appointment, index) => (
           <Box key={index} sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Grid container spacing={2} sx={{ flex: 1 }}>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
-                <Typography variant="body1" fontWeight="bold">{appointment.preferredDonationDate ? dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY') : ''}</Typography>
+              <Grid item xs={12} sm={2}>
+                <Typography variant="body2" color="text.secondary">Ngày đặt lịch</Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {appointment.requestDate
+                    ? dayjs(appointment.requestDate).format('DD/MM/YYYY')
+                    : appointment.RequestDate
+                      ? dayjs(appointment.RequestDate).format('DD/MM/YYYY')
+                      : ''}
+                </Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={2}>
+                <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến máu</Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {appointment.preferredDonationDate ? dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={3}>
                 <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                 <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={3}>
                 <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
                 {getStatusChip(appointment.status)}
               </Grid>
@@ -246,8 +278,7 @@ const AppointmentHistory = () => {
               variant="outlined"
               sx={{ ml: 2, minWidth: 120 }}
               onClick={() => {
-                setSelectedAppointment({ ...appointment, detail: appointment.detail || {} });
-                setOpenDetailDialog(true);
+                handleDetailClick(appointment.donationId);
               }}
             >
               Xem chi tiết
@@ -290,14 +321,6 @@ const AppointmentHistory = () => {
                     <Typography variant="body1" fontWeight="bold">{selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}</Typography>
                     <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography>
-                    <Typography variant="body2" color="text.secondary">Nhóm máu hiến</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.bloodTypeName || 'Chưa rõ'}</Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.location || 'Chưa có thông tin'}</Typography>
-                    <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
-                    <Typography variant="body1">{selectedAppointment.notes || ''}</Typography>
                   </Grid>
                 </Grid>
               </Paper>

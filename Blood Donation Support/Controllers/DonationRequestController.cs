@@ -165,9 +165,9 @@ namespace Blood_Donation_Support.Controllers
             if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
             {
                 var daysSinceTransfusion = (DateTime.UtcNow - lastTransfusion.CompletionDate.Value).TotalDays;
-                if (daysSinceTransfusion < 180)
+                if (daysSinceTransfusion < 365)
                 {
-                    return BadRequest("Bạn vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 180 ngày.");
+                    return BadRequest("Bạn vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 365 ngày.");
                 }
             }
 

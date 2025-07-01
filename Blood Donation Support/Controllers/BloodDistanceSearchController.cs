@@ -39,8 +39,11 @@ namespace Blood_Donation_Support.Controllers
 
             // Lọc tiếp trên C# với điều kiện ngày phục hồi
             var filteredDonors = donors
-                .Where(m => m.LastDonationDate == null ||
+                .Where(m => (m.LastDonationDate == null ||
                             (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84)
+                        // Loại trừ member vừa truyền máu xong (trong vòng 365 ngày)
+                        && !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && (DateTime.Now - tr.CompletionDate.Value).TotalDays < 365)
+                )
                 .Select(m => new {
                     m.UserId,
                     m.User.FullName,

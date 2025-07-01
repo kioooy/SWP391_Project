@@ -24,7 +24,8 @@ public class BloodSearchController : ControllerBase
     private async Task<List<object>> FindAndRankDonors(int recipientBloodTypeId, Point hospitalPoint)
     {
         var now = DateTime.Now;
-        var restPeriod = TimeSpan.FromDays(84); // 12 tuần
+        var donationRestPeriod = TimeSpan.FromDays(84); // 12 tuần
+        var transfusionRestPeriod = TimeSpan.FromDays(365); // 12 tháng
         
         var compatibleBloodTypeIds = await _context.BloodCompatibilityRules
             .Where(r => r.BloodRecieveId == recipientBloodTypeId && r.IsCompatible)
@@ -36,7 +37,8 @@ public class BloodSearchController : ControllerBase
             .Where(m => m.IsDonor == true 
                         && m.BloodTypeId.HasValue
                         && compatibleBloodTypeIds.Contains(m.BloodTypeId.Value)
-                        && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84))
+                        && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84)
+                        && !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && EF.Functions.DateDiffDay(tr.CompletionDate.Value, now) < 365))
             .Select(m => new
             {
                 m.UserId,

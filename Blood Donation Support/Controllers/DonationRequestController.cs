@@ -21,7 +21,7 @@ namespace Blood_Donation_Support.Controllers
 
         // get donation request history by id (Member View)
         // api/DonationRequest/{memberId}/history
-        [HttpGet("{memberId}/history")]
+        [HttpGet("history")]
         [Authorize(Roles = "Member,Admin")] 
         public async Task<IActionResult> GetDonationRequestHistory()
         {
@@ -164,7 +164,7 @@ namespace Blood_Donation_Support.Controllers
                          (dr.Status == "Pending" || dr.Status == "Approved") &&
                          ((dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) || dr.Period.PeriodDateFrom >= DateTime.Today));
             if (hasUpcoming)
-                    return BadRequest("You Have Upcomming Donation Period. You Can't Booking New Period");
+                    return BadRequest("Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.");
             
             // Add new donation request
             var donationRequest = new DonationRequest
@@ -182,12 +182,16 @@ namespace Blood_Donation_Support.Controllers
             };
 
             // Update the current quantity for the donation period
-            var currentQuantity = await _context.BloodDonationPeriods
+            var period = await _context.BloodDonationPeriods
                 .Where(p => p.PeriodId == model.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) + 1; // Increment the current quantity by 1
-             _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {model.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if (period.CurrentQuantity >= 0)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
@@ -306,12 +310,17 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.Notes = $"Lý do từ chối của bác sĩ phụ trách {name}: {note}"; // Add a note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            var currentQuantity = await _context.BloodDonationPeriods
+            // Get the current quantity for the period
+            var period = await _context.BloodDonationPeriods
                 .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if (period.CurrentQuantity > 0)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try
@@ -341,21 +350,23 @@ namespace Blood_Donation_Support.Controllers
             var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-            if (existingRequest.ResponsibleById != currentUserId)
-                return BadRequest("You are not authorized to cancel this request."); // Return 400 Bad Request if the user is not authorized
 
-            existingRequest.ResponsibleById = currentUserId; // Staff responsible for the request
             existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
             existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
             existingRequest.Notes = $"Hủy Lịch";             // Custom Note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            var currentQuantity = await _context.BloodDonationPeriods
+            // Get the current quantity for the period
+            var period = await _context.BloodDonationPeriods
                 .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if(period.CurrentQuantity > 0)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try

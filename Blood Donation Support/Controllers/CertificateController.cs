@@ -30,6 +30,7 @@ namespace Blood_Donation_Support.Controllers
                 .Where(dr => dr.Status == "Completed")
                 .Select(dr => new
                 {
+                    dr.DonationId,
                     dr.Member.User.CitizenNumber, // Số CMND/CCCD
                     dr.Member.User.FullName, // Họ và tên
                     dr.Member.User.DateOfBirth, // Ngày sinh
@@ -101,6 +102,7 @@ namespace Blood_Donation_Support.Controllers
             var certificates = certificatesRaw
                 .Select(dr => new
                 {
+                    dr.DonationId,
                     dr.Member.User.CitizenNumber, // Số CMND/CCCD
                     dr.Member.User.FullName, // Họ và tên
                     dr.Member.User.DateOfBirth, // Ngày sinh

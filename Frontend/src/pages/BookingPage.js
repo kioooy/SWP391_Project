@@ -445,7 +445,7 @@ const BookingPage = () => {
         requestDate: requestDate,
         approvalDate: null,
         donationVolume: donationVolume,
-        status: 'Pending',
+        status: 'Approved',
         notes: `Địa điểm hiến máu: ${selectedHospital ? selectedHospital.name : 'Chưa chọn'}. Khung giờ: ${selectedTimeSlot}`,
         patientCondition: patientCondition
       };
@@ -454,7 +454,7 @@ const BookingPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.status === 200) {
+      if (response.status === 200 || response.status === 201) {
         setSnackbar({ open: true, message: 'Đăng ký của bạn đã được gửi thành công!', severity: 'success' });
         setTimeout(() => navigate('/'), 1500);
       } else {

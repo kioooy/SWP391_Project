@@ -45,6 +45,11 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
   Delete as DeleteIcon,
+  Badge,
+  Cake,
+  Wc,
+  Height,
+  MonitorWeight,
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -206,7 +211,7 @@ const UserProfile = () => {
         if (!token) return;
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
         // Lấy lịch sử hiến máu đã hoàn thành từ endpoint mới
-        const res = await axios.get(`${apiUrl}/DonationRequest/history/completed`, {
+        const res = await axios.get(`${apiUrl}/DonationRequest/history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCompletedDonationHistory(res.data || []);
@@ -515,6 +520,11 @@ const UserProfile = () => {
     );
   }
 
+  // Thêm biến lọc các lịch đã lên lịch
+  const scheduledAppointments = upcomingAppointments.filter(
+    (a) => a.status === 'Approved' || a.status === 'scheduled'
+  );
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -628,32 +638,36 @@ const UserProfile = () => {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Thông tin cá nhân
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Số CMND: {formData.citizenNumber}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <CalendarToday sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
-                  Ngày sinh: {formData.dateOfBirth}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Giới tính: {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Không xác định'}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Chiều cao: {formData.height} cm
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Cân nặng: {formData.weight} kg
-                </Typography>
-                {formData.medicalHistory && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Tiền sử bệnh án: {formData.medicalHistory}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Số CMND:</strong> {formData.citizenNumber || 'Chưa cập nhật'}
                   </Typography>
-                )}
-                {formData.allergies && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Dị ứng: {formData.allergies}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Ngày sinh:</strong> {formData.dateOfBirth || 'Chưa cập nhật'}
                   </Typography>
-                )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Giới tính:</strong> {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Height sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Chiều cao:</strong> {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Cân nặng:</strong> {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -665,49 +679,13 @@ const UserProfile = () => {
             <CardContent>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={handleTabChange} aria-label="donation history tabs">
-                  <Tab label="Lịch sử hiến máu" />
                   <Tab label="Lịch hẹn sắp tới" />
                 </Tabs>
               </Box>
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch sử hiến máu đã hoàn thành</Typography>
-                {completedDonationHistory.length > 0 ? (
-                  <TableContainer component={Paper}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Ngày</TableCell>
-                          <TableCell>Địa điểm</TableCell>
-                          <TableCell>Nhóm máu</TableCell>
-                          <TableCell>Thể tích (ml)</TableCell>
-                          <TableCell>Trạng thái</TableCell>
-                          <TableCell>Ngày hiến máu tiếp theo</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {completedDonationHistory.map((row) => (
-                          <TableRow key={row.donationId}>
-                            <TableCell>{row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : ''}</TableCell>
-                            <TableCell>{row.location}</TableCell>
-                            <TableCell>{formData.bloodType}</TableCell>
-                            <TableCell>{row.donationVolume}</TableCell>
-                            <TableCell>{getStatusChip(row.status)}</TableCell>
-                            <TableCell></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                    Chưa có lịch sử hiến máu đã hoàn thành.
-                  </Typography>
-                )}
-              </TabPanel>
-              <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
-                {upcomingAppointments.length > 0 ? (
-                  upcomingAppointments.map((appointment, index) => {
+                {scheduledAppointments.length > 0 ? (
+                  scheduledAppointments.map((appointment, index) => {
                     // Cố gắng parse "notes" để lấy giờ và địa điểm bệnh viện
                     let hospitalName = '';
                     let timeSlot = 'Không xác định';
@@ -947,7 +925,7 @@ const UserProfile = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>

@@ -82,47 +82,28 @@ const DonationRequestManagement = () => {
     setNotes('');
   };
 
-  const handleConfirmAction = async () => {
+  const handleRejectRequest = async () => {
     if (!selectedRequest || !user) return;
-
-    const newStatus = actionType === 'Approve' ? 'Approved' : 'Rejected';
-    const responsibleById = user.userId;
-
-    // Nếu duyệt và chưa có ghi chú, tự động thêm tên staff/admin
-    let autoNote = notes;
-    if (actionType === 'Approve' && !notes.trim()) {
-      autoNote = `Đã duyệt bởi ${user.fullName || user.username || 'Staff/Admin'}`;
+    if (!notes.trim()) {
+      setSnackbar({ open: true, message: 'Vui lòng nhập lý do từ chối!', severity: 'error' });
+      return;
     }
-    const payload = {
-      Status: newStatus,
-      Notes: autoNote,
-      ResponsibleById: responsibleById,
-      MemberId: selectedRequest.memberId, // Cần memberId để backend xác thực
-    };
-
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/update-status`, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/reject?note=${encodeURIComponent(notes)}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Update the request in the local state
       setRequests(
         requests.map((req) =>
           req.donationId === selectedRequest.donationId
-            ? { ...req, status: newStatus, notes: autoNote, responsibleById: responsibleById }
+            ? { ...req, status: 'Rejected', notes: notes }
             : req
         )
       );
-
       handleCloseDialog();
-      setSnackbar({ open: true, message: `Yêu cầu đã được ${newStatus === 'Approved' ? 'duyệt' : 'từ chối'}.`, severity: 'success' });
+      setSnackbar({ open: true, message: 'Yêu cầu đã bị từ chối.', severity: 'success' });
     } catch (error) {
-      console.error('Error updating status:', error);
-      setSnackbar({ open: true, message: 'Cập nhật trạng thái thất bại!', severity: 'error' });
+      setSnackbar({ open: true, message: 'Từ chối yêu cầu thất bại!', severity: 'error' });
     }
   };
 
@@ -189,12 +170,14 @@ const DonationRequestManagement = () => {
   const getStatusChip = (status) => {
     switch (status) {
       case 'Approved':
-        return <Chip label="Đã duyệt" color="success" />;
+        return <Chip label="Đã duyệt" color="warning" />;
       case 'Pending':
-        return <Chip label="Chờ duyệt" color="warning" />;
+        return <Chip label="Chờ duyệt" sx={{ backgroundColor: '#795548', color: 'white' }} />;
       case 'Rejected':
       case 'Cancelled':
         return <Chip label="Đã từ chối" color="error" />;
+      case 'Completed':
+        return <Chip label="Hoàn Thành" color="success" />;
       default:
         return <Chip label={status} />;
     }
@@ -230,31 +213,31 @@ const DonationRequestManagement = () => {
       {/* Tổng hợp trạng thái căn giữa, bỏ lọc theo trạng thái */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #1976d2' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #9e9e9e' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
           onClick={() => setStatusFilter('All')}
           elevation={statusFilter === 'All' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Tất cả</Typography>
           <Typography variant="h4" fontWeight="bold">{requests.length}</Typography>
-          <Chip label="Tất cả" color="primary" sx={{ mt: 1 }} />
+          <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
         </Paper>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
           onClick={() => setStatusFilter('Pending')}
           elevation={statusFilter === 'Pending' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
           <Typography variant="h4" fontWeight="bold">{pendingCount}</Typography>
-          <Chip label="Chờ duyệt" color="warning" sx={{ mt: 1 }} />
+          <Chip label="Chờ duyệt" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
         </Paper>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #0288d1' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
           onClick={() => setStatusFilter('Approved')}
           elevation={statusFilter === 'Approved' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
           <Typography variant="h4" fontWeight="bold">{approvedCount}</Typography>
-          <Chip label="Đã duyệt" color="info" sx={{ mt: 1 }} />
+          <Chip label="Đã duyệt" color="warning" sx={{ mt: 1 }} />
         </Paper>
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
@@ -288,7 +271,7 @@ const DonationRequestManagement = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                  <TableCell>Họ tên</TableCell>
+                <TableCell>Họ tên</TableCell>
                 <TableCell>Số CCCD</TableCell>
                 <TableCell>Nhóm máu</TableCell>
                 <TableCell>Ngày hẹn</TableCell>
@@ -302,7 +285,7 @@ const DonationRequestManagement = () => {
               {filteredRequests.map((req) => (
                 <TableRow key={req.donationId} hover>
                   <TableCell>{req.donationId}</TableCell>
-                  <TableCell>{req.memberName}</TableCell>
+                  <TableCell sx={{ minWidth: 180, maxWidth: 260 }}>{req.fullName || req.memberName}</TableCell>
                   <TableCell>{req.citizenNumber}</TableCell>
                   <TableCell>{req.bloodTypeName}</TableCell>
                   <TableCell>
@@ -385,9 +368,15 @@ const DonationRequestManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Hủy</Button>
-          <Button onClick={handleConfirmAction} variant="contained">
-            Xác nhận
-          </Button>
+          {actionType === 'Reject' ? (
+            <Button onClick={handleRejectRequest} variant="contained" color="error">
+              Từ chối
+            </Button>
+          ) : (
+            <Button onClick={handleCloseDialog} variant="contained">
+              Xác nhận
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

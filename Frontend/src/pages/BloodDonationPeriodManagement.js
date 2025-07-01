@@ -23,9 +23,15 @@ import {
   FormControl,
   Select,
   MenuItem,
-  InputLabel
+  InputLabel,
+  TextField,
+  Grid,
+  Tooltip
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import axios from 'axios';
 import CreateBloodDonationPeriod from '../components/CreateBloodDonationPeriod';
 
@@ -40,6 +46,15 @@ const BloodDonationPeriodManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPeriod, setEditingPeriod] = useState(null);
+  const [editedData, setEditedData] = useState({
+    periodName: '',
+    periodDateFrom: null,
+    periodDateTo: null,
+    targetQuantity: 0,
+    location: ''
+  });
 
   const fetchPeriods = async () => {
     try {
@@ -84,6 +99,57 @@ const BloodDonationPeriodManagement = () => {
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Cập nhật trạng thái thất bại!');
+    }
+  };
+
+  const handleEdit = (period) => {
+    setEditingPeriod(period);
+    setEditedData({
+      periodName: period.periodName,
+      periodDateFrom: dayjs(period.periodDateFrom),
+      periodDateTo: dayjs(period.periodDateTo),
+      targetQuantity: period.targetQuantity,
+      location: period.location
+    });
+    setEditDialogOpen(true);
+  };
+  
+  const handleUpdate = async () => {
+    if (!editingPeriod) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const requestData = {
+        periodName: editedData.periodName,
+        periodDateFrom: editedData.periodDateFrom.toISOString(),
+        periodDateTo: editedData.periodDateTo.toISOString(),
+        targetQuantity: parseInt(editedData.targetQuantity, 10),
+        imageUrl: editingPeriod.imageUrl
+      };
+
+      await axios.patch(`/api/BloodDonationPeriod/${editingPeriod.periodId}/details/admin,staff`, requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      const updatedPeriod = {
+        ...editingPeriod,
+        periodName: editedData.periodName,
+        location: editedData.location,
+        periodDateFrom: editedData.periodDateFrom.toISOString(),
+        periodDateTo: editedData.periodDateTo.toISOString(),
+        targetQuantity: parseInt(editedData.targetQuantity, 10),
+      };
+
+      setPeriods(periods.map(p => (p.periodId === editingPeriod.periodId ? updatedPeriod : p)));
+      setEditDialogOpen(false);
+      setEditingPeriod(null);
+      alert('Cập nhật đợt hiến máu thành công!');
+    } catch (error) {
+      console.error('Error updating period:', error.response?.data || error.message);
+      alert(`Cập nhật đợt hiến máu thất bại! Lỗi: ${error.response?.data?.title || error.message}`);
     }
   };
 
@@ -241,27 +307,25 @@ const BloodDonationPeriodManagement = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => {
-                        // TODO: Implement edit functionality
-                        alert('Chức năng chỉnh sửa sẽ được phát triển sau');
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    {isAdmin && (
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => {
-                        setSelectedPeriod(period);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    {(isAdmin || isStaff) && (
+                      <Box>
+                        <Tooltip title="Chỉnh sửa đợt hiến máu">
+                          <IconButton onClick={() => handleEdit(period)}>
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Xóa đợt hiến máu">
+                          <IconButton
+                            onClick={() => {
+                              setSelectedPeriod(period);
+                              setDeleteDialogOpen(true);
+                            }}
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     )}
                   </TableCell>
                 </TableRow>
@@ -277,6 +341,71 @@ const BloodDonationPeriodManagement = () => {
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={fetchPeriods}
       />
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Chỉnh Sửa Đợt Hiến Máu</DialogTitle>
+        <DialogContent>
+          {editingPeriod && (
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Grid container spacing={3} sx={{ mt: 1 }}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Tên đợt hiến máu"
+                    value={editedData.periodName}
+                    onChange={(e) => setEditedData({ ...editedData, periodName: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Địa điểm"
+                    value={editedData.location}
+                    onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <DateTimePicker
+                    label="Thời gian bắt đầu"
+                    value={editedData.periodDateFrom}
+                    onChange={(newValue) => setEditedData({ ...editedData, periodDateFrom: newValue })}
+                    renderInput={(params) => (
+                      <TextField 
+                        {...params} 
+                        fullWidth 
+                        helperText={editingPeriod && dayjs().isAfter(dayjs(editingPeriod.periodDateFrom)) ? "Không thể sửa ngày bắt đầu của đợt đã diễn ra." : ""}
+                      />
+                    )}
+                    disabled={editingPeriod && dayjs().isAfter(dayjs(editingPeriod.periodDateFrom))}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <DateTimePicker
+                    label="Thời gian kết thúc"
+                    value={editedData.periodDateTo}
+                    onChange={(newValue) => setEditedData({ ...editedData, periodDateTo: newValue })}
+                    renderInput={(params) => <TextField {...params} fullWidth />}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Số lượng mục tiêu"
+                    type="number"
+                    value={editedData.targetQuantity}
+                    onChange={(e) => setEditedData({ ...editedData, targetQuantity: e.target.value })}
+                  />
+                </Grid>
+              </Grid>
+            </LocalizationProvider>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Hủy</Button>
+          <Button onClick={handleUpdate} variant="contained">Lưu</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

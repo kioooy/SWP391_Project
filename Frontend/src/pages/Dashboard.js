@@ -40,8 +40,10 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { useSelector } from 'react-redux';
 
 const Dashboard = () => {
+  const currentUser = useSelector(state => state.auth.user);
   // Dữ liệu mẫu cho biểu đồ
   const bloodTypeData = [
     { name: 'A+', value: 150 },

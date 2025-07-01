@@ -68,6 +68,30 @@ export const logout = createAsyncThunk(
   }
 );
 
+export const fetchUserProfile = createAsyncThunk(
+  'auth/fetchUserProfile',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return rejectWithValue('No token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const response = await axios.get(`${API_URL}/User/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userData = response.data[0];
+      if (userData) {
+        dispatch(setAccountType({
+          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
+          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
+        }));
+      }
+      return userData;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Fetch profile failed');
+    }
+  }
+);
+
 const getInitialState = () => {
   const token = localStorage.getItem('token');
   console.log('Token from localStorage:', token);
@@ -163,6 +187,12 @@ const authSlice = createSlice({
       
       console.log('Test account logged in successfully');
     },
+    setAccountType(state, action) {
+      if (state.user) {
+        state.user.isDonor = action.payload.isDonor;
+        state.user.isRecipient = action.payload.isRecipient;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -219,7 +249,7 @@ const authSlice = createSlice({
 });
 
 
-export const { clearError, createTestAccount, updateUserLocation } = authSlice.actions;
+export const { clearError, createTestAccount, updateUserLocation, setAccountType } = authSlice.actions;
 
 // Selectors
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Blood_Donation_Support.Model;
@@ -8,6 +6,8 @@ public partial class BloodUnit
 {
     [Key]
     public int BloodUnitId { get; set; }
+
+    public int? MemberId { get; set; }
 
     public int BloodTypeId { get; set; }
 
@@ -24,11 +24,13 @@ public partial class BloodUnit
 
     public string BloodStatus { get; set; } = null!;
 
+    public string? Notes { get; set; }
+
+    public virtual Member Member { get; set; } = null!;
+
     public virtual BloodType BloodType { get; set; } = null!;
 
     public virtual BloodComponent Component { get; set; } = null!;
-
-    public virtual ICollection<DonationRequestsDetail> DonationRequestsDetails { get; set; } = new List<DonationRequestsDetail>();
 
     public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();
 }

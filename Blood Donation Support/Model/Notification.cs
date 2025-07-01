@@ -17,5 +17,9 @@ public partial class Notification
 
     public string NotificationType { get; set; } = null!;
 
+    public bool IsActive { get; set; } = true;
+
+    public bool IsRead { get; set; } = false;
+
     public virtual User User { get; set; } = null!;
 }

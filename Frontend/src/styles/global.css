@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -69,4 +71,11 @@ input, select, textarea {
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* Custom font for header menu */
+.MuiAppBar-root, .MuiToolbar-root, .MuiButton-root, .MuiTypography-root, .header-menu-font {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 } 

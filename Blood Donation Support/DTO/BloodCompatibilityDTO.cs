@@ -10,4 +10,10 @@ namespace Blood_Donation_Support.DTO
         // "whole-blood", "red-cell", "plasma", "platelet"
         public string Component { get; set; } = "whole-blood";
     }
+
+    public class BloodCompatibilityResponseDto
+    {
+        public List<string> CompatibleBloodTypes { get; set; }
+    }
+
 }

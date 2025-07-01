@@ -51,7 +51,7 @@ namespace Blood_Donation_Support.DTO
     public class UpdateUser 
     {
         [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
-        public string? PasswordHash { get; set; } // Optional for updates
+        public required string PasswordHash { get; set; } 
 
         [Required]
         [StringLength(40)]
@@ -138,6 +138,9 @@ namespace Blood_Donation_Support.DTO
         [EmailAddress]
         public string? Email { get; set; }
 
+        // Thêm thuộc tính FullName để cập nhật họ tên
+        public string? FullName { get; set; }
+
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại không hợp lệ")]
         public string? PhoneNumber { get; set; }
 
@@ -150,6 +153,11 @@ namespace Blood_Donation_Support.DTO
         public int? Height { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+    }
+    public class SoftDeleteUserRequest
+    {
+        [Required]
+        public int UserId { get; set; }
     }
 
     public class LocationUpdateModel

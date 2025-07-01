@@ -3,8 +3,6 @@ using Blood_Donation_Support.Model;
 using Blood_Donation_Support.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -30,7 +28,7 @@ namespace Blood_Donation_Support.Controllers
             var period = new BloodDonationPeriod
             {
                 PeriodName = dto.PeriodName,
-                Location = dto.Location,
+                HospitalId = 1, // Default to 1 ( Primary Hospital ID 1 )
                 Status = dto.Status,
                 PeriodDateFrom = dto.PeriodDateFrom,
                 PeriodDateTo = dto.PeriodDateTo,
@@ -39,7 +37,7 @@ namespace Blood_Donation_Support.Controllers
                 ImageUrl = dto.ImageUrl
             };
 
-            _context.BloodDonationPeriods.Add(period);
+            await _context.BloodDonationPeriods.AddAsync(period);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetBloodDonationPeriodById), new { id = period.PeriodId }, period);
@@ -53,44 +51,48 @@ namespace Blood_Donation_Support.Controllers
             var period = await _context.BloodDonationPeriods.FindAsync(id);
             if (period == null)
                 return NotFound();
-            return Ok(period);
-        }
-        // PUT: api/BloodDonationPeriod/{id}
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> UpdateBloodDonationPeriod(int id, [FromBody] UpdateBloodDonationPeriodDTO dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var period = await _context.BloodDonationPeriods.FindAsync(id);
-            if (period == null)
-                return NotFound();
-
-            period.PeriodName = dto.PeriodName;
-            period.Location = dto.Location;
-            period.Status = dto.Status;
-            period.PeriodDateFrom = dto.PeriodDateFrom;
-            period.PeriodDateTo = dto.PeriodDateTo;
-            period.TargetQuantity = dto.TargetQuantity;
-            period.ImageUrl = dto.ImageUrl;
-
-            await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok(new {
+                period.PeriodId,
+                period.PeriodName,
+                period.HospitalId,
+                period.Hospital.Name,
+                period.Status,
+                period.PeriodDateFrom,
+                period.PeriodDateTo,
+                period.CurrentQuantity,
+                period.TargetQuantity,
+                period.ImageUrl,
+            });
         }
 
         // GET: api/BloodDonationPeriod
         [HttpGet]
-        [Authorize(Roles = "Staff,Admin")]
+        [AllowAnonymous]
         public IActionResult GetAllBloodDonationPeriods()
         {
-            var periods = _context.BloodDonationPeriods.ToList();
-            return Ok(periods);
+            // Tự động cập nhật các đợt đã hết hạn
+            var expiredPeriods = _context.BloodDonationPeriods
+                .Where(p => p.Status == "Active" && p.PeriodDateTo < DateTime.Now)
+                .ToList();
+            foreach (var period in expiredPeriods)
+            {
+                period.Status = "Completed";
+                period.IsActive = false;
+            }
+            if (expiredPeriods.Any())
+                _context.SaveChanges();
+
+            // Trả về các đợt đang hoạt động hoặc sắp diễn ra
+            var availablePeriods = _context.BloodDonationPeriods
+                .Where(p => p.Status == "Active" && p.IsActive && p.PeriodDateTo >= DateTime.Now.Date)
+                .OrderBy(p => p.PeriodDateFrom)
+                .ToList();
+            return Ok(availablePeriods);
         }
 
         // PATCH: api/BloodDonationPeriod/{id}/status
-        [HttpPatch("{id}/status")]
-        [Authorize(Roles = "Staff,Admin")]
+        [HttpPatch("{id}/status/admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBloodDonationPeriodStatus(int id, [FromBody] string status)
         {
             var validStatuses = new[] { "Active", "Completed", "Cancelled" };
@@ -102,9 +104,23 @@ namespace Blood_Donation_Support.Controllers
                 return NotFound();
 
             period.Status = status;
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
             return NoContent();
         }
+        // PATCH: api/BloodDonationPeriod/{id}/isActive/admin
+        [HttpPatch("{id}/isActive/admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateBloodDonationPeriodIsActive(int id, [FromBody] bool isActive)
+        {
+            var period = await _context.BloodDonationPeriods.FindAsync(id);
+            if (period == null)
+                return NotFound();
+
+            period.IsActive = isActive;
+            _context.SaveChanges();
+            return NoContent();
+        }
+
         // GET: api/BloodDonationPeriod/progress/{id}
         [HttpGet("progress/{id}")]
         [AllowAnonymous]
@@ -113,12 +129,13 @@ namespace Blood_Donation_Support.Controllers
             var period = await _context.BloodDonationPeriods.FindAsync(id);
             if (period == null)
             {
-                return NotFound(new { message = "Donation period not found" });
+                return NotFound(new { message = "Không Tìm Thấy Lịch Đợt Hiến" });
             }
-            var progress = new BloodDonationPeriodProgressDto
+            var progress = new BloodDonationPeriodProgressDTO
             {
                 PeriodId = period.PeriodId,
                 PeriodName = period.PeriodName,
+                HospitalName = period.Hospital.Name,
                 TargetQuantity = period.TargetQuantity,
                 CurrentQuantity = period.CurrentQuantity ?? 0,
                 ProgressPercent = period.TargetQuantity > 0 ? (int)(period.CurrentQuantity ?? 0) * 100 / period.TargetQuantity : 0,
@@ -127,6 +144,43 @@ namespace Blood_Donation_Support.Controllers
                 PeriodDateTo = period.PeriodDateTo
             };
             return Ok(progress);
+        }
+
+        // GET: api/BloodDonationPeriod/all/admin,staff
+        [HttpGet("all/admin,staff")]
+        [Authorize(Roles = "Staff,Admin")]
+        public IActionResult GetAllPeriodsForStaff()
+        {
+            var allPeriods = _context.BloodDonationPeriods.ToList();
+            return Ok(allPeriods);
+        }
+
+        // PATCH: api/BloodDonationPeriod/{id}/details/admin,staff
+        [HttpPatch("{id}/details/admin,staff")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> StaffUpdateBloodDonationPeriod(int id, [FromBody] StaffUpdateBloodDonationPeriodDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var period = await _context.BloodDonationPeriods.FindAsync(id);
+            if (period == null)
+                return NotFound();
+
+            // Chỉ được phép chỉnh PeriodDateFrom khi sự kiện chưa bắt đầu
+            if (DateTime.Now >= period.PeriodDateFrom && dto.PeriodDateFrom != period.PeriodDateFrom)
+            {
+                return BadRequest("Không thể thay đổi ngày bắt đầu khi đợt hiến máu đã diễn ra hoặc đang diễn ra.");
+            }
+
+            period.PeriodName = dto.PeriodName;
+            period.PeriodDateFrom = dto.PeriodDateFrom;
+            period.PeriodDateTo = dto.PeriodDateTo;
+            period.TargetQuantity = dto.TargetQuantity;
+            period.ImageUrl = dto.ImageUrl;
+
+            _context.SaveChanges();
+            return NoContent();
         }
     }
 }

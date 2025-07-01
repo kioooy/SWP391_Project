@@ -357,6 +357,68 @@
     ]
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodDistanceSearchController",
+    "Method": "GetNearbyDonors",
+    "RelativePath": "api/BloodDistanceSearch/donors-nearby",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "latitude",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "longitude",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "radius",
+        "Type": "System.Double",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodDistanceSearchController",
+    "Method": "GetHospitals",
+    "RelativePath": "api/BloodDistanceSearch/hospitals",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodDistanceSearchController",
+    "Method": "GetNearbyRecipients",
+    "RelativePath": "api/BloodDistanceSearch/recipients-nearby",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "latitude",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "longitude",
+        "Type": "System.Double",
+        "IsRequired": false
+      },
+      {
+        "Name": "radius",
+        "Type": "System.Double",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodDonationPeriodController",
     "Method": "CreateBloodDonationPeriod",
     "RelativePath": "api/BloodDonationPeriod",
@@ -400,9 +462,9 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodDonationPeriodController",
-    "Method": "UpdateBloodDonationPeriod",
-    "RelativePath": "api/BloodDonationPeriod/{id}",
-    "HttpMethod": "PUT",
+    "Method": "StaffUpdateBloodDonationPeriod",
+    "RelativePath": "api/BloodDonationPeriod/{id}/details/admin,staff",
+    "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -413,7 +475,28 @@
       },
       {
         "Name": "dto",
-        "Type": "Blood_Donation_Support.DTO.UpdateBloodDonationPeriodDTO",
+        "Type": "Blood_Donation_Support.DTO.StaffUpdateBloodDonationPeriodDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodDonationPeriodController",
+    "Method": "UpdateBloodDonationPeriodIsActive",
+    "RelativePath": "api/BloodDonationPeriod/{id}/isActive/admin",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "isActive",
+        "Type": "System.Boolean",
         "IsRequired": true
       }
     ],
@@ -422,7 +505,7 @@
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodDonationPeriodController",
     "Method": "UpdateBloodDonationPeriodStatus",
-    "RelativePath": "api/BloodDonationPeriod/{id}/status",
+    "RelativePath": "api/BloodDonationPeriod/{id}/status/admin",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -442,6 +525,16 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodDonationPeriodController",
+    "Method": "GetAllPeriodsForStaff",
+    "RelativePath": "api/BloodDonationPeriod/all/admin,staff",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodDonationPeriodController",
     "Method": "GetDonationPeriodProgress",
     "RelativePath": "api/BloodDonationPeriod/progress/{id}",
     "HttpMethod": "GET",
@@ -450,6 +543,298 @@
     "Parameters": [
       {
         "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodInventoryController",
+    "Method": "GetAvailableCompatible",
+    "RelativePath": "api/BloodInventory/available",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "recipientBloodType",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "component",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.AvailableBloodDto, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
+    "Method": "RequestDonorsWithHospital",
+    "RelativePath": "api/BloodSearch/request-donors-with-hospital/{recipientBloodTypeId}/{requiredVolume}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "recipientBloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requiredVolume",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "Blood_Donation_Support.Controllers.RequestDonorsWithHospitalDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
+    "Method": "SearchBloodWithHospitalLocation",
+    "RelativePath": "api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "recipientBloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requiredVolume",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetAllBloodUnits",
+    "RelativePath": "api/BloodUnit",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "AddBloodUnit",
+    "RelativePath": "api/BloodUnit",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitAdd",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetBloodUnitById",
+    "RelativePath": "api/BloodUnit/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "UpdateBloodUnit",
+    "RelativePath": "api/BloodUnit/{id}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitUpdate",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "UpdateBloodUnitStatus",
+    "RelativePath": "api/BloodUnit/{id}/update-status",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.BloodUnitStatusUpdateDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetCompatibleBloodUnits",
+    "RelativePath": "api/BloodUnit/compatible",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "componentId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "minVolume",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetBloodInventoryStats",
+    "RelativePath": "api/Dashboard/blood-inventory",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetDonationAnalytics",
+    "RelativePath": "api/Dashboard/donation-analytics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetRecentActivity",
+    "RelativePath": "api/Dashboard/recent-activity",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "count",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "TotalNumberData",
+    "RelativePath": "api/Dashboard/total-number",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
+    "Method": "GetTransfusionAnalytics",
+    "RelativePath": "api/Dashboard/transfusion-analytics",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
+    "Method": "CheckDonationEligibility",
+    "RelativePath": "api/DonationAlert/CheckDonationEligibility/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
+    "Method": "GetLastSuccessfulDonation",
+    "RelativePath": "api/DonationAlert/LastSuccessfulDonation/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationAlertController",
+    "Method": "GetLoginNotification",
+    "RelativePath": "api/DonationAlert/LoginNotification/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
         "Type": "System.Int32",
         "IsRequired": true
       }
@@ -476,7 +861,7 @@
     "Parameters": [
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.DonationRequestControllerDTO",
+        "Type": "Blood_Donation_Support.DTO.CreateDonationRequest",
         "IsRequired": true
       }
     ],
@@ -500,8 +885,24 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
-    "Method": "UpdateDonationRequest",
-    "RelativePath": "api/DonationRequest/{id}/update-request",
+    "Method": "CancelDonationRequest",
+    "RelativePath": "api/DonationRequest/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "CompletedDonationRequestStatus",
+    "RelativePath": "api/DonationRequest/{id}/update-completed",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -513,7 +914,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.UpdateDonationRequest",
+        "Type": "Blood_Donation_Support.DTO.CompletedDonationRequest",
         "IsRequired": true
       }
     ],
@@ -539,6 +940,126 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "GetUpcomingDonationRequests",
+    "RelativePath": "api/DonationRequest/upcoming/all-role",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.HospitalController",
+    "Method": "GetHospital",
+    "RelativePath": "api/Hospital",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.HospitalController",
+    "Method": "UpdateLocation",
+    "RelativePath": "api/Hospital/{id}/location",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "Blood_Donation_Support.DTO.HospitalLocationUpdateDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.ReservationsController",
+    "Method": "CreateReservation",
+    "RelativePath": "api/Reservations",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Blood_Donation_Support.DTO.CreateReservationDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Blood_Donation_Support.DTO.ReservationDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.ReservationsController",
+    "Method": "UpdateReservation",
+    "RelativePath": "api/Reservations/{id}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "action",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.ReservationsController",
+    "Method": "GetActiveReservations",
+    "RelativePath": "api/Reservations/active",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "transfusionId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.ReservationDto, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.RolesController",
@@ -587,6 +1108,111 @@
     ]
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CreateTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.CreateTransfusionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetAllTransfusionRequests",
+    "RelativePath": "api/TransfusionRequest",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetTransfusionRequestById",
+    "RelativePath": "api/TransfusionRequest/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "ApproveTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/{id}/approve",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.ApproveTransfusionRequestInput",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CancelTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "CompleteTransfusionRequest",
+    "RelativePath": "api/TransfusionRequest/{id}/complete",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetPendingTransfusionRequests",
+    "RelativePath": "api/TransfusionRequest/pending",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
     "Method": "GetAllUser",
     "RelativePath": "api/User",
@@ -594,6 +1220,22 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "GetUserById",
+    "RelativePath": "api/User/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -633,6 +1275,27 @@
       {
         "Name": "model",
         "Type": "Blood_Donation_Support.DTO.UpdateProfile",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "UpdateUserLocation",
+    "RelativePath": "api/User/{userId}/location",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.LocationUpdateModel",
         "IsRequired": true
       }
     ],
@@ -727,26 +1390,5 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "Blood_Donation_Support.Controllers.WeatherForecastController",
-    "Method": "Get",
-    "RelativePath": "WeatherForecast",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.Model.WeatherForecast, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ],
-    "EndpointName": "GetWeatherForecast"
   }
 ]

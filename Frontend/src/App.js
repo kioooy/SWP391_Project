@@ -8,9 +8,11 @@ import Signup from "./pages/auth/Signup";
 import Home from "./pages/Home";
 import FAQ from "./pages/FAQ";
 import Events from "./pages/Events";
-import News from "./pages/News";
-import NewsDetail from "./pages/NewsDetail";
+import Article from "./pages/News";
+import ArticleDetail from "./pages/NewsDetail";
 import BookingPage from "./pages/BookingPage";
+import BookingTransfusion from "./pages/BookingTransfusion";
+import TransfusionHistory from "./pages/TransfusionHistory";
 import { selectIsAuthenticated } from "./features/auth/authSlice";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -27,13 +29,31 @@ import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
 import BloodSearch from "./pages/BloodSearch";
+import BloodDonationPeriodManagement from "./pages/BloodDonationPeriodManagement";
+import News from "./pages/News";
+import NewsDetail from "./pages/NewsDetail";
+import DonationRequestManagement from "./pages/DonationRequestManagement";
+import { RequireAuth } from "./components/RequireAuth";
+import BlogPage from "./pages/BlogPage";
+import UserProfileRecipient from "./pages/UserProfileRecipient";
+import RequireRecipient from "./components/RequireRecipient";
+import BlogDetail from "./pages/BlogDetail";
+import ArticleManage from "./pages/admin/ArticleManage";
+import BloodStorageManage from "./pages/admin/BloodStorageManage";
+import BlogManage from "./pages/admin/BlogManage";
+import Unauthorized from "./pages/Unauthorized";
+import SidebarLayout from "./layouts/SidebarLayout";
+import AdminProfile from "./pages/admin/AdminProfile";
+import StaffProfile from "./pages/StaffProfile";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 const App = () => {
+  console.log("DEBUG App.js loaded");
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  console.log('isAuthenticated in App.js:', isAuthenticated);
+  const role = useSelector((state) => state.auth.user?.role);
+  console.log("isAuthenticated in App.js:", isAuthenticated);
 
   return (
     <Routes>
@@ -54,24 +74,46 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/news/:id" element={<NewsDetail />} />
+        <Route path="/article" element={<Article />} />
+        <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
-        <Route path="/profile" element={<UserProfile />} />
+        <Route path="/booking-transfusion" element={<BookingTransfusion />} />
+        <Route path="/transfusion-history" element={<TransfusionHistory />} />
+        <Route path="/profile" element={<RequireAuth roles={["Member"]}><UserProfile /></RequireAuth>} />
         <Route
-          path="/transfusion-request"
-          element={<TransfusionManagement />}
+          path="/user-profile-recipient"
+          element={
+            <RequireRecipient>
+              <UserProfileRecipient />
+            </RequireRecipient>
+          }
         />
         <Route path="/certificate" element={<BloodDonationCertificate />} />
         <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />
-        <Route path="/blood-inventory" element={<BloodInventory />} />
-        <Route path="/user-profile" element={<UserProfile />} />
-        <Route path="/search-distance" element={<SearchDistance />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/history" element={<AppointmentHistory />} />
-        <Route path="/hospital-location" element={<HospitalLocationEdit />} />
         <Route path="/blood-search" element={<BloodSearch />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:postId" element={<BlogDetail />} />
+        <Route path="/history" element={<AppointmentHistory />} />
+      </Route>
+
+      {/* Sidebar Layout cho các trang quản lý */}
+      <Route element={<SidebarLayout />}>
+        <Route path="/profile" element={<RequireAuth roles={["Admin", "Staff"]}><UserProfile /></RequireAuth>} />
+        <Route path="/profile-admin" element={<RequireAuth roles={["Admin"]}><AdminProfile /></RequireAuth>} />
+        <Route path="/profile-staff" element={<RequireAuth roles={["Staff"]}><StaffProfile /></RequireAuth>} />
+        <Route path="/dashboard" element={<RequireAuth roles={["Admin", "Staff"]}><Dashboard /></RequireAuth>} />
+        <Route path="/manage-requests" element={<RequireAuth roles={["Admin", "Staff"]}><DonationRequestManagement /></RequireAuth>} />
+        <Route path="/manage-blood-periods" element={<RequireAuth roles={["Admin", "Staff"]}><BloodDonationPeriodManagement /></RequireAuth>} />
+        <Route path="/blood-inventory" element={<RequireAuth roles={["Admin", "Staff"]}><BloodInventory /></RequireAuth>} />
+        <Route path="/manage-blood-storage" element={<RequireAuth roles={["Admin", "Staff"]}><BloodStorageManage /></RequireAuth>} />
+        <Route path="/transfusion-management" element={<RequireAuth roles={["Admin", "Staff"]}><TransfusionManagement /></RequireAuth>} />
+        <Route path="/manage-article" element={<RequireAuth roles={["Admin", "Staff"]}><ArticleManage /></RequireAuth>} />
+        <Route path="/manage-blog" element={<RequireAuth roles={["Admin", "Staff"]}><BlogManage /></RequireAuth>} />
+        <Route path="/hospital-location" element={<RequireAuth roles={["Admin", "Staff"]}><HospitalLocationEdit /></RequireAuth>} />
+        <Route path="/manage-roles" element={<RequireAuth roles={["Admin"]}><div>Quản lý vai trò (đang phát triển)</div></RequireAuth>} />
+        <Route path="/manage-users" element={<RequireAuth roles={["Admin"]}><div>Quản lý người dùng (đang phát triển)</div></RequireAuth>} />
+        <Route path="/certificate" element={<RequireAuth roles={["Admin", "Staff"]}><BloodDonationCertificate /></RequireAuth>} />
       </Route>
 
       {/* Fallback Route */}

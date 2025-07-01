@@ -24,15 +24,16 @@ namespace Blood_Donation_Support.Controllers
         public async Task<ActionResult<IEnumerable<ArticleDTO>>> GetArticles()
         {
             var Article = await _context.Articles
-                .Where(b => b.IsActive == true && b.Status == "Published")
-                .OrderByDescending(b => b.PublishedDate)
-                .Select(b => new ArticleDTO
+                .Where(a => a.IsActive == true && a.Status == "Published")
+                .OrderByDescending(a => a.PublishedDate)
+                .Select(a => new ArticleDTO
                 {
-                    ArticleId = b.ArticleId,
-                    Title = b.Title,
-                    Content = b.Content,
-                    PublishedDate = b.PublishedDate,
-                    UpdatedDate = b.UpdatedDate,
+                    ArticleId = a.ArticleId,
+                    Title = a.Title,
+                    Content = a.Content,
+                    PublishedDate = a.PublishedDate,
+                    UpdatedDate = a.UpdatedDate,
+                    ImageUrl = a.ImageUrl
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -44,14 +45,15 @@ namespace Blood_Donation_Support.Controllers
         public async Task<ActionResult<IEnumerable<ArticleDTO>>> GetAllArticlesForAdmin()
         {
             var Article = await _context.Articles
-                .OrderByDescending(b => b.PublishedDate)
-                .Select(b => new ArticleDTO
+                .OrderByDescending(a => a.PublishedDate)
+                .Select(a => new ArticleDTO
                 {
-                    ArticleId = b.ArticleId,
-                    Title = b.Title,
-                    Content = b.Content,
-                    PublishedDate = b.PublishedDate,
-                    UpdatedDate = b.UpdatedDate,
+                    ArticleId = a.ArticleId,
+                    Title = a.Title,
+                    Content = a.Content,
+                    PublishedDate = a.PublishedDate,
+                    UpdatedDate = a.UpdatedDate,
+                    ImageUrl = a.ImageUrl
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -63,14 +65,15 @@ namespace Blood_Donation_Support.Controllers
         public async Task<ActionResult<ArticleDTO>> GetArticle(int id)
         {
             var Article = await _context.Articles
-                .Where(b => b.ArticleId == id && b.IsActive == true && b.Status == "Published")
-                .Select(b => new ArticleDTO
+                .Where(a => a.ArticleId == id && a.IsActive == true && a.Status == "Published")
+                .Select(a => new ArticleDTO
                 {
-                    ArticleId = b.ArticleId,
-                    Title = b.Title,
-                    Content = b.Content,
-                    PublishedDate = b.PublishedDate,
-                    UpdatedDate = b.UpdatedDate,
+                    ArticleId = a.ArticleId,
+                    Title = a.Title,
+                    Content = a.Content,
+                    PublishedDate = a.PublishedDate,
+                    UpdatedDate = a.UpdatedDate,
+                    ImageUrl = a.ImageUrl
                 })
                 .FirstOrDefaultAsync();
 
@@ -92,7 +95,8 @@ namespace Blood_Donation_Support.Controllers
                 Content = dto.Content,
                 Status = dto.Status,
                 IsActive = true,
-                PublishedDate = DateTime.Now
+                PublishedDate = DateTime.Now,
+                ImageUrl = dto.ImageUrl
             };
             _context.Articles.Add(Article);
             await _context.SaveChangesAsync();

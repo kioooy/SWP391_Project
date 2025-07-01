@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Blood_Donation_Support.Model;
 
@@ -20,7 +18,9 @@ public partial class DonationRequest
 
     public DateTime? RequestDate { get; set; }
 
-    public DateTime? ApprovalDate { get; set; }
+    public DateTime? CompletionDate { get; set; }
+    public DateTime? CancelledDate { get; set; }
+    public DateTime? RejectedDate { get; set; }
 
     public int? DonationVolume { get; set; }
 
@@ -32,11 +32,12 @@ public partial class DonationRequest
 
     public virtual BloodComponent Component { get; set; } = null!;
 
-    public virtual ICollection<DonationRequestsDetail> DonationRequestsDetails { get; set; } = new List<DonationRequestsDetail>();
     [ForeignKey("MemberId")]
     public virtual Member Member { get; set; } = null!;
 
     public virtual BloodDonationPeriod Period { get; set; } = null!;
 
-    public virtual User? ResponsibleBy { get; set; }
+    public virtual User ResponsibleBy { get; set; } = null!;
+
+    public virtual ICollection<Hospital> Hospital { get; set; } = new List<Hospital>();
 }

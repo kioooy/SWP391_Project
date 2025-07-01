@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
@@ -202,7 +201,24 @@ namespace Blood_Donation_Support.Controllers
             if (existingUser == null)
                 return NotFound(); // Status code 404 Not Found 
 
-            if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
+            if (!string.IsNullOrEmpty(model.FullName) && existingUser.FullName != model.FullName.Trim())
+            {
+                existingUser.FullName = model.FullName.Trim();
+            }
+
+            // Cập nhật Email nếu có thay đổi và chưa bị trùng
+    if (!string.IsNullOrEmpty(model.Email) && existingUser.Email != model.Email)
+    {
+        var isEmailTaken = await _context.Users.AnyAsync(u => u.Email == model.Email && u.UserId != id);
+        if (isEmailTaken)
+        {
+            return BadRequest(new { message = "Email đã tồn tại cho người dùng khác." });
+        }
+        existingUser.Email = model.Email;
+    }
+
+    // Cập nhật Số điện thoại
+    if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
             {
                 // Check existing Phone Number
                 var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);
@@ -572,60 +588,6 @@ namespace Blood_Donation_Support.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "User location updated successfully." });
-        }
-
-        // Search Users by Distance
-        // GET: api/User/search-by-distance
-        [HttpGet("search-by-distance")]
-        [Authorize(Roles = "Member,Staff,Admin")] // Allow Member, Staff, Admin to search
-        public async Task<IActionResult> SearchUsersByDistance(
-            [FromQuery] double latitude,
-            [FromQuery] double longitude,
-            [FromQuery] double radiusInKm, // Radius in kilometers
-            [FromQuery] string userType = null // Optional: "Donor" or "Recipient"
-        )
-        {
-            // Create a Point object for the search origin
-            var searchPoint = new Point(longitude, latitude) { SRID = 4326 };
-
-            // Convert radius from kilometers to meters for NetTopologySuite's Distance method
-            var radiusInMeters = radiusInKm * 1000;
-
-            var query = _context.Members.AsQueryable();
-
-            // Filter by user type if specified
-            if (!string.IsNullOrEmpty(userType))
-            {
-                if (userType.Equals("Donor", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = query.Where(m => m.IsDonor == true);
-                }
-                else if (userType.Equals("Recipient", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = query.Where(m => m.IsRecipient == true);
-                }
-            }
-
-            // Filter users by distance
-            var nearbyUsers = await query
-                .Include(m => m.User)
-                .Include(m => m.BloodType) // Include BloodType to access its properties
-                .Where(m => m.Location != null && m.Location.Distance(searchPoint) <= radiusInMeters)
-                .Select(m => new {
-                    m.UserId,
-                    m.User.FullName,
-                    m.User.Email,
-                    m.User.PhoneNumber,
-                    m.User.Address,
-                    m.IsDonor,
-                    m.IsRecipient,
-                    BloodTypeName = m.BloodType != null ? m.BloodType.BloodTypeName : null, // Access BloodTypeName
-                    Distance = m.Location.Distance(searchPoint) / 1000 // Distance in kilometers
-                })
-                .OrderBy(m => m.Distance)
-                .ToListAsync();
-
-            return Ok(nearbyUsers);
         }
     }
 

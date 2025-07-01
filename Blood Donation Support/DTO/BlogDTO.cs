@@ -1,34 +1,42 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Blood_Donation_Support.DTO
 {
     public class BlogDTO
     {
         public int PostId { get; set; }
-        public string Title { get; set; }
-        public string Content { get; set; }
+        public required string Title { get; set; }
+        public required string Content { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
-        public string ImageUrl { get; set; }
+        public required string ImageUrl { get; set; }
     }
 
     public class BlogCreateDTO
     {
         public int UserId { get; set; }
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string ImageUrl { get; set; }
-        public string Status { get; set; }
+        [Required(ErrorMessage = "Title is required")]
+        public required string Title { get; set; }
+        [Required(ErrorMessage = "Content is required")]
+        public required string Content { get; set; }
+        [Required(ErrorMessage = "Status is required")]
+        public required string Status { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     public class BlogUpdateDTO
     {
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string ImageUrl { get; set; }
-        public string Status { get; set; }
+        public required string Title { get; set; }
+        [Required(ErrorMessage = "Content is required")]
+        public required string Content { get; set; }
+        [Required(ErrorMessage = "Status is required")]
+        public required string Status { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     public class BlogStatusDTO
     {
-        public string Status { get; set; }
+        [Required(ErrorMessage = "Status is required")]
+        public required string Status { get; set; }
     }
 }

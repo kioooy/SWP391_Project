@@ -17,16 +17,16 @@ import {
   MenuItem,
   Snackbar,
   Alert,
-
+  Avatar,
 } from "@mui/material";
 import axios from 'axios';
 import { styled } from "@mui/material/styles";
 import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import HomeIcon from "@mui/icons-material/Home";
 import HistoryIcon from "@mui/icons-material/History";
-import NewsIcon from "@mui/icons-material/Article";
+import ArticleIcon from "@mui/icons-material/Article";
 import ContactIcon from "@mui/icons-material/ContactMail";
-import { logout } from "../features/auth/authSlice";
+import { logout, fetchUserProfile } from "../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "../features/auth/authSlice";
 import Footer from "../components/Footer";
@@ -36,6 +36,12 @@ import SearchIcon from "@mui/icons-material/Search";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BloodtypeIcon from "@mui/icons-material/Bloodtype";
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import EventIcon from '@mui/icons-material/Event';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import NotificationBell from "../components/NotificationBell";
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -103,6 +109,13 @@ const MainLayout = () => {
   const [locationSnackbarMessage, setLocationSnackbarMessage] = useState('');
 
   const { user: currentUser, isAuthenticated, token: authToken } = useSelector((state) => state.auth);
+  // currentUser bây giờ sẽ luôn có isDonor, isRecipient nếu đã vào UserProfile
+
+  // Thêm log để kiểm tra user và role
+  console.log('DEBUG currentUser:', currentUser);
+  if (currentUser) {
+    console.log('DEBUG currentUser.role:', currentUser.role);
+  }
 
   useEffect(() => {
     if (currentUser && currentUser.role === 'Member') {
@@ -146,11 +159,26 @@ const MainLayout = () => {
     }
   }, [currentUser]);
 
+  useEffect(() => {
+    if (currentUser && (currentUser.role === 'Staff' || currentUser.role === 'Admin')) {
+      if (location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/') {
+        navigate('/manage-requests', { replace: true });
+      }
+    }
+  }, [currentUser, location.pathname, navigate]);
+
+  useEffect(() => {
+    // Nếu đã đăng nhập, tự động fetch profile để đồng bộ loại tài khoản vào Redux
+    if (authToken && currentUser) {
+      dispatch(fetchUserProfile());
+    }
+  }, [authToken, currentUser, dispatch]);
+
   const handleLogout = async () => {
     await dispatch(logout());
     localStorage.removeItem("isTestUser");
     localStorage.removeItem("isStaff");
-    navigate("/login");
+    navigate("/home");
   };
 
   const handleLogin = () => {
@@ -183,60 +211,185 @@ const MainLayout = () => {
   };
 
   const handleProfile = () => {
-    navigate("/profile");
+    if (currentUser && currentUser.isRecipient) {
+      navigate("/user-profile-recipient");
+    } else {
+      navigate("/profile");
+    }
   };
 
   // Kiểm tra trạng thái đăng nhập test user và staff
   const isTestUser = localStorage.getItem("isTestUser") === "true";
   const isStaff = localStorage.getItem("isStaff") === "true";
 
-  let menuItems = [
-    { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-    { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-    { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
-    { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-    { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-    { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
-    { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-  ];
+  let menuItems = [];
+  console.log('DEBUG currentUser at menuItems:', currentUser);
 
-  // Xác định menu items dựa trên vai trò người dùng
-  if (isAuthenticated || isTestUser) {
-    // Nếu là nhân viên hoặc admin
-    if (isStaff || (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff'))) {
+  if (currentUser && currentUser.role === 'Staff') {
+    menuItems = [
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> },
+      { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
+      { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
+      { path: "/transfusion-management", label: "Quản lý truyền máu", icon: <LocalHospitalIcon /> },
+      { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
+      { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
+      { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
+    ];
+  } else if (currentUser && currentUser.role === 'Admin') {
+    menuItems = [
+      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+      { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> },
+      { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+      { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
+      { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
+      { path: "/transfusion-management", label: "Quản lý truyền máu", icon: <LocalHospitalIcon /> },
+      { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
+      { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
+      { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
+    ];
+  } else {
+    // Nếu chưa đăng nhập, chỉ hiện các mục cơ bản
+    if (!isAuthenticated && !isTestUser) {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-        { path: "/transfusion-request", label: "Yêu Cầu Hiến Máu", icon: <HistoryIcon /> },
-      ];
-      
-      // Nếu là Admin thì thêm menu quản lý bệnh viện
-      if (currentUser?.role === 'Admin') {
-        menuItems.push(
-          { path: "/hospital-location", label: "Sửa Vị Trí Bệnh Viện", icon: <LocalHospitalIcon /> }
-        );
-      }
-    } else {
-      // Menu cho người dùng thường
-      menuItems = [
-        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-        { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-        { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
-        { path: "/booking", label: "Đặt Lịch", icon: <ContactIcon /> },
-        { path: "/certificate", label: "Chứng Chỉ", icon: <ContactIcon /> },
-        // { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> }, // Ẩn với member
-        ...(currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Staff') ? [{ path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> }] : []),
+        { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
+        { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
-        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <PersonIcon /> },
+      ];
+    } else {
+      menuItems = [
+        { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+        { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
+        { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
+        { path: "/booking", label: "Đặt Lịch", icon: <EventIcon /> },
+        { path: "/certificate", label: "Chứng Chỉ", icon: <VerifiedIcon /> },
+        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+        { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <HistoryIcon /> },
       ];
     }
-  } else {
-    // Menu cho người dùng chưa đăng nhập
-    menuItems = [
-      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
-      { path: "/faq", label: "Hỏi & Đáp", icon: <QuestionAnswerIcon /> },
-      { path: "/news", label: "Tin Tức", icon: <NewsIcon /> },
-      { path: "/search-distance", label: "Tìm Kiếm", icon: <SearchIcon /> },
+  }
+  console.log('DEBUG menuItems render:', menuItems);
+
+  console.log('DEBUG MainLayout mounted');
+
+  // Thêm state cho menu Tin Tức (đặt ngoài mọi if)
+  const [newsAnchorEl, setNewsAnchorEl] = useState(null);
+  const openNewsMenu = Boolean(newsAnchorEl);
+  const handleNewsMenu = (event) => setNewsAnchorEl(event.currentTarget);
+  const handleCloseNewsMenu = () => setNewsAnchorEl(null);
+
+  // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị menu có 2 mục này
+  if (currentUser && currentUser.isRecipient) {
+    const recipientMenu = [
+      { path: "/", label: "Trang Chủ" },
+      { path: "/faq", label: "Hỏi & Đáp" },
+      { path: "/article", label: "Tài Liệu Máu" },
+      { path: "/blog", label: "Blog" },
+      { path: "/booking-transfusion", label: "Đặt lịch truyền máu" },
+      { path: "/transfusion-history", label: "Lịch Sử Truyền Máu" },
     ];
+    return (
+      <MainContainer>
+        {/* PHẦN TRÊN: logo, ngôn ngữ, đăng nhập */}
+        <Box sx={{ background: "#fff", py: 1 }}>
+          <Container maxWidth="lg">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ width: 80 }} />
+              {/* Logo */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <img
+                  src="/images/logo.png"
+                  alt="logo"
+                  style={{ height: 40, marginRight: 8 }}
+                />
+                <Typography
+                  variant="h5"
+                  fontWeight="bold"
+                  color="primary.main"
+                  sx={{ letterSpacing: 2 }}
+                >
+                  Hệ Thống Hỗ Trợ Hiến Máu
+                </Typography>
+              </Box>
+              {/* Đăng nhập/Đăng ký hoặc Profile */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {isAuthenticated || isTestUser ? (
+                  <>
+                    {/* Notification Bell - chỉ hiển thị cho Member */}
+                    {currentUser && currentUser.role === 'Member' && (
+                      <NotificationBell userId={currentUser.userId} />
+                    )}
+                    <Button
+                      color="primary"
+                      startIcon={
+                        currentUser && currentUser.fullName ? (
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                            {currentUser.fullName.charAt(0).toUpperCase()}
+                          </Avatar>
+                        ) : (
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                        )
+                      }
+                      onClick={handleProfile}
+                      sx={{ fontSize: 17, fontWeight: 'bold' }}
+                    >
+                      {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="text"
+                    color="primary"
+                    onClick={handleLogin}
+                    startIcon={<PersonIcon />}
+                    sx={{ fontSize: 18 }}
+                  >
+                    Đăng nhập
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </Container>
+        </Box>
+
+        {/* PHẦN DƯỚI: menu điều hướng cho recipient */}
+        <AppBar
+          position="static"
+          sx={{ background: "#202G99", boxShadow: "none" }}
+        >
+          <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }}>
+            <Stack direction="row" spacing={4}>
+              {recipientMenu.map((item) => (
+                <NavButton
+                  key={item.path}
+                  component={StyledLink}
+                  to={item.path}
+                  isActive={location.pathname === item.path}
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontSize: 18,
+                    letterSpacing: 1,
+                  }}
+                >
+                  {item.label}
+                </NavButton>
+              ))}
+            </Stack>
+          </Toolbar>
+        </AppBar>
+        <ContentContainer maxWidth="lg">
+          <Outlet />
+        </ContentContainer>
+      </MainContainer>
+    );
   }
 
   return (
@@ -269,22 +422,37 @@ const MainLayout = () => {
               </Typography>
             </Box>
             {/* Đăng nhập/Đăng ký hoặc Profile */}
-            <Box>
-
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {isAuthenticated || isTestUser ? (
-                <Button
-                  color="primary"
-                  startIcon={<AccountCircleIcon />}
-                  onClick={handleProfile}
-                >
-                  {isStaff ? "Staff" : (isTestUser ? "Test User" : "Profile")}
-                </Button>
+                <>
+                  {/* Notification Bell - chỉ hiển thị cho Member */}
+                  {currentUser && currentUser.role === 'Member' && (
+                    <NotificationBell userId={currentUser.userId} />
+                  )}
+                  <Button
+                    color="primary"
+                    startIcon={
+                      currentUser && currentUser.fullName ? (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>
+                          {currentUser.fullName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      ) : (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'error.main', fontWeight: 'bold' }}>?</Avatar>
+                      )
+                    }
+                    onClick={handleProfile}
+                    sx={{ fontSize: 17, fontWeight: 'bold' }}
+                  >
+                    {isStaff ? "Staff" : (isTestUser ? "Test User" : "Hồ sơ")}
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="text"
                   color="primary"
                   onClick={handleLogin}
                   startIcon={<PersonIcon />}
+                  sx={{ fontSize: 18 }}
                 >
                   Đăng nhập
                 </Button>
@@ -301,38 +469,50 @@ const MainLayout = () => {
       >
         <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }}>
           <Stack direction="row" spacing={4}>
-            {menuItems.map(
-              (item) =>
-
-                ((item.path === "/certificate" &&
-                  (isAuthenticated || isTestUser)) ||
-                  item.path !== "/certificate") && (
+            {menuItems.map((item) =>
+              item.isNews ? (
+                <div key="news-menu">
                   <NavButton
-                    key={item.path}
-                    component={StyledLink}
-                    to={item.path}
-                    isActive={location.pathname === item.path}
-                    sx={{
-                      color: "white",
-                      fontWeight: "bold",
-                      fontSize: 18,
-                      letterSpacing: 1,
-                    }}
-                    onClick={(e) => {
-                      if (
-                        item.path === "/booking" &&
-
-                        !isAuthenticated &&
-                        !isTestUser
-                      ) {
-                        e.preventDefault(); // Prevent default navigation
-                        navigate("/login");
-                      }
-                    }}
+                    onClick={handleNewsMenu}
+                    isActive={location.pathname.startsWith('/article') || location.pathname.startsWith('/faq')}
+                    sx={{ color: "white", fontWeight: "bold", fontSize: 18, letterSpacing: 1 }}
+                    startIcon={item.icon}
                   >
-                    {item.label}
+                    Tin Tức
                   </NavButton>
-                )
+                  <Menu
+                    anchorEl={newsAnchorEl}
+                    open={openNewsMenu}
+                    onClose={handleCloseNewsMenu}
+                    MenuListProps={{ 'aria-labelledby': 'news-menu-button' }}
+                  >
+                    <MenuItem component={RouterLink} to="/article" onClick={handleCloseNewsMenu}>
+                      <MenuBookIcon sx={{ mr: 1 }} /> Thông Tin
+                    </MenuItem>
+                    <MenuItem component={RouterLink} to="/faq" onClick={handleCloseNewsMenu}>
+                      <QuestionAnswerIcon sx={{ mr: 1 }} /> Hỏi & Đáp
+                    </MenuItem>
+                  </Menu>
+                </div>
+              ) :
+              ((item.path === "/certificate" && (isAuthenticated || isTestUser)) || item.path !== "/certificate") && (
+                <NavButton
+                  key={item.path}
+                  component={StyledLink}
+                  to={item.path}
+                  isActive={location.pathname === item.path}
+                  sx={{ color: "white", fontWeight: "bold", fontSize: 18, letterSpacing: 1 }}
+                  onClick={(e) => {
+                    if (item.path === "/booking" && !isAuthenticated && !isTestUser) {
+                      e.preventDefault();
+                      navigate("/login");
+                    }
+                  }}
+                  startIcon={item.icon}
+                >
+                  {item.label}
+                </NavButton>
+              )
             )}
           </Stack>
         </Toolbar>

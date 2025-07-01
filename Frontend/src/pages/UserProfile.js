@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectUser, selectIsAuthenticated, updateUserLocation } from '../features/auth/authSlice';
+import { selectUser, selectIsAuthenticated, updateUserLocation, logout, setAccountType } from '../features/auth/authSlice';
 import {
   Container,
   Typography,
@@ -45,10 +45,14 @@ import {
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
   Delete as DeleteIcon,
+  Badge,
+  Cake,
+  Wc,
+  Height,
+  MonitorWeight,
 } from '@mui/icons-material';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { logout } from '../features/auth/authSlice';
 
 // Hàm tính khoảng cách Haversine giữa hai điểm (latitude, longitude)
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -75,13 +79,13 @@ const UserProfile = () => {
   const { user, token: authToken } = useSelector((state) => state.auth);
   const userId = user?.userId;
 
-  const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
   const [formData, setFormData] = useState({
     fullName: '',
     citizenNumber: '',
@@ -94,6 +98,8 @@ const UserProfile = () => {
     address: '',
     weight: '',
     height: '',
+    latitude: '', // Thêm trường latitude vào trạng thái ban đầu
+    longitude: '', // Thêm trường longitude vào trạng thái ban đầu
     medicalHistory: '',
     allergies: '',
   });
@@ -105,70 +111,115 @@ const UserProfile = () => {
     severity: 'success'
   });
 
-
   // State cho lịch hẹn sắp tới
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
 
-  // Fetch dữ liệu người dùng từ API khi component mount
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
-          return;
-        }
+  // State cho lịch sử hiến máu (chỉ những lịch đã hoàn thành)
+  const [completedDonationHistory, setCompletedDonationHistory] = useState([]);
 
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        const response = await axios.get(`${API_URL}/User/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  // State cho lỗi form
+  const [formErrors, setFormErrors] = useState({});
 
-        const userData = response.data[0]; 
-        if (userData) {
-          setFormData({
-            ...userData,
-            fullName: userData.fullName || '',
-            citizenNumber: userData.citizenNumber || '',
-            citizenIdCard: userData.citizenIdCard || '',
-            dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
-            gender: userData.sex === true ? 'male' : userData.sex === false ? 'female' : '',
-            bloodType: userData.bloodTypeName || '',
-            phone: userData.phoneNumber || '',
-            email: userData.email || '',
-            address: userData.address || '',
-            weight: userData.weight || '',
-            height: userData.height || '',
-            // medicalHistory và allergies không có trong API GetUserProfile, giữ nguyên mặc định hoặc lấy từ nguồn khác nếu có
-            medicalHistory: '', 
-            allergies: '',
-          });
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy thông tin người dùng:', error);
-        setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+  // State cho dữ liệu chỉnh sửa trong dialog
+  const [editFormData, setEditFormData] = useState({});
+
+  // Lấy loại tài khoản từ nhiều nguồn
+  const isDonor = user?.isDonor || user?.member?.isDonor || formData?.isDonor;
+  const isRecipient = user?.isRecipient || user?.member?.isRecipient || formData?.isRecipient;
+  console.log('DEBUG loại tài khoản:', { isDonor, isRecipient, user, formData });
+
+  // Định nghĩa fetchUserProfile bên ngoài useEffect để có thể gọi lại
+  const fetchUserProfile = async () => {
+    try {
+      console.log('fetchUserProfile được gọi lại');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
+        return;
       }
-    };
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const response = await axios.get(`${API_URL}/User/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Dữ liệu user mới:', response.data);
+      const userData = response.data[0]; 
+      if (userData) {
+        const id = userData.userId || userData.UserId || user?.userId;
+        setFormData({
+          id,
+          fullName: userData.fullName || '',
+          citizenNumber: userData.citizenNumber || '',
+          dateOfBirth: userData.dateOfBirth ? dayjs(userData.dateOfBirth).format('YYYY-MM-DD') : '',
+          gender: userData.sex === true ? 'male' : userData.sex === false ? 'female' : '',
+          bloodType: userData.bloodTypeName || '',
+          phone: userData.phoneNumber || '',
+          email: userData.email || '',
+          address: userData.address || '',
+          weight: userData.weight || userData.Weight || '',
+          height: userData.height || userData.Height || '',
+          latitude: userData.latitude || '',
+          longitude: userData.longitude || '',
+          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
+          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
+        });
+        // Đồng bộ loại tài khoản vào Redux
+        dispatch(setAccountType({
+          isDonor: userData.isDonor ?? userData.IsDonor ?? false,
+          isRecipient: userData.isRecipient ?? userData.IsRecipient ?? false,
+        }));
+      } else {
+        console.warn('Không lấy được userData từ API');
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+      setSnackbar({ open: true, message: error.response?.data?.message || 'Lỗi khi tải thông tin người dùng.', severity: 'error' });
+    }
+  };
 
+  // useEffect chỉ gọi fetchUserProfile khi mount
+  useEffect(() => {
     fetchUserProfile();
   }, []);
 
-  // Load lịch hẹn từ localStorage
+  // Thêm hàm reloadUpcomingAppointments để có thể gọi lại khi cần
+  const reloadUpcomingAppointments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const res = await axios.get(`${apiUrl}/DonationRequest/upcoming/all-role`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
+    } catch (error) {
+      setUpcomingAppointments([]);
+    }
+  };
+
+  // Sửa useEffect cũ thành gọi reloadUpcomingAppointments
   useEffect(() => {
-    const loadAppointments = () => {
+    reloadUpcomingAppointments();
+  }, []);
+
+  // useEffect lấy lịch sử hiến máu đã hoàn thành từ backend
+  useEffect(() => {
+    const fetchCompletedDonationHistory = async () => {
       try {
-        const appointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-        // Lọc chỉ lịch hẹn sắp tới (status = "scheduled")
-        const upcoming = appointments.filter(app => app.status === 'scheduled');
-        setUpcomingAppointments(upcoming);
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        // Lấy lịch sử hiến máu đã hoàn thành từ endpoint mới
+        const res = await axios.get(`${apiUrl}/DonationRequest/history/completed`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCompletedDonationHistory(res.data || []);
       } catch (error) {
-        console.error('Lỗi khi load lịch hẹn:', error);
+        setCompletedDonationHistory([]);
       }
     };
-
-    loadAppointments();
+    fetchCompletedDonationHistory();
   }, []);
 
   // Hàm đóng Snackbar
@@ -181,7 +232,7 @@ const UserProfile = () => {
     await dispatch(logout());
     localStorage.removeItem("isTestUser");
     localStorage.removeItem("isStaff");
-    navigate("/login");
+    navigate("/home");
   };
 
   // Hàm mở dialog xác nhận hủy lịch hẹn
@@ -191,41 +242,28 @@ const UserProfile = () => {
   };
 
   // Hàm xác nhận hủy lịch hẹn
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!appointmentToCancel) return;
-    
+    console.log('Appointment to cancel:', appointmentToCancel); // Log để debug
     try {
-      const existingAppointments = JSON.parse(localStorage.getItem('userAppointments') || '[]');
-      
-      const updatedAppointments = existingAppointments.map(app => {
-        if (app.id === appointmentToCancel.id) {
-          return {
-            ...app,
-            status: 'expired',
-            statusText: 'Đã xoá',
-            detail: {
-              ...(app.detail || {}),
-              cancellationReason: 'Người dùng tự hủy',
-              cancellationDate: dayjs().format('DD/MM/YYYY'),
-              cancellationTime: dayjs().format('HH:mm'),
-            }
-          };
-        }
-        return app;
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      await axios.patch(`${apiUrl}/DonationRequest/${appointmentToCancel.donationId}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      localStorage.setItem('userAppointments', JSON.stringify(updatedAppointments));
-      
-      // Cập nhật lại state chỉ với các lịch hẹn sắp tới (status === 'scheduled')
-      setUpcomingAppointments(updatedAppointments.filter(app => app.status === 'scheduled'));
       setSnackbar({ open: true, message: 'Lịch hẹn đã được hủy thành công!', severity: 'success' });
-      
-      // Đóng dialog và reset state
       setOpenCancelDialog(false);
       setAppointmentToCancel(null);
+      // Reload lại danh sách lịch hẹn
+      reloadUpcomingAppointments();
     } catch (error) {
-      console.error('Lỗi khi xóa lịch hẹn:', error);
-      setSnackbar({ open: true, message: 'Lỗi khi hủy lịch hẹn.', severity: 'error' });
+      console.error('Error cancelling appointment:', error);
+      let errorMessage = 'Lỗi khi hủy lịch hẹn.';
+      if (error.response?.data) {
+        errorMessage = error.response.data;
+      }
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
@@ -235,42 +273,8 @@ const UserProfile = () => {
     setAppointmentToCancel(null);
   };
 
-  // Dữ liệu mẫu lịch sử hiến máu
-  const donationHistory = [
-    {
-      id: 1,
-      date: '2024-03-15',
-      location: 'Bệnh viện Chợ Rẫy',
-      bloodType: 'A+',
-      volume: 350,
-      status: 'completed',
-      nextDonationDate: '2024-06-15',
-    },
-    {
-      id: 2,
-      date: '2023-12-10',
-      location: 'Bệnh viện Nhi Đồng 1',
-      bloodType: 'A+',
-      volume: 350,
-      status: 'completed',
-      nextDonationDate: '2024-03-10',
-    },
-    {
-      id: 3,
-      date: '2023-09-05',
-      location: 'Bệnh viện 115',
-      bloodType: 'A+',
-      volume: 250,
-      status: 'completed',
-      nextDonationDate: '2023-12-05',
-    },
-  ];
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
   const handleOpenDialog = () => {
+    setEditFormData(formData);
     setOpenDialog(true);
   };
 
@@ -300,20 +304,33 @@ const UserProfile = () => {
       const { latitude, longitude } = position.coords;
       setUserLocation({ latitude, longitude });
 
-      // Gửi vị trí lên server
+      // Gọi API reverse geocoding để lấy địa chỉ từ toạ độ
+      let address = '';
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        address = data.display_name || '';
+      } catch (err) {
+        address = '';
+      }
+
+      // Gửi vị trí và địa chỉ lên server
       const token = localStorage.getItem('token');
-      // Lấy userId từ Redux store (user?.userId)
       if (token && user?.userId) {
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
         await axios.put(`${apiUrl}/User/${user?.userId}/location`, {
           latitude,
-          longitude
+          longitude,
+          address
         }, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
       }
+
+      // Cập nhật địa chỉ vào formData
+      setFormData((prev) => ({ ...prev, address, latitude, longitude }));
 
       setSnackbar({ 
         open: true, 
@@ -323,7 +340,6 @@ const UserProfile = () => {
     } catch (error) {
       console.error('Lỗi khi cập nhật vị trí:', error);
       let errorMessage = 'Không thể lấy vị trí hiện tại.';
-      
       if (error.code === 1) {
         errorMessage = 'Quyền truy cập vị trí bị từ chối. Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt.';
       } else if (error.code === 2) {
@@ -331,7 +347,6 @@ const UserProfile = () => {
       } else if (error.code === 3) {
         errorMessage = 'Hết thời gian chờ lấy vị trí. Vui lòng thử lại.';
       }
-      
       setLocationError(errorMessage);
       setSnackbar({ 
         open: true, 
@@ -343,40 +358,89 @@ const UserProfile = () => {
     }
   };
 
+  // Validate form dùng editFormData
+  const validateForm = () => {
+    const errors = {};
+    // Họ tên: chỉ chữ và khoảng trắng, tối thiểu 2 ký tự
+    const fullNameTrim = (editFormData.fullName || '').trim();
+    if (!fullNameTrim || !/^[\p{L}\s]+$/u.test(fullNameTrim) || fullNameTrim.length < 2) {
+      errors.fullName = 'Họ và tên chỉ được nhập chữ và tối thiểu 2 ký tự.';
+    }
+    // Số CCCD: đúng 12 số
+    if (!editFormData.citizenNumber || !/^\d{12}$/.test(editFormData.citizenNumber)) {
+      errors.citizenNumber = 'Số CCCD phải là 12 chữ số.';
+    }
+    // Giới tính: chỉ Nam/Nữ
+    if (editFormData.gender !== 'male' && editFormData.gender !== 'female') {
+      errors.gender = 'Giới tính chỉ được chọn Nam hoặc Nữ.';
+    }
+    // Cân nặng: số, 45-300
+    const weightNum = Number(editFormData.weight);
+    if (isNaN(weightNum) || weightNum < 45 || weightNum > 300) {
+      errors.weight = 'Cân nặng phải từ 45 đến 300 kg.';
+    }
+    // Chiều cao: số, 145-300
+    const heightNum = Number(editFormData.height);
+    if (isNaN(heightNum) || heightNum < 145 || heightNum > 300) {
+      errors.height = 'Chiều cao phải từ 145 đến 300 cm.';
+    }
+    // Số điện thoại: 10 số, bắt đầu 03,05,07,08,09
+    if (!editFormData.phone || !/^0[3|5|7|8|9][0-9]{8}$/.test(editFormData.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ.';
+    }
+    // Địa chỉ
+    if (!editFormData.address || editFormData.address.length < 5) {
+      errors.address = 'Vui lòng nhập địa chỉ.';
+    }
+    // Ngày sinh
+    if (!editFormData.dateOfBirth) {
+      errors.dateOfBirth = 'Vui lòng nhập ngày sinh.';
+    }
+    // Email: không ký tự đặc biệt ngoài @ và .
+    if (!editFormData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editFormData.email)) {
+      errors.email = 'Email không hợp lệ hoặc chứa ký tự đặc biệt.';
+    }
+    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang
+    if (!editFormData.address || /[^a-zA-Z0-9\s,.-]/.test(editFormData.address)) {
+      errors.address = 'Địa chỉ không được chứa ký tự đặc biệt.';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
         return;
       }
-
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      // Chỉ gửi các trường backend chấp nhận, đúng tên trường model backend
       const payload = {
-        ...formData,
-        sex: formData.gender === 'male' ? true : formData.gender === 'female' ? false : null,
-        bloodTypeName: formData.bloodType,
-        phoneNumber: formData.phone,
-        citizenNumber: formData.citizenNumber,
-        citizenIdCard: formData.citizenIdCard,
+        FullName: editFormData.fullName.trim(),
+        PhoneNumber: editFormData.phone,
+        Address: editFormData.address,
+        Sex: editFormData.gender === 'male' ? true : editFormData.gender === 'female' ? false : null,
+        Weight: Number(editFormData.weight),
+        Height: Number(editFormData.height),
+        // Thêm Latitude và Longitude vào payload nếu có giá trị hợp lệ
+        ...(editFormData.latitude && !isNaN(Number(editFormData.latitude)) && { Latitude: Number(editFormData.latitude) }),
+        ...(editFormData.longitude && !isNaN(Number(editFormData.longitude)) && { Longitude: Number(editFormData.longitude) }),
       };
-
-      // Xóa các trường không cần thiết hoặc đã được ánh xạ lại
-      delete payload.gender;
-      delete payload.bloodType;
-      delete payload.phone;
-
-      const response = await axios.put(`${apiUrl}/users/${formData.id}`, payload, {
+      console.log('Payload gửi lên:', payload);
+      const response = await axios.patch(`${apiUrl}/User/${editFormData.id}/profile`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (response.status === 200) {
+      console.log('Response cập nhật:', response);
+      if (response.status === 200 || response.status === 204) {
         setSnackbar({ open: true, message: 'Cập nhật thông tin thành công!', severity: 'success' });
         handleCloseDialog();
-        // Có thể cần cập nhật lại dữ liệu người dùng sau khi lưu thành công
-        // Ví dụ: fetchData();
+        // Fetch lại dữ liệu mới nhất từ API
+        fetchUserProfile();
       } else {
         setSnackbar({ open: true, message: `Lỗi khi cập nhật: ${response.statusText}`, severity: 'error' });
       }
@@ -398,6 +462,7 @@ const UserProfile = () => {
           />
         );
       case 'scheduled':
+      case 'Approved':
         return (
           <Chip
             icon={<CalendarToday />}
@@ -407,6 +472,8 @@ const UserProfile = () => {
           />
         );
       case 'cancelled':
+      case 'Cancelled':
+      case 'Rejected':
         return (
           <Chip
             icon={<WarningIcon />}
@@ -415,9 +482,21 @@ const UserProfile = () => {
             size="small"
           />
         );
+      case 'Pending':
+        return (
+          <Chip
+            label="Chờ duyệt"
+            color="warning"
+            size="small"
+          />
+        );
       default:
         return null;
     }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
   // Component TabPanel để hiển thị nội dung tab
@@ -467,6 +546,22 @@ const UserProfile = () => {
                 <Typography variant="h5" gutterBottom>
                   {formData.fullName}
                 </Typography>
+                {/* Hiển thị loại tài khoản */}
+                {user?.role && user.role.toString().toLowerCase() === 'staff' && (
+                  <Chip label="Nhân viên" color="secondary" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {user?.role && user.role.toString().toLowerCase() === 'admin' && (
+                  <Chip label="Quản trị viên" color="secondary" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {isDonor && (
+                  <Chip label="Tài khoản hiến máu" color="success" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {isRecipient && !isDonor && (
+                  <Chip label="Tài khoản truyền máu" color="info" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
+                {!isDonor && !isRecipient && !user?.role && (
+                  <Chip label="Không xác định loại tài khoản" color="warning" sx={{ mb: 1, fontWeight: 'bold' }} />
+                )}
                 <Chip
                   icon={<Bloodtype />}
                   label={`Nhóm máu ${formData.bloodType}`}
@@ -505,7 +600,7 @@ const UserProfile = () => {
                   {formData.email}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  <LocationOn sx={{ verticalAlign: 'middle', mr: 0.5 }} /> {formData.address || 'Chưa có địa chỉ'}
+                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
 
@@ -538,38 +633,42 @@ const UserProfile = () => {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Thông tin cá nhân
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  <CalendarToday sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
-                  Ngày sinh: {formData.dateOfBirth}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Giới tính: {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Không xác định'}
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Chiều cao: {formData.height} cm
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Cân nặng: {formData.weight} kg
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Số CMND: {formData.citizenNumber}
-                </Typography>
-                {formData.medicalHistory && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Tiền sử bệnh án: {formData.medicalHistory}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Số CMND:</strong> {formData.citizenNumber || 'Chưa cập nhật'}
                   </Typography>
-                )}
-                {formData.allergies && (
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Dị ứng: {formData.allergies}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Ngày sinh:</strong> {formData.dateOfBirth || 'Chưa cập nhật'}
                   </Typography>
-                )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Giới tính:</strong> {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Height sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Chiều cao:</strong> {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Typography variant="body1">
+                    <strong>Cân nặng:</strong> {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}
+                  </Typography>
+                </Box>
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Lịch sử hiến máu và lịch hẹn */} 
+        {/* Lịch sử hiến máu và lịch hẹn sắp tới */} 
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
@@ -580,115 +679,99 @@ const UserProfile = () => {
                 </Tabs>
               </Box>
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch sử hiến máu</Typography>
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Ngày</TableCell>
-                        <TableCell>Địa điểm</TableCell>
-                        <TableCell>Nhóm máu</TableCell>
-                        <TableCell>Thể tích (ml)</TableCell>
-                        <TableCell>Trạng thái</TableCell>
-                        <TableCell>Ngày hiến máu tiếp theo</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {donationHistory.map((row) => (
-                        <TableRow key={row.id}>
-                          <TableCell>{row.date}</TableCell>
-                          <TableCell>{row.location}</TableCell>
-                          <TableCell>{row.bloodType}</TableCell>
-                          <TableCell>{row.volume}</TableCell>
-                          <TableCell>{getStatusChip(row.status)}</TableCell>
-                          <TableCell>{row.nextDonationDate}</TableCell>
+                <Typography variant="h6" gutterBottom>Lịch sử hiến máu đã hoàn thành</Typography>
+                {completedDonationHistory.length > 0 ? (
+                  <TableContainer component={Paper}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Ngày</TableCell>
+                          <TableCell>Địa điểm</TableCell>
+                          <TableCell>Nhóm máu</TableCell>
+                          <TableCell>Thể tích (ml)</TableCell>
+                          <TableCell>Trạng thái</TableCell>
+                          <TableCell>Ngày hiến máu tiếp theo</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {completedDonationHistory.map((row) => (
+                          <TableRow key={row.donationId}>
+                            <TableCell>{row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : ''}</TableCell>
+                            <TableCell>{row.location}</TableCell>
+                            <TableCell>{formData.bloodType}</TableCell>
+                            <TableCell>{row.donationVolume}</TableCell>
+                            <TableCell>{getStatusChip(row.status)}</TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                    Chưa có lịch sử hiến máu đã hoàn thành.
+                  </Typography>
+                )}
               </TabPanel>
               <TabPanel value={tabValue} index={1}>
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
                 {upcomingAppointments.length > 0 ? (
-                  <Box sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', borderRadius: 2 }}>
-                    {(() => {
-                      const latestAppointment = upcomingAppointments[0]; // Chỉ lấy lịch hẹn đầu tiên/gần nhất
-                      const detail = latestAppointment.detail || {};
-                      return (
-                        <>
-                          <Typography variant="h6" fontWeight="bold" color="#4285f4" sx={{ mb: 2 }}>
-                            Thông tin chi tiết lịch hẹn
-                          </Typography>
-                          <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Mã lịch hẹn</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.appointmentId}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
-                              {getStatusChip(latestAppointment.status)}
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Ngày hẹn</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.appointmentDate}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Khung giờ</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.appointmentTime}</Typography>
-                            </Grid>
-                            <Grid item xs={12}>
-                              <Typography variant="body2" color="text.secondary">Trung tâm hiến máu</Typography>
-                              <Typography variant="body1" fontWeight="bold">{detail.donationCenter}</Typography>
-                              <Typography variant="body2" color="text.secondary">{detail.centerAddress}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Số điện thoại trung tâm</Typography>
-                              <Typography variant="body1">{detail.centerPhone}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Loại hiến máu</Typography>
-                              <Typography variant="body1">{detail.donationType}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Lượng máu</Typography>
-                              <Typography variant="body1">{detail.bloodAmount}</Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="body2" color="text.secondary">Nhân viên phụ trách</Typography>
-                              <Typography variant="body1">{detail.staffName}</Typography>
-                            </Grid>
-                            {detail.notes && (
-                              <Grid item xs={12}>
-                                <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
-                                <Typography variant="body1">{detail.notes}</Typography>
-                              </Grid>
-                            )}
-                            {detail.preparationNotes && detail.preparationNotes.length > 0 && (
-                              <Grid item xs={12}>
-                                <Typography variant="body2" color="text.secondary">Hướng dẫn chuẩn bị:</Typography>
-                                <Box component="ul" sx={{ pl: 2 }}>
-                                  {detail.preparationNotes.map((note, idx) => (
-                                    <Typography key={idx} component="li" variant="body2">{note}</Typography>
-                                  ))}
-                                </Box>
-                              </Grid>
-                            )}
+                  upcomingAppointments.map((appointment, index) => {
+                    // Cố gắng parse "notes" để lấy giờ và địa điểm bệnh viện
+                    let hospitalName = '';
+                    let timeSlot = 'Không xác định';
+                    if (appointment.notes) {
+                        const hospitalMatch = appointment.notes.match(/Địa điểm hiến máu: (.*?)\./);
+                        const timeMatch = appointment.notes.match(/Khung giờ: (.*)/);
+                        if (hospitalMatch && hospitalMatch[1] !== 'Chưa chọn') {
+                            hospitalName = hospitalMatch[1];
+                        }
+                        if (timeMatch) {
+                            timeSlot = timeMatch[1];
+                        }
+                    }
+
+                    return (
+                      <Box key={index} sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                        <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ mb: 2 }}>
+                          Thông tin đăng ký hiến máu
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
+                            <Typography variant="body1" fontWeight="bold">#{appointment.donationId}</Typography>
                           </Grid>
-                          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                            {getStatusChip(appointment.status)}
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
+                            <Typography variant="body1" fontWeight="bold">{dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY')}</Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
+                            <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
+                          </Grid>
+                          <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
+                              <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
+                              <Typography variant="body2" color="text.secondary">{appointment.location}</Typography>
+                          </Grid>
+                        </Grid>
+                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
                             <Button
                               variant="contained"
                               color="error"
                               startIcon={<DeleteIcon />}
-                              onClick={() => handleOpenCancelDialog(latestAppointment)}
+                              onClick={() => handleOpenCancelDialog(appointment)}
                             >
                               Hủy lịch hẹn
                             </Button>
-                          </Box>
-                        </>
-                      );
-                    })()} 
-                  </Box>
+                        </Box>
+                      </Box>
+                    );
+                  })
                 ) : (
                   <Box sx={{ textAlign: 'center', py: 4 }}>
                     <Typography variant="body1" color="text.secondary">
@@ -720,22 +803,23 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.fullName}
-            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+            value={editFormData.fullName || ''}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
           />
           <TextField
             margin="dense"
             name="citizenNumber"
-            label="Số CMND"
+            label="Số CCCD"
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.citizenNumber}
-            onChange={(e) => setFormData({ ...formData, citizenNumber: e.target.value })}
+            value={editFormData.citizenNumber || ''}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
           />
-
           <TextField
             margin="dense"
             name="dateOfBirth"
@@ -743,24 +827,23 @@ const UserProfile = () => {
             type="date"
             fullWidth
             variant="outlined"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            value={formData.dateOfBirth}
-            onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            value={editFormData.dateOfBirth || ''}
+            disabled
+            InputProps={{ readOnly: true }}
             sx={{ mb: 2 }}
           />
           <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
             <InputLabel>Giới tính</InputLabel>
             <Select
               name="gender"
-              value={formData.gender}
-              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+              value={editFormData.gender || ''}
+              disabled
+              inputProps={{ readOnly: true }}
               label="Giới tính"
             >
               <MenuItem value="male">Nam</MenuItem>
               <MenuItem value="female">Nữ</MenuItem>
-              <MenuItem value="other">Khác</MenuItem>
             </Select>
           </FormControl>
           <TextField
@@ -770,9 +853,11 @@ const UserProfile = () => {
             type="tel"
             fullWidth
             variant="outlined"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            value={editFormData.phone || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/[^0-9]/g, '').slice(0,10) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
           />
           <TextField
             margin="dense"
@@ -781,9 +866,11 @@ const UserProfile = () => {
             type="email"
             fullWidth
             variant="outlined"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            value={editFormData.email || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value.replace(/[^a-zA-Z0-9@._-]/g, '') })}
             sx={{ mb: 2 }}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
           />
           <TextField
             margin="dense"
@@ -792,57 +879,37 @@ const UserProfile = () => {
             type="text"
             fullWidth
             variant="outlined"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            value={editFormData.address || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') })}
             sx={{ mb: 2 }}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
           />
           <TextField
             margin="dense"
             name="weight"
             label="Cân nặng (kg)"
-            type="number"
+            type="text"
             fullWidth
             variant="outlined"
-            value={formData.weight}
-            onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+            value={editFormData.weight || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, weight: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
             sx={{ mb: 2 }}
+            error={!!formErrors.weight}
+            helperText={formErrors.weight}
           />
           <TextField
             margin="dense"
             name="height"
             label="Chiều cao (cm)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={formData.height}
-            onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="medicalHistory"
-            label="Tiền sử bệnh án"
             type="text"
             fullWidth
-            multiline
-            rows={3}
             variant="outlined"
-            value={formData.medicalHistory}
-            onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+            value={editFormData.height || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, height: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
             sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="allergies"
-            label="Dị ứng"
-            type="text"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={formData.allergies}
-            onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-            sx={{ mb: 2 }}
+            error={!!formErrors.height}
+            helperText={formErrors.height}
           />
         </DialogContent>
         <DialogActions>
@@ -869,9 +936,6 @@ const UserProfile = () => {
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 <strong>Ngày hẹn:</strong> {appointmentToCancel.detail?.appointmentDate}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Khung giờ:</strong> {appointmentToCancel.detail?.appointmentTime}
               </Typography>
               <Typography variant="body2">
                 <strong>Địa điểm:</strong> {appointmentToCancel.detail?.donationCenter}

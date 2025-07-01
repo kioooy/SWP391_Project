@@ -20,7 +20,7 @@ public class ReservationsController : ControllerBase
     // POST api/reservations
     [HttpPost]
     [Authorize(Roles = "Staff,Admin")]
-    public async Task<ActionResult<ReservationDto>> CreateReservation(CreateReservationDto dto)
+    public async Task<ActionResult<ReservationDTO>> CreateReservation(CreateReservationDTO dto)
     {
         // Check blood unit availability
         var unit = await _context.BloodUnits.FirstOrDefaultAsync(u => u.BloodUnitId == dto.BloodUnitId && u.BloodStatus == "Available");
@@ -39,7 +39,7 @@ public class ReservationsController : ControllerBase
         _context.BloodReservations.Add(reservation);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetActiveReservations), new { transfusionId = reservation.TransfusionId }, new ReservationDto
+        return CreatedAtAction(nameof(GetActiveReservations), new { transfusionId = reservation.TransfusionId }, new ReservationDTO
         {
             ReservationId = reservation.ReservationId,
             BloodUnitId = reservation.BloodUnitId,
@@ -79,11 +79,11 @@ public class ReservationsController : ControllerBase
     // GET api/reservations/active?transfusionId=123
     [HttpGet("active")]
     [Authorize(Roles = "Staff,Admin")]
-    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetActiveReservations([FromQuery] int? transfusionId)
+    public async Task<ActionResult<IEnumerable<ReservationDTO>>> GetActiveReservations([FromQuery] int? transfusionId)
     {
         var query = _context.BloodReservations.AsQueryable().Where(r => r.Status == "Active");
         if (transfusionId.HasValue) query = query.Where(r => r.TransfusionId == transfusionId);
-        var list = await query.Select(r => new ReservationDto
+        var list = await query.Select(r => new ReservationDTO
         {
             ReservationId = r.ReservationId,
             BloodUnitId = r.BloodUnitId,

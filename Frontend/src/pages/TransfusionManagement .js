@@ -199,7 +199,7 @@ const TransfusionManagement = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      Approved: "info",
+      Approved: "primary",
       Completed: "success",
       Rejected: "error",
     };

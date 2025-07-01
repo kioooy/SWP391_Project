@@ -76,6 +76,59 @@ const districts = {
   'Đồng Nai': ['Thành phố Biên Hòa', 'Thành phố Long Khánh', 'Huyện Cẩm Mỹ', 'Huyện Định Quán', 'Huyện Long Thành', 'Huyện Nhơn Trạch', 'Huyện Tân Phú', 'Huyện Thống Nhất', 'Huyện Trảng Bom', 'Huyện Vĩnh Cửu', 'Huyện Xuân Lộc'],
   'Nghệ An': ['Thành phố Vinh', 'Thị xã Cửa Lò', 'Thị xã Thái Hòa', 'Huyện Anh Sơn', 'Huyện Con Cuông', 'Huyện Diễn Châu', 'Huyện Đô Lương', 'Huyện Hưng Nguyên', 'Huyện Kỳ Sơn', 'Huyện Nam Đàn', 'Huyện Nghi Lộc', 'Huyện Nghĩa Đàn', 'Huyện Quế Phong', 'Huyện Quỳ Châu', 'Huyện Quỳ Hợp', 'Huyện Quỳnh Lưu', 'Huyện Tân Kỳ', 'Huyện Thanh Chương', 'Huyện Tương Dương', 'Huyện Yên Thành'],
   'Thanh Hóa': ['Thành phố Thanh Hóa', 'Thị xã Bỉm Sơn', 'Thị xã Sầm Sơn', 'Huyện Bá Thước', 'Huyện Cẩm Thủy', 'Huyện Đông Sơn', 'Huyện Hà Trung', 'Huyện Hậu Lộc', 'Huyện Hoằng Hóa', 'Huyện Lang Chánh', 'Huyện Mường Lát', 'Huyện Nga Sơn', 'Huyện Ngọc Lặc', 'Huyện Như Thanh', 'Huyện Như Xuân', 'Huyện Nông Cống', 'Huyện Quan Hóa', 'Huyện Quan Sơn', 'Huyện Quảng Xương', 'Huyện Thạch Thành', 'Huyện Thiệu Hóa', 'Huyện Thọ Xuân', 'Huyện Thường Xuân', 'Huyện Tĩnh Gia', 'Huyện Triệu Sơn', 'Huyện Vĩnh Lộc', 'Huyện Yên Định'],
+  'Bà Rịa - Vũng Tàu': ['Thành phố Vũng Tàu', 'Huyện Long Điền', 'Huyện Đất Đỏ'],
+  'Bắc Giang': ['Thành phố Bắc Giang', 'Huyện Lục Nam'],
+  'Bắc Kạn': ['Thành phố Bắc Kạn', 'Huyện Ba Bể'],
+  'Bạc Liêu': ['Thành phố Bạc Liêu', 'Huyện Hòa Bình'],
+  'Bắc Ninh': ['Thành phố Bắc Ninh', 'Huyện Quế Võ'],
+  'Bến Tre': ['Thành phố Bến Tre', 'Huyện Châu Thành'],
+  'Bình Định': ['Thành phố Quy Nhơn', 'Huyện Tuy Phước'],
+  'Bình Phước': ['Thị xã Đồng Xoài', 'Huyện Bù Đăng'],
+  'Bình Thuận': ['Thành phố Phan Thiết', 'Huyện Hàm Thuận Bắc'],
+  'Cà Mau': ['Thành phố Cà Mau', 'Huyện Đầm Dơi'],
+  'Cao Bằng': ['Thành phố Cao Bằng', 'Huyện Trùng Khánh'],
+  'Đắk Lắk': ['Thành phố Buôn Ma Thuột', 'Huyện Krông Pắc'],
+  'Đắk Nông': ['Thị xã Gia Nghĩa', 'Huyện Đắk Mil'],
+  'Điện Biên': ['Thành phố Điện Biên Phủ', 'Huyện Mường Nhé'],
+  'Đồng Tháp': ['Thành phố Cao Lãnh', 'Huyện Lai Vung'],
+  'Gia Lai': ['Thành phố Pleiku', 'Huyện Chư Sê'],
+  'Hà Giang': ['Thành phố Hà Giang', 'Huyện Đồng Văn'],
+  'Hà Nam': ['Thành phố Phủ Lý', 'Huyện Kim Bảng'],
+  'Hà Tĩnh': ['Thành phố Hà Tĩnh', 'Huyện Cẩm Xuyên'],
+  'Hải Dương': ['Thành phố Hải Dương', 'Huyện Gia Lộc'],
+  'Hậu Giang': ['Thành phố Vị Thanh', 'Huyện Châu Thành A'],
+  'Hòa Bình': ['Thành phố Hòa Bình', 'Huyện Lương Sơn'],
+  'Hưng Yên': ['Thành phố Hưng Yên', 'Huyện Văn Lâm'],
+  'Khánh Hòa': ['Thành phố Nha Trang', 'Huyện Diên Khánh'],
+  'Kiên Giang': ['Thành phố Rạch Giá', 'Huyện Phú Quốc'],
+  'Kon Tum': ['Thành phố Kon Tum', 'Huyện Đắk Hà'],
+  'Lai Châu': ['Thành phố Lai Châu', 'Huyện Phong Thổ'],
+  'Lâm Đồng': ['Thành phố Đà Lạt', 'Huyện Đức Trọng'],
+  'Lạng Sơn': ['Thành phố Lạng Sơn', 'Huyện Cao Lộc'],
+  'Lào Cai': ['Thành phố Lào Cai', 'Huyện Sa Pa'],
+  'Long An': ['Thành phố Tân An', 'Huyện Đức Hòa'],
+  'Nam Định': ['Thành phố Nam Định', 'Huyện Hải Hậu'],
+  'Ninh Bình': ['Thành phố Ninh Bình', 'Huyện Gia Viễn'],
+  'Ninh Thuận': ['Thành phố Phan Rang-Tháp Chàm', 'Huyện Ninh Phước'],
+  'Phú Thọ': ['Thành phố Việt Trì', 'Huyện Lâm Thao'],
+  'Phú Yên': ['Thành phố Tuy Hòa', 'Huyện Đông Hòa'],
+  'Quảng Bình': ['Thành phố Đồng Hới', 'Huyện Bố Trạch'],
+  'Quảng Nam': ['Thành phố Tam Kỳ', 'Huyện Thăng Bình'],
+  'Quảng Ngãi': ['Thành phố Quảng Ngãi', 'Huyện Bình Sơn'],
+  'Quảng Ninh': ['Thành phố Hạ Long', 'Huyện Đông Triều'],
+  'Quảng Trị': ['Thành phố Đông Hà', 'Huyện Triệu Phong'],
+  'Sóc Trăng': ['Thành phố Sóc Trăng', 'Huyện Mỹ Xuyên'],
+  'Sơn La': ['Thành phố Sơn La', 'Huyện Mộc Châu'],
+  'Tây Ninh': ['Thành phố Tây Ninh', 'Huyện Hòa Thành'],
+  'Thái Bình': ['Thành phố Thái Bình', 'Huyện Quỳnh Phụ'],
+  'Thái Nguyên': ['Thành phố Thái Nguyên', 'Huyện Phổ Yên'],
+  'Thừa Thiên Huế': ['Thành phố Huế', 'Huyện Phú Vang'],
+  'Tiền Giang': ['Thành phố Mỹ Tho', 'Huyện Cai Lậy'],
+  'Trà Vinh': ['Thành phố Trà Vinh', 'Huyện Càng Long'],
+  'Tuyên Quang': ['Thành phố Tuyên Quang', 'Huyện Sơn Dương'],
+  'Vĩnh Long': ['Thành phố Vĩnh Long', 'Huyện Long Hồ'],
+  'Vĩnh Phúc': ['Thành phố Vĩnh Yên', 'Huyện Yên Lạc'],
+  'Yên Bái': ['Thành phố Yên Bái', 'Huyện Lục Yên']
 };
 
 const occupations = [
@@ -94,6 +147,7 @@ const occupations = [
 ];
 
 const bloodTypes = [
+  { id: 0, label: 'Chưa biết' },
   { id: 1, label: 'A+' },
   { id: 2, label: 'A-' },
   { id: 3, label: 'B+' },
@@ -117,6 +171,7 @@ const getValidationSchema = (activeStep) => {
       .required('Vui lòng nhập số CCCD');
     baseSchema.fullName = Yup.string()
       .min(2, 'Họ tên phải có ít nhất 2 ký tự')
+      .matches(/^[\p{L}\s]+$/u, 'Họ tên chỉ được chứa chữ và khoảng trắng')
       .required('Vui lòng nhập họ và tên');
     baseSchema.dateOfBirth = Yup.date()
       .nullable()
@@ -142,14 +197,17 @@ const getValidationSchema = (activeStep) => {
     baseSchema.email = Yup.string()
       .email('Email không đúng định dạng')
       .required('Vui lòng nhập email');
-    baseSchema.occupation = Yup.string().required('Vui lòng chọn nghề nghiệp');
     baseSchema.weight = Yup.number()
       .typeError('Vui lòng nhập cân nặng')
       .positive('Cân nặng phải là số dương')
+      .min(45, 'Cân nặng tối thiểu là 45kg')
+      .max(300, 'Cân nặng tối đa là 300kg')
       .required('Vui lòng nhập cân nặng');
     baseSchema.height = Yup.number()
       .typeError('Vui lòng nhập chiều cao')
       .positive('Chiều cao phải là số dương')
+      .min(145, 'Chiều cao tối thiểu là 145cm')
+      .max(300, 'Chiều cao tối đa là 300cm')
       .required('Vui lòng nhập chiều cao');
     baseSchema.bloodTypeId = Yup.string().required('Vui lòng chọn nhóm máu');
   }
@@ -200,14 +258,19 @@ const Signup = () => {
       weight: '',
       height: '',
       email: '',
-      occupation: '',
       password: '',
       confirmPassword: '',
       bloodTypeId: '',
     },
     validate: (values) => {
       try {
-        getValidationSchema(currentStepRef.current).validateSync(values, { abortEarly: false });
+        // Bỏ occupation khỏi validation
+        const schema = getValidationSchema(currentStepRef.current);
+        // Xóa occupation nếu có trong schema
+        if (schema.fields && schema.fields.occupation) {
+          delete schema.fields.occupation;
+        }
+        schema.validateSync(values, { abortEarly: false });
         return {};
       } catch (error) {
         const errors = {};
@@ -217,16 +280,39 @@ const Signup = () => {
         return errors;
       }
     },
+    validateOnChange: true,
+    validateOnBlur: true,
     onSubmit: async (values) => {
+      // Kiểm tra nếu chưa phải bước cuối cùng
       if (activeStep < 3) {
+        const errors = await formik.validateForm();
+        if (Object.keys(errors).length > 0) {
+          formik.setTouched(
+            Object.keys(errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
+            true
+          );
+          return;
+        }
         setActiveStep(activeStep + 1);
         return;
       }
-
       // Submit registration data on final step
       try {
         const registrationData = {
-          ...values,
+          fullName: values.fullName,
+          password: values.password,
+          citizenNumber: values.personalId,
+          email: values.email,
+          phoneNumber: values.mobilePhone,
+          dateOfBirth: values.dateOfBirth ? dayjs(values.dateOfBirth).format('YYYY-MM-DD') : null,
+          sex: values.gender === 'male' ? true : false,
+          address: `${values.street}, ${values.district}, ${values.city}`,
+          roleId: values.accountType === 'donor' ? 1 : 2, // hoặc map theo backend
+          bloodTypeId: values.bloodTypeId,
+          weight: Number(values.weight),
+          height: Number(values.height),
+          isDonor: values.accountType === 'donor',
+          isRecipient: values.accountType === 'recipient',
         };
         await dispatch(register(registrationData)).unwrap();
         navigate('/');
@@ -389,7 +475,11 @@ const Signup = () => {
                   label="Số CCCD(*)"
                   placeholder="VD: 123456789012"
                   value={formik.values.personalId}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập số, tối đa 12 ký tự
+                    const onlyNums = e.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+                    formik.setFieldValue('personalId', onlyNums);
+                  }}
                   error={formik.touched.personalId && Boolean(formik.errors.personalId)}
                   helperText={formik.touched.personalId && formik.errors.personalId}
                   inputProps={{ maxLength: 12 }}
@@ -410,7 +500,11 @@ const Signup = () => {
                   label="Họ và tên (*)"
                   placeholder="VD: Nguyễn Văn A"
                   value={formik.values.fullName}
-                  onChange={formik.handleChange}
+                  onChange={e => {
+                    // Chỉ cho nhập chữ và khoảng trắng
+                    const onlyLetters = e.target.value.replace(/[^\p{L}\s]/gu, '');
+                    formik.setFieldValue('fullName', onlyLetters);
+                  }}
                   error={formik.touched.fullName && Boolean(formik.errors.fullName)}
                   helperText={formik.touched.fullName && formik.errors.fullName}
                   inputProps={{ maxLength: 60 }}
@@ -485,8 +579,8 @@ const Signup = () => {
                 <Grid container spacing={2}>
                   {/* Tỉnh/Thành phố */}
                   <Grid item xs={12}>
-                    <FormControl fullWidth>
-                      <InputLabel>Tỉnh/Thành phố</InputLabel>
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel shrink={true}>Tỉnh/Thành phố</InputLabel>
                       <Select
                         name="city"
                         value={formik.values.city}
@@ -495,6 +589,8 @@ const Signup = () => {
                           formik.setFieldValue('district', '');
                         }}
                         error={formik.touched.city && Boolean(formik.errors.city)}
+                        label="Tỉnh/Thành phố"
+                        variant="outlined"
                       >
                         {cities.map((city) => (
                           <MenuItem key={city} value={city}>
@@ -506,14 +602,16 @@ const Signup = () => {
                   </Grid>
 
                   {/* Quận/Huyện */}
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth disabled={!formik.values.city}>
-                      <InputLabel>Quận/Huyện</InputLabel>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth variant="outlined" disabled={!formik.values.city}>
+                      <InputLabel shrink={true}>Quận/Huyện</InputLabel>
                       <Select
                         name="district"
                         value={formik.values.district}
                         onChange={formik.handleChange}
                         error={formik.touched.district && Boolean(formik.errors.district)}
+                        label="Quận/Huyện"
+                        variant="outlined"
                       >
                         {districts[formik.values.city]?.map((district) => (
                           <MenuItem key={district} value={district}>
@@ -532,7 +630,11 @@ const Signup = () => {
                       label="Số nhà, tên đường"
                       placeholder="Nhập số nhà, tên đường"
                       value={formik.values.street}
-                      onChange={formik.handleChange}
+                      onChange={e => {
+                        // Chỉ cho nhập số, chữ, khoảng trắng
+                        const onlyValid = e.target.value.replace(/[^\p{L}0-9\s]/gu, '');
+                        formik.setFieldValue('street', onlyValid);
+                      }}
                       error={formik.touched.street && Boolean(formik.errors.street)}
                       helperText={formik.touched.street && formik.errors.street}
                       inputProps={{ maxLength: 120 }}
@@ -620,49 +722,6 @@ const Signup = () => {
                 />
               </Grid>
 
-              {/* Nghề nghiệp */}
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel shrink>Nghề nghiệp (*)</InputLabel>
-                  <Select
-                    name="occupation"
-                    value={formik.values.occupation}
-                    onChange={e => {
-                      formik.handleChange(e);
-                      if (e.target.value !== 'Khác') setOtherOccupation('');
-                    }}
-                    error={formik.touched.occupation && Boolean(formik.errors.occupation)}
-                  >
-                    {occupations.map((occupation) => (
-                      <MenuItem key={occupation} value={occupation}>
-                        {occupation}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {formik.touched.occupation && formik.errors.occupation && (
-                    <Typography variant="caption" color="error">
-                      {formik.errors.occupation}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Grid>
-              {/* Nếu chọn Khác thì hiện ô nhập nghề nghiệp */}
-              {formik.values.occupation === 'Khác' && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    name="otherOccupation"
-                    label="Nhập nghề nghiệp khác"
-                    value={otherOccupation}
-                    onChange={e => {
-                      setOtherOccupation(e.target.value);
-                      formik.setFieldValue('occupation', e.target.value);
-                    }}
-                    required
-                  />
-                </Grid>
-              )}
-
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                   <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
@@ -715,13 +774,15 @@ const Signup = () => {
 
               {/* Nhóm máu */}
               <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Nhóm máu (*)</InputLabel>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel shrink={true}>Nhóm máu (*)</InputLabel>
                   <Select
                     name="bloodTypeId"
                     value={formik.values.bloodTypeId}
                     onChange={formik.handleChange}
                     error={formik.touched.bloodTypeId && Boolean(formik.errors.bloodTypeId)}
+                    label="Nhóm máu (*)"
+                    variant="outlined"
                   >
                     {bloodTypes.map((type) => (
                       <MenuItem key={type.id} value={type.id}>{type.label}</MenuItem>

@@ -32,12 +32,13 @@ import {
   LocationOn,
   Warning,
 } from '@mui/icons-material';
+import axios from 'axios';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
-    requestType: 'hospital', // 'hospital' hoặc 'individual'
-    hospitalName: '',
     patientName: '',
     bloodType: '',
     quantity: '',
@@ -53,7 +54,25 @@ const EmergencyRequest = () => {
 
   const steps = ['Thông tin cơ bản', 'Thông tin liên hệ', 'Xác nhận'];
 
-  const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  const bloodTypes = [
+    { id: 1, name: 'A+' },
+    { id: 2, name: 'A-' },
+    { id: 3, name: 'B+' },
+    { id: 4, name: 'B-' },
+    { id: 5, name: 'AB+' },
+    { id: 6, name: 'AB-' },
+    { id: 7, name: 'O+' },
+    { id: 8, name: 'O-' },
+  ];
+
+  const components = [
+    { id: 1, name: 'Máu toàn phần' },
+  ];
+
+  const [selectedComponentId, setSelectedComponentId] = useState(1);
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   const handleChange = (field) => (event) => {
     setFormData({
@@ -69,23 +88,68 @@ const EmergencyRequest = () => {
     }
   };
 
+  const handlePatientNameChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    setFormData({
+      ...formData,
+      patientName: value,
+    });
+    if (errors.patientName) {
+      setErrors({ ...errors, patientName: '' });
+    }
+  };
+
+  const handleReasonChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    setFormData({
+      ...formData,
+      reason: value,
+    });
+  };
+
+  const handleContactNameChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    setFormData({
+      ...formData,
+      contactName: value,
+    });
+    if (errors.contactName) {
+      setErrors({ ...errors, contactName: '' });
+    }
+  };
+
+  const handleContactPhoneChange = (event) => {
+    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 10); // chỉ cho nhập tối đa 10 số
+    setFormData({
+      ...formData,
+      contactPhone: value,
+    });
+    if (errors.contactPhone) {
+      setErrors({ ...errors, contactPhone: '' });
+    }
+  };
+
   const validateStep = () => {
     const newErrors = {};
-    
     if (activeStep === 0) {
-      if (!formData.requestType) newErrors.requestType = 'Vui lòng chọn loại yêu cầu';
-      if (formData.requestType === 'hospital' && !formData.hospitalName) {
-        newErrors.hospitalName = 'Vui lòng nhập tên bệnh viện';
-      }
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
-      if (!formData.quantity) newErrors.quantity = 'Vui lòng nhập số lượng máu cần';
     } else if (activeStep === 1) {
       if (!formData.contactName) newErrors.contactName = 'Vui lòng nhập tên người liên hệ';
-      if (!formData.contactPhone) newErrors.contactPhone = 'Vui lòng nhập số điện thoại';
+      // Kiểm tra số điện thoại Việt Nam
+      if (!formData.contactPhone) {
+        newErrors.contactPhone = 'Vui lòng nhập số điện thoại';
+      } else if (!/^0[3|5|7|8|9][0-9]{8}$/.test(formData.contactPhone)) {
+        newErrors.contactPhone = 'Số điện thoại không hợp lệ (phải là số Việt Nam, 10 số, bắt đầu 03,05,07,08,09)';
+      }
+      // Kiểm tra email phải là gmail
+      if (!formData.contactEmail) {
+        newErrors.contactEmail = 'Vui lòng nhập email';
+      } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.contactEmail)) {
+        newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
+      }
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -100,25 +164,52 @@ const EmergencyRequest = () => {
     setActiveStep((prevStep) => prevStep - 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateStep()) {
-      // Xử lý gửi form
-      console.log('Form submitted:', formData);
-      // Reset form và chuyển về bước đầu
-      setActiveStep(0);
-      setFormData({
-        requestType: 'hospital',
-        hospitalName: '',
-        patientName: '',
-        bloodType: '',
-        quantity: '',
-        contactName: '',
-        contactPhone: '',
-        contactEmail: '',
-        location: '',
-        reason: '',
-        notes: '',
-      });
+      try {
+        // Ánh xạ BloodTypeId từ tên sang id
+        const selectedBloodType = bloodTypes.find(b => b.name === formData.bloodType);
+        if (!selectedBloodType) {
+          setErrors({ ...errors, bloodType: 'Nhóm máu không hợp lệ' });
+          return;
+        }
+        // Chuẩn bị payload
+        const payload = {
+          BloodTypeId: selectedBloodType.id,
+          ComponentId: selectedComponentId,
+          TransfusionVolume: 500, // Giá trị mặc định 500ml cho yêu cầu khẩn cấp
+          IsEmergency: true,
+          PreferredReceiveDate: null,
+          Notes: formData.notes,
+          PatientCondition: formData.reason,
+        };
+        // Lấy token từ localStorage (hoặc redux)
+        const token = localStorage.getItem('token');
+        await axios.post('/api/TransfusionRequest', payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setSnackbar({ open: true, message: 'Gửi yêu cầu thành công!', severity: 'success' });
+        setActiveStep(0);
+        setFormData({
+          patientName: '',
+          bloodType: '',
+          quantity: '',
+          contactName: '',
+          contactPhone: '',
+          contactEmail: '',
+          location: '',
+          reason: '',
+          notes: '',
+        });
+      } catch (error) {
+        let msg = 'Có lỗi khi gửi yêu cầu!';
+        if (error.response && error.response.data && error.response.data.message) {
+          msg = error.response.data.message;
+        }
+        setSnackbar({ open: true, message: msg, severity: 'error' });
+      }
     }
   };
 
@@ -127,52 +218,12 @@ const EmergencyRequest = () => {
       case 0:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <FormControl component="fieldset" error={!!errors.requestType}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Loại yêu cầu
-                </Typography>
-                <RadioGroup
-                  row
-                  value={formData.requestType}
-                  onChange={handleChange('requestType')}
-                >
-                  <FormControlLabel
-                    value="hospital"
-                    control={<Radio />}
-                    label="Bệnh viện/Cơ sở y tế"
-                  />
-                  <FormControlLabel
-                    value="individual"
-                    control={<Radio />}
-                    label="Cá nhân"
-                  />
-                </RadioGroup>
-                {errors.requestType && (
-                  <FormHelperText>{errors.requestType}</FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
-
-            {formData.requestType === 'hospital' && (
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Tên bệnh viện/cơ sở y tế"
-                  value={formData.hospitalName}
-                  onChange={handleChange('hospitalName')}
-                  error={!!errors.hospitalName}
-                  helperText={errors.hospitalName}
-                />
-              </Grid>
-            )}
-
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Tên bệnh nhân"
                 value={formData.patientName}
-                onChange={handleChange('patientName')}
+                onChange={handlePatientNameChange}
                 error={!!errors.patientName}
                 helperText={errors.patientName}
               />
@@ -187,8 +238,8 @@ const EmergencyRequest = () => {
                   onChange={handleChange('bloodType')}
                 >
                   {bloodTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
+                    <MenuItem key={type.id} value={type.name}>
+                      {type.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -198,18 +249,6 @@ const EmergencyRequest = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số lượng máu cần (đơn vị)"
-                type="number"
-                value={formData.quantity}
-                onChange={handleChange('quantity')}
-                error={!!errors.quantity}
-                helperText={errors.quantity}
-              />
-            </Grid>
-
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -217,7 +256,7 @@ const EmergencyRequest = () => {
                 multiline
                 rows={3}
                 value={formData.reason}
-                onChange={handleChange('reason')}
+                onChange={handleReasonChange}
               />
             </Grid>
           </Grid>
@@ -231,7 +270,7 @@ const EmergencyRequest = () => {
                 fullWidth
                 label="Tên người liên hệ"
                 value={formData.contactName}
-                onChange={handleChange('contactName')}
+                onChange={handleContactNameChange}
                 error={!!errors.contactName}
                 helperText={errors.contactName}
               />
@@ -242,9 +281,10 @@ const EmergencyRequest = () => {
                 fullWidth
                 label="Số điện thoại"
                 value={formData.contactPhone}
-                onChange={handleChange('contactPhone')}
+                onChange={handleContactPhoneChange}
                 error={!!errors.contactPhone}
                 helperText={errors.contactPhone}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
               />
             </Grid>
 
@@ -255,6 +295,8 @@ const EmergencyRequest = () => {
                 type="email"
                 value={formData.contactEmail}
                 onChange={handleChange('contactEmail')}
+                error={!!errors.contactEmail}
+                helperText={errors.contactEmail}
               />
             </Grid>
 
@@ -297,24 +339,6 @@ const EmergencyRequest = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Loại yêu cầu
-                    </Typography>
-                    <Typography>
-                      {formData.requestType === 'hospital' ? 'Bệnh viện/Cơ sở y tế' : 'Cá nhân'}
-                    </Typography>
-                  </Grid>
-
-                  {formData.requestType === 'hospital' && (
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Tên bệnh viện
-                      </Typography>
-                      <Typography>{formData.hospitalName}</Typography>
-                    </Grid>
-                  )}
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
                       Tên bệnh nhân
                     </Typography>
                     <Typography>{formData.patientName}</Typography>
@@ -332,13 +356,6 @@ const EmergencyRequest = () => {
                         size="small"
                       />
                     </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Số lượng máu
-                    </Typography>
-                    <Typography>{formData.quantity} đơn vị</Typography>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -436,6 +453,12 @@ const EmergencyRequest = () => {
           </Box>
         </CardContent>
       </Card>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </Container>
   );
 };

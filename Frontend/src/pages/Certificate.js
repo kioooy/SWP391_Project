@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -34,112 +34,80 @@ import {
   Add,
 } from "@mui/icons-material";
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { useSelector } from "react-redux";
+import axios from "axios";
+import { selectUser } from "../features/auth/authSlice";
+import dayjs from "dayjs";
 
 const BloodDonationCertificate = () => {
-  const [certificates, setCertificates] = useState([
-    {
-      id: 1,
-      cccd: "079201234567",
-      name: "Nguyễn Văn Minh",
-      dateOfBirth: "15/03/1990",
-      address: "123 Đường Nguyễn Văn Cừ, Quận Ninh Kiều, Cần Thơ",
-      donationCenter: "Trung tâm Huyết học - Truyền máu Cần Thơ",
-      bloodAmount: "350ml",
-      donationDate: "20/11/2024",
-      bloodType: "O+",
-      certificateNumber: "CT-2024-001",
-    },
-    {
-      id: 2,
-      cccd: "079201234568",
-      name: "Trần Thị Lan",
-      dateOfBirth: "22/07/1985",
-      address: "456 Đường 3/2, Quận Ninh Kiều, Cần Thơ",
-      donationCenter: "Bệnh viện Đa khoa Trung ương Cần Thơ",
-      bloodAmount: "450ml",
-      donationDate: "15/12/2024",
-      bloodType: "A+",
-      certificateNumber: "CT-2024-002",
-    },
-  ]);
+  const [certificates, setCertificates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const user = useSelector(selectUser);
+
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      if (!user) {
+        setLoading(false);
+        setError("Vui lòng đăng nhập để xem chứng chỉ.");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        let url = "/api/Certificate"; // Default for Admin/Staff
+
+        if (user.role.toLowerCase() === "member") {
+          url = `/api/Certificate/member/${user.userId}`;
+        }
+
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const formattedCertificates = response.data.map((cert, index) => ({
+          id: cert.donationId || index + 1,
+          cccd: cert.citizenNumber,
+          name: cert.fullName,
+          dateOfBirth: dayjs(cert.dateOfBirth).format("DD/MM/YYYY"),
+          address: cert.address,
+          donationCenter: cert.name, // API returns hospital name as 'name'
+          bloodAmount: `${cert.donationVolume}ml`,
+          donationDate: dayjs(cert.preferredDonationDate).format("DD/MM/YYYY"),
+          bloodType: cert.bloodTypeName,
+          certificateNumber: `CT-${dayjs(cert.preferredDonationDate).year()}-${String(cert.donationId || index + 1).padStart(5, "0")}`,
+        }));
+
+        setCertificates(formattedCertificates);
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+            "Không thể tải chứng chỉ. Vui lòng thử lại."
+        );
+        console.error("Error fetching certificates:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCertificates();
+  }, [user]);
 
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingCertificate, setEditingCertificate] = useState(null);
-  const [formData, setFormData] = useState({
-    cccd: "",
-    name: "",
-    dateOfBirth: "",
-    address: "",
-    donationCenter: "",
-    bloodAmount: "",
-    donationDate: "",
-    bloodType: "",
-    certificateNumber: "",
-  });
+  const [viewingCertificate, setViewingCertificate] = useState(null);
 
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   const bloodAmounts = ["250ml", "350ml", "450ml", "500ml"];
 
-  const handleOpenDialog = (certificate = null) => {
-    if (certificate) {
-      setEditingCertificate(certificate);
-      setFormData({ ...certificate });
-    } else {
-      setEditingCertificate(null);
-      setFormData({
-        cccd: "",
-        name: "",
-        dateOfBirth: "",
-        address: "",
-        donationCenter: "",
-        bloodAmount: "",
-        donationDate: "",
-        bloodType: "",
-        certificateNumber: `CT-2024-${String(certificates.length + 1).padStart(
-          3,
-          "0"
-        )}`,
-      });
-    }
+  const handleOpenDialog = (certificate) => {
+    setViewingCertificate(certificate);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    setEditingCertificate(null);
-    setFormData({
-      cccd: "",
-      name: "",
-      dateOfBirth: "",
-      address: "",
-      donationCenter: "",
-      bloodAmount: "",
-      donationDate: "",
-      bloodType: "",
-      certificateNumber: "",
-    });
-  };
-
-  const handleSave = () => {
-    if (editingCertificate) {
-      setCertificates(
-        certificates.map((cert) =>
-          cert.id === editingCertificate.id
-            ? { ...formData, id: editingCertificate.id }
-            : cert
-        )
-      );
-    } else {
-      setCertificates([
-        ...certificates,
-        { ...formData, id: certificates.length + 1 },
-      ]);
-    }
-    handleCloseDialog();
-  };
-
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setViewingCertificate(null);
   };
 
   const getBloodTypeColor = (bloodType) => {
@@ -203,7 +171,7 @@ const BloodDonationCertificate = () => {
                   fontStyle: "italic",
                 }}
               >
-                Quản lý chứng chỉ hiến máu tình nguyện
+                Lưu giữ và tôn vinh những lần hiến máu của bạn
               </Typography>
             </Box>
           </Box>
@@ -226,6 +194,11 @@ const BloodDonationCertificate = () => {
         </Box>
 
         {/* Certificates Grid */}
+        {loading && <Typography>Đang tải chứng chỉ...</Typography>}
+        {error && <Typography color="error">{error}</Typography>}
+        {!loading && !error && certificates.length === 0 && (
+          <Typography>Bạn chưa có chứng chỉ hiến máu nào.</Typography>
+        )}
         <Grid container spacing={3}>
           {certificates.map((certificate) => (
             <Grid item xs={12} md={6} lg={4} key={certificate.id}>
@@ -446,22 +419,14 @@ const BloodDonationCertificate = () => {
                   <Box
                     sx={{
                       display: "flex",
-                      justifyContent: "space-between",
+                      justifyContent: "flex-end",
                       alignItems: "center",
                       mt: 3,
                       pt: 2,
                       borderTop: "1px solid rgba(0,0,0,0.08)",
                     }}
                   >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "#718096",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Số chứng chỉ: {certificate.certificateNumber}
-                    </Typography>
+                    {/*
                     <Box>
                       <IconButton size="small" sx={{ color: "#667eea" }}>
                         <Print />
@@ -470,6 +435,7 @@ const BloodDonationCertificate = () => {
                         <Download />
                       </IconButton>
                     </Box>
+                    */}
                   </Box>
                 </CardContent>
               </Card>
@@ -477,7 +443,7 @@ const BloodDonationCertificate = () => {
           ))}
         </Grid>
 
-        {/* Add/Edit Dialog */}
+        {/* View Dialog */}
         <Dialog
           open={openDialog}
           onClose={handleCloseDialog}
@@ -498,9 +464,10 @@ const BloodDonationCertificate = () => {
               color: "#1a202c",
             }}
           >
-            {editingCertificate ? "Xem thông tin chứng chỉ" : "Thêm chứng chỉ mới"}
+            Thông tin chi tiết chứng chỉ
           </DialogTitle>
           <DialogContent>
+            {viewingCertificate && (
             <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
                 <Box>
@@ -508,7 +475,7 @@ const BloodDonationCertificate = () => {
                     Số CCCD
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.cccd}
+                    {viewingCertificate.cccd}
                   </Typography>
                 </Box>
               </Grid>
@@ -518,7 +485,7 @@ const BloodDonationCertificate = () => {
                     Họ và Tên
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.name}
+                    {viewingCertificate.name}
                   </Typography>
                 </Box>
               </Grid>
@@ -528,7 +495,7 @@ const BloodDonationCertificate = () => {
                     Ngày sinh
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.dateOfBirth}
+                    {viewingCertificate.dateOfBirth}
                   </Typography>
                 </Box>
               </Grid>
@@ -538,7 +505,7 @@ const BloodDonationCertificate = () => {
                     Nhóm máu
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.bloodType}
+                    {viewingCertificate.bloodType}
                   </Typography>
                 </Box>
               </Grid>
@@ -548,7 +515,7 @@ const BloodDonationCertificate = () => {
                     Địa Chỉ
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.address}
+                    {viewingCertificate.address}
                   </Typography>
                 </Box>
               </Grid>
@@ -558,7 +525,7 @@ const BloodDonationCertificate = () => {
                     Cơ sở tiếp nhận máu
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.donationCenter}
+                    {viewingCertificate.donationCenter}
                   </Typography>
                 </Box>
               </Grid>
@@ -568,7 +535,7 @@ const BloodDonationCertificate = () => {
                     Lượng máu hiến
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.bloodAmount}
+                    {viewingCertificate.bloodAmount}
                   </Typography>
                 </Box>
               </Grid>
@@ -578,28 +545,19 @@ const BloodDonationCertificate = () => {
                     Ngày hiến máu
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {formData.donationDate}
+                    {viewingCertificate.donationDate}
                   </Typography>
                 </Box>
               </Grid>
-              {/* <Grid item xs={12}>
-                    <Box>
-                    <Typography variant="caption" sx={{ color: "#718096", fontWeight: 500 }}>
-                      Số Chứng Chỉ
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                      {formData.certificateNumber}
-                    </Typography>
-                  </Box>
-                </Grid> */}
             </Grid>
+            )}
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
-            <Button onClick={handleCloseDialog} sx={{ color: "#718096" }}>
+            {/* <Button onClick={handleCloseDialog} sx={{ color: "#718096" }}>
               Hủy
-            </Button>
+            </Button> */}
             <Button
-              onClick={handleSave}
+              onClick={handleCloseDialog}
               variant="contained"
               sx={{
                 bgcolor: "#667eea",
@@ -608,7 +566,7 @@ const BloodDonationCertificate = () => {
                 },
               }}
             >
-              {editingCertificate ? "Xem xong" : "Thêm mới"}
+             Đóng
             </Button>
           </DialogActions>
         </Dialog>

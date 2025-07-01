@@ -1,12 +1,13 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Container, Typography, Grid, Card, CardContent, Button, Box, Avatar, Stack } from '@mui/material';
+import { Container, Typography, Grid, Card, CardContent, Button, Box, Avatar, Stack, Snackbar, Alert } from '@mui/material';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PeopleIcon from '@mui/icons-material/People';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import axios from 'axios';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -42,27 +43,39 @@ const Events = () => {
   const navigate = useNavigate();
   const from = query.get('from');
   const to = query.get('to');
+  const [periods, setPeriods] = React.useState([]);
+  const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
 
-  const handleBooking = (locationId) => {
-    const isAuthenticated = localStorage.getItem('token') !== null || localStorage.getItem('isTestUser') === 'true';
-    if (isAuthenticated) {
-      navigate('/booking');
-    } else {
-      navigate('/login');
+  React.useEffect(() => {
+    if (!from || !to) return;
+    axios.get('/api/BloodDonationPeriod')
+      .then(res => {
+        // Lọc các đợt nằm trong khoảng ngày đã chọn
+        const filtered = res.data.filter(period => {
+          const periodFrom = dayjs(period.periodDateFrom);
+          const periodTo = dayjs(period.periodDateTo);
+          return periodTo.isSameOrAfter(dayjs(from)) && periodFrom.isSameOrBefore(dayjs(to));
+        });
+        setPeriods(filtered);
+      });
+  }, [from, to]);
+
+  const handleBooking = (period) => {
+    // Kiểm tra đăng nhập và vai trò Member
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('role');
+    if (!token || userRole !== 'Member') {
+      navigate('/login', { state: { popup: true, popupMessage: 'Bạn cần đăng nhập để đặt lịch hiến máu!' } });
       return;
     }
-    dispatch(bookEvent({ eventId, userId: user.id }));
+    const selectedInfo = {
+      period,
+      fromDate: from,
+      toDate: to
+    };
+    localStorage.setItem('selectedPeriodInfo', JSON.stringify(selectedInfo));
+    navigate('/booking');
   };
-
-  let results = [];
-  if (from && to) {
-    const fromDate = dayjs(from);
-    const toDate = dayjs(to);
-    results = bloodDonationLocations.filter((loc) => {
-      const locDate = dayjs(loc.date);
-      return locDate.isSameOrAfter(fromDate) && locDate.isSameOrBefore(toDate);
-    });
-  }
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f6f8fa', py: 6 }}>
@@ -77,20 +90,10 @@ const Events = () => {
               ? `Từ ngày ${dayjs(from).format('DD/MM/YYYY')} đến ngày ${dayjs(to).format('DD/MM/YYYY')}`
               : 'Vui lòng chọn khoảng ngày ở trang chủ.'}
           </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                  {bank.bloodTypes.map((type) => (
-                                    <Chip 
-                                      key={type} 
-                                      label={type} 
-                                      size="small" 
-                                      color="primary" 
-                                      variant="outlined"
-                                    />
-                                  ))}
         </Box>
         <Grid container spacing={4}>
-          {results.length > 0 ? results.map((loc) => (
-            <Grid item xs={12} md={6} key={loc.id}>
+          {periods.length > 0 ? periods.map((period) => (
+            <Grid item xs={12} md={6} key={period.periodId}>
               <Card sx={{ borderRadius: 3, boxShadow: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={2} mb={2}>
@@ -98,23 +101,17 @@ const Events = () => {
                       <EventAvailableIcon />
                     </Avatar>
                     <Box>
-                      <Typography variant="h6" color="primary" fontWeight="bold">{loc.name}</Typography>
+                      <Typography variant="h6" color="primary" fontWeight="bold">{period.periodName}</Typography>
                       <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
                         <LocationOnIcon color="action" fontSize="small" />
-                        <Typography variant="body2" color="text.secondary">{loc.address}</Typography>
+                        <Typography variant="body2" color="text.secondary">{period.location}</Typography>
                       </Stack>
                     </Box>
                   </Stack>
                   <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                     <EventAvailableIcon color="action" fontSize="small" />
                     <Typography variant="body2" color="text.secondary">
-                      {dayjs(loc.date).format('DD/MM/YYYY')} - {loc.time}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <PeopleIcon color="action" fontSize="small" />
-                    <Typography variant="body2" color="text.secondary">
-                      Số lượng đăng ký: <b>{loc.registered}/{loc.capacity}</b> Người
+                      {dayjs(period.periodDateFrom).format('DD/MM/YYYY')} - {dayjs(period.periodDateTo).format('DD/MM/YYYY')}
                     </Typography>
                   </Stack>
                 </CardContent>
@@ -122,13 +119,11 @@ const Events = () => {
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={() => handleBooking(loc.id)}
+                    onClick={() => handleBooking(period)}
                   >
                     Đặt lịch
                   </Button>
                 </Box>
-                        </Stack>
-                      </CardContent>
               </Card>
             </Grid>
           )) : (

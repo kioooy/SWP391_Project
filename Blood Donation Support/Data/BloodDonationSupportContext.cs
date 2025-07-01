@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Blood_Donation_Support.Model;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,13 +32,14 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<DonationRequest> DonationRequests { get; set; }
 
-    public virtual DbSet<DonationRequestsDetail> DonationRequestsDetails { get; set; }
-
     public virtual DbSet<Member> Members { get; set; }
+
     public virtual DbSet<Role> Role { get; set; }
+
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
+
     public virtual DbSet<Hospital> Hospitals { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -83,6 +82,7 @@ public partial class BloodDonationSupportContext : DbContext
             entity.ToTable("Article");
 
             entity.Property(e => e.Content).HasColumnType("ntext");
+            entity.Property(e => e.ImageUrl).HasMaxLength(255);
             entity.Property(e => e.PublishedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -131,7 +131,12 @@ public partial class BloodDonationSupportContext : DbContext
 
             entity.Property(e => e.CurrentQuantity).HasDefaultValue(0);
             entity.Property(e => e.ImageUrl).HasMaxLength(255);
-            entity.Property(e => e.Location).HasMaxLength(255);
+
+            entity.HasOne(d => d.Hospital).WithMany(p => p.BloodDonationPeriod)
+                .HasForeignKey(d => d.HospitalId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__BloodDona__Hospi__43D61337");
+
             entity.Property(e => e.PeriodDateFrom).HasColumnType("datetime");
             entity.Property(e => e.PeriodDateTo).HasColumnType("datetime");
             entity.Property(e => e.PeriodName).HasMaxLength(100);
@@ -159,6 +164,7 @@ public partial class BloodDonationSupportContext : DbContext
             entity.Property(e => e.BloodStatus)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.Notes).HasColumnType("nvarchar(max)");
 
             entity.HasOne(d => d.BloodType).WithMany(p => p.BloodUnits)
                 .HasForeignKey(d => d.BloodTypeId)
@@ -170,13 +176,19 @@ public partial class BloodDonationSupportContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__BloodUnit__Compo__628FA481");
 
+            entity.HasOne(d => d.Member).WithMany(p => p.BloodUnits)
+                .HasForeignKey(d => d.MemberId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__BloodUnit__Membe__1332DBDC");
         });
 
         modelBuilder.Entity<DonationRequest>(entity =>
         {
             entity.HasKey(e => e.DonationId).HasName("PK__Donation__C5082EFBE2E54925");
 
-            entity.Property(e => e.ApprovalDate).HasColumnType("datetime");
+            entity.Property(e => e.CompletionDate).HasColumnType("datetime");
+            entity.Property(e => e.CancelledDate).HasColumnType("datetime");
+            entity.Property(e => e.RejectedDate).HasColumnType("datetime");
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PatientCondition).HasMaxLength(500);
             entity.Property(e => e.RequestDate)
@@ -203,20 +215,6 @@ public partial class BloodDonationSupportContext : DbContext
             entity.HasOne(d => d.ResponsibleBy).WithMany(p => p.DonationRequests)
                 .HasForeignKey(d => d.ResponsibleById)
                 .HasConstraintName("FK__DonationR__Respo__6754599E");
-        });
-
-        modelBuilder.Entity<DonationRequestsDetail>(entity =>
-        {
-            entity.HasKey(e => e.DetailsId).HasName("PK__Donation__BAC8628C4BCD2DF5");
-
-            entity.HasOne(d => d.BloodUnit).WithMany(p => p.DonationRequestsDetails)
-                .HasForeignKey(d => d.BloodUnitId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__DonationR__Blood__693CA210");
-
-            entity.HasOne(d => d.Donation).WithMany(p => p.DonationRequestsDetails)
-                .HasForeignKey(d => d.DonationId)
-                .HasConstraintName("FK__DonationR__Donat__68487DD7");
         });
 
         modelBuilder.Entity<Member>(entity =>
@@ -285,6 +283,8 @@ public partial class BloodDonationSupportContext : DbContext
 
             entity.Property(e => e.ApprovalDate).HasColumnType("datetime");
             entity.Property(e => e.CompletionDate).HasColumnType("datetime");
+            entity.Property(e => e.CancelledDate).HasColumnType("datetime");
+            entity.Property(e => e.RejectedDate).HasColumnType("datetime");
             entity.Property(e => e.IsEmergency).HasDefaultValue(false);
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PatientCondition).HasMaxLength(500);

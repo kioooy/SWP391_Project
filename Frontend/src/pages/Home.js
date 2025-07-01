@@ -43,6 +43,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ScienceIcon from '@mui/icons-material/Science';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import { useSelector } from 'react-redux';
 
 const stats = [
   { icon: <BloodtypeIcon color="primary" sx={{ fontSize: 40 }} />, label: 'Đơn vị máu đã tiếp nhận', value: '12,345+' },
@@ -152,6 +153,33 @@ const Home = () => {
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
 
+  // Lấy user từ redux
+  const user = useSelector((state) => state.auth.user);
+  // Lấy thông tin member nếu có
+  const isDonor = user && (user.isDonor || (user.member && user.member.isDonor));
+  const isRecipient = user && (user.isRecipient || (user.member && user.member.isRecipient));
+
+  // Nếu là member truyền máu (isRecipient)
+  if (isRecipient) {
+    return (
+      <Box sx={{ backgroundColor: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Paper elevation={6} sx={{ p: 6, maxWidth: 500, mx: 'auto', textAlign: 'center' }}>
+          <BloodtypeIcon sx={{ fontSize: 60, color: '#e53e3e', mb: 2 }} />
+          <Typography variant="h4" fontWeight="bold" color="#e53e3e" gutterBottom>
+            Xin chào người nhận máu!
+          </Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Tài khoản của bạn là tài khoản truyền máu. Vui lòng liên hệ với bệnh viện hoặc các điểm hiến máu để được hỗ trợ.
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Nếu bạn cần hỗ trợ khẩn cấp, hãy sử dụng chức năng tìm kiếm người hiến máu hoặc liên hệ tổng đài hỗ trợ.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  // Nếu là member hiến máu (isDonor) hoặc chưa đăng nhập, giữ nguyên giao diện cũ
   const handleSearch = () => {
     if (!fromDate || !toDate) return;
     navigate(`/events?from=${dayjs(fromDate).format('YYYY-MM-DD')}&to=${dayjs(toDate).format('YYYY-MM-DD')}`);
@@ -311,11 +339,11 @@ const Home = () => {
   ];
 
   return (
-    <Box>
+    <Box sx={{ backgroundColor: '#fff', minHeight: '100vh' }}>
       {/* Hero Section - Đặt lịch hiến máu */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #F8FBFD 0%, #F8FBFD 100%)',
+          background: '#fff',
           color: '#333',
           py: 8,
           position: 'relative',
@@ -327,7 +355,7 @@ const Home = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23F8FBFD" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            background: 'none',
           }
         }}
       >
@@ -354,7 +382,7 @@ const Home = () => {
               borderRadius: 3,
               maxWidth: 600,
               mx: 'auto',
-              background: '#F8FBFD',
+              background: '#fff',
               backdropFilter: 'blur(10px)',
               border: '1px solid #333'
             }}
@@ -412,24 +440,7 @@ const Home = () => {
         </Container>
       </Box>
 
-      {/* Floating Action Button */}
-      <Fab
-        color="primary"
-        aria-label="book"
-        onClick={handleBookNow}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          zIndex: 1000,
-          width: 64,
-          height: 64,
-        }}
-      >
-        <BookOnlineIcon sx={{ fontSize: 32 }} />
-      </Fab>
-
-      <Container maxWidth="lg" sx={{ py: 6, backgroundColor: '#F8FBFD' }}>
+      <Container maxWidth="lg" sx={{ py: 6, backgroundColor: '#fff' }}>
         {/* Section quyền lợi người hiến máu */}
         <Box sx={{ mb: 8 }}>
           <Box sx={{ textAlign: 'center', mb: 6 }}>

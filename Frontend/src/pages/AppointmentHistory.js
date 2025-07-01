@@ -38,6 +38,7 @@ import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
+import axios from 'axios';
 
 // Styled components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -130,6 +131,8 @@ const AppointmentHistory = () => {
   const [selectedAppointment, setSelectedAppointment] = React.useState(null);
   const [upcomingAppointments, setUpcomingAppointments] = React.useState([]);
   const [hospitalLocation, setHospitalLocation] = React.useState({ name: '', address: '' });
+  const [openCancelDialog, setOpenCancelDialog] = React.useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = React.useState(null);
 
   // Lấy nhóm máu từ profile (Redux)
   const user = useSelector(state => state.auth.user);
@@ -236,6 +239,38 @@ const AppointmentHistory = () => {
     }
   };
 
+  // Hàm hủy lịch hẹn
+  const handleOpenCancelDialog = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setOpenCancelDialog(true);
+  };
+  const handleConfirmCancel = async () => {
+    if (!appointmentToCancel) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      await axios.patch(`${apiUrl}/DonationRequest/${appointmentToCancel.donationId}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOpenCancelDialog(false);
+      setAppointmentToCancel(null);
+      // Reload lại danh sách lịch hẹn
+      const res = await axios.get(`${apiUrl}/DonationRequest/upcoming/all-role`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
+    } catch (error) {
+      setOpenCancelDialog(false);
+      setAppointmentToCancel(null);
+      alert('Lỗi khi hủy lịch hẹn!');
+    }
+  };
+  const handleCloseCancelDialog = () => {
+    setOpenCancelDialog(false);
+    setAppointmentToCancel(null);
+  };
+
   return (
     <Container maxWidth="lg">
       <Typography
@@ -274,15 +309,27 @@ const AppointmentHistory = () => {
                 {getStatusChip(appointment.status)}
               </Grid>
             </Grid>
-            <Button
-              variant="outlined"
-              sx={{ ml: 2, minWidth: 120 }}
-              onClick={() => {
-                handleDetailClick(appointment.donationId);
-              }}
-            >
-              Xem chi tiết
-            </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
+              <Button
+                variant="outlined"
+                sx={{ minWidth: 120 }}
+                onClick={() => {
+                  handleDetailClick(appointment.donationId);
+                }}
+              >
+                Xem chi tiết
+              </Button>
+              {(appointment.status === 'scheduled' || appointment.status === 'Approved') && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  sx={{ minWidth: 120 }}
+                  onClick={() => handleOpenCancelDialog(appointment)}
+                >
+                  Hủy lịch hẹn
+                </Button>
+              )}
+            </Box>
           </Box>
         ))
       ) : (
@@ -331,6 +378,15 @@ const AppointmentHistory = () => {
           <Button onClick={handleCloseDialog} variant="outlined" color="primary">
             Đóng
           </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog xác nhận hủy lịch hẹn */}
+      <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog}>
+        <DialogTitle>Xác nhận hủy lịch hẹn</DialogTitle>
+        <DialogContent>Bạn có chắc chắn muốn hủy lịch hẹn này không?</DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancelDialog}>Không</Button>
+          <Button onClick={handleConfirmCancel} color="error" variant="contained">Hủy lịch hẹn</Button>
         </DialogActions>
       </Dialog>
     </Container>

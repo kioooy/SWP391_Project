@@ -13,12 +13,10 @@ namespace Blood_Donation_Support.Controllers
     public class DonationRequestController : ControllerBase
     {
         private readonly BloodDonationSupportContext _context;
-        private readonly IConfiguration _configuration;
 
-        public DonationRequestController(BloodDonationSupportContext context, IConfiguration configuration)
+        public DonationRequestController(BloodDonationSupportContext context)
         {
             _context = context;
-            _configuration = configuration;
         }
 
         // get donation request history by id (Member View)
@@ -101,18 +99,12 @@ namespace Blood_Donation_Support.Controllers
             var today = DateOnly.FromDateTime(DateTime.Today);
             var hasUpcoming = await _context.DonationRequests
                 .Include(dr => dr.Period)
-                .AnyAsync(dr =>
-                    dr.MemberId == member.UserId &&
-                    (dr.Status == "Pending" || dr.Status == "Approved") &&
-                    (
-                        (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
-                        dr.Period.PeriodDateFrom >= DateTime.Today
-                    )
-                );
+                .AnyAsync(dr => dr.MemberId == member.UserId && 
+                         (dr.Status == "Pending" || dr.Status == "Approved") &&
+                         ((dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) || dr.Period.PeriodDateFrom >= DateTime.Today));
             if (hasUpcoming)
-            {
-                return BadRequest("Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.");
-            }
+                    return BadRequest("You Have Upcomming Donation Period. You Can't Booking New Period");
+            
             // Add new donation request
             var donationRequest = new DonationRequest
             {
@@ -128,11 +120,14 @@ namespace Blood_Donation_Support.Controllers
                 Notes = model.Notes,                                 // Notes 
                 PatientCondition = model.PatientCondition            // Patient Condition
             };
+
+            // Update the current quantity for the donation period
             var currentQuantity = await _context.BloodDonationPeriods
                 .Where(p => p.PeriodId == model.PeriodId)
                 .Select(p => p.CurrentQuantity)
                 .FirstOrDefaultAsync(); // Get the current quantity for the period
             currentQuantity = (currentQuantity ?? 0) + 1; // Increment the current quantity by 1
+             _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
@@ -141,13 +136,11 @@ namespace Blood_Donation_Support.Controllers
                 await _context.SaveChangesAsync();  // Save changes to the database
                 await transaction.CommitAsync();    // Commit the transaction
 
-                return Ok(new // Return 200 OK with the created donation request
+                return CreatedAtAction(nameof(GetDonationRequest), new { id = donationRequest.DonationId }, new // Return 201 Created with the created donation request
                 {
                     donationRequest.DonationId,
                     donationRequest.MemberId,
                     donationRequest.PeriodId,
-                    donationRequest.Period.PeriodName,
-                    donationRequest.Period.Hospital.Address,
                     donationRequest.ComponentId,
                     donationRequest.PreferredDonationDate,
                     donationRequest.ResponsibleById,
@@ -267,6 +260,87 @@ namespace Blood_Donation_Support.Controllers
                 throw;
             }
         }
+        // Reject donation request by id
+        // PATCH: api/DonationRequest/{id}/cancel
+        [HttpPatch("{id}/reject")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> RejectDonationRequest(int id)
+        {
+
+            var roleName = User.FindFirst(ClaimTypes.Role); // Get the role of the user
+            var name = User.FindFirst(ClaimTypes.Name)?.Value; // Get the name of the user
+
+            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
+            if (existingRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+
+            existingRequest.RejectedDate = DateTime.Now;    // Set the cancellation date
+            existingRequest.Status = "Rejected";            // Update the status to "Cancelled"
+            existingRequest.Notes = $"Rejected By {roleName} {name}"; // Add a note indicating cancellation by the user
+            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
+
+            var currentQuantity = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == existingRequest.PeriodId)
+                .Select(p => p.CurrentQuantity)
+                .FirstOrDefaultAsync(); // Get the current quantity for the period
+            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+
+            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            try
+            {
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
+                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction 
+                throw;
+            }
+        }
+
+        // Cancel donation request by id
+        // PATCH: api/DonationRequest/{id}/cancel
+        [HttpPatch("{id}/cancel")]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> CancelDonationRequest(int id)
+        {
+            // Determine caller's role and id
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+
+            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
+            if (existingRequest == null)
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+
+            existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
+            existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
+            existingRequest.Notes = "Đã hủy bởi người dùng"; // Add a note indicating cancellation by the user
+            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
+
+            var currentQuantity = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == existingRequest.PeriodId)
+                .Select(p => p.CurrentQuantity)
+                .FirstOrDefaultAsync(); // Get the current quantity for the period
+            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+
+            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            try
+            {
+                await _context.SaveChangesAsync();  // Save changes to the database
+                await transaction.CommitAsync();    // Commit the transaction
+                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction 
+                throw;
+            }
+        }
+
+        //---Quý Coding Support---
 
         // Cập nhật donation request (sắp tới) theo role
         // GET: api/DonationRequest/upcoming/all-role
@@ -283,7 +357,7 @@ namespace Blood_Donation_Support.Controllers
                 // member chỉ được xem lịch của chính mình
                 memberId = currentUserId;
             }
-            
+
             // Kiểm tra member có lịch hẹn sắp tới chưa
             var today = DateOnly.FromDateTime(DateTime.Today);
 
@@ -322,88 +396,6 @@ namespace Blood_Donation_Support.Controllers
                        .ToList();
 
             return Ok(list);
-        }
-        // Reject donation request by id
-        // PATCH: api/DonationRequest/{id}/cancel
-        [HttpPatch("{id}/reject")]
-        [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> RejectDonationRequest(int id)
-        {
-
-            var roleName = User.FindFirst(ClaimTypes.Role); // Get the role of the user
-            var name = User.FindFirst(ClaimTypes.Name)?.Value; // Get the name of the user
-
-            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
-            if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-
-            existingRequest.RejectedDate = DateTime.Now;    // Set the cancellation date
-            existingRequest.Status = "Rejected";            // Update the status to "Cancelled"
-            existingRequest.Notes = $"Rejected By {roleName} {name}"; // Add a note indicating cancellation by the user
-
-            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
-
-            var currentQuantity = await _context.BloodDonationPeriods
-                .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
-
-            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
-            try
-            {
-                await _context.SaveChangesAsync();  // Save changes to the database
-                await transaction.CommitAsync();    // Commit the transaction
-                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                await transaction.RollbackAsync(); // Rollback the transaction 
-                throw;
-            }
-        }
-
-
-        // Cancel donation request by id
-        // PATCH: api/DonationRequest/{id}/cancel
-        [HttpPatch("{id}/cancel")]
-        [Authorize(Roles = "Member")]
-        public async Task<IActionResult> CancelDonationRequest(int id)
-        {
-            // Determine caller's role and id
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
-
-            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
-            if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-
-            existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
-            existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
-            existingRequest.Notes = "Đã hủy bởi người dùng"; // Add a note indicating cancellation by the user
-
-            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
-
-            var currentQuantity = await _context.BloodDonationPeriods
-                .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
-
-            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
-            try
-            {
-                await _context.SaveChangesAsync();  // Save changes to the database
-                await transaction.CommitAsync();    // Commit the transaction
-                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                await transaction.RollbackAsync(); // Rollback the transaction 
-                throw;
-            }
         }
 
     }

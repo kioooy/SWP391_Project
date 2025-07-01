@@ -23,15 +23,24 @@ namespace Blood_Donation_Support.Controllers
         // GET: api/BloodDistanceSearch/donors-nearby
         [HttpGet("donors-nearby")]
         [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> GetNearbyDonors([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radius)
+        public async Task<IActionResult> GetNearbyDonors([FromQuery] double radius)
         {
-            _logger.LogInformation("GetNearbyDonors called with latitude={Latitude}, longitude={Longitude}, radius={Radius} meters. Results count: {Count}", latitude, longitude, radius, 0); 
-            var center = new Point(longitude, latitude) { SRID = 4326 };
+            // Lấy vị trí trung tâm từ bệnh viện
+            var hospital = await _context.Hospitals.FirstOrDefaultAsync();
+            if (hospital?.Location == null)
+                return BadRequest("Không tìm thấy vị trí bệnh viện.");
+            var center = hospital.Location;
+            _logger.LogInformation("GetNearbyDonors called with hospital center, radius={Radius} meters. Results count: {Count}", radius, 0); 
             var donors = await _context.Members
-                .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius
-                    && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), DateTime.Now) >= 84))
+                .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius)
                 .Include(m => m.User)
                 .Include(m => m.BloodType)
+                .ToListAsync();
+
+            // Lọc tiếp trên C# với điều kiện ngày phục hồi
+            var filteredDonors = donors
+                .Where(m => m.LastDonationDate == null ||
+                            (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84)
                 .Select(m => new {
                     m.UserId,
                     m.User.FullName,
@@ -45,19 +54,23 @@ namespace Blood_Donation_Support.Controllers
                     m.Weight,
                     m.Height
                 })
-                .ToListAsync();
-            _logger.LogInformation("GetNearbyDonors returned {Count} results", donors.Count);
-            return Ok(donors);
+                .ToList();
+            _logger.LogInformation("GetNearbyDonors returned {Count} results", filteredDonors.Count);
+            return Ok(filteredDonors);
         }
 
         // Tìm kiếm người cần máu theo khoảng cách (Recipient)
         // GET: api/BloodDistanceSearch/recipients-nearby
         [HttpGet("recipients-nearby")]
         [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> GetNearbyRecipients([FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] double radius)
+        public async Task<IActionResult> GetNearbyRecipients([FromQuery] double radius)
         {
-            _logger.LogInformation("GetNearbyRecipients called with latitude={Latitude}, longitude={Longitude}, radius={Radius} meters. Results count: {Count}", latitude, longitude, radius, 0); 
-            var center = new Point(longitude, latitude) { SRID = 4326 };
+            // Lấy vị trí trung tâm từ bệnh viện
+            var hospital = await _context.Hospitals.FirstOrDefaultAsync();
+            if (hospital?.Location == null)
+                return BadRequest("Không tìm thấy vị trí bệnh viện.");
+            var center = hospital.Location;
+            _logger.LogInformation("GetNearbyRecipients called with hospital center, radius={Radius} meters. Results count: {Count}", radius, 0); 
             var recipients = await _context.Members
                 .Where(m => m.IsRecipient == true && m.Location != null && m.Location.Distance(center) <= radius)
                 .Include(m => m.User)

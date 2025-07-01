@@ -124,7 +124,8 @@ const BloodDonationPeriodManagement = () => {
         periodDateFrom: editedData.periodDateFrom.toISOString(),
         periodDateTo: editedData.periodDateTo.toISOString(),
         targetQuantity: parseInt(editedData.targetQuantity, 10),
-        imageUrl: editingPeriod.imageUrl
+        imageUrl: editingPeriod.imageUrl,
+        location: editedData.location
       };
 
       await axios.patch(`/api/BloodDonationPeriod/${editingPeriod.periodId}/details/admin,staff`, requestData, {

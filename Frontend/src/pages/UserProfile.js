@@ -467,7 +467,7 @@ const UserProfile = () => {
           <Chip
             icon={<CalendarToday />}
             label="Đã lên lịch"
-            color="primary"
+            color="success"
             size="small"
           />
         );

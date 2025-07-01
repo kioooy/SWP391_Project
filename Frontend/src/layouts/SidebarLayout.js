@@ -35,9 +35,9 @@ const SidebarLayout = () => {
     { path: "/manage-users", label: "Người dùng", icon: <GroupIcon /> },
   ];
 
-  // Nếu là Staff, ẩn một số mục chỉ dành cho Admin
+  // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods"].includes(item.path))
     : menuItems;
 
   return (

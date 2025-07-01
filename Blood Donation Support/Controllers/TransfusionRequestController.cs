@@ -38,7 +38,7 @@ namespace Blood_Donation_Support.Controllers
             var responsibleUser = await _context.Users.FindAsync(int.Parse(userId));
             if (responsibleUser == null)
             {
-                return Forbid("Authenticated user not found in the database.");
+                return Forbid("Authenticated user not found.");
             }
 
             // Nếu là recipient thì lấy MemberId từ user hiện tại

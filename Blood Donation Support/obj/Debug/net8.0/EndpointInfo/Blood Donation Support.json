@@ -1256,6 +1256,64 @@
         }
       }
     },
+    "/api/Certificate": {
+      "get": {
+        "tags": [
+          "Certificate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Certificate/{id}": {
+      "get": {
+        "tags": [
+          "Certificate"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Certificate/member/{memberId}": {
+      "get": {
+        "tags": [
+          "Certificate"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Dashboard/total-number": {
       "get": {
         "tags": [
@@ -1377,6 +1435,29 @@
       "get": {
         "tags": [
           "DonationAlert"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/{memberId}/history": {
+      "get": {
+        "tags": [
+          "DonationRequest"
         ],
         "parameters": [
           {
@@ -1643,6 +1724,98 @@
         }
       }
     },
+    "/api/Notification/GetUserNotifications/{userId}": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/MarkAsRead/{notificationId}": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/MarkAllAsRead/{userId}": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/CreateRecoveryReminder/{userId}": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Reservations": {
       "post": {
         "tags": [
@@ -1652,17 +1825,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReservationDto"
+                "$ref": "#/components/schemas/CreateReservationDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReservationDto"
+                "$ref": "#/components/schemas/CreateReservationDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReservationDto"
+                "$ref": "#/components/schemas/CreateReservationDTO"
               }
             }
           }
@@ -1673,17 +1846,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReservationDto"
+                  "$ref": "#/components/schemas/ReservationDTO"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReservationDto"
+                  "$ref": "#/components/schemas/ReservationDTO"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReservationDto"
+                  "$ref": "#/components/schemas/ReservationDTO"
                 }
               }
             }
@@ -1744,7 +1917,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReservationDto"
+                    "$ref": "#/components/schemas/ReservationDTO"
                   }
                 }
               },
@@ -1752,7 +1925,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReservationDto"
+                    "$ref": "#/components/schemas/ReservationDTO"
                   }
                 }
               },
@@ -1760,7 +1933,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReservationDto"
+                    "$ref": "#/components/schemas/ReservationDTO"
                   }
                 }
               }
@@ -2349,6 +2522,11 @@
         "additionalProperties": false
       },
       "ArticleCreateDTO": {
+        "required": [
+          "content",
+          "status",
+          "title"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -2356,14 +2534,18 @@
             "format": "int32"
           },
           "title": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "content": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "imageUrl": {
             "type": "string",
             "nullable": true
           }
@@ -2394,6 +2576,10 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2412,19 +2598,24 @@
         "additionalProperties": false
       },
       "ArticleUpdateDTO": {
+        "required": [
+          "content",
+          "status",
+          "title"
+        ],
         "type": "object",
         "properties": {
           "title": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "content": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -2448,6 +2639,11 @@
         "additionalProperties": false
       },
       "BlogCreateDTO": {
+        "required": [
+          "content",
+          "status",
+          "title"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -2455,18 +2651,18 @@
             "format": "int32"
           },
           "title": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "content": {
-            "type": "string",
-            "nullable": true
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "imageUrl": {
             "type": "string",
             "nullable": true
           }
@@ -2506,16 +2702,23 @@
         "additionalProperties": false
       },
       "BlogStatusDTO": {
+        "required": [
+          "status"
+        ],
         "type": "object",
         "properties": {
           "status": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "BlogUpdateDTO": {
+        "required": [
+          "content",
+          "status"
+        ],
         "type": "object",
         "properties": {
           "title": {
@@ -2523,14 +2726,14 @@
             "nullable": true
           },
           "content": {
-            "type": "string",
-            "nullable": true
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "imageUrl": {
             "type": "string",
             "nullable": true
           }
@@ -2662,7 +2865,6 @@
       },
       "CreateBloodDonationPeriodDTO": {
         "required": [
-          "location",
           "periodDateFrom",
           "periodDateTo",
           "periodName",
@@ -2673,11 +2875,6 @@
         "properties": {
           "periodName": {
             "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "location": {
-            "maxLength": 255,
             "minLength": 0,
             "type": "string"
           },
@@ -2740,11 +2937,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "approvalDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
           "donationVolume": {
             "type": "integer",
             "format": "int32"
@@ -2760,7 +2952,7 @@
         },
         "additionalProperties": false
       },
-      "CreateReservationDto": {
+      "CreateReservationDTO": {
         "required": [
           "bloodUnitId",
           "expireAt",
@@ -3084,7 +3276,7 @@
         },
         "additionalProperties": false
       },
-      "ReservationDto": {
+      "ReservationDTO": {
         "type": "object",
         "properties": {
           "reservationId": {
@@ -3143,7 +3335,6 @@
       },
       "StaffUpdateBloodDonationPeriodDTO": {
         "required": [
-          "location",
           "periodDateFrom",
           "periodDateTo",
           "periodName",
@@ -3153,11 +3344,6 @@
         "properties": {
           "periodName": {
             "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "location": {
-            "maxLength": 255,
             "minLength": 0,
             "type": "string"
           },

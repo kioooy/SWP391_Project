@@ -738,6 +738,48 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.CertificateController",
+    "Method": "GetAllCertificates",
+    "RelativePath": "api/Certificate",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.CertificateController",
+    "Method": "GetCertificateById",
+    "RelativePath": "api/Certificate/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.CertificateController",
+    "Method": "GetCertificatesByMember",
+    "RelativePath": "api/Certificate/member/{memberId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
     "Method": "GetBloodInventoryStats",
     "RelativePath": "api/Dashboard/blood-inventory",
@@ -943,6 +985,22 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
+    "Method": "GetDonationRequestHistory",
+    "RelativePath": "api/DonationRequest/{memberId}/history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "memberId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.DonationRequestController",
     "Method": "GetUpcomingDonationRequests",
     "RelativePath": "api/DonationRequest/upcoming/all-role",
     "HttpMethod": "GET",
@@ -989,6 +1047,70 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.NotificationController",
+    "Method": "CreateRecoveryReminder",
+    "RelativePath": "api/Notification/CreateRecoveryReminder/{userId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.NotificationController",
+    "Method": "GetUserNotifications",
+    "RelativePath": "api/Notification/GetUserNotifications/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.NotificationController",
+    "Method": "MarkAllAsRead",
+    "RelativePath": "api/Notification/MarkAllAsRead/{userId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.NotificationController",
+    "Method": "MarkAsRead",
+    "RelativePath": "api/Notification/MarkAsRead/{notificationId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "notificationId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.ReservationsController",
     "Method": "CreateReservation",
     "RelativePath": "api/Reservations",
@@ -998,13 +1120,13 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "Blood_Donation_Support.DTO.CreateReservationDto",
+        "Type": "Blood_Donation_Support.DTO.CreateReservationDTO",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "Blood_Donation_Support.DTO.ReservationDto",
+        "Type": "Blood_Donation_Support.DTO.ReservationDTO",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1051,7 +1173,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.ReservationDto, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.ReservationDTO, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

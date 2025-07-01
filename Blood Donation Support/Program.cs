@@ -77,6 +77,9 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Đăng ký IHttpClientFactory
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

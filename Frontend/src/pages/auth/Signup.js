@@ -579,61 +579,46 @@ const Signup = () => {
                 <Grid container spacing={2}>
                   {/* Tỉnh/Thành phố */}
                   <Grid item xs={12} md={6}>
-                    <FormControl
+                    <TextField
+                      select
                       fullWidth
+                      name="city"
+                      label="Tỉnh/Thành phố"
+                      value={formik.values.city}
+                      onChange={e => {
+                        formik.handleChange(e);
+                        formik.setFieldValue('district', '');
+                      }}
                       error={formik.touched.city && Boolean(formik.errors.city)}
+                      helperText={formik.touched.city && formik.errors.city}
                     >
-                      <InputLabel id="city-label">Tỉnh/Thành phố</InputLabel>
-                      <Select
-                        labelId="city-label"
-                        name="city"
-                        value={formik.values.city}
-                        onChange={(e) => {
-                          formik.handleChange(e);
-                          formik.setFieldValue('district', '');
-                        }}
-                        label="Tỉnh/Thành phố"
-                        displayEmpty
-                      >
-                        {cities.map((city) => (
-                          <MenuItem key={city} value={city}>
-                            {city}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {formik.touched.city && formik.errors.city && (
-                        <Typography color="error" variant="caption" sx={{ pl: 2 }}>
-                          {formik.errors.city}
-                        </Typography>
-                      )}
-                    </FormControl>
+                      {cities.map((city) => (
+                        <MenuItem key={city} value={city}>
+                          {city}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   </Grid>
 
                   {/* Quận/Huyện */}
                   <Grid item xs={12} md={6}>
-                    <FormControl fullWidth error={formik.touched.district && Boolean(formik.errors.district)}>
-                      <InputLabel id="district-label">Quận/Huyện</InputLabel>
-                      <Select
-                        labelId="district-label"
-                        name="district"
-                        value={formik.values.district}
-                        onChange={formik.handleChange}
-                        label="Quận/Huyện"
-                        disabled={!formik.values.city}
-                        displayEmpty
-                      >
-                        {(districts[formik.values.city] || []).map((district) => (
-                          <MenuItem key={district} value={district}>
-                            {district}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {formik.touched.district && formik.errors.district && (
-                        <Typography color="error" variant="caption" sx={{ pl: 2 }}>
-                          {formik.errors.district}
-                        </Typography>
-                      )}
-                    </FormControl>
+                    <TextField
+                      select
+                      fullWidth
+                      name="district"
+                      label="Quận/Huyện"
+                      value={formik.values.district}
+                      onChange={formik.handleChange}
+                      error={formik.touched.district && Boolean(formik.errors.district)}
+                      helperText={formik.touched.district && formik.errors.district}
+                      disabled={!formik.values.city}
+                    >
+                      {(districts[formik.values.city] || []).map((district) => (
+                        <MenuItem key={district} value={district}>
+                          {district}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   </Grid>
 
                   {/* Số nhà, tên đường */}

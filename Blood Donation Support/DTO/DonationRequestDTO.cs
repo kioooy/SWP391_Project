@@ -26,8 +26,8 @@ namespace Blood_Donation_Support.DTO
         [Required]
         public required int ResponsibleById { get; set; }
         [Required]
-        [RegularExpression("Pending|Approved|Rejected",
-            ErrorMessage = "Only Pending, Approved, Rejected.")]
+        [RegularExpression("Approved|Rejected|Cancelled",
+            ErrorMessage = "Only Approved, Rejected, Cancelled .")]
         public required string Status { get; set; }
         public string? Notes { get; set; }
     }

@@ -38,6 +38,4 @@ public partial class DonationRequest
     public virtual BloodDonationPeriod Period { get; set; } = null!;
 
     public virtual User ResponsibleBy { get; set; } = null!;
-
-    public virtual ICollection<Hospital> Hospital { get; set; } = new List<Hospital>();
 }

@@ -138,6 +138,8 @@ namespace Blood_Donation_Support.Controllers
                     tr.RequestDate,
                     tr.ApprovalDate,
                     tr.CompletionDate,
+                    tr.CancelledDate,
+                    tr.RejectedDate,
                     tr.Status,
                     tr.Notes,
                     tr.PatientCondition
@@ -173,6 +175,8 @@ namespace Blood_Donation_Support.Controllers
                     tr.RequestDate,
                     tr.ApprovalDate,
                     tr.CompletionDate,
+                    tr.CancelledDate,
+                    tr.RejectedDate,
                     tr.Status,
                     tr.Notes,
                     tr.PatientCondition

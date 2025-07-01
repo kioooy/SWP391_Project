@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Blood_Donation_Support.Data;
 using NetTopologySuite.Geometries;
+using System.Text;
+using System.Text.Json;
 
 namespace Blood_Donation_Support.Controllers;
 
@@ -10,10 +12,76 @@ namespace Blood_Donation_Support.Controllers;
 public class BloodSearchController : ControllerBase
 {
     private readonly BloodDonationSupportContext _context;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public BloodSearchController(BloodDonationSupportContext context)
+    public BloodSearchController(BloodDonationSupportContext context, IHttpClientFactory httpClientFactory)
     {
         _context = context;
+        _httpClientFactory = httpClientFactory;
+    }
+
+    private async Task<List<object>> FindAndRankDonors(int recipientBloodTypeId, Point hospitalPoint)
+    {
+        var now = DateTime.Now;
+        var restPeriod = TimeSpan.FromDays(84); // 12 tuần
+        
+        var compatibleBloodTypeIds = await _context.BloodCompatibilityRules
+            .Where(r => r.BloodRecieveId == recipientBloodTypeId && r.IsCompatible)
+            .Select(r => r.BloodGiveId)
+            .ToListAsync();
+
+        var donorsFromDb = await _context.Members
+            .Include(m => m.User)
+            .Where(m => m.IsDonor == true 
+                        && m.BloodTypeId.HasValue
+                        && compatibleBloodTypeIds.Contains(m.BloodTypeId.Value)
+                        && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84))
+            .Select(m => new
+            {
+                m.UserId,
+                m.User.FullName,
+                m.BloodTypeId,
+                m.Weight,
+                m.Height,
+                m.LastDonationDate,
+                m.IsDonor,
+                m.IsRecipient,
+                m.DonationCount,
+                m.Location
+            })
+            .ToListAsync();
+
+        var suggestedDonors = donorsFromDb
+            .Select(m =>
+            {
+                double? distance = null;
+                if (m.Location != null && hospitalPoint != null)
+                {
+                    double calculatedDistance = m.Location.Distance(hospitalPoint) * 111;
+                    if (!double.IsNaN(calculatedDistance) && !double.IsInfinity(calculatedDistance) && calculatedDistance >= 0 && calculatedDistance < 1e6)
+                    {
+                        distance = calculatedDistance;
+                    }
+                }
+                return new
+                {
+                    m.UserId,
+                    m.FullName,
+                    m.BloodTypeId,
+                    m.Weight,
+                    m.Height,
+                    m.LastDonationDate,
+                    m.IsDonor,
+                    m.IsRecipient,
+                    m.DonationCount,
+                    DistanceToHospital = distance
+                };
+            })
+            .Where(d => d.DistanceToHospital == null || (d.DistanceToHospital >= 0 && !double.IsNaN(d.DistanceToHospital.Value) && !double.IsInfinity(d.DistanceToHospital.Value)))
+            .OrderBy(d => d.DistanceToHospital)
+            .ToList<object>();
+
+        return suggestedDonors;
     }
 
     [HttpGet("search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}")]
@@ -23,17 +91,12 @@ public class BloodSearchController : ControllerBase
     {
         try
         {
-            // Lấy vị trí bệnh viện từ database
             var hospital = await _context.Hospitals.FirstOrDefaultAsync();
             if (hospital?.Location == null)
             {
                 return BadRequest(new { error = "Không tìm thấy thông tin vị trí bệnh viện" });
             }
-
-            var hospitalLatitude = hospital.Location.Y;
-            var hospitalLongitude = hospital.Location.X;
-
-            // 1. Tìm máu phù hợp trong kho
+            
             var availableBloodUnits = await _context.BloodUnits
                 .Where(bu => bu.BloodTypeId == recipientBloodTypeId
                           && bu.BloodStatus == "Available"
@@ -51,68 +114,13 @@ public class BloodSearchController : ControllerBase
 
             if (availableBloodUnits.Any())
             {
-                // Nếu có máu phù hợp, chỉ trả về máu phù hợp
                 return Ok(new {
                     availableBloodUnits,
                     suggestedDonors = new object[0]
                 });
             }
-
-            // 2. Nếu không có máu phù hợp, tìm người hiến máu phù hợp
-            var hospitalPoint = hospital.Location;
-
-            var now = DateTime.Now;
-            var restPeriod = TimeSpan.FromDays(84); // 12 tuần
-            // Lấy danh sách người hiến máu phù hợp từ DB
-            var donorsFromDb = await _context.Members
-                .Include(m => m.User)
-                .Where(m => m.IsDonor == true && m.BloodTypeId == recipientBloodTypeId
-                    && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84))
-                .Select(m => new
-                {
-                    m.UserId,
-                    m.User.FullName,
-                    m.BloodTypeId,
-                    m.Weight,
-                    m.Height,
-                    m.LastDonationDate,
-                    m.IsDonor,
-                    m.IsRecipient,
-                    m.DonationCount,
-                    m.Location
-                })
-                .ToListAsync();
-
-            // Tính toán khoảng cách và tạo danh sách gợi ý
-            var suggestedDonors = donorsFromDb
-                .Select(m =>
-                {
-                    double? distance = null;
-                    if (m.Location != null)
-                    {
-                        double calculatedDistance = m.Location.Distance(hospitalPoint) * 111;
-                        if (!double.IsNaN(calculatedDistance) && !double.IsInfinity(calculatedDistance) && calculatedDistance >= 0 && calculatedDistance < 1e6)
-                        {
-                            distance = calculatedDistance;
-                        }
-                    }
-                    return new
-                    {
-                        m.UserId,
-                        m.FullName,
-                        m.BloodTypeId,
-                        m.Weight,
-                        m.Height,
-                        m.LastDonationDate,
-                        m.IsDonor,
-                        m.IsRecipient,
-                        m.DonationCount,
-                        DistanceToHospital = distance
-                    };
-                })
-                .Where(d => d.DistanceToHospital == null || (d.DistanceToHospital >= 0 && !double.IsNaN(d.DistanceToHospital.Value) && !double.IsInfinity(d.DistanceToHospital.Value)))
-                .OrderBy(d => d.DistanceToHospital)
-                .ToList();
+            
+            var suggestedDonors = await FindAndRankDonors(recipientBloodTypeId, hospital.Location);
 
             return Ok(new {
                 availableBloodUnits = new object[0],
@@ -133,20 +141,48 @@ public class BloodSearchController : ControllerBase
     {
         try
         {
-            // Lấy vị trí bệnh viện từ database
             var hospital = await _context.Hospitals.FirstOrDefaultAsync();
             if (hospital?.Location == null)
             {
                 return BadRequest(new { error = "Không tìm thấy thông tin vị trí bệnh viện" });
             }
 
-            var hospitalLatitude = hospital.Location.Y;
-            var hospitalLongitude = hospital.Location.X;
+            var donors = await FindAndRankDonors(recipientBloodTypeId, hospital.Location);
 
-            // Logic gửi thông báo cho người hiến được chuyển trực tiếp vào đây
-            // (Có thể copy/paste logic từ RequestDonorsLogic cũ, nhưng chỉ dùng hospitalLatitude, hospitalLongitude)
-            // ...
-            return Ok(new { message = "Đã chuyển logic gửi thông báo trực tiếp vào API này. Vui lòng bổ sung logic chi tiết nếu cần." });
+            var client = _httpClientFactory.CreateClient();
+            var notificationUrl = $"{Request.Scheme}://{Request.Host}/api/Notification/CreateUrgentDonationRequest";
+            
+            int notifiedCount = 0;
+            foreach (var donor in donors)
+            {
+                try
+                {
+                    // Dùng reflection để lấy UserId vì kiểu dữ liệu của donor là object
+                    var userId = (int)donor.GetType().GetProperty("UserId").GetValue(donor, null);
+
+                    var notificationDto = new
+                    {
+                        UserId = userId,
+                        Message = request.Message
+                    };
+                    
+                    var jsonContent = new StringContent(JsonSerializer.Serialize(notificationDto), Encoding.UTF8, "application/json");
+                    
+                    var response = await client.PostAsync(notificationUrl, jsonContent);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        notifiedCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Ghi lại log lỗi gửi thông báo cho 1 người dùng cụ thể mà không làm gián đoạn toàn bộ quá trình
+                    Console.WriteLine($"Error notifying donor: {ex.Message}");
+                }
+            }
+
+            return Ok(new { message = $"Đã gửi thông báo đến {notifiedCount} người hiến máu phù hợp." });
         }
         catch (Exception ex)
         {

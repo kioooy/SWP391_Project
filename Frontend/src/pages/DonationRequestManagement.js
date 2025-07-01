@@ -82,47 +82,28 @@ const DonationRequestManagement = () => {
     setNotes('');
   };
 
-  const handleConfirmAction = async () => {
+  const handleRejectRequest = async () => {
     if (!selectedRequest || !user) return;
-
-    const newStatus = actionType === 'Approve' ? 'Approved' : 'Rejected';
-    const responsibleById = user.userId;
-
-    // Nếu duyệt và chưa có ghi chú, tự động thêm tên staff/admin
-    let autoNote = notes;
-    if (actionType === 'Approve' && !notes.trim()) {
-      autoNote = `Đã duyệt bởi ${user.fullName || user.username || 'Staff/Admin'}`;
+    if (!notes.trim()) {
+      setSnackbar({ open: true, message: 'Vui lòng nhập lý do từ chối!', severity: 'error' });
+      return;
     }
-    const payload = {
-      Status: newStatus,
-      Notes: autoNote,
-      ResponsibleById: responsibleById,
-      MemberId: selectedRequest.memberId, // Cần memberId để backend xác thực
-    };
-
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/update-status`, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/reject?note=${encodeURIComponent(notes)}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Update the request in the local state
       setRequests(
         requests.map((req) =>
           req.donationId === selectedRequest.donationId
-            ? { ...req, status: newStatus, notes: autoNote, responsibleById: responsibleById }
+            ? { ...req, status: 'Rejected', notes: notes }
             : req
         )
       );
-
       handleCloseDialog();
-      setSnackbar({ open: true, message: `Yêu cầu đã được ${newStatus === 'Approved' ? 'duyệt' : 'từ chối'}.`, severity: 'success' });
+      setSnackbar({ open: true, message: 'Yêu cầu đã bị từ chối.', severity: 'success' });
     } catch (error) {
-      console.error('Error updating status:', error);
-      setSnackbar({ open: true, message: 'Cập nhật trạng thái thất bại!', severity: 'error' });
+      setSnackbar({ open: true, message: 'Từ chối yêu cầu thất bại!', severity: 'error' });
     }
   };
 
@@ -387,9 +368,15 @@ const DonationRequestManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Hủy</Button>
-          <Button onClick={handleConfirmAction} variant="contained">
-            Xác nhận
-          </Button>
+          {actionType === 'Reject' ? (
+            <Button onClick={handleRejectRequest} variant="contained" color="error">
+              Từ chối
+            </Button>
+          ) : (
+            <Button onClick={handleCloseDialog} variant="contained">
+              Xác nhận
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

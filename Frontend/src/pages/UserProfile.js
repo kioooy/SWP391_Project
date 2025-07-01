@@ -211,7 +211,7 @@ const UserProfile = () => {
         if (!token) return;
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
         // Lấy lịch sử hiến máu đã hoàn thành từ endpoint mới
-        const res = await axios.get(`${apiUrl}/DonationRequest/history/completed`, {
+        const res = await axios.get(`${apiUrl}/DonationRequest/history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCompletedDonationHistory(res.data || []);

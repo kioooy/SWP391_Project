@@ -1465,8 +1465,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -1541,48 +1540,6 @@
         }
       }
     },
-    "/api/DonationRequest/{id}/update-status": {
-      "patch": {
-        "tags": [
-          "DonationRequest"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
     "/api/DonationRequest/{id}/update-completed": {
       "patch": {
         "tags": [
@@ -1625,18 +1582,26 @@
         }
       }
     },
-    "/api/DonationRequest/upcoming/all-role": {
-      "get": {
+    "/api/DonationRequest/{id}/reject": {
+      "patch": {
         "tags": [
           "DonationRequest"
         ],
         "parameters": [
           {
-            "name": "memberId",
-            "in": "query",
+            "name": "id",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "note",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1657,6 +1622,28 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/upcoming/all-role": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "query",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -1786,6 +1773,37 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/CreateUrgentDonationRequest": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrgentDonationRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrgentDonationRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrgentDonationRequestDTO"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -3413,29 +3431,6 @@
         },
         "additionalProperties": false
       },
-      "UpdateStatusDonationRequest": {
-        "required": [
-          "responsibleById",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "responsibleById": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "status": {
-            "minLength": 1,
-            "pattern": "Pending|Approved|Rejected",
-            "type": "string"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "UpdateUser": {
         "required": [
           "address",
@@ -3512,6 +3507,20 @@
           },
           "isRecipient": {
             "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UrgentDonationRequestDTO": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string",
             "nullable": true
           }
         },

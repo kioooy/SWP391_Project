@@ -20,44 +20,43 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // get donation request history by id (Member View)
-        // api/DonationRequest/{id}
+        // api/DonationRequest/{memberId}/history
         [HttpGet("{memberId}/history")]
         [Authorize(Roles = "Member,Admin")] 
         public async Task<IActionResult> GetDonationRequestHistory()
         {
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
-            var donationRequest = await _context.DonationRequests
-                .Include(dr => dr.Member)
-                    .ThenInclude(m => m.User)
-                .Include(dr => dr.Member.BloodType)
-                .Include(dr => dr.Period)
-                    .ThenInclude(p => p.Hospital)
-                .Include(dr => dr.Component)
-                .Include(dr => dr.ResponsibleBy)
-                .FirstOrDefaultAsync(dr => dr.MemberId == currentUserId);
-
+            var donationRequest = await _context.DonationRequests.FirstOrDefaultAsync(dr => dr.MemberId == currentUserId);
             if (donationRequest == null)
                 return NotFound(); // Return 404 if not found
-                        
-            return Ok(new
+            
+            return Ok( await _context.DonationRequests
+                .Where(dr => dr.MemberId == currentUserId)
+                .Include(dr => dr.Member)
+                    .ThenInclude(m => m.User)
+                .Include(dr => dr.Period)
+                .Include(dr => dr.Component)
+                .Include(dr => dr.ResponsibleBy)  
+                .Select(dr => new
             {
-                donationRequest.Member.User.FullName,           // FullName from User
-                donationRequest.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
-                donationRequest.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
-                donationRequest.Period.PeriodName,              // Period Name
-                donationRequest.Period.Hospital.Address,        // Period Address
-                donationRequest.Component.ComponentName,        // Component Name
-                donationRequest.PreferredDonationDate,          // Preferred Donation Date
-                ResponsibleBy = donationRequest.ResponsibleBy.FullName, // Responsible By Full Name
-                donationRequest.DonationVolume,                 // Donation Volume
-                donationRequest.Notes,                          // Notes 
-                donationRequest.Status,                         // Status of the donation request
-                donationRequest.RequestDate,                    // Request Date
-                donationRequest.CompletionDate,                 // Completion Date
-                donationRequest.CancelledDate,                  // Cancelled Date
-                donationRequest.RejectedDate,                   // Rejected Date
-            });
+                dr.Member.User.FullName,                   // FullName from User
+                dr.Member.User.CitizenNumber,              // CitizenNumber from User instead of UserId
+                dr.Member.BloodType.BloodTypeName,         // BloodTypeName from BloodType
+                dr.Period.PeriodName,                      // Period Name
+                dr.Period.Hospital.Address,                // Period Address
+                dr.Component.ComponentName,                // Component Name
+                dr.PreferredDonationDate,                  // Preferred Donation Date
+                ResponsibleBy = dr.ResponsibleBy.FullName, // Responsible By Full Name
+                dr.DonationVolume,                         // Donation Volume
+                dr.Notes,                                  // Notes 
+                dr.Status,                                 // Status of the donation request
+                dr.RequestDate,                            // Request Date
+                dr.CompletionDate,                         // Completion Date
+                dr.CancelledDate,                          // Cancelled Date
+                dr.RejectedDate,                           // Rejected Date
+            })
+            .ToListAsync());
         }
 
         // get donation request by id
@@ -69,31 +68,42 @@ namespace Blood_Donation_Support.Controllers
             var donationRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
             if (donationRequest == null)
                 return NotFound(); // Return 404 if not found
-            
-            return Ok( new { 
-                donationRequest.DonationId,                     // Donation Id                    
-                donationRequest.MemberId,                       // Member Id (UserId of role the member)
-                donationRequest.Member.User.FullName,           // FullName from User
-                donationRequest.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
-                donationRequest.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
-                donationRequest.PeriodId,                       // Period Id
-                donationRequest.Period.PeriodName,              // Period Name
-                donationRequest.Period.Hospital.Address,        // Period Address
-                donationRequest.ComponentId,                    // Component Id
-                donationRequest.PreferredDonationDate,          // Preferred Donation Date
-                donationRequest.ResponsibleById,                // Responsible By Id (staff responsible)
-                donationRequest.DonationVolume,                 // Donation Volume
-                donationRequest.Notes,                          // Notes 
-                donationRequest.Status,                         // Status of the donation request
-                donationRequest.RequestDate,                    // Request Date
-                donationRequest.CompletionDate,                 // Completion Date
-                donationRequest.CancelledDate,                  // Cancelled Date
-                donationRequest.RejectedDate,                   // Rejected Date
-            });
+
+            return Ok(await _context.DonationRequests
+                .Where(dr => dr.MemberId == id)
+                .Include(dr => dr.Member)
+                    .ThenInclude(m => m.User)
+                .Include(dr => dr.Period)
+                .Include(dr => dr.Component)
+                .Include(dr => dr.ResponsibleBy)
+                .Select(dr => new
+                {
+                    dr.DonationId,                             // Donation Id                    
+                    dr.MemberId,                               // Member Id (UserId of role the member)
+                    dr.Member.User.FullName,                   // FullName from User
+                    dr.Member.User.CitizenNumber,              // CitizenNumber from User instead of UserId
+                    dr.Member.BloodType.BloodTypeName,         // BloodTypeName from BloodType
+                    dr.PeriodId,                               // Period Id
+                    dr.Period.PeriodName,                      // Period Name
+                    dr.Period.Hospital.Address,                // Period Address
+                    dr.ComponentId,                            // Component Id
+                    dr.Component.ComponentName,                // Component Name
+                    dr.PreferredDonationDate,                  // Preferred Donation Date
+                    dr.ResponsibleById,                        // Responsible By Id (staff responsible)
+                    ResponsibleBy = dr.ResponsibleBy.FullName, // Responsible By Full Name
+                    dr.DonationVolume,                         // Donation Volume
+                    dr.Notes,                                  // Notes 
+                    dr.Status,                                 // Status of the donation request
+                    dr.RequestDate,                            // Request Date
+                    dr.CompletionDate,                         // Completion Date
+                    dr.CancelledDate,                          // Cancelled Date
+                    dr.RejectedDate,                           // Rejected Date                
+                })
+                .ToListAsync());
         }
 
-        // get all donation requests (Custom View)
-        // GET: api/DonationRequest/all
+        // get all donation requests
+        // GET: api/DonationRequest/
         [HttpGet]
         [Authorize(Roles = "Staff,Admin")] // Staff and Admin roles can view all donation requests
         public async Task<IActionResult> GetAllDonationRequests()
@@ -102,26 +112,30 @@ namespace Blood_Donation_Support.Controllers
                 .Include(dr => dr.Member)
                     .ThenInclude(m => m.User)
                 .Include(dr => dr.Period)
+                .Include(dr => dr.Component)
+                .Include(dr => dr.ResponsibleBy)
                 .Select(dr => new
                 {
-                    dr.DonationId,                     // Donation Id                    
-                    dr.MemberId,                       // Member Id (UserId of role the member)
-                    dr.Member.User.FullName,           // FullName from User
-                    dr.Member.User.CitizenNumber,      // CitizenNumber from User instead of UserId
-                    dr.Member.BloodType.BloodTypeName, // BloodTypeName from BloodType
-                    dr.PeriodId,                       // Period Id
-                    dr.Period.PeriodName,              // Period Name
-                    dr.Period.Hospital.Address,        // Period Address
-                    dr.ComponentId,                    // Component Id
-                    dr.PreferredDonationDate,          // Preferred Donation Date
-                    dr.ResponsibleById,                // Responsible By Id (staff responsible)
-                    dr.DonationVolume,                 // Donation Volume
-                    dr.Notes,                          // Notes 
-                    dr.Status,                         // Status of the donation request
-                    dr.RequestDate,                    // Request Date
-                    dr.CompletionDate,                 // Completion Date
-                    dr.CancelledDate,                  // Cancelled Date
-                    dr.RejectedDate,                   // Rejected Date
+                    dr.DonationId,                             // Donation Id                    
+                    dr.MemberId,                               // Member Id (UserId of role the member)
+                    dr.Member.User.FullName,                   // FullName from User
+                    dr.Member.User.CitizenNumber,              // CitizenNumber from User instead of UserId
+                    dr.Member.BloodType.BloodTypeName,         // BloodTypeName from BloodType
+                    dr.PeriodId,                               // Period Id
+                    dr.Period.PeriodName,                      // Period Name
+                    dr.Period.Hospital.Address,                // Period Address
+                    dr.ComponentId,                            // Component Id
+                    dr.Component.ComponentName,                // Component Name
+                    dr.PreferredDonationDate,                  // Preferred Donation Date
+                    dr.ResponsibleById,                        // Responsible By Id (staff responsible)
+                    ResponsibleBy = dr.ResponsibleBy.FullName, // Responsible By Full Name
+                    dr.DonationVolume,                         // Donation Volume
+                    dr.Notes,                                  // Notes 
+                    dr.Status,                                 // Status of the donation request
+                    dr.RequestDate,                            // Request Date
+                    dr.CompletionDate,                         // Completion Date
+                    dr.CancelledDate,                          // Cancelled Date
+                    dr.RejectedDate,                           // Rejected Date                
                 })
                 .ToListAsync();
 
@@ -273,7 +287,7 @@ namespace Blood_Donation_Support.Controllers
         // PATCH: api/DonationRequest/{id}/cancel
         [HttpPatch("{id}/reject")]
         [Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> RejectDonationRequest(int id)
+        public async Task<IActionResult> RejectDonationRequest(int id, string note)
         {
             // Determine caller's role and id
             var roleName = User.FindFirst(ClaimTypes.Role)?.Value; // Get the role of the user
@@ -289,7 +303,7 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.ResponsibleById = currentUserId; // Current Staff responsible for the request
             existingRequest.RejectedDate = DateTime.Now;    // Set the cancellation date
             existingRequest.Status = "Rejected";            // Update the status to "Cancelled"
-            existingRequest.Notes = $"Rejected By {roleName} {name}"; // Add a note indicating cancellation by the user
+            existingRequest.Notes = $"Lý do từ chối của bác sĩ phụ trách {name}: {note}"; // Add a note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
             var currentQuantity = await _context.BloodDonationPeriods
@@ -333,7 +347,7 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.ResponsibleById = currentUserId; // Staff responsible for the request
             existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
             existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
-            existingRequest.Notes = $"Delete by {existingRequest.Member.User.FullName}"; // Add a note indicating cancellation by the user
+            existingRequest.Notes = $"Hủy Lịch";             // Custom Note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
             var currentQuantity = await _context.BloodDonationPeriods

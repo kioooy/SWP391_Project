@@ -156,6 +156,21 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound(); // Return 404 Not Found if member not found
 
+            // Kiểm tra member vừa truyền máu xong hoặc đang trong thời gian hồi phục
+            var lastTransfusion = await _context.TransfusionRequests
+                .Where(tr => tr.MemberId == member.UserId && tr.Status == "Completed")
+                .OrderByDescending(tr => tr.CompletionDate)
+                .FirstOrDefaultAsync();
+
+            if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
+            {
+                var daysSinceTransfusion = (DateTime.UtcNow - lastTransfusion.CompletionDate.Value).TotalDays;
+                if (daysSinceTransfusion < 180)
+                {
+                    return BadRequest("Bạn vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 180 ngày.");
+                }
+            }
+
             // Check if the member has an upcoming donation request
             var today = DateOnly.FromDateTime(DateTime.Today);
             var hasUpcoming = await _context.DonationRequests

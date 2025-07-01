@@ -164,7 +164,7 @@ namespace Blood_Donation_Support.Controllers
                          (dr.Status == "Pending" || dr.Status == "Approved") &&
                          ((dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) || dr.Period.PeriodDateFrom >= DateTime.Today));
             if (hasUpcoming)
-                    return BadRequest("You Have Upcomming Donation Period. You Can't Booking New Period");
+                return BadRequest("Bạn đang có lịch hiến máu. Vui lòng hoàn thành hoặc hủy lịch trước khi đặt lịch mới!");
             
             // Add new donation request
             var donationRequest = new DonationRequest
@@ -182,12 +182,12 @@ namespace Blood_Donation_Support.Controllers
             };
 
             // Update the current quantity for the donation period
-            var currentQuantity = await _context.BloodDonationPeriods
-                .Where(p => p.PeriodId == model.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) + 1; // Increment the current quantity by 1
-             _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+            var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == model.PeriodId);
+            if (period != null)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1;
+                _context.Entry(period).State = EntityState.Modified;
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try 
@@ -341,21 +341,21 @@ namespace Blood_Donation_Support.Controllers
             var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-            if (existingRequest.ResponsibleById != currentUserId)
-                return BadRequest("You are not authorized to cancel this request."); // Return 400 Bad Request if the user is not authorized
+            if (existingRequest.MemberId != currentUserId)
+                return BadRequest("You are not authorized to cancel this request."); // Chỉ cho phép member hủy lịch của chính mình
 
-            existingRequest.ResponsibleById = currentUserId; // Staff responsible for the request
             existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
             existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
             existingRequest.Notes = $"Hủy Lịch";             // Custom Note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            var currentQuantity = await _context.BloodDonationPeriods
-                .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+            // Cập nhật số lượng hiện tại của đợt hiến máu
+            var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == existingRequest.PeriodId);
+            if (period != null)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1;
+                _context.Entry(period).State = EntityState.Modified;
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try

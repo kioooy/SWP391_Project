@@ -61,7 +61,7 @@ const cities = [
   'Lào Cai', 'Long An', 'Nam Định', 'Nghệ An', 'Ninh Bình', 'Ninh Thuận',
   'Phú Thọ', 'Phú Yên', 'Quảng Bình', 'Quảng Nam', 'Quảng Ngãi', 'Quảng Ninh',
   'Quảng Trị', 'Sóc Trăng', 'Sơn La', 'Tây Ninh', 'Thái Bình', 'Thái Nguyên',
-  'Thanh Hóa', 'Thừa Thiên Huế', 'Tiền Giang', 'TP Hồ Chí Minh', 'Trà Vinh',
+  'Thừa Thiên Huế', 'Tiền Giang', 'TP Hồ Chí Minh', 'Trà Vinh',
   'Tuyên Quang', 'Vĩnh Long', 'Vĩnh Phúc', 'Yên Bái'
 ];
 
@@ -578,9 +578,12 @@ const Signup = () => {
 
                 <Grid container spacing={2}>
                   {/* Tỉnh/Thành phố */}
-                  <Grid item xs={12}>
-                    <FormControl fullWidth variant="outlined">
-                      <InputLabel shrink={true}>Tỉnh/Thành phố</InputLabel>
+                  <Grid item xs={12} md={6}>
+                    <FormControl
+                      fullWidth
+                      error={formik.touched.city && Boolean(formik.errors.city)}
+                    >
+                      <InputLabel>Tỉnh/Thành phố</InputLabel>
                       <Select
                         name="city"
                         value={formik.values.city}
@@ -588,9 +591,14 @@ const Signup = () => {
                           formik.handleChange(e);
                           formik.setFieldValue('district', '');
                         }}
-                        error={formik.touched.city && Boolean(formik.errors.city)}
                         label="Tỉnh/Thành phố"
-                        variant="outlined"
+                        renderValue={(selected) => {
+                          if (!selected) {
+                            return <Typography sx={{ color: 'text.secondary' }}>Tỉnh/Thành phố</Typography>;
+                          }
+                          return selected;
+                        }}
+                        displayEmpty
                       >
                         {cities.map((city) => (
                           <MenuItem key={city} value={city}>
@@ -598,27 +606,43 @@ const Signup = () => {
                           </MenuItem>
                         ))}
                       </Select>
+                      {formik.touched.city && formik.errors.city && (
+                        <Typography color="error" variant="caption" sx={{ pl: 2 }}>
+                          {formik.errors.city}
+                        </Typography>
+                      )}
                     </FormControl>
                   </Grid>
 
                   {/* Quận/Huyện */}
-                  <Grid item xs={12}>
-                    <FormControl fullWidth variant="outlined" disabled={!formik.values.city}>
-                      <InputLabel shrink={true}>Quận/Huyện</InputLabel>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth error={formik.touched.district && Boolean(formik.errors.district)}>
+                      <InputLabel>Quận/Huyện</InputLabel>
                       <Select
                         name="district"
                         value={formik.values.district}
                         onChange={formik.handleChange}
-                        error={formik.touched.district && Boolean(formik.errors.district)}
                         label="Quận/Huyện"
-                        variant="outlined"
+                        disabled={!formik.values.city}
+                        renderValue={(selected) => {
+                          if (!selected) {
+                            return <Typography sx={{ color: 'text.secondary' }}>Quận/Huyện</Typography>;
+                          }
+                          return selected;
+                        }}
+                        displayEmpty
                       >
-                        {districts[formik.values.city]?.map((district) => (
+                        {(districts[formik.values.city] || []).map((district) => (
                           <MenuItem key={district} value={district}>
                             {district}
                           </MenuItem>
                         ))}
                       </Select>
+                      {formik.touched.district && formik.errors.district && (
+                        <Typography color="error" variant="caption" sx={{ pl: 2 }}>
+                          {formik.errors.district}
+                        </Typography>
+                      )}
                     </FormControl>
                   </Grid>
 

@@ -583,8 +583,9 @@ const Signup = () => {
                       fullWidth
                       error={formik.touched.city && Boolean(formik.errors.city)}
                     >
-                      <InputLabel>Tỉnh/Thành phố</InputLabel>
+                      <InputLabel id="city-label">Tỉnh/Thành phố</InputLabel>
                       <Select
+                        labelId="city-label"
                         name="city"
                         value={formik.values.city}
                         onChange={(e) => {
@@ -592,12 +593,6 @@ const Signup = () => {
                           formik.setFieldValue('district', '');
                         }}
                         label="Tỉnh/Thành phố"
-                        renderValue={(selected) => {
-                          if (!selected) {
-                            return <Typography sx={{ color: 'text.secondary' }}>Tỉnh/Thành phố</Typography>;
-                          }
-                          return selected;
-                        }}
                         displayEmpty
                       >
                         {cities.map((city) => (
@@ -617,19 +612,14 @@ const Signup = () => {
                   {/* Quận/Huyện */}
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth error={formik.touched.district && Boolean(formik.errors.district)}>
-                      <InputLabel>Quận/Huyện</InputLabel>
+                      <InputLabel id="district-label">Quận/Huyện</InputLabel>
                       <Select
+                        labelId="district-label"
                         name="district"
                         value={formik.values.district}
                         onChange={formik.handleChange}
                         label="Quận/Huyện"
                         disabled={!formik.values.city}
-                        renderValue={(selected) => {
-                          if (!selected) {
-                            return <Typography sx={{ color: 'text.secondary' }}>Quận/Huyện</Typography>;
-                          }
-                          return selected;
-                        }}
                         displayEmpty
                       >
                         {(districts[formik.values.city] || []).map((district) => (

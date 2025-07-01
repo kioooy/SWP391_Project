@@ -1,4 +1,7 @@
-﻿namespace Blood_Donation_Support.Model;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Blood_Donation_Support.Model;
 
 public partial class Notification
 {
@@ -13,6 +16,10 @@ public partial class Notification
     public DateTime? CreatedAt { get; set; }
 
     public string NotificationType { get; set; } = null!;
+
+    public bool IsActive { get; set; } = true;
+
+    public bool IsRead { get; set; } = false;
 
     public virtual User User { get; set; } = null!;
 }

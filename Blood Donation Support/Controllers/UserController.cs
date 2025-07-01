@@ -443,7 +443,7 @@ namespace Blood_Donation_Support.Controllers
             if (existingMember != null)
             {
                 // Kiểm tra điều kiện hồi phục khi cập nhật IsDonor = true
-                if (model.IsDonor)
+                if (model.IsDonor == true)
                 {
                     var lastTransfusion = await _context.TransfusionRequests
                         .Where(tr => tr.MemberId == existingMember.UserId && tr.Status == "Completed")

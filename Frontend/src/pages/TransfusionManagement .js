@@ -35,138 +35,47 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useSelector } from 'react-redux';
 import { selectUser } from '../features/auth/authSlice';
+import axios from "axios";
 
-// Mock Redux store data and actions
+// Thay thế useTransfusionStore bằng kết nối API thật và bổ sung các trường mới
 const useTransfusionStore = () => {
   const [transfusions, setTransfusions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get id's staff or admin when update transfusion
-  //   const userId = localStorage.getItem("userId");
-  //   const userProfile = localStorage.getItem("userProfile");
-
   useEffect(() => {
-    // Mock API call
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Simulate API delay
-        // Call API update transfusion
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Call API get all transfusion
-        const mockTransfusions = [
-          {
-            TransfusionId: 1,
-            MemberId: 101,
-            BloodTypeId: 1,
-            ComponentId: 1,
-            BloodUnitId: 501,
-            ResponsibleById: 2,
-            IsEmergency: true,
-            TransfusionVolume: 450,
-            PreferredReceiveDate: "2025-06-10T10:00:00",
-            RequestDate: "2025-06-05T08:30:00",
-            ApprovalDate: "2025-06-05T14:00:00",
-            CompletionDate: null,
-            Status: "Approved",
-            Notes: "Patient has low hemoglobin levels",
-            PatientCondition: "Stable",
-            BloodType: { BloodTypeName: "O+" },
-            BloodUnit: { BloodUnitId: "BU-2025-001" },
-            BloodComponent: { ComponentName: "Whole Blood" },
-            Member: {
-              User: { FullName: "Nguyen Van A" },
-              Weight: "80",
-              Height: "1m72",
-            },
-            ResponsibleBy: { FullName: "Dr. Tran B" },
-          },
-          {
-            TransfusionId: 2,
-            MemberId: 102,
-            BloodTypeId: 2,
-            ComponentId: 2,
-            BloodUnitId: 502,
-            ResponsibleById: null,
-            IsEmergency: false,
-            TransfusionVolume: 250,
-            PreferredReceiveDate: "2025-06-12T14:00:00",
-            RequestDate: "2025-06-04T16:20:00",
-            ApprovalDate: null,
-            CompletionDate: null,
-            Status: "Rejected",
-            Notes: null,
-            PatientCondition: "Requires monitoring",
-            BloodType: { BloodTypeName: "A+" },
-            BloodUnit: { BloodUnitId: "BU-2025-002" },
-            BloodComponent: { ComponentName: "Red Blood Cells" },
-            Member: {
-              User: { FullName: "Le Thi C" },
-              Weight: "80",
-              Height: "1m72",
-            },
-            ResponsibleBy: null,
-          },
-          {
-            TransfusionId: 3,
-            MemberId: 103,
-            BloodTypeId: 3,
-            ComponentId: 1,
-            BloodUnitId: 503,
-            ResponsibleById: 3,
-            IsEmergency: false,
-            TransfusionVolume: 300,
-            PreferredReceiveDate: "2025-06-08T09:00:00",
-            RequestDate: "2025-06-03T11:15:00",
-            ApprovalDate: "2025-06-04T10:30:00",
-            CompletionDate: "2025-06-08T10:45:00",
-            Status: "Completed",
-            Notes: "Transfusion completed successfully",
-            PatientCondition: "Good recovery",
-            BloodType: { BloodTypeName: "B+" },
-            BloodUnit: { BloodUnitId: "BU-2025-003" },
-            BloodComponent: { ComponentName: "Whole Blood" },
-            Member: {
-              User: { FullName: "Pham Van D" },
-              Weight: "80",
-              Height: "1m72",
-            },
-            ResponsibleBy: { FullName: "Dr. Hoang E" },
-          },
-        ];
-
-        setTransfusions(mockTransfusions);
+        const token = localStorage.getItem("token");
+        const res = await axios.get("/api/TransfusionRequest", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setTransfusions(res.data);
       } catch (err) {
-        setError("Failed to fetch data");
+        setError("Không thể lấy dữ liệu truyền máu!");
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   const updateTransfusion = async (id, data) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setTransfusions((prev) =>
-        prev.map((t) =>
-          t.TransfusionId === id
-            ? {
-                ...t,
-                ...data,
-              }
-            : t
-        )
-      );
+      const token = localStorage.getItem("token");
+      await axios.patch(`/api/TransfusionRequest/${id}`, data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Sau khi cập nhật, reload lại danh sách
+      const res = await axios.get("/api/TransfusionRequest", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTransfusions(res.data);
       return { success: true };
     } catch (err) {
-      setError("Failed to update transfusion");
+      setError("Cập nhật trạng thái truyền máu thất bại!");
       return { success: false };
     } finally {
       setLoading(false);
@@ -195,13 +104,13 @@ const TransfusionManagement = () => {
     severity: "success",
   });
 
-  const statusOptions = ["Approved", "Completed", "Rejected"];
+  const statusOptions = ["Đã duyệt", "Hoàn thành", "Từ chối"];
 
   const getStatusColor = (status) => {
     const colors = {
-      Approved: "primary",
-      Completed: "success",
-      Rejected: "error",
+      "Đã duyệt": "primary",
+      "Hoàn thành": "success",
+      "Từ chối": "error",
     };
     return colors[status] || "default";
   };
@@ -272,19 +181,13 @@ const TransfusionManagement = () => {
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      {/* Statistics */}
+      {/* Thống kê */}
       <Grid container spacing={2} sx={{ mb: 3, justifyContent: "center" }}>
         {getStatistics().map(({ status, count }) => (
           <Grid item xs={12} sm={6} md={3} key={status}>
             <Card>
               <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Box>
                     <Typography variant="body2" color="text.secondary">
                       {status}
@@ -293,11 +196,7 @@ const TransfusionManagement = () => {
                       {count}
                     </Typography>
                   </Box>
-                  <Chip
-                    label={status}
-                    color={getStatusColor(status)}
-                    size="small"
-                  />
+                  <Chip label={status} color={getStatusColor(status)} size="small" />
                 </Box>
               </CardContent>
             </Card>
@@ -305,53 +204,51 @@ const TransfusionManagement = () => {
         ))}
       </Grid>
 
-      {/* Transfusions Table */}
+      {/* Bảng truyền máu */}
       <Card>
         <CardContent>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Transfusion Requests
+            Danh sách yêu cầu truyền máu
           </Typography>
           <TableContainer component={Paper} variant="outlined">
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Transfusion Info</TableCell>
-                  <TableCell>Member</TableCell>
-                  <TableCell>Blood Details</TableCell>
-                  <TableCell>Dates</TableCell>
-                  <TableCell>Responsible</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Notes</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>Thông tin truyền máu</TableCell>
+                  <TableCell>Người nhận</TableCell>
+                  <TableCell>Chi tiết máu</TableCell>
+                  <TableCell>Ngày giờ</TableCell>
+                  <TableCell>Người phụ trách</TableCell>
+                  <TableCell>Trạng thái</TableCell>
+                  <TableCell>Ghi chú</TableCell>
+                  <TableCell>Tình trạng bệnh nhân</TableCell>
+                  <TableCell>Ngày duyệt</TableCell>
+                  <TableCell>Ngày hoàn thành</TableCell>
+                  <TableCell>Ngày hủy</TableCell>
+                  <TableCell>Ngày từ chối</TableCell>
+                  <TableCell align="center">Hành động</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {transfusions.map((transfusion) => (
                   <TableRow key={transfusion.TransfusionId} hover>
-                    {/* Transfusion Info */}
+                    {/* Thông tin truyền máu */}
                     <TableCell>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
-                          ID: {transfusion.TransfusionId}
+                          Mã: {transfusion.TransfusionId}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Volume: {transfusion.TransfusionVolume}ml
+                          Lượng: {transfusion.TransfusionVolume}ml
                         </Typography>
                         {transfusion.IsEmergency && (
                           <Box sx={{ mt: 0.5 }}>
-                            <Chip
-                              icon={<BloodIcon />}
-                              label="Emergency"
-                              color="error"
-                              size="small"
-                              variant="outlined"
-                            />
+                            <Chip icon={<BloodIcon />} label="Khẩn cấp" color="error" size="small" variant="outlined" />
                           </Box>
                         )}
                       </Box>
                     </TableCell>
-
-                    {/* Member */}
+                    {/* Người nhận */}
                     <TableCell>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
@@ -360,17 +257,12 @@ const TransfusionManagement = () => {
                         <Typography variant="caption" color="text.secondary">
                           Cân nặng: {transfusion?.Member?.Weight}
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          color="text.secondary"
-                        >
+                        <Typography variant="caption" display="block" color="text.secondary">
                           Chiều cao: {transfusion?.Member?.Height}
                         </Typography>
                       </Box>
                     </TableCell>
-
-                    {/* Blood Details */}
+                    {/* Chi tiết máu */}
                     <TableCell>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
@@ -379,107 +271,100 @@ const TransfusionManagement = () => {
                         <Typography variant="caption" color="text.secondary">
                           {transfusion?.BloodComponent?.ComponentName}
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          color="text.secondary"
-                        >
+                        <Typography variant="caption" display="block" color="text.secondary">
                           {transfusion?.BloodUnit?.BloodUnitId || "N/A"}
                         </Typography>
                       </Box>
                     </TableCell>
-
-                    {/* Dates */}
+                    {/* Ngày giờ */}
                     <TableCell>
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          Req: {formatDateTime(transfusion?.RequestDate)}
+                          Yêu cầu: {formatDateTime(transfusion?.RequestDate)}
                         </Typography>
                         {transfusion?.PreferredReceiveDate && (
-                          <Typography
-                            variant="caption"
-                            display="block"
-                            color="text.secondary"
-                          >
-                            Pref:{" "}
-                            {formatDateTime(transfusion?.PreferredReceiveDate)}
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            Mong muốn: {formatDateTime(transfusion?.PreferredReceiveDate)}
+                          </Typography>
+                        )}
+                        {transfusion.ApprovalDate && (
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            Duyệt: {formatDateTime(transfusion?.ApprovalDate)}
                           </Typography>
                         )}
                         {transfusion.CompletionDate && (
-                          <Typography
-                            variant="caption"
-                            display="block"
-                            color="text.secondary"
-                          >
-                            Done: {formatDateTime(transfusion?.CompletionDate)}
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            Hoàn thành: {formatDateTime(transfusion?.CompletionDate)}
+                          </Typography>
+                        )}
+                        {transfusion.CancelledDate && (
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            Hủy: {formatDateTime(transfusion?.CancelledDate)}
+                          </Typography>
+                        )}
+                        {transfusion.RejectedDate && (
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            Từ chối: {formatDateTime(transfusion?.RejectedDate)}
                           </Typography>
                         )}
                       </Box>
                     </TableCell>
-
-                    {/* Responsible */}
+                    {/* Người phụ trách */}
                     <TableCell>
                       {transfusion.ResponsibleBy ? (
                         <Typography variant="body2" fontWeight="medium">
                           {transfusion?.ResponsibleBy?.FullName}
                         </Typography>
                       ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontStyle="italic"
-                        >
-                          Not assigned
+                        <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                          Chưa phân công
                         </Typography>
                       )}
                     </TableCell>
-
-                    {/* Status */}
+                    {/* Trạng thái */}
                     <TableCell>
-                      <Chip
-                        label={transfusion?.Status}
-                        color={getStatusColor(transfusion?.Status)}
-                        size="small"
-                      />
+                      <Chip label={transfusion?.Status} color={getStatusColor(transfusion?.Status)} size="small" />
                     </TableCell>
-
-                    {/* Notes */}
+                    {/* Ghi chú */}
                     <TableCell>
                       <Box sx={{ maxWidth: 200 }}>
                         {transfusion.Notes ? (
                           <Tooltip title={transfusion?.Notes} arrow>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
+                            <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {transfusion?.Notes}
                             </Typography>
                           </Tooltip>
                         ) : (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            fontStyle="italic"
-                          >
-                            No notes
+                          <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                            Không có ghi chú
                           </Typography>
                         )}
                       </Box>
                     </TableCell>
-
-                    {/* Actions */}
+                    {/* Tình trạng bệnh nhân */}
+                    <TableCell>
+                      {transfusion.PatientCondition || <span style={{ fontStyle: "italic", color: "gray" }}>Không có</span>}
+                    </TableCell>
+                    {/* Ngày duyệt */}
+                    <TableCell>
+                      {transfusion.ApprovalDate ? formatDateTime(transfusion.ApprovalDate) : <span style={{ fontStyle: "italic", color: "gray" }}>Chưa duyệt</span>}
+                    </TableCell>
+                    {/* Ngày hoàn thành */}
+                    <TableCell>
+                      {transfusion.CompletionDate ? formatDateTime(transfusion.CompletionDate) : <span style={{ fontStyle: "italic", color: "gray" }}>Chưa hoàn thành</span>}
+                    </TableCell>
+                    {/* Ngày hủy */}
+                    <TableCell>
+                      {transfusion.CancelledDate ? formatDateTime(transfusion.CancelledDate) : <span style={{ fontStyle: "italic", color: "gray" }}>Chưa hủy</span>}
+                    </TableCell>
+                    {/* Ngày từ chối */}
+                    <TableCell>
+                      {transfusion.RejectedDate ? formatDateTime(transfusion.RejectedDate) : <span style={{ fontStyle: "italic", color: "gray" }}>Chưa từ chối</span>}
+                    </TableCell>
+                    {/* Hành động */}
                     <TableCell align="center">
-                      <Tooltip title="Edit Transfusion">
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleEditClick(transfusion)}
-                          disabled={loading}
-                        >
+                      <Tooltip title="Chỉnh sửa yêu cầu">
+                        <IconButton color="primary" onClick={() => handleEditClick(transfusion)} disabled={loading}>
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
@@ -492,27 +377,20 @@ const TransfusionManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
-      <Dialog
-        open={editDialog.open}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
+      {/* Dialog chỉnh sửa */}
+      <Dialog open={editDialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <form onSubmit={formik.handleSubmit}>
           <DialogTitle>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <EditIcon color="primary" />
-              Edit Transfusion #{editDialog.transfusion?.TransfusionId}
+              Chỉnh sửa yêu cầu #{editDialog.transfusion?.TransfusionId}
             </Box>
           </DialogTitle>
           <DialogContent>
-            <Box
-              sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 3 }}
-            >
+            <Box sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 3 }}>
               <TextField
                 select
-                label="Status"
+                label="Trạng thái"
                 name="Status"
                 value={formik.values.Status}
                 onChange={formik.handleChange}
@@ -524,19 +402,14 @@ const TransfusionManagement = () => {
                 {statusOptions.map((status) => (
                   <MenuItem key={status} value={status}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Chip
-                        label={status}
-                        color={getStatusColor(status)}
-                        size="small"
-                      />
+                      <Chip label={status} color={getStatusColor(status)} size="small" />
                     </Box>
                   </MenuItem>
                 ))}
               </TextField>
-
-              {/* Notes */}
+              {/* Ghi chú */}
               <TextField
-                label="Notes"
+                label="Ghi chú"
                 name="Notes"
                 value={formik.values.Notes}
                 onChange={formik.handleChange}
@@ -544,53 +417,32 @@ const TransfusionManagement = () => {
                 helperText={formik.touched.Notes && formik.errors.Notes}
                 multiline
                 rows={4}
-                placeholder="Enter notes about the transfusion..."
+                placeholder="Nhập ghi chú về truyền máu..."
                 fullWidth
               />
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={handleCloseDialog}
-              startIcon={<CancelIcon />}
-              disabled={loading}
-            >
-              Cancel
+            <Button onClick={handleCloseDialog} startIcon={<CancelIcon />} disabled={loading}>
+              Hủy
             </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              startIcon={<SaveIcon />}
-              disabled={loading}
-            >
-              {loading ? "Saving..." : "Save Changes"}
+            <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={loading}>
+              {loading ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
+      {/* Snackbar thông báo */}
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: "100%" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
 
-      {/* Error handling */}
+      {/* Xử lý lỗi */}
       {error && (
-        <Snackbar
-          open={Boolean(error)}
-          autoHideDuration={6000}
-          onClose={clearError}
-        >
+        <Snackbar open={Boolean(error)} autoHideDuration={6000} onClose={clearError}>
           <Alert onClose={clearError} severity="error" sx={{ width: "100%" }}>
             {error}
           </Alert>

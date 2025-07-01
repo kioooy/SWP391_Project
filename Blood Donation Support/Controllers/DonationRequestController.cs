@@ -20,8 +20,8 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // get donation request history by id (Member View)
-        // api/DonationRequest/{memberId}/history
-        [HttpGet("{memberId}/history")]
+        // api/DonationRequest/history
+        [HttpGet("history")]
         [Authorize(Roles = "Member,Admin")] 
         public async Task<IActionResult> GetDonationRequestHistory()
         {
@@ -182,11 +182,15 @@ namespace Blood_Donation_Support.Controllers
             };
 
             // Update the current quantity for the donation period
-            var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == model.PeriodId);
-            if (period != null)
+            var period = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == model.PeriodId)
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {model.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if (period.CurrentQuantity >= 0)
             {
-                period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1;
-                _context.Entry(period).State = EntityState.Modified;
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
             }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
@@ -306,12 +310,17 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.Notes = $"Lý do từ chối của bác sĩ phụ trách {name}: {note}"; // Add a note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            var currentQuantity = await _context.BloodDonationPeriods
+            // Get the current quantity for the period
+            var period = await _context.BloodDonationPeriods
                 .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if (period.CurrentQuantity > 0)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try
@@ -339,23 +348,23 @@ namespace Blood_Donation_Support.Controllers
 
             var existingRequest = await _context.DonationRequests.FindAsync(id);
             if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}.");
+                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
 
-            // Member chỉ được hủy của chính mình, Staff/Admin được hủy bất kỳ
-            if (roleName == "Member" && existingRequest.MemberId != currentUserId)
-                return BadRequest("You are not authorized to cancel this request.");
+            existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
+            existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
+            existingRequest.Notes = $"Hủy Lịch";             // Custom Note indicating cancellation by the user
+            _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            existingRequest.CancelledDate = DateTime.Now;
-            existingRequest.Status = "Cancelled";
-            existingRequest.Notes = $"Hủy lịch bởi {roleName} {name}";
-            _context.Entry(existingRequest).State = EntityState.Modified;
-
-            // Cập nhật số lượng hiện tại của đợt hiến máu
-            var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == existingRequest.PeriodId);
-            if (period != null)
+            // Get the current quantity for the period
+            var period = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == existingRequest.PeriodId)
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if(period.CurrentQuantity > 0)
             {
-                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1;
-                _context.Entry(period).State = EntityState.Modified;
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
             }
 
             var transaction = await _context.Database.BeginTransactionAsync();

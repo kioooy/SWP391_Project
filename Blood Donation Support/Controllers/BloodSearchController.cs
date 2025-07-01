@@ -4,6 +4,7 @@ using Blood_Donation_Support.Data;
 using NetTopologySuite.Geometries;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Blood_Donation_Support.Controllers;
 
@@ -190,6 +191,65 @@ public class BloodSearchController : ControllerBase
         }
     }
 
+    // Chỉ cho phép Admin hoặc Staff thực hiện API này
+    [Authorize(Roles = "Admin,Staff")]
+    // Định nghĩa endpoint POST /api/BloodSearch/notify-all-donors
+    [HttpPost("notify-all-donors")]
+    // Nhận dữ liệu từ body request dưới dạng NotifyAllDonorsDTO
+    public async Task<IActionResult> NotifyAllDonors([FromBody] NotifyAllDonorsDTO request)
+    {
+        try
+        {
+            var now = DateTime.Now;
+            // Lấy tất cả member là người hiến máu (IsDonor == true) và đã hồi phục (chưa từng hiến hoặc đã đủ 84 ngày kể từ lần hiến máu gần nhất)
+            var donors = await _context.Members
+                .Where(m => m.IsDonor == true && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84)) //trả về số chênh lệnh 2 ngày   EF.Functions.DateDiffDay(<ngày bắt đầu>, <ngày kết thúc>) > 84 ngày thì trả về true
+                .Select(m => new { m.UserId, m.User.FullName }) // Chỉ lấy UserId và FullName
+                .ToListAsync();
+
+            // Tạo một HttpClient để gửi HTTP request đi nơi khác (ở đây là nội bộ)
+            var client = _httpClientFactory.CreateClient();
+            // Tạo URL nội bộ để gọi API gửi thông báo khẩn cấp, đây là vc tái sử dụng API gửi thông báo khẩn cấp bên nofi controller
+            var notificationUrl = $"{Request.Scheme}://{Request.Host}/api/Notification/CreateUrgentDonationRequest";
+            // Biến đếm số lượng gửi thông báo thành công
+            int notifiedCount = 0;
+            // Lặp qua từng người hiến máu hợp lệ
+            foreach (var donor in donors)
+            {
+                try
+                {
+                    // Tạo object chứa thông tin gửi thông báo cho từng người
+                    var notificationDto = new
+                    {
+                        UserId = donor.UserId, // ID người nhận thông báo
+                        Message = request.Message // Nội dung thông báo do client gửi lên
+                    };
+                    // Chuyển object trên thành JSON, đóng gói vào StringContent để gửi HTTP POST
+                    var jsonContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(notificationDto), System.Text.Encoding.UTF8, "application/json");
+                    // Gửi POST request đến API Notification
+                    var response = await client.PostAsync(notificationUrl, jsonContent);
+                    // Nếu gửi thành công thì tăng biến đếm
+                    if (response.IsSuccessStatusCode)
+                    {
+                        notifiedCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Nếu lỗi khi gửi cho một người, ghi log lỗi nhưng không dừng vòng lặp
+                    Console.WriteLine($"Error notifying donor: {ex.Message}");
+                }
+            }
+            // Trả về kết quả tổng số người đã gửi thông báo thành công
+            return Ok(new { message = $"Đã gửi thông báo đến {notifiedCount} người hiến máu đã hồi phục." });
+        }
+        catch (Exception ex)
+        {
+            // Nếu có lỗi tổng thể, trả về lỗi cho client
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     private double CalculateDistance(Point donorLocation, Point hospitalLocation)
     {
         // Tính khoảng cách giữa 2 điểm (km)
@@ -206,6 +266,11 @@ public class RequestDonorsDTO
 }
 
 public class RequestDonorsWithHospitalDTO
+{
+    public string Message { get; set; } = "Vui lòng liên hệ ngay!";
+}
+
+public class NotifyAllDonorsDTO
 {
     public string Message { get; set; } = "Vui lòng liên hệ ngay!";
 } 

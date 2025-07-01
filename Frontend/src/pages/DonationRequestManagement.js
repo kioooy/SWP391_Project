@@ -271,7 +271,7 @@ const DonationRequestManagement = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                  <TableCell>Họ tên</TableCell>
+                <TableCell>Họ tên</TableCell>
                 <TableCell>Số CCCD</TableCell>
                 <TableCell>Nhóm máu</TableCell>
                 <TableCell>Ngày hẹn</TableCell>
@@ -285,7 +285,7 @@ const DonationRequestManagement = () => {
               {filteredRequests.map((req) => (
                 <TableRow key={req.donationId} hover>
                   <TableCell>{req.donationId}</TableCell>
-                  <TableCell>{req.memberName}</TableCell>
+                  <TableCell sx={{ minWidth: 180, maxWidth: 260 }}>{req.fullName || req.memberName}</TableCell>
                   <TableCell>{req.citizenNumber}</TableCell>
                   <TableCell>{req.bloodTypeName}</TableCell>
                   <TableCell>

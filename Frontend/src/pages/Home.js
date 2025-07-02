@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Box,
@@ -44,17 +44,37 @@ import ScienceIcon from '@mui/icons-material/Science';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
 
 const Home = () => {
   const navigate = useNavigate();
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [periods, setPeriods] = useState([]);
+  const [loadingPeriods, setLoadingPeriods] = useState(true);
 
   // Lấy user từ redux
   const user = useSelector((state) => state.auth.user);
   // Lấy thông tin member nếu có
   const isDonor = user && (user.isDonor || (user.member && user.member.isDonor));
   const isRecipient = user && (user.isRecipient || (user.member && user.member.isRecipient));
+
+  // Luôn gọi useEffect ở đầu component
+  useEffect(() => {
+    setLoadingPeriods(true);
+    axios.get('/api/BloodDonationPeriod')
+      .then(res => {
+        // Lọc các đợt hiến máu trong tháng hiện tại
+        const now = dayjs();
+        const periodsInMonth = res.data.filter(period => {
+          const from = dayjs(period.periodDateFrom);
+          return from.month() === now.month() && from.year() === now.year();
+        });
+        setPeriods(periodsInMonth);
+      })
+      .catch(() => setPeriods([]))
+      .finally(() => setLoadingPeriods(false));
+  }, []);
 
   // Nếu là member truyền máu (isRecipient)
   if (isRecipient) {
@@ -264,75 +284,65 @@ const Home = () => {
             <Typography variant="h5" sx={{ mb: 2, opacity: 0.9, fontWeight: 300, color: '#e53e3e' }}>
               Cùng nhau cứu sống những sinh mệnh quý giá
             </Typography>
-            {/* <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-              <Chip label="Miễn phí" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
-              <Chip label="An toàn" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
-              <Chip label="Có bồi dưỡng" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
-            </Stack> */}
           </Box>
 
-          {/* Quick Booking */}
+          {/* Danh sách đợt hiến máu khả dụng trong tháng */}
           <Paper
             elevation={8}
             sx={{
               p: 4,
               borderRadius: 3,
-              maxWidth: 600,
+              maxWidth: 700,
               mx: 'auto',
               background: '#fff',
               backdropFilter: 'blur(10px)',
-              border: '1px solid #333'
+              border: '1px solid #333',
+              mb: 4
             }}
           >
             <Box sx={{ textAlign: 'center', mb: 3 }}>
               <VolunteerActivismIcon sx={{ fontSize: 48, color: '#e53e3e', mb: 2 }} />
               <Typography variant="h5" fontWeight="bold" color="#e53e3e" gutterBottom>
-                Đặt lịch ngay hôm nay
+                Các đợt hiến máu trong tháng này
               </Typography>
               <Typography variant="body2" color="#e53e3e">
-                Chọn thời gian phù hợp với bạn để tham gia hiến máu tình nguyện
+                Chọn đợt phù hợp để đăng ký nhanh
               </Typography>
             </Box>
-
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Stack spacing={3}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <DatePicker
-                      label="Từ ngày"
-                      value={fromDate}
-                      onChange={setFromDate}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth />
-                      )}
-                    />
+            {loadingPeriods ? (
+              <Typography align="center" color="text.secondary">Đang tải...</Typography>
+            ) : periods.length === 0 ? (
+              <Typography align="center" color="text.secondary">Không có đợt hiến máu nào trong tháng này.</Typography>
+            ) : (
+              <Grid container spacing={2}>
+                {periods.map((period) => (
+                  <Grid item xs={12} md={6} key={period.periodId}>
+                    <Card sx={{ borderRadius: 2, border: '1px solid #e53e3e', mb: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" fontWeight="bold" color="#e53e3e">
+                          {period.periodName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Địa điểm: {period.location}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Thời gian: {dayjs(period.periodDateFrom).format('DD/MM/YYYY')} - {dayjs(period.periodDateTo).format('DD/MM/YYYY')}
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                          onClick={() => navigate(`/booking?periodId=${period.periodId}`)}
+                          sx={{ mt: 2 }}
+                        >
+                          Đăng ký ngay
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <DatePicker
-                      label="Đến ngày"
-                      value={toDate}
-                      onChange={setToDate}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth />
-                      )}
-                    />
-                  </Grid>
-                </Grid>
-
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleSearch}
-                    disabled={!fromDate || !toDate}
-                    startIcon={<CalendarTodayIcon />}
-                    sx={{ py: 1.5, px: 4 }}
-                  >
-                    Tìm kiếm lịch trình
-                  </Button>
-                </Box>
-              </Stack>
-            </LocalizationProvider>
+                ))}
+              </Grid>
+            )}
           </Paper>
         </Container>
       </Box>

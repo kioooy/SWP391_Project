@@ -200,11 +200,12 @@ const AppointmentHistory = () => {
   const getStatusChip = (status) => {
     switch (status) {
       case 'completed':
+      case 'Completed':
         return (
           <Chip
             label="Hoàn thành"
-            color="success"
             size="small"
+            sx={{ backgroundColor: '#757575', color: 'white', fontWeight: 600 }}
           />
         );
       case 'scheduled':

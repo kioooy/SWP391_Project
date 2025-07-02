@@ -48,6 +48,7 @@ const EmergencyRequest = () => {
     location: '',
     reason: '',
     notes: '',
+    cccd: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -149,6 +150,11 @@ const EmergencyRequest = () => {
         newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
       }
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
+      if (!formData.cccd) {
+        newErrors.cccd = 'Vui lòng nhập số CCCD';
+      } else if (!/^\d{12}$/.test(formData.cccd)) {
+        newErrors.cccd = 'Số CCCD phải là 12 chữ số';
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -202,6 +208,7 @@ const EmergencyRequest = () => {
           location: '',
           reason: '',
           notes: '',
+          cccd: '',
         });
       } catch (error) {
         let msg = 'Có lỗi khi gửi yêu cầu!';
@@ -308,6 +315,17 @@ const EmergencyRequest = () => {
                 onChange={handleChange('location')}
                 error={!!errors.location}
                 helperText={errors.location}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Số CCCD"
+                value={formData.cccd}
+                onChange={handleChange('cccd')}
+                error={!!errors.cccd}
+                helperText={errors.cccd}
               />
             </Grid>
 

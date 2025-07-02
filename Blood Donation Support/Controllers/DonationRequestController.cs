@@ -255,9 +255,6 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
 
-            if(existingRequest.PreferredDonationDate != DateOnly.FromDateTime(DateTime.Now))
-                return BadRequest("Preferred donation date does not match the existing request."); // Return 400 Bad Request if preferred date does not match
-
             // Update the status Donation request 
             existingRequest.Status = model.Status;
             existingRequest.CompletionDate = DateTime.Now;

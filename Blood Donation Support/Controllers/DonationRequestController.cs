@@ -4,6 +4,7 @@ using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace Blood_Donation_Support.Controllers
@@ -175,6 +176,7 @@ namespace Blood_Donation_Support.Controllers
                 PreferredDonationDate = model.PreferredDonationDate, // Preferred Donation Date 
                 ResponsibleById = model.ResponsibleById,             // Responsible By Id 
                 RequestDate = DateTime.Now,                          // Request Date (current date)
+                ApprovalDate = DateTime.Now,                         // Approval Date (current date)
                 DonationVolume = model.DonationVolume,               // Donation Volume
                 Status = "Approved",                                 // Status (default "Approved" as per new business logic)
                 Notes = model.Notes,                                 // Notes 
@@ -235,6 +237,9 @@ namespace Blood_Donation_Support.Controllers
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
             if (member == null)
                 return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
+
+            if(existingRequest.PreferredDonationDate != DateOnly.FromDateTime(DateTime.Now))
+                return BadRequest("Preferred donation date does not match the existing request."); // Return 400 Bad Request if preferred date does not match
 
             // Update the status Donation request 
             existingRequest.Status = model.Status;

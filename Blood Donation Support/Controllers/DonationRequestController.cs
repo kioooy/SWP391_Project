@@ -155,6 +155,8 @@ namespace Blood_Donation_Support.Controllers
             var member = await _context.Members.FirstOrDefaultAsync( u => u.UserId == model.MemberId ); 
             if (member == null)
                 return NotFound(); // Return 404 Not Found if member not found
+            if(member.LastDonationDate < DateOnly.FromDateTime(DateTime.Now.AddDays(-90)))
+                return BadRequest("Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới."); // Return 400 Bad Request if last donation date is less than 90 days ago
 
             // Check if the member has an upcoming donation request
             var today = DateOnly.FromDateTime(DateTime.Today);
@@ -167,7 +169,7 @@ namespace Blood_Donation_Support.Controllers
                     return BadRequest("Bạn đã có lịch hẹn sắp tới, không thể đặt thêm lịch mới.");
             
             // Add new donation request
-            var donationRequest = new DonationRequest
+             var donationRequest = new DonationRequest
             {
                 MemberId = member.UserId,                            // Member Id ( UserId of role the member )
                 PeriodId = model.PeriodId,                           // Period Id 

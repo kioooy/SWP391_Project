@@ -18,6 +18,8 @@ public partial class DonationRequest
 
     public DateTime? RequestDate { get; set; }
 
+    public DateTime? ApprovalDate { get; set; }
+
     public DateTime? CompletionDate { get; set; }
     public DateTime? CancelledDate { get; set; }
     public DateTime? RejectedDate { get; set; }

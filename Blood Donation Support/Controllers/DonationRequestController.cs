@@ -4,6 +4,7 @@ using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace Blood_Donation_Support.Controllers
@@ -155,6 +156,8 @@ namespace Blood_Donation_Support.Controllers
             var member = await _context.Members.FirstOrDefaultAsync( u => u.UserId == model.MemberId ); 
             if (member == null)
                 return NotFound(); // Return 404 Not Found if member not found
+            if(member.LastDonationDate < DateOnly.FromDateTime(DateTime.Now.AddDays(-90)))
+                return BadRequest("Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới."); // Return 400 Bad Request if last donation date is less than 90 days ago
 
             // Kiểm tra member vừa truyền máu xong hoặc đang trong thời gian hồi phục
             var lastTransfusion = await _context.TransfusionRequests
@@ -182,7 +185,7 @@ namespace Blood_Donation_Support.Controllers
                 return BadRequest("Bạn đang có lịch hiến máu. Vui lòng hoàn thành hoặc hủy lịch trước khi đặt lịch mới!");
             
             // Add new donation request
-            var donationRequest = new DonationRequest
+             var donationRequest = new DonationRequest
             {
                 MemberId = member.UserId,                            // Member Id ( UserId of role the member )
                 PeriodId = model.PeriodId,                           // Period Id 
@@ -190,6 +193,7 @@ namespace Blood_Donation_Support.Controllers
                 PreferredDonationDate = model.PreferredDonationDate, // Preferred Donation Date 
                 ResponsibleById = model.ResponsibleById,             // Responsible By Id 
                 RequestDate = DateTime.Now,                          // Request Date (current date)
+                ApprovalDate = DateTime.Now,                         // Approval Date (current date)
                 DonationVolume = model.DonationVolume,               // Donation Volume
                 Status = "Approved",                                 // Status (default "Approved" as per new business logic)
                 Notes = model.Notes,                                 // Notes 
@@ -250,6 +254,9 @@ namespace Blood_Donation_Support.Controllers
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
             if (member == null)
                 return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
+
+            if(existingRequest.PreferredDonationDate != DateOnly.FromDateTime(DateTime.Now))
+                return BadRequest("Preferred donation date does not match the existing request."); // Return 400 Bad Request if preferred date does not match
 
             // Update the status Donation request 
             existingRequest.Status = model.Status;

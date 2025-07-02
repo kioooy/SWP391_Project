@@ -91,31 +91,30 @@ namespace Blood_Donation_Support.Controllers
                 return Forbid("Bạn chỉ có thể xem chứng chỉ của chính mình");
             }
 
-            var certificatesRaw = await _context.DonationRequests
+            var certificate = await _context.DonationRequests
                 .Include(dr => dr.Member)
                     .ThenInclude(m => m.User)
                 .Include(dr => dr.Member.BloodType)
                 .Include(dr => dr.Period)
                 .Where(dr => dr.MemberId == memberId && dr.Status == "Completed")
+               .Select(dr => new
+               {
+                   dr.Member.User.CitizenNumber, // Số CMND/CCCD
+                   dr.Member.User.FullName, // Họ và tên
+                   dr.Member.User.DateOfBirth, // Ngày sinh
+                   dr.Member.User.Address,  // Địa chỉ
+                   dr.Period.Hospital.Name,  // Địa điểm hiến máu
+                   dr.DonationVolume,  // Thể tích máu hiến
+                   dr.PreferredDonationDate, // Ngày hiến máu
+                   dr.Member.BloodType.BloodTypeName // Nhóm máu
+               })
+                .OrderByDescending(c => c.PreferredDonationDate)
                 .ToListAsync();
 
-            var certificates = certificatesRaw
-                .Select(dr => new
-                {
-                    dr.DonationId,
-                    dr.Member.User.CitizenNumber, // Số CMND/CCCD
-                    dr.Member.User.FullName, // Họ và tên
-                    dr.Member.User.DateOfBirth, // Ngày sinh
-                    dr.Member.User.Address,  // Địa chỉ
-                    dr.Period.Hospital.Name,  // Địa điểm hiến máu
-                    dr.DonationVolume,  // Thể tích máu hiến
-                    dr.PreferredDonationDate, // Ngày hiến máu
-                    dr.Member.BloodType.BloodTypeName // Nhóm máu
-                })
-                .OrderByDescending(c => c.PreferredDonationDate)
-                .ToList();
+            if(!certificate.Any()) // Kiểm tra nếu không có chứng chỉ nào
+                return NotFound("Không tìm thấy chứng chỉ hiến máu cho thành viên này");
 
-            return Ok(certificates);
+            return Ok(certificate);
         }
     }
 } 

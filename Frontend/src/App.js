@@ -45,6 +45,8 @@ import Unauthorized from "./pages/Unauthorized";
 import SidebarLayout from "./layouts/SidebarLayout";
 import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
+import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
+import TransfusionManage from "./pages/admin/TransfusionManage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -79,7 +81,14 @@ const App = () => {
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/booking-transfusion" element={<BookingTransfusion />} />
         <Route path="/transfusion-history" element={<TransfusionHistory />} />
-        <Route path="/profile" element={<RequireAuth roles={["Member"]}><UserProfile /></RequireAuth>} />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth roles={["Member"]}>
+              <UserProfile />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/user-profile-recipient"
           element={
@@ -99,21 +108,142 @@ const App = () => {
 
       {/* Sidebar Layout cho các trang quản lý */}
       <Route element={<SidebarLayout />}>
-        <Route path="/profile" element={<RequireAuth roles={["Admin", "Staff"]}><UserProfile /></RequireAuth>} />
-        <Route path="/profile-admin" element={<RequireAuth roles={["Admin"]}><AdminProfile /></RequireAuth>} />
-        <Route path="/profile-staff" element={<RequireAuth roles={["Staff"]}><StaffProfile /></RequireAuth>} />
-        <Route path="/dashboard" element={<RequireAuth roles={["Admin", "Staff"]}><Dashboard /></RequireAuth>} />
-        <Route path="/manage-requests" element={<RequireAuth roles={["Admin", "Staff"]}><DonationRequestManagement /></RequireAuth>} />
-        <Route path="/manage-blood-periods" element={<RequireAuth roles={["Admin", "Staff"]}><BloodDonationPeriodManagement /></RequireAuth>} />
-        <Route path="/blood-inventory" element={<RequireAuth roles={["Admin", "Staff"]}><BloodInventory /></RequireAuth>} />
-        <Route path="/manage-blood-storage" element={<RequireAuth roles={["Admin", "Staff"]}><BloodStorageManage /></RequireAuth>} />
-        <Route path="/transfusion-management" element={<RequireAuth roles={["Admin", "Staff"]}><TransfusionManagement /></RequireAuth>} />
-        <Route path="/manage-article" element={<RequireAuth roles={["Admin", "Staff"]}><ArticleManage /></RequireAuth>} />
-        <Route path="/manage-blog" element={<RequireAuth roles={["Admin", "Staff"]}><BlogManage /></RequireAuth>} />
-        <Route path="/hospital-location" element={<RequireAuth roles={["Admin", "Staff"]}><HospitalLocationEdit /></RequireAuth>} />
-        <Route path="/manage-roles" element={<RequireAuth roles={["Admin"]}><div>Quản lý vai trò (đang phát triển)</div></RequireAuth>} />
-        <Route path="/manage-users" element={<RequireAuth roles={["Admin"]}><div>Quản lý người dùng (đang phát triển)</div></RequireAuth>} />
-        <Route path="/certificate" element={<RequireAuth roles={["Admin", "Staff"]}><BloodDonationCertificate /></RequireAuth>} />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <UserProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile-admin"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <AdminProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/emergency-transfusion"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <EmergencyTransfusionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile-staff"
+          element={
+            <RequireAuth roles={["Staff"]}>
+              <StaffProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <Dashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-requests"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <DonationRequestManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-blood-periods"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodDonationPeriodManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/blood-inventory"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodInventory />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-blood-storage"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodStorageManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/transfusion-management"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <TransfusionManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-article"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <ArticleManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-blog"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BlogManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/emergency-transfusion"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <EmergencyTransfusionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/hospital-location"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <HospitalLocationEdit />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-roles"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <div>Quản lý vai trò (đang phát triển)</div>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-users"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <div>Quản lý người dùng (đang phát triển)</div>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/certificate"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodDonationCertificate />
+            </RequireAuth>
+          }
+        />
       </Route>
 
       {/* Fallback Route */}

@@ -90,7 +90,8 @@ const EmergencyRequest = () => {
   };
 
   const handlePatientNameChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
+    const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
     setFormData({
       ...formData,
       patientName: value,
@@ -101,7 +102,8 @@ const EmergencyRequest = () => {
   };
 
   const handleReasonChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
+    const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
     setFormData({
       ...formData,
       reason: value,
@@ -109,7 +111,8 @@ const EmergencyRequest = () => {
   };
 
   const handleContactNameChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
+    const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
     setFormData({
       ...formData,
       contactName: value,

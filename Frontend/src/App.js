@@ -18,6 +18,7 @@ import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
+import TransfusionManagement from "./pages/TransfusionManagement ";
 import BloodDonationCertificate from "./pages/Certificate";
 import SearchByDistance from "./pages/SearchByDistance";
 import EmergencyRequest from "./pages/EmergencyRequest";
@@ -44,8 +45,8 @@ import Unauthorized from "./pages/Unauthorized";
 import SidebarLayout from "./layouts/SidebarLayout";
 import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
-import TransfusionManage from "./pages/admin/TransfusionManagement";
 import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
+import TransfusionManage from "./pages/admin/TransfusionManage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);

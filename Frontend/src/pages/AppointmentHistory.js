@@ -366,9 +366,22 @@ const AppointmentHistory = () => {
                     <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
                     {getStatusChip(selectedAppointment.status)}
                     <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}</Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography>
+                    <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {selectedAppointment.periodDateFrom && selectedAppointment.periodDateTo
+                        ? `${dayjs(selectedAppointment.periodDateFrom).format('HH:mm')} - ${dayjs(selectedAppointment.periodDateTo).format('HH:mm')}`
+                        : 'Không xác định'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">Lượng máu hiến</Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {/* Lấy từ thông tin đặt lịch */}
+                      {selectedAppointment.donationVolume ? `${selectedAppointment.donationVolume} ml` : 'Không xác định'}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>

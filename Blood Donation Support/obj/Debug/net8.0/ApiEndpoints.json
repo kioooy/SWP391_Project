@@ -1315,6 +1315,48 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "CreateUrgentBloodRequest",
+    "RelativePath": "api/UrgentBloodRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.CreateUrgentBloodRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "GetAllUrgentBloodRequests",
+    "RelativePath": "api/UrgentBloodRequest",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "GetUrgentBloodRequestById",
+    "RelativePath": "api/UrgentBloodRequest/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.UserController",
     "Method": "GetAllUser",
     "RelativePath": "api/User",

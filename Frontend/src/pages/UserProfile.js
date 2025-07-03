@@ -704,7 +704,6 @@ const UserProfile = () => {
                 </Tabs>
               </Box>
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
                 {scheduledAppointments.length > 0 ? (
                   scheduledAppointments.map((appointment, index) => {
                     // BỎ HOÀN TOÀN logic parse hospitalName từ notes
@@ -739,9 +738,18 @@ const UserProfile = () => {
                             <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                             <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
                           </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                            <Typography variant="body1" fontWeight="bold">
+                              {/* Hiển thị thời gian diễn ra của đợt hiến máu */}
+                              {appointment.periodDateFrom && appointment.periodDateTo
+                                ? `${dayjs(appointment.periodDateFrom).format('HH:mm')} - ${dayjs(appointment.periodDateTo).format('HH:mm')}`
+                                : 'Không xác định'}
+                            </Typography>
+                          </Grid>
                           <Grid item xs={12}>
-                              <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
-                              <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
+                            <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
+                            <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
                           </Grid>
                         </Grid>
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>

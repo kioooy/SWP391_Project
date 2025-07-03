@@ -108,7 +108,10 @@ const DonationRequestManagement = () => {
   };
 
   const handleOpenActionDialog = (request, mode) => {
-    setActionRequest(request);
+    setActionRequest({
+      ...request,
+      notes: "", // Luôn để trống khi mở dialog hoàn thành/hủy
+    });
     setActionMode(mode);
     setOpenActionDialog(true);
   };
@@ -271,7 +274,7 @@ const DonationRequestManagement = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                  <TableCell>Họ tên</TableCell>
+                <TableCell>Họ tên</TableCell>
                 <TableCell>Số CCCD</TableCell>
                 <TableCell>Nhóm máu</TableCell>
                 <TableCell>Ngày hẹn</TableCell>
@@ -285,7 +288,7 @@ const DonationRequestManagement = () => {
               {filteredRequests.map((req) => (
                 <TableRow key={req.donationId} hover>
                   <TableCell>{req.donationId}</TableCell>
-                  <TableCell>{req.memberName}</TableCell>
+                  <TableCell sx={{ minWidth: 180, maxWidth: 260 }}>{req.fullName || req.memberName}</TableCell>
                   <TableCell>{req.citizenNumber}</TableCell>
                   <TableCell>{req.bloodTypeName}</TableCell>
                   <TableCell>
@@ -389,10 +392,31 @@ const DonationRequestManagement = () => {
           <DialogContentText>
             Bạn có chắc chắn muốn {actionMode === 'complete' ? 'đánh dấu hoàn thành' : 'hủy'} yêu cầu này không?
           </DialogContentText>
+          {actionMode === 'complete' && (
+            <TextField
+              margin="dense"
+              label="Ghi chú (nếu cần)"
+              type="text"
+              fullWidth
+              variant="standard"
+              value={actionRequest?.notes || ''}
+              onChange={e =>
+                setActionRequest((prev) => ({
+                  ...prev,
+                  notes: e.target.value,
+                }))
+              }
+              sx={{ mt: 2 }}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseActionDialog}>Hủy</Button>
-          <Button onClick={handleConfirmActionRequest} variant="contained" color={actionMode === 'complete' ? 'success' : 'error'}>
+          <Button
+            onClick={handleConfirmActionRequest}
+            variant="contained"
+            color={actionMode === 'complete' ? 'success' : 'error'}
+          >
             Xác nhận
           </Button>
         </DialogActions>
@@ -416,4 +440,4 @@ const DonationRequestManagement = () => {
   );
 };
 
-export default DonationRequestManagement; 
+export default DonationRequestManagement;

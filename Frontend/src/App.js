@@ -124,6 +124,14 @@ const App = () => {
           }
         />
         <Route
+          path="/emergency-transfusion"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <EmergencyTransfusionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/profile-staff"
           element={
             <RequireAuth roles={["Staff"]}>

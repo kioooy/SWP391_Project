@@ -317,9 +317,7 @@ const BloodDonationCertificate = () => {
                         gap: 1.5,
                       }}
                     >
-                      <LocationOn
-                        sx={{ color: "#718096", fontSize: 18, mt: 0.2 }}
-                      />
+                      <LocationOn sx={{ color: "#718096", fontSize: 18, mt: 0.2 }} />
                       <Box>
                         <Typography
                           variant="caption"
@@ -331,7 +329,7 @@ const BloodDonationCertificate = () => {
                           variant="body2"
                           sx={{ fontWeight: 500, color: "#2d3748" }}
                         >
-                          {certificate.address}
+                          118 Hồng Bàng, Phường 12, Quận 5, TP.HCM
                         </Typography>
                       </Box>
                     </Box>
@@ -515,7 +513,7 @@ const BloodDonationCertificate = () => {
                     Địa Chỉ
                   </Typography>
                   <Typography variant="body1" sx={{ color: "#1a202c", fontWeight: 600 }}>
-                    {viewingCertificate.address}
+                    118 Hồng Bàng, Phường 12, Quận 5, TP.HCM
                   </Typography>
                 </Box>
               </Grid>

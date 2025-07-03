@@ -108,7 +108,10 @@ const DonationRequestManagement = () => {
   };
 
   const handleOpenActionDialog = (request, mode) => {
-    setActionRequest(request);
+    setActionRequest({
+      ...request,
+      notes: "", // Luôn để trống khi mở dialog hoàn thành/hủy
+    });
     setActionMode(mode);
     setOpenActionDialog(true);
   };
@@ -389,10 +392,31 @@ const DonationRequestManagement = () => {
           <DialogContentText>
             Bạn có chắc chắn muốn {actionMode === 'complete' ? 'đánh dấu hoàn thành' : 'hủy'} yêu cầu này không?
           </DialogContentText>
+          {actionMode === 'complete' && (
+            <TextField
+              margin="dense"
+              label="Ghi chú (nếu cần)"
+              type="text"
+              fullWidth
+              variant="standard"
+              value={actionRequest?.notes || ''}
+              onChange={e =>
+                setActionRequest((prev) => ({
+                  ...prev,
+                  notes: e.target.value,
+                }))
+              }
+              sx={{ mt: 2 }}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseActionDialog}>Hủy</Button>
-          <Button onClick={handleConfirmActionRequest} variant="contained" color={actionMode === 'complete' ? 'success' : 'error'}>
+          <Button
+            onClick={handleConfirmActionRequest}
+            variant="contained"
+            color={actionMode === 'complete' ? 'success' : 'error'}
+          >
             Xác nhận
           </Button>
         </DialogActions>
@@ -416,4 +440,4 @@ const DonationRequestManagement = () => {
   );
 };
 
-export default DonationRequestManagement; 
+export default DonationRequestManagement;

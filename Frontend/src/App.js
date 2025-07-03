@@ -45,6 +45,7 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
 import TransfusionManage from "./pages/admin/TransfusionManagement";
+import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -191,6 +192,14 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <BlogManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/emergency-transfusion"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <EmergencyTransfusionPage />
             </RequireAuth>
           }
         />

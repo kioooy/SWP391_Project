@@ -123,6 +123,9 @@ const UserProfile = () => {
   // State cho dữ liệu chỉnh sửa trong dialog
   const [editFormData, setEditFormData] = useState({});
 
+  // 1. Thêm state lưu tên bệnh viện
+  const [hospitalName, setHospitalName] = useState('');
+
   // Lấy loại tài khoản từ nhiều nguồn
   const isDonor = user?.isDonor || user?.member?.isDonor || formData?.isDonor;
   const isRecipient = user?.isRecipient || user?.member?.isRecipient || formData?.isRecipient;
@@ -220,6 +223,24 @@ const UserProfile = () => {
       }
     };
     fetchCompletedDonationHistory();
+  }, []);
+
+  // 2. Thêm useEffect để fetch tên bệnh viện khi mount
+  useEffect(() => {
+    const fetchHospitalName = async () => {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const res = await axios.get(`${apiUrl}/Hospital`);
+        if (res.data && (res.data.Name || res.data.name)) {
+          setHospitalName(res.data.Name || res.data.name);
+        } else if (Array.isArray(res.data) && res.data.length > 0) {
+          setHospitalName(res.data[0].Name || res.data[0].name || '');
+        }
+      } catch (e) {
+        setHospitalName('');
+      }
+    };
+    fetchHospitalName();
   }, []);
 
   // Hàm đóng Snackbar
@@ -686,15 +707,11 @@ const UserProfile = () => {
                 <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
                 {scheduledAppointments.length > 0 ? (
                   scheduledAppointments.map((appointment, index) => {
-                    // Cố gắng parse "notes" để lấy giờ và địa điểm bệnh viện
-                    let hospitalName = '';
+                    // BỎ HOÀN TOÀN logic parse hospitalName từ notes
+                    // Luôn dùng hospitalName từ state
                     let timeSlot = 'Không xác định';
                     if (appointment.notes) {
-                        const hospitalMatch = appointment.notes.match(/Địa điểm hiến máu: (.*?)\./);
                         const timeMatch = appointment.notes.match(/Khung giờ: (.*)/);
-                        if (hospitalMatch && hospitalMatch[1] !== 'Chưa chọn') {
-                            hospitalName = hospitalMatch[1];
-                        }
                         if (timeMatch) {
                             timeSlot = timeMatch[1];
                         }
@@ -725,7 +742,6 @@ const UserProfile = () => {
                           <Grid item xs={12}>
                               <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
                               <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
-                              <Typography variant="body2" color="text.secondary">{appointment.location}</Typography>
                           </Grid>
                         </Grid>
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>

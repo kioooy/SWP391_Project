@@ -629,22 +629,6 @@
         ],
         "parameters": [
           {
-            "name": "latitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "longitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
             "name": "radius",
             "in": "query",
             "schema": {
@@ -666,22 +650,6 @@
           "BloodDistanceSearch"
         ],
         "parameters": [
-          {
-            "name": "latitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "longitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
           {
             "name": "radius",
             "in": "query",
@@ -1021,46 +989,26 @@
         }
       }
     },
-    "/api/BloodSearch/request-donors-with-hospital/{recipientBloodTypeId}/{requiredVolume}": {
+    "/api/BloodSearch/notify-all-donors": {
       "post": {
         "tags": [
           "BloodSearch"
-        ],
-        "parameters": [
-          {
-            "name": "recipientBloodTypeId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "requiredVolume",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
+                "$ref": "#/components/schemas/NotifyAllDonorsDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
+                "$ref": "#/components/schemas/NotifyAllDonorsDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
+                "$ref": "#/components/schemas/NotifyAllDonorsDTO"
               }
             }
           }
@@ -1454,20 +1402,10 @@
         }
       }
     },
-    "/api/DonationRequest/{memberId}/history": {
+    "/api/DonationRequest/history": {
       "get": {
         "tags": [
           "DonationRequest"
-        ],
-        "parameters": [
-          {
-            "name": "memberId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -3209,6 +3147,16 @@
         },
         "additionalProperties": false
       },
+      "NotifyAllDonorsDTO": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "RegisterModel": {
         "required": [
           "address",
@@ -3280,16 +3228,6 @@
           },
           "isRecipient": {
             "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "RequestDonorsWithHospitalDTO": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false

@@ -176,12 +176,12 @@ const getValidationSchema = (activeStep) => {
     baseSchema.dateOfBirth = Yup.date()
       .nullable()
       .max(new Date(), 'Ngày sinh không được lớn hơn ngày hiện tại')
-      .test('age', 'Người hiến máu phải từ 16 đến 60 tuổi', function (value) {
+      .test('age', 'Người hiến máu phải từ 18 đến 60 tuổi', function (value) {
         if (!value) return false;
         const today = dayjs();
         const birthDate = dayjs(value);
         const age = today.diff(birthDate, 'year');
-        return age >= 16 && age <= 60;
+        return age >= 18 && age <= 60;
       })
       .required('Vui lòng chọn ngày sinh');
     baseSchema.gender = Yup.string().required('Vui lòng chọn giới tính');

@@ -20,14 +20,23 @@ public class BloodSearchController : ControllerBase
         _httpClientFactory = httpClientFactory;
     }
 
-    private async Task<List<object>> FindAndRankDonors(int recipientBloodTypeId)
+    private async Task<List<object>> FindAndRankDonors(int recipientBloodTypeId, int? componentId = null)
     {
         var now = DateTime.Now;
         var donationRestPeriod = TimeSpan.FromDays(84); // 12 tuần
         var transfusionRestPeriod = TimeSpan.FromDays(365); // 12 tháng
         
-        var compatibleBloodTypeIds = await _context.BloodCompatibilityRules
-            .Where(r => r.BloodRecieveId == recipientBloodTypeId && r.IsCompatible)
+        var compatibleBloodTypeIdsQuery = _context.BloodCompatibilityRules
+            .Where(r => r.BloodRecieveId == recipientBloodTypeId && r.IsCompatible);
+
+        if (componentId.HasValue)
+        {
+            compatibleBloodTypeIdsQuery = compatibleBloodTypeIdsQuery.Where(r => r.ComponentId == componentId);
+        } else {
+            compatibleBloodTypeIdsQuery = compatibleBloodTypeIdsQuery.Where(r => r.ComponentId == null);
+        }
+
+        var compatibleBloodTypeIds = await compatibleBloodTypeIdsQuery
             .Select(r => r.BloodGiveId)
             .ToListAsync();
 
@@ -77,10 +86,32 @@ public class BloodSearchController : ControllerBase
     [HttpGet("search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}")]
     public async Task<IActionResult> SearchBloodWithHospitalLocation(
         int recipientBloodTypeId, 
-        int requiredVolume)
+        int requiredVolume,
+        [FromQuery] string? component = null)
     {
         try
         {
+            int? targetComponentId = null;
+
+            if (!string.IsNullOrWhiteSpace(component))
+            {
+                if (component.Equals("whole-blood", StringComparison.OrdinalIgnoreCase) || 
+                    component.Equals("whole blood", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetComponentId = null; // Máu toàn phần
+                }
+                else
+                {
+                    var componentEntry = await _context.BloodComponents
+                                                .FirstOrDefaultAsync(c => c.ComponentName.ToLower() == component.ToLower());
+
+                    if (componentEntry == null)
+                        return BadRequest("Invalid component type.");
+                    
+                    targetComponentId = componentEntry.ComponentId;
+                }
+            }
+            
             var hospital = await _context.Hospitals.FirstOrDefaultAsync();
             if (hospital?.Location == null)
             {
@@ -91,7 +122,8 @@ public class BloodSearchController : ControllerBase
                 .Where(bu => bu.BloodTypeId == recipientBloodTypeId
                           && bu.BloodStatus == "Available"
                           && bu.RemainingVolume >= requiredVolume
-                          && bu.ExpiryDate >= DateOnly.FromDateTime(DateTime.Now))
+                          && bu.ExpiryDate >= DateOnly.FromDateTime(DateTime.Now)
+                          && (targetComponentId == null || bu.ComponentId == targetComponentId))
                 .Select(bu => new {
                     bu.BloodUnitId,
                     bu.BloodTypeId,
@@ -110,7 +142,7 @@ public class BloodSearchController : ControllerBase
                 });
             }
             
-            var suggestedDonors = await FindAndRankDonors(recipientBloodTypeId);
+            var suggestedDonors = await FindAndRankDonors(recipientBloodTypeId, targetComponentId);
 
             return Ok(new {
                 availableBloodUnits = new object[0],

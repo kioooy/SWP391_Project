@@ -263,11 +263,12 @@ namespace Blood_Donation_Support.Controllers
                 var isCompatible = await _context.BloodCompatibilityRules.AnyAsync(rule =>
                     rule.BloodGiveId == bloodUnit.BloodTypeId &&
                     rule.BloodRecieveId == transfusionRequestFull.BloodTypeId &&
-                    rule.IsCompatible == true);
+                    rule.IsCompatible == true &&
+                    rule.ComponentId == transfusionRequestFull.ComponentId);
                 if (!isCompatible)
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Blood unit {model.BloodUnitId} blood type is not compatible with the requested blood type (unit: {bloodUnit.BloodTypeId}, request: {transfusionRequestFull.BloodTypeId}).");
+                    return BadRequest($"Blood unit {model.BloodUnitId} blood type is not compatible with the requested blood type (unit: {bloodUnit.BloodTypeId}, request: {transfusionRequestFull.BloodTypeId}) or component (unit component: {bloodUnit.ComponentId}, request component: {transfusionRequestFull.ComponentId}).");
                 }
                 // 4. Kiểm tra thể tích còn lại
                 if (bloodUnit.RemainingVolume < transfusionRequestFull.TransfusionVolume)

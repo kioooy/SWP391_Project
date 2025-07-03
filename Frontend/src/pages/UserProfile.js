@@ -789,56 +789,7 @@ const UserProfile = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>Chỉnh sửa thông tin cá nhân</DialogTitle>
         <DialogContent>
-          <TextField
-            margin="dense"
-            name="fullName"
-            label="Họ và tên"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={editFormData.fullName || ''}
-            disabled
-            InputProps={{ readOnly: true }}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="citizenNumber"
-            label="Số CCCD"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={editFormData.citizenNumber || ''}
-            disabled
-            InputProps={{ readOnly: true }}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="dateOfBirth"
-            label="Ngày sinh"
-            type="date"
-            fullWidth
-            variant="outlined"
-            InputLabelProps={{ shrink: true }}
-            value={editFormData.dateOfBirth || ''}
-            disabled
-            InputProps={{ readOnly: true }}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
-            <InputLabel>Giới tính</InputLabel>
-            <Select
-              name="gender"
-              value={editFormData.gender || ''}
-              disabled
-              inputProps={{ readOnly: true }}
-              label="Giới tính"
-            >
-              <MenuItem value="male">Nam</MenuItem>
-              <MenuItem value="female">Nữ</MenuItem>
-            </Select>
-          </FormControl>
+          {/* Chỉ hiển thị các trường có thể chỉnh sửa */}
           <TextField
             margin="dense"
             name="phone"

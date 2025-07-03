@@ -525,7 +525,20 @@ const MainLayout = () => {
                   component={StyledLink}
                   to={item.path}
                   isActive={location.pathname === item.path}
-                  sx={{ color: "white", fontWeight: "bold", fontSize: 16, letterSpacing: 1 }}
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontSize: 15,
+                    letterSpacing: 0.5,
+                    px: 1.5,
+                    py: 1,
+                    minWidth: 0,
+                    whiteSpace: "nowrap",      // Không cho xuống dòng
+                    lineHeight: 1.2,           // Giảm chiều cao dòng
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1
+                  }}
                   onClick={(e) => {
                     if (item.path === "/booking" && !isAuthenticated && !isTestUser) {
                       e.preventDefault();

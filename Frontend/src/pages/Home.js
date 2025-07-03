@@ -397,9 +397,17 @@ const Home = () => {
                             fullWidth
                             onClick={() => {
                               if (user) {
-                                navigate(`/booking?periodId=${period.periodId}`);
+                                // Lưu thông tin đợt hiến máu đã chọn vào localStorage để BookingPage lấy lại
+                                localStorage.setItem(
+                                  'selectedPeriodInfo',
+                                  JSON.stringify({
+                                    period: period,
+                                    fromDate: period.periodDateFrom,
+                                    toDate: period.periodDateTo
+                                  })
+                                );
+                                navigate('/booking');
                               } else {
-                                // Lưu trạng thái cần thông báo vào localStorage
                                 localStorage.setItem('showLoginSnackbar', 'true');
                                 navigate('/login');
                               }

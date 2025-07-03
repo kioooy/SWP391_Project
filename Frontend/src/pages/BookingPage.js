@@ -428,16 +428,12 @@ const BookingPage = () => {
         return;
       }
       const payload = {
-        donationId: 0, // để backend tự sinh
         memberId: userId,
         periodId: periodId,
         componentId: componentId,
-        preferredDonationDate: donationDate ? dayjs(donationDate).format('YYYY-MM-DD') : null, // Sử dụng ngày đã chọn
+        preferredDonationDate: donationDate ? dayjs(donationDate).format('YYYY-MM-DD') : null,
         responsibleById: responsibleById,
-        requestDate: requestDate,
-        approvalDate: null,
         donationVolume: donationVolume,
-        status: 'Approved',
         notes: `Địa điểm hiến máu: ${selectedPeriod ? selectedPeriod.location : 'Chưa chọn'}. Khung giờ: ${selectedTimeSlot}`,
         patientCondition: patientCondition
       };
@@ -648,6 +644,8 @@ const BookingPage = () => {
       if (info.period) {
         setSelectedPeriod(info.period);
         setSelectedLocation(info.period.location);
+        // Tự động set ngày hiến máu là ngày bắt đầu của đợt
+        setDonationDate(dayjs(info.period.periodDateFrom));
       }
       if (info.fromDate) setFromDate(dayjs(info.fromDate));
       if (info.toDate) setToDate(dayjs(info.toDate));
@@ -837,7 +835,10 @@ const BookingPage = () => {
                     {selectedPeriod && (
                       <Alert severity="info" sx={{ mb: 3 }}>
                         <Typography variant="body2">
-                          <strong>Khoảng thời gian hiến máu:</strong> Từ {dayjs(selectedPeriod.periodDateFrom).format('DD/MM/YYYY')} đến {dayjs(selectedPeriod.periodDateTo).format('DD/MM/YYYY')}
+                          <strong>Khoảng thời gian hiến máu:</strong>
+                          {' '}
+                          {/* Chỉ hiển thị giờ từ đợt hiến máu */}
+                          {dayjs(selectedPeriod.periodDateFrom).format('HH:mm')} - {dayjs(selectedPeriod.periodDateTo).format('HH:mm')}
                         </Typography>
                       </Alert>
                     )}
@@ -1468,4 +1469,4 @@ const BookingPage = () => {
   );
 };
 
-export default BookingPage; 
+export default BookingPage;

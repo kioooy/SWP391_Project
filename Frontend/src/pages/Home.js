@@ -45,6 +45,8 @@ import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -52,6 +54,11 @@ const Home = () => {
   const [toDate, setToDate] = useState(null);
   const [periods, setPeriods] = useState([]);
   const [loadingPeriods, setLoadingPeriods] = useState(true);
+  const [showAllPeriods, setShowAllPeriods] = useState(false); // <-- Di chuyển lên đây
+  const [hospitals, setHospitals] = useState([]); // Thêm state lưu danh sách bệnh viện
+
+  // State cho popup thông báo
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Lấy user từ redux
   const user = useSelector((state) => state.auth.user);
@@ -74,6 +81,11 @@ const Home = () => {
       })
       .catch(() => setPeriods([]))
       .finally(() => setLoadingPeriods(false));
+
+    // Lấy danh sách bệnh viện
+    axios.get('/api/Hospital')
+      .then(res => setHospitals(res.data))
+      .catch(() => setHospitals([]));
   }, []);
 
   // Nếu là member truyền máu (isRecipient)
@@ -255,6 +267,18 @@ const Home = () => {
     }
   ];
 
+  // Sắp xếp các đợt hiến máu theo ngày bắt đầu tăng dần
+  const sortedPeriods = [...periods].sort((a, b) => dayjs(a.periodDateFrom) - dayjs(b.periodDateFrom));
+  // Lấy 4 đợt gần nhất
+  const displayedPeriods = showAllPeriods ? sortedPeriods : sortedPeriods.slice(0, 4);
+
+  // Hàm lấy tên bệnh viện từ hospitalId
+  const getHospitalName = (hospitalId) => {
+    if (!hospitals || hospitals.length === 0) return '';
+    const hospital = hospitals.find(h => h.hospitalId === hospitalId);
+    return hospital ? hospital.name : '';
+  };
+
   return (
     <Box sx={{ backgroundColor: '#fff', minHeight: '100vh' }}>
       {/* Hero Section - Đặt lịch hiến máu */}
@@ -314,34 +338,93 @@ const Home = () => {
             ) : periods.length === 0 ? (
               <Typography align="center" color="text.secondary">Không có đợt hiến máu nào trong tháng này.</Typography>
             ) : (
-              <Grid container spacing={2}>
-                {periods.map((period) => (
-                  <Grid item xs={12} md={6} key={period.periodId}>
-                    <Card sx={{ borderRadius: 2, border: '1px solid #e53e3e', mb: 2 }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="bold" color="#e53e3e">
-                          {period.periodName}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Địa điểm: {period.location}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Thời gian: {dayjs(period.periodDateFrom).format('DD/MM/YYYY')} - {dayjs(period.periodDateTo).format('DD/MM/YYYY')}
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          fullWidth
-                          onClick={() => navigate(`/booking?periodId=${period.periodId}`)}
-                          sx={{ mt: 2 }}
-                        >
-                          Đăng ký ngay
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
+              <>
+                <Grid container spacing={2}>
+                  {displayedPeriods.map((period) => (
+                    <Grid item xs={12} md={6} key={period.periodId}>
+                      <Card sx={{ borderRadius: 2, border: '1px solid #e53e3e', mb: 2 }}>
+                        <CardContent>
+                          {/* Ẩn tên đợt hiến máu */}
+                          {/* <Typography variant="h6" fontWeight="bold" color="#e53e3e">
+                            {period.periodName}
+                          </Typography> */}
+                          <Box sx={{ mb: 1 }}>
+                            {/* Highlight tên bệnh viện trên 1 dòng riêng */}
+                            <span
+                              style={{
+                                background: '#ffeaea',
+                                color: '#e53e3e',
+                                fontWeight: 'bold',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '1rem',
+                                display: 'inline-block',
+                                width: '100%',
+                                textAlign: 'center',
+                                marginBottom: 8
+                              }}
+                            >
+                              {getHospitalName(period.hospitalId)}
+                            </span>
+                          </Box>
+                          <Typography variant="body2" sx={{ mb: 1, color: '#000' }}>
+                            {/* Hiển thị ngày và thời gian: nếu khác ngày thì tách ngày và giờ riêng */}
+                            {(() => {
+                              const from = dayjs(period.periodDateFrom);
+                              const to = dayjs(period.periodDateTo);
+                              if (from.isSame(to, 'day')) {
+                                // Nếu cùng ngày, hiển thị ngày 1 lần và khoảng thời gian
+                                return (
+                                  <>
+                                    <span>Ngày: {from.format('DD/MM/YYYY')}</span><br />
+                                    <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                  </>
+                                );
+                              } else {
+                                // Nếu khác ngày, tách ngày và thời gian riêng
+                                return (
+                                  <>
+                                    <span>Ngày: {from.format('DD/MM/YYYY')} - {to.format('DD/MM/YYYY')}</span><br />
+                                    <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                  </>
+                                );
+                              }
+                            })()}
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            onClick={() => {
+                              if (user) {
+                                navigate(`/booking?periodId=${period.periodId}`);
+                              } else {
+                                // Lưu trạng thái cần thông báo vào localStorage
+                                localStorage.setItem('showLoginSnackbar', 'true');
+                                navigate('/login');
+                              }
+                            }}
+                            sx={{ mt: 2 }}
+                          >
+                            Đăng ký ngay
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+                {sortedPeriods.length > 4 && (
+                  <Box sx={{ textAlign: 'center', mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => setShowAllPeriods(!showAllPeriods)}
+                    >
+                      {showAllPeriods ? 'Ẩn bớt' : 'Xem thêm'}
+                    </Button>
+                  </Box>
+                )}
+              </>
             )}
           </Paper>
         </Container>
@@ -562,6 +645,18 @@ const Home = () => {
           </Grid>
         </Box>
       </Container>
+
+      {/* Snackbar popup thông báo */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={1200}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <MuiAlert elevation={6} variant="filled" severity="warning" sx={{ fontSize: '1rem' }}>
+          Vui lòng đăng nhập để đặt lịch
+        </MuiAlert>
+      </Snackbar>
     </Box>
   );
 };

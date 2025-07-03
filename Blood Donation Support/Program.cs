@@ -35,6 +35,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<Blood_Donation_Support.Controllers.BloodCompatibilityController>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -76,6 +77,9 @@ builder.Services.AddCors(options =>
                    .AllowCredentials(); // Allow credentials (e.g., cookies, authorization headers)
         });
 });
+
+// Đăng ký IHttpClientFactory
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

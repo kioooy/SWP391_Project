@@ -18,6 +18,8 @@ public partial class DonationRequest
 
     public DateTime? RequestDate { get; set; }
 
+    public DateTime? ApprovalDate { get; set; }
+
     public DateTime? CompletionDate { get; set; }
     public DateTime? CancelledDate { get; set; }
     public DateTime? RejectedDate { get; set; }
@@ -39,5 +41,4 @@ public partial class DonationRequest
 
     public virtual User ResponsibleBy { get; set; } = null!;
 
-    public virtual ICollection<Hospital> Hospital { get; set; } = new List<Hospital>();
 }

@@ -1,5 +1,5 @@
-using Blood_Donation_Support.Model;
 using Microsoft.EntityFrameworkCore;
+using Blood_Donation_Support.Model;
 
 namespace Blood_Donation_Support.Data;
 
@@ -46,9 +46,13 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UrgentBloodRequest> UrgentBloodRequests { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=BloodDonationDB;Trusted_Connection=True;TrustServerCertificate=True;");
+        // => optionsBuilder.UseSqlServer("Server=localhost;Database=BloodDonationDB;Trusted_Connection=True;TrustServerCertificate=True;");
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -111,6 +115,11 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasForeignKey(d => d.BloodRecieveId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__BloodComp__Blood__60A75C0F");
+
+            entity.HasOne(d => d.Component)
+                .WithMany()
+                .HasForeignKey(d => d.ComponentId)
+                .HasConstraintName("FK_BloodCompatibilityRules_BloodComponents_ComponentId");
         });
 
         modelBuilder.Entity<BloodComponent>(entity =>
@@ -248,12 +257,13 @@ public partial class BloodDonationSupportContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12696D1B7A");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__C90E2B1038E88F93");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Message).HasMaxLength(500);
+            entity.Property(e => e.Message).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.IsRead).HasColumnType("bit");
             entity.Property(e => e.NotificationType)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -353,6 +363,65 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<UrgentBloodRequest>(entity =>
+        {
+            entity.HasKey(e => e.UrgentRequestId).HasName("PK_UrgentBloodRequests_Id");
+
+            entity.ToTable("UrgentBloodRequests");
+
+            entity.Property(e => e.PatientName).HasMaxLength(255);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.ContactName).HasMaxLength(255);
+            entity.Property(e => e.ContactPhone).HasMaxLength(20).IsUnicode(false);
+            entity.Property(e => e.ContactEmail).HasMaxLength(255);
+            entity.Property(e => e.EmergencyLocation).HasMaxLength(500);
+            entity.Property(e => e.Notes).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.RequestDate)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.CompletionDate).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.BloodType)
+                .WithMany()
+                .HasForeignKey(d => d.RequestedBloodTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UrgentBloodRequests_BloodTypes_Requested");
+
+            entity.HasOne(d => d.RelatedTransfusionRequest)
+                .WithMany()
+                .HasForeignKey(d => d.RelatedTransfusionRequestId)
+                .HasConstraintName("FK_UrgentBloodRequests_TransfusionRequests_Related");
+
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .HasConstraintName("FK_UrgentBloodRequests_CreatedByUser");
+        });
+
+        modelBuilder.Entity<Hospital>(entity =>
+        {
+            entity.HasKey(e => e.HospitalId).HasName("PK__Hospital__BA9C464811D44BF0");
+
+            entity.Property(e => e.Address).HasMaxLength(255);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Location).HasColumnType("geography");
+        });
+
+        modelBuilder.Entity<BloodReservation>(entity =>
+        {
+            entity.HasKey(e => e.ReservationId).HasName("PK__BloodRes__B9756D8A29A26A4A");
+
+            entity.Property(e => e.ReservedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ExpireAt).HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
         });
 
         OnModelCreatingPartial(modelBuilder);

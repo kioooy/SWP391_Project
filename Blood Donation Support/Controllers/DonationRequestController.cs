@@ -4,6 +4,7 @@ using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace Blood_Donation_Support.Controllers
@@ -20,8 +21,8 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // get donation request history by id (Member View)
-        // api/DonationRequest/{memberId}/history
-        [HttpGet("{memberId}/history")]
+        // api/DonationRequest/history
+        [HttpGet("history")]
         [Authorize(Roles = "Member,Admin")] 
         public async Task<IActionResult> GetDonationRequestHistory()
         {
@@ -155,6 +156,23 @@ namespace Blood_Donation_Support.Controllers
             var member = await _context.Members.FirstOrDefaultAsync( u => u.UserId == model.MemberId ); 
             if (member == null)
                 return NotFound(); // Return 404 Not Found if member not found
+            if(member.LastDonationDate < DateOnly.FromDateTime(DateTime.Now.AddDays(-90)))
+                return BadRequest("Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới."); // Return 400 Bad Request if last donation date is less than 90 days ago
+
+            // Kiểm tra member vừa truyền máu xong hoặc đang trong thời gian hồi phục
+            var lastTransfusion = await _context.TransfusionRequests
+                .Where(tr => tr.MemberId == member.UserId && tr.Status == "Completed")
+                .OrderByDescending(tr => tr.CompletionDate)
+                .FirstOrDefaultAsync();
+
+            if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
+            {
+                var daysSinceTransfusion = (DateTime.UtcNow - lastTransfusion.CompletionDate.Value).TotalDays;
+                if (daysSinceTransfusion < 365)
+                {
+                    return BadRequest("Bạn vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 365 ngày.");
+                }
+            }
 
             // Check if the member has an upcoming donation request
             var today = DateOnly.FromDateTime(DateTime.Today);
@@ -167,7 +185,7 @@ namespace Blood_Donation_Support.Controllers
                 return BadRequest("Bạn đang có lịch hiến máu. Vui lòng hoàn thành hoặc hủy lịch trước khi đặt lịch mới!");
             
             // Add new donation request
-            var donationRequest = new DonationRequest
+             var donationRequest = new DonationRequest
             {
                 MemberId = member.UserId,                            // Member Id ( UserId of role the member )
                 PeriodId = model.PeriodId,                           // Period Id 
@@ -175,6 +193,7 @@ namespace Blood_Donation_Support.Controllers
                 PreferredDonationDate = model.PreferredDonationDate, // Preferred Donation Date 
                 ResponsibleById = model.ResponsibleById,             // Responsible By Id 
                 RequestDate = DateTime.Now,                          // Request Date (current date)
+                ApprovalDate = DateTime.Now,                         // Approval Date (current date)
                 DonationVolume = model.DonationVolume,               // Donation Volume
                 Status = "Approved",                                 // Status (default "Approved" as per new business logic)
                 Notes = model.Notes,                                 // Notes 
@@ -182,11 +201,15 @@ namespace Blood_Donation_Support.Controllers
             };
 
             // Update the current quantity for the donation period
-            var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == model.PeriodId);
-            if (period != null)
+            var period = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == model.PeriodId)
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {model.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if (period.CurrentQuantity >= 0)
             {
-                period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1;
-                _context.Entry(period).State = EntityState.Modified;
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
             }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
@@ -306,12 +329,17 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.Notes = $"Lý do từ chối của bác sĩ phụ trách {name}: {note}"; // Add a note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            var currentQuantity = await _context.BloodDonationPeriods
+            // Get the current quantity for the period
+            var period = await _context.BloodDonationPeriods
                 .Where(p => p.PeriodId == existingRequest.PeriodId)
-                .Select(p => p.CurrentQuantity)
-                .FirstOrDefaultAsync(); // Get the current quantity for the period
-            currentQuantity = (currentQuantity ?? 0) - 1; // Decrement the current quantity by 1
-            _context.Entry(currentQuantity).State = EntityState.Modified; // Mark the entity as modified
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if (period.CurrentQuantity > 0)
+            {
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
+            }
 
             var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
             try
@@ -330,43 +358,44 @@ namespace Blood_Donation_Support.Controllers
         // Cancel donation request by id
         // PATCH: api/DonationRequest/{id}/cancel
         [HttpPatch("{id}/cancel")]
-        [Authorize(Roles = "Member")]
+        [Authorize(Roles = "Member,Staff,Admin")]
         public async Task<IActionResult> CancelDonationRequest(int id)
         {
-            // Determine caller's role and id
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value; // Get the role of the user
-            var name = User.FindFirst(ClaimTypes.Name)?.Value; // Get the name of the current user
+            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
+            var name = User.FindFirst(ClaimTypes.Name)?.Value;
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
-            var existingRequest = await _context.DonationRequests.FindAsync(id); // Fetch the donation request by ID
+            var existingRequest = await _context.DonationRequests.FindAsync(id);
             if (existingRequest == null)
                 return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
-            if (existingRequest.MemberId != currentUserId)
-                return BadRequest("You are not authorized to cancel this request."); // Chỉ cho phép member hủy lịch của chính mình
 
             existingRequest.CancelledDate = DateTime.Now;    // Set the cancellation date
             existingRequest.Status = "Cancelled";            // Update the status to "Cancelled"
             existingRequest.Notes = $"Hủy Lịch";             // Custom Note indicating cancellation by the user
             _context.Entry(existingRequest).State = EntityState.Modified; // Mark the entity as modified
 
-            // Cập nhật số lượng hiện tại của đợt hiến máu
-            var period = await _context.BloodDonationPeriods.FirstOrDefaultAsync(p => p.PeriodId == existingRequest.PeriodId);
-            if (period != null)
+            // Get the current quantity for the period
+            var period = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodId == existingRequest.PeriodId)
+                .FirstOrDefaultAsync();
+            if (period == null)
+                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}."); // Return 404 Not Found if the period is not found
+            else if(period.CurrentQuantity > 0)
             {
-                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1;
-                _context.Entry(period).State = EntityState.Modified;
+                period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1; // Decrement the current quantity by 1
+                _context.Entry(period).State = EntityState.Modified; // Mark the entity as modified
             }
 
-            var transaction = await _context.Database.BeginTransactionAsync(); // Begin a new transaction
+            var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                await _context.SaveChangesAsync();  // Save changes to the database
-                await transaction.CommitAsync();    // Commit the transaction
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
                 return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
             }
             catch (DbUpdateConcurrencyException)
             {
-                await transaction.RollbackAsync(); // Rollback the transaction 
+                await transaction.RollbackAsync();
                 throw;
             }
         }
@@ -395,11 +424,8 @@ namespace Blood_Donation_Support.Controllers
             IQueryable<DonationRequest> query = _context.DonationRequests
                 .Include(dr => dr.Period)
                 .Where(dr =>
-                    (dr.Status == "Pending" || dr.Status == "Approved") &&
-                    (
-                        (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
-                        dr.Period.PeriodDateFrom >= DateTime.Today
-                    )
+                    (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                    dr.Period.PeriodDateFrom >= DateTime.Today
                 );
 
             if (memberId.HasValue)
@@ -407,26 +433,30 @@ namespace Blood_Donation_Support.Controllers
                 query = query.Where(dr => dr.MemberId == memberId.Value);
             }
 
-            var list = await query
-                .Select(dr => new
-                {
+            var result = await _context.DonationRequests
+                .Where(dr =>
+                    (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                    dr.Period.PeriodDateFrom >= DateTime.Today
+                )
+                .Select(dr => new {
                     dr.DonationId,
-                    dr.MemberId,
-                    dr.PreferredDonationDate,
                     dr.Status,
-                    dr.Period.PeriodId,
+                    dr.PreferredDonationDate,
                     dr.Period.PeriodName,
                     dr.Period.Hospital.Name,
                     dr.Period.PeriodDateFrom,
-                    dr.Period.PeriodDateTo
+                    dr.Period.PeriodDateTo,
+                    dr.RequestDate,
+                    DonationVolume = dr.DonationVolume,
+                    MemberBloodType = dr.Member.BloodType.BloodTypeName // hoặc BloodTypeCode nếu cần
                 })
                 .ToListAsync();
 
             // Sắp xếp sau khi đã lấy dữ liệu để tránh lỗi dịch LINQ
-            list = list.OrderBy(dr => dr.PreferredDonationDate.HasValue ? dr.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : dr.PeriodDateFrom)
+            result = result.OrderBy(dr => dr.PreferredDonationDate.HasValue ? dr.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : dr.PeriodDateFrom)
                        .ToList();
 
-            return Ok(list);
+            return Ok(result);
         }
 
     }

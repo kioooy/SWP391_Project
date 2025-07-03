@@ -3,6 +3,7 @@ using Blood_Donation_Support.Model;
 using Blood_Donation_Support.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -48,14 +49,17 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> GetBloodDonationPeriodById(int id)
         {
-            var period = await _context.BloodDonationPeriods.FindAsync(id);
+            // Include Hospital để tránh lỗi null
+            var period = await _context.BloodDonationPeriods
+                .Include(p => p.Hospital)
+                .FirstOrDefaultAsync(p => p.PeriodId == id);
             if (period == null)
                 return NotFound();
             return Ok(new {
                 period.PeriodId,
                 period.PeriodName,
                 period.HospitalId,
-                period.Hospital.Name,
+                HospitalName = period.Hospital != null ? period.Hospital.Name : null,
                 period.Status,
                 period.PeriodDateFrom,
                 period.PeriodDateTo,

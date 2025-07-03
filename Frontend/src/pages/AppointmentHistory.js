@@ -38,6 +38,7 @@ import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
+import axios from 'axios';
 
 // Styled components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -129,6 +130,9 @@ const AppointmentHistory = () => {
   const [openDetailDialog, setOpenDetailDialog] = React.useState(false);
   const [selectedAppointment, setSelectedAppointment] = React.useState(null);
   const [upcomingAppointments, setUpcomingAppointments] = React.useState([]);
+  const [hospitalLocation, setHospitalLocation] = React.useState({ name: '', address: '' });
+  const [openCancelDialog, setOpenCancelDialog] = React.useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = React.useState(null);
 
   // Lấy nhóm máu từ profile (Redux)
   const user = useSelector(state => state.auth.user);
@@ -157,13 +161,32 @@ const AppointmentHistory = () => {
     console.log(`Clicked appointment ${appointmentId}`);
   };
 
-  const handleDetailClick = (appointmentId) => {
-    const appointment = upcomingAppointments.find(app => app.id === appointmentId);
+  const handleDetailClick = async (appointmentId) => {
+    const appointment = upcomingAppointments.find(app => app.donationId === appointmentId);
     if (appointment) {
       setSelectedAppointment({
         ...appointment,
-        detail: appointment.detail || {} // Đảm bảo detail luôn là một object
+        detail: appointment.detail || {}
       });
+      // Gọi API lấy địa điểm bệnh viện theo periodId
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const res = await fetch(`${apiUrl}/Hospital/location?periodId=${appointment.periodId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setHospitalLocation({
+            name: data?.name || '',
+            address: data?.address || data?.location || 'Chưa có thông tin'
+          });
+        } else {
+          setHospitalLocation({ name: '', address: 'Chưa có thông tin' });
+        }
+      } catch {
+        setHospitalLocation({ name: '', address: 'Chưa có thông tin' });
+      }
       setOpenDetailDialog(true);
     }
   };
@@ -177,11 +200,12 @@ const AppointmentHistory = () => {
   const getStatusChip = (status) => {
     switch (status) {
       case 'completed':
+      case 'Completed':
         return (
           <Chip
             label="Hoàn thành"
-            color="success"
             size="small"
+            sx={{ backgroundColor: '#757575', color: 'white', fontWeight: 600 }}
           />
         );
       case 'scheduled':
@@ -189,7 +213,7 @@ const AppointmentHistory = () => {
         return (
           <Chip
             label="Đã lên lịch"
-            color="primary"
+            color="success"
             size="small"
           />
         );
@@ -216,6 +240,38 @@ const AppointmentHistory = () => {
     }
   };
 
+  // Hàm hủy lịch hẹn
+  const handleOpenCancelDialog = (appointment) => {
+    setAppointmentToCancel(appointment);
+    setOpenCancelDialog(true);
+  };
+  const handleConfirmCancel = async () => {
+    if (!appointmentToCancel) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      await axios.patch(`${apiUrl}/DonationRequest/${appointmentToCancel.donationId}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOpenCancelDialog(false);
+      setAppointmentToCancel(null);
+      // Reload lại danh sách lịch hẹn
+      const res = await axios.get(`${apiUrl}/DonationRequest/upcoming/all-role`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingAppointments(res.data || []);
+    } catch (error) {
+      setOpenCancelDialog(false);
+      setAppointmentToCancel(null);
+      alert('Lỗi khi hủy lịch hẹn!');
+    }
+  };
+  const handleCloseCancelDialog = () => {
+    setOpenCancelDialog(false);
+    setAppointmentToCancel(null);
+  };
+
   return (
     <Container maxWidth="lg">
       <Typography
@@ -229,29 +285,52 @@ const AppointmentHistory = () => {
         upcomingAppointments.map((appointment, index) => (
           <Box key={index} sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Grid container spacing={2} sx={{ flex: 1 }}>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
-                <Typography variant="body1" fontWeight="bold">{appointment.preferredDonationDate ? dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY') : ''}</Typography>
+              <Grid item xs={12} sm={2}>
+                <Typography variant="body2" color="text.secondary">Ngày đặt lịch</Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {appointment.requestDate
+                    ? dayjs(appointment.requestDate).format('DD/MM/YYYY')
+                    : appointment.RequestDate
+                      ? dayjs(appointment.RequestDate).format('DD/MM/YYYY')
+                      : ''}
+                </Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={2}>
+                <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến máu</Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {appointment.preferredDonationDate ? dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={3}>
                 <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                 <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={3}>
                 <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
                 {getStatusChip(appointment.status)}
               </Grid>
             </Grid>
-            <Button
-              variant="outlined"
-              sx={{ ml: 2, minWidth: 120 }}
-              onClick={() => {
-                setSelectedAppointment({ ...appointment, detail: appointment.detail || {} });
-                setOpenDetailDialog(true);
-              }}
-            >
-              Xem chi tiết
-            </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
+              <Button
+                variant="outlined"
+                sx={{ minWidth: 120 }}
+                onClick={() => {
+                  handleDetailClick(appointment.donationId);
+                }}
+              >
+                Xem chi tiết
+              </Button>
+              {(appointment.status === 'scheduled' || appointment.status === 'Approved') && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  sx={{ minWidth: 120 }}
+                  onClick={() => handleOpenCancelDialog(appointment)}
+                >
+                  Hủy lịch hẹn
+                </Button>
+              )}
+            </Box>
           </Box>
         ))
       ) : (
@@ -287,17 +366,22 @@ const AppointmentHistory = () => {
                     <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
                     {getStatusChip(selectedAppointment.status)}
                     <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}</Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography>
-                    <Typography variant="body2" color="text.secondary">Nhóm máu hiến</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.bloodTypeName || 'Chưa rõ'}</Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.location || 'Chưa có thông tin'}</Typography>
-                    <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
-                    <Typography variant="body1">{selectedAppointment.notes || ''}</Typography>
+                    <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {selectedAppointment.periodDateFrom && selectedAppointment.periodDateTo
+                        ? `${dayjs(selectedAppointment.periodDateFrom).format('HH:mm')} - ${dayjs(selectedAppointment.periodDateTo).format('HH:mm')}`
+                        : 'Không xác định'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">Lượng máu hiến</Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {/* Lấy từ thông tin đặt lịch */}
+                      {selectedAppointment.donationVolume ? `${selectedAppointment.donationVolume} ml` : 'Không xác định'}
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
@@ -308,6 +392,15 @@ const AppointmentHistory = () => {
           <Button onClick={handleCloseDialog} variant="outlined" color="primary">
             Đóng
           </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog xác nhận hủy lịch hẹn */}
+      <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog}>
+        <DialogTitle>Xác nhận hủy lịch hẹn</DialogTitle>
+        <DialogContent>Bạn có chắc chắn muốn hủy lịch hẹn này không?</DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancelDialog}>Không</Button>
+          <Button onClick={handleConfirmCancel} color="error" variant="contained">Hủy lịch hẹn</Button>
         </DialogActions>
       </Dialog>
     </Container>

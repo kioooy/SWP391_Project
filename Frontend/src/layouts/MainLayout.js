@@ -254,6 +254,7 @@ const MainLayout = () => {
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
         { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
+        { path: "/blood-search", label: "Tra Cứu Nhóm Máu ", icon: <BloodtypeIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
       ];
     } else {
@@ -261,6 +262,7 @@ const MainLayout = () => {
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
         { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
+        { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <EventIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <VerifiedIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
@@ -281,12 +283,13 @@ const MainLayout = () => {
   // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị menu có 2 mục này
   if (currentUser && currentUser.isRecipient) {
     const recipientMenu = [
-      { path: "/", label: "Trang Chủ" },
-      { path: "/faq", label: "Hỏi & Đáp" },
-      { path: "/article", label: "Tài Liệu Máu" },
-      { path: "/blog", label: "Blog" },
-      { path: "/booking-transfusion", label: "Đặt lịch truyền máu" },
-      { path: "/transfusion-history", label: "Lịch Sử Truyền Máu" },
+      { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
+      { label: "Tin Tức", isNews: true, icon: <ArticleIcon /> },
+      { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
+      { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
+      { path: "/booking-transfusion", label: "Đặt Lịch Truyền Máu", icon: <EventIcon /> },
+      { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
+      { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
     ];
     return (
       <MainContainer>
@@ -365,22 +368,44 @@ const MainLayout = () => {
         >
           <Toolbar sx={{ justifyContent: "center", minHeight: 0, py: 1 }}>
             <Stack direction="row" spacing={4}>
-              {recipientMenu.map((item) => (
-                <NavButton
-                  key={item.path}
-                  component={StyledLink}
-                  to={item.path}
-                  isActive={location.pathname === item.path}
-                  sx={{
-                    color: "white",
-                    fontWeight: "bold",
-                    fontSize: 18,
-                    letterSpacing: 1,
-                  }}
-                >
-                  {item.label}
-                </NavButton>
-              ))}
+              {recipientMenu.map((item) =>
+                item.isNews ? (
+                  <div key="news-menu-recipient">
+                    <NavButton
+                      onClick={handleNewsMenu}
+                      isActive={location.pathname.startsWith('/article') || location.pathname.startsWith('/faq')}
+                      sx={{ color: "white", fontWeight: "bold", fontSize: 16, letterSpacing: 1 }}
+                      startIcon={item.icon}
+                    >
+                      Tin Tức
+                    </NavButton>
+                    <Menu
+                      anchorEl={newsAnchorEl}
+                      open={openNewsMenu}
+                      onClose={handleCloseNewsMenu}
+                      MenuListProps={{ 'aria-labelledby': 'news-menu-button-recipient' }}
+                    >
+                      <MenuItem component={RouterLink} to="/article" onClick={handleCloseNewsMenu}>
+                        <MenuBookIcon sx={{ mr: 1 }} /> Thông Tin
+                      </MenuItem>
+                      <MenuItem component={RouterLink} to="/faq" onClick={handleCloseNewsMenu}>
+                        <QuestionAnswerIcon sx={{ mr: 1 }} /> Hỏi & Đáp
+                      </MenuItem>
+                    </Menu>
+                  </div>
+                ) : (
+                  <NavButton
+                    key={item.path}
+                    component={StyledLink}
+                    to={item.path}
+                    isActive={location.pathname === item.path}
+                    sx={{ color: "white", fontWeight: "bold", fontSize: 16, letterSpacing: 1 }}
+                    startIcon={item.icon}
+                  >
+                    {item.label}
+                  </NavButton>
+                )
+              )}
             </Stack>
           </Toolbar>
         </AppBar>
@@ -474,7 +499,7 @@ const MainLayout = () => {
                   <NavButton
                     onClick={handleNewsMenu}
                     isActive={location.pathname.startsWith('/article') || location.pathname.startsWith('/faq')}
-                    sx={{ color: "white", fontWeight: "bold", fontSize: 18, letterSpacing: 1 }}
+                    sx={{ color: "white", fontWeight: "bold", fontSize: 16, letterSpacing: 1 }}
                     startIcon={item.icon}
                   >
                     Tin Tức
@@ -500,7 +525,20 @@ const MainLayout = () => {
                   component={StyledLink}
                   to={item.path}
                   isActive={location.pathname === item.path}
-                  sx={{ color: "white", fontWeight: "bold", fontSize: 18, letterSpacing: 1 }}
+                  sx={{
+                    color: "white",
+                    fontWeight: "bold",
+                    fontSize: 15,
+                    letterSpacing: 0.5,
+                    px: 1.5,
+                    py: 1,
+                    minWidth: 0,
+                    whiteSpace: "nowrap",      // Không cho xuống dòng
+                    lineHeight: 1.2,           // Giảm chiều cao dòng
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1
+                  }}
                   onClick={(e) => {
                     if (item.path === "/booking" && !isAuthenticated && !isTestUser) {
                       e.preventDefault();

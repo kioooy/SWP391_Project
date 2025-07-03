@@ -433,27 +433,30 @@ namespace Blood_Donation_Support.Controllers
                 query = query.Where(dr => dr.MemberId == memberId.Value);
             }
 
-            var list = await query
-                .Select(dr => new
-                {
+            var result = await _context.DonationRequests
+                .Where(dr =>
+                    (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                    dr.Period.PeriodDateFrom >= DateTime.Today
+                )
+                .Select(dr => new {
                     dr.DonationId,
-                    dr.MemberId,
-                    dr.PreferredDonationDate,
                     dr.Status,
-                    dr.Period.PeriodId,
+                    dr.PreferredDonationDate,
                     dr.Period.PeriodName,
                     dr.Period.Hospital.Name,
                     dr.Period.PeriodDateFrom,
                     dr.Period.PeriodDateTo,
-                    dr.RequestDate
+                    dr.RequestDate,
+                    DonationVolume = dr.DonationVolume,
+                    MemberBloodType = dr.Member.BloodType.BloodTypeName // hoặc BloodTypeCode nếu cần
                 })
                 .ToListAsync();
 
             // Sắp xếp sau khi đã lấy dữ liệu để tránh lỗi dịch LINQ
-            list = list.OrderBy(dr => dr.PreferredDonationDate.HasValue ? dr.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : dr.PeriodDateFrom)
+            result = result.OrderBy(dr => dr.PreferredDonationDate.HasValue ? dr.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : dr.PeriodDateFrom)
                        .ToList();
 
-            return Ok(list);
+            return Ok(result);
         }
 
     }

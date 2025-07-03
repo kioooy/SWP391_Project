@@ -49,8 +49,10 @@ public partial class BloodDonationSupportContext : DbContext
     public virtual DbSet<UrgentBloodRequest> UrgentBloodRequests { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=BloodDonationDB;Trusted_Connection=True;TrustServerCertificate=True;");
+        // => optionsBuilder.UseSqlServer("Server=localhost;Database=BloodDonationDB;Trusted_Connection=True;TrustServerCertificate=True;");
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -113,6 +115,11 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasForeignKey(d => d.BloodRecieveId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__BloodComp__Blood__60A75C0F");
+
+            entity.HasOne(d => d.Component)
+                .WithMany()
+                .HasForeignKey(d => d.ComponentId)
+                .HasConstraintName("FK_BloodCompatibilityRules_BloodComponents_ComponentId");
         });
 
         modelBuilder.Entity<BloodComponent>(entity =>

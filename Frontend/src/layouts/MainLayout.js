@@ -69,6 +69,7 @@ const MainContainer = styled(Box)(({ theme }) => ({
 const ContentContainer = styled(Container)(({ theme }) => ({
   flex: 1,
   padding: theme.spacing(3),
+  marginTop: theme.spacing(8), // Thêm margin-top để tránh bị header che
 }));
 
 const StyledLink = styled(RouterLink)(({ theme }) => ({

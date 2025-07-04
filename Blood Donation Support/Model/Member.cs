@@ -23,7 +23,7 @@ public partial class Member
     public int? DonationCount { get; set; }
 
     // Vị trí địa lý (tọa độ) sử dụng NetTopologySuite Point (SRID 4326)
-    public Point Location { get; set; } = null!;
+    public Point? Location { get; set; }
 
     public DateOnly? LastCheckupDate { get; set; }
 

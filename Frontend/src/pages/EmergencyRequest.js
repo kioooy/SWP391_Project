@@ -48,6 +48,7 @@ const EmergencyRequest = () => {
     location: '',
     reason: '',
     notes: '',
+    cccd: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -89,7 +90,8 @@ const EmergencyRequest = () => {
   };
 
   const handlePatientNameChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
+    const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
     setFormData({
       ...formData,
       patientName: value,
@@ -100,7 +102,8 @@ const EmergencyRequest = () => {
   };
 
   const handleReasonChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
+    const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
     setFormData({
       ...formData,
       reason: value,
@@ -108,7 +111,8 @@ const EmergencyRequest = () => {
   };
 
   const handleContactNameChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '');
+    // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
+    const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
     setFormData({
       ...formData,
       contactName: value,
@@ -149,6 +153,11 @@ const EmergencyRequest = () => {
         newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
       }
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
+      if (!formData.cccd) {
+        newErrors.cccd = 'Vui lòng nhập số CCCD';
+      } else if (!/^\d{12}$/.test(formData.cccd)) {
+        newErrors.cccd = 'Số CCCD phải là 12 chữ số';
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -202,6 +211,7 @@ const EmergencyRequest = () => {
           location: '',
           reason: '',
           notes: '',
+          cccd: '',
         });
       } catch (error) {
         let msg = 'Có lỗi khi gửi yêu cầu!';
@@ -308,6 +318,17 @@ const EmergencyRequest = () => {
                 onChange={handleChange('location')}
                 error={!!errors.location}
                 helperText={errors.location}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Số CCCD"
+                value={formData.cccd}
+                onChange={handleChange('cccd')}
+                error={!!errors.cccd}
+                helperText={errors.cccd}
               />
             </Grid>
 

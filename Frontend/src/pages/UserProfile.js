@@ -123,6 +123,9 @@ const UserProfile = () => {
   // State cho dữ liệu chỉnh sửa trong dialog
   const [editFormData, setEditFormData] = useState({});
 
+  // 1. Thêm state lưu tên bệnh viện
+  const [hospitalName, setHospitalName] = useState('');
+
   // Lấy loại tài khoản từ nhiều nguồn
   const isDonor = user?.isDonor || user?.member?.isDonor || formData?.isDonor;
   const isRecipient = user?.isRecipient || user?.member?.isRecipient || formData?.isRecipient;
@@ -211,7 +214,7 @@ const UserProfile = () => {
         if (!token) return;
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
         // Lấy lịch sử hiến máu đã hoàn thành từ endpoint mới
-        const res = await axios.get(`${apiUrl}/DonationRequest/history/completed`, {
+        const res = await axios.get(`${apiUrl}/DonationRequest/history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCompletedDonationHistory(res.data || []);
@@ -220,6 +223,24 @@ const UserProfile = () => {
       }
     };
     fetchCompletedDonationHistory();
+  }, []);
+
+  // 2. Thêm useEffect để fetch tên bệnh viện khi mount
+  useEffect(() => {
+    const fetchHospitalName = async () => {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const res = await axios.get(`${apiUrl}/Hospital`);
+        if (res.data && (res.data.Name || res.data.name)) {
+          setHospitalName(res.data.Name || res.data.name);
+        } else if (Array.isArray(res.data) && res.data.length > 0) {
+          setHospitalName(res.data[0].Name || res.data[0].name || '');
+        }
+      } catch (e) {
+        setHospitalName('');
+      }
+    };
+    fetchHospitalName();
   }, []);
 
   // Hàm đóng Snackbar
@@ -467,7 +488,7 @@ const UserProfile = () => {
           <Chip
             icon={<CalendarToday />}
             label="Đã lên lịch"
-            color="primary"
+            color="success"
             size="small"
           />
         );
@@ -519,6 +540,11 @@ const UserProfile = () => {
       </div>
     );
   }
+
+  // Thêm biến lọc các lịch đã lên lịch
+  const scheduledAppointments = upcomingAppointments.filter(
+    (a) => a.status === 'Approved' || a.status === 'scheduled'
+  );
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -674,58 +700,17 @@ const UserProfile = () => {
             <CardContent>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={handleTabChange} aria-label="donation history tabs">
-                  <Tab label="Lịch sử hiến máu" />
                   <Tab label="Lịch hẹn sắp tới" />
                 </Tabs>
               </Box>
               <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch sử hiến máu đã hoàn thành</Typography>
-                {completedDonationHistory.length > 0 ? (
-                  <TableContainer component={Paper}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Ngày</TableCell>
-                          <TableCell>Địa điểm</TableCell>
-                          <TableCell>Nhóm máu</TableCell>
-                          <TableCell>Thể tích (ml)</TableCell>
-                          <TableCell>Trạng thái</TableCell>
-                          <TableCell>Ngày hiến máu tiếp theo</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {completedDonationHistory.map((row) => (
-                          <TableRow key={row.donationId}>
-                            <TableCell>{row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : ''}</TableCell>
-                            <TableCell>{row.location}</TableCell>
-                            <TableCell>{formData.bloodType}</TableCell>
-                            <TableCell>{row.donationVolume}</TableCell>
-                            <TableCell>{getStatusChip(row.status)}</TableCell>
-                            <TableCell></TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                    Chưa có lịch sử hiến máu đã hoàn thành.
-                  </Typography>
-                )}
-              </TabPanel>
-              <TabPanel value={tabValue} index={1}>
-                <Typography variant="h6" gutterBottom>Lịch hẹn sắp tới</Typography>
-                {upcomingAppointments.length > 0 ? (
-                  upcomingAppointments.map((appointment, index) => {
-                    // Cố gắng parse "notes" để lấy giờ và địa điểm bệnh viện
-                    let hospitalName = '';
+                {scheduledAppointments.length > 0 ? (
+                  scheduledAppointments.map((appointment, index) => {
+                    // BỎ HOÀN TOÀN logic parse hospitalName từ notes
+                    // Luôn dùng hospitalName từ state
                     let timeSlot = 'Không xác định';
                     if (appointment.notes) {
-                        const hospitalMatch = appointment.notes.match(/Địa điểm hiến máu: (.*?)\./);
                         const timeMatch = appointment.notes.match(/Khung giờ: (.*)/);
-                        if (hospitalMatch && hospitalMatch[1] !== 'Chưa chọn') {
-                            hospitalName = hospitalMatch[1];
-                        }
                         if (timeMatch) {
                             timeSlot = timeMatch[1];
                         }
@@ -753,10 +738,18 @@ const UserProfile = () => {
                             <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                             <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
                           </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                            <Typography variant="body1" fontWeight="bold">
+                              {/* Hiển thị thời gian diễn ra của đợt hiến máu */}
+                              {appointment.periodDateFrom && appointment.periodDateTo
+                                ? `${dayjs(appointment.periodDateFrom).format('HH:mm')} - ${dayjs(appointment.periodDateTo).format('HH:mm')}`
+                                : 'Không xác định'}
+                            </Typography>
+                          </Grid>
                           <Grid item xs={12}>
-                              <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
-                              <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
-                              <Typography variant="body2" color="text.secondary">{appointment.location}</Typography>
+                            <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
+                            <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
                           </Grid>
                         </Grid>
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
@@ -796,56 +789,7 @@ const UserProfile = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
         <DialogTitle>Chỉnh sửa thông tin cá nhân</DialogTitle>
         <DialogContent>
-          <TextField
-            margin="dense"
-            name="fullName"
-            label="Họ và tên"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={editFormData.fullName || ''}
-            disabled
-            InputProps={{ readOnly: true }}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="citizenNumber"
-            label="Số CCCD"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={editFormData.citizenNumber || ''}
-            disabled
-            InputProps={{ readOnly: true }}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="dateOfBirth"
-            label="Ngày sinh"
-            type="date"
-            fullWidth
-            variant="outlined"
-            InputLabelProps={{ shrink: true }}
-            value={editFormData.dateOfBirth || ''}
-            disabled
-            InputProps={{ readOnly: true }}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
-            <InputLabel>Giới tính</InputLabel>
-            <Select
-              name="gender"
-              value={editFormData.gender || ''}
-              disabled
-              inputProps={{ readOnly: true }}
-              label="Giới tính"
-            >
-              <MenuItem value="male">Nam</MenuItem>
-              <MenuItem value="female">Nữ</MenuItem>
-            </Select>
-          </FormControl>
+          {/* Chỉ hiển thị các trường có thể chỉnh sửa */}
           <TextField
             margin="dense"
             name="phone"
@@ -956,7 +900,7 @@ const UserProfile = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>

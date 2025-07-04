@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Box,
@@ -25,6 +25,7 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -44,6 +45,12 @@ import ScienceIcon from '@mui/icons-material/Science';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+
+// Thiết lập locale cho dayjs NGAY SAU import, nhưng TRƯỚC bất kỳ code nào khác
+dayjs.locale('vi');
 
 const stats = [
   { icon: <BloodtypeIcon color="primary" sx={{ fontSize: 40 }} />, label: 'Đơn vị máu đã tiếp nhận', value: '12,345+' },
@@ -152,12 +159,41 @@ const Home = () => {
   const navigate = useNavigate();
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [periods, setPeriods] = useState([]);
+  const [loadingPeriods, setLoadingPeriods] = useState(true);
+  const [showAllPeriods, setShowAllPeriods] = useState(false); // <-- Di chuyển lên đây
+  const [hospitals, setHospitals] = useState([]); // Thêm state lưu danh sách bệnh viện
+
+  // State cho popup thông báo
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Lấy user từ redux
   const user = useSelector((state) => state.auth.user);
   // Lấy thông tin member nếu có
   const isDonor = user && (user.isDonor || (user.member && user.member.isDonor));
   const isRecipient = user && (user.isRecipient || (user.member && user.member.isRecipient));
+
+  // Luôn gọi useEffect ở đầu component
+  useEffect(() => {
+    setLoadingPeriods(true);
+    axios.get('/api/BloodDonationPeriod')
+      .then(res => {
+        // Lọc các đợt hiến máu trong tháng hiện tại
+        const now = dayjs();
+        const periodsInMonth = res.data.filter(period => {
+          const from = dayjs(period.periodDateFrom);
+          return from.month() === now.month() && from.year() === now.year();
+        });
+        setPeriods(periodsInMonth);
+      })
+      .catch(() => setPeriods([]))
+      .finally(() => setLoadingPeriods(false));
+
+    // Lấy danh sách bệnh viện
+    axios.get('/api/Hospital')
+      .then(res => setHospitals(res.data))
+      .catch(() => setHospitals([]));
+  }, []);
 
   // Nếu là member truyền máu (isRecipient)
   if (isRecipient) {
@@ -338,6 +374,18 @@ const Home = () => {
     }
   ];
 
+  // Sắp xếp các đợt hiến máu theo ngày bắt đầu tăng dần
+  const sortedPeriods = [...periods].sort((a, b) => dayjs(a.periodDateFrom) - dayjs(b.periodDateFrom));
+  // Lấy 6 đợt gần nhất
+  const displayedPeriods = showAllPeriods ? sortedPeriods : sortedPeriods.slice(0, 6);
+
+  // Hàm lấy tên bệnh viện từ hospitalId
+  const getHospitalName = (hospitalId) => {
+    if (!hospitals || hospitals.length === 0) return '';
+    const hospital = hospitals.find(h => h.hospitalId === hospitalId);
+    return hospital ? hospital.name : '';
+  };
+
   return (
     <Box sx={{ backgroundColor: '#fff', minHeight: '100vh' }}>
       {/* Hero Section - Đặt lịch hiến máu */}
@@ -367,75 +415,155 @@ const Home = () => {
             <Typography variant="h5" sx={{ mb: 2, opacity: 0.9, fontWeight: 300, color: '#e53e3e' }}>
               Cùng nhau cứu sống những sinh mệnh quý giá
             </Typography>
-            {/* <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-              <Chip label="Miễn phí" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
-              <Chip label="An toàn" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
-              <Chip label="Có bồi dưỡng" sx={{ fontWeight: 'bold', backgroundColor: '#F8FBFD', color: '#e53e3e', border: '1px solid #e53e3e' }} />
-            </Stack> */}
           </Box>
 
-          {/* Quick Booking */}
+          {/* Danh sách đợt hiến máu khả dụng trong tháng */}
           <Paper
             elevation={8}
             sx={{
-              p: 4,
+              p: 6, // tăng padding nếu muốn
               borderRadius: 3,
-              maxWidth: 600,
+              maxWidth: 1000, // tăng từ 700 lên 1000
               mx: 'auto',
               background: '#fff',
               backdropFilter: 'blur(10px)',
-              border: '1px solid #333'
+              border: '1px solid #333',
+              mb: 4
             }}
           >
             <Box sx={{ textAlign: 'center', mb: 3 }}>
               <VolunteerActivismIcon sx={{ fontSize: 48, color: '#e53e3e', mb: 2 }} />
               <Typography variant="h5" fontWeight="bold" color="#e53e3e" gutterBottom>
-                Đặt lịch ngay hôm nay
+                Các đợt hiến máu trong tháng này
               </Typography>
               <Typography variant="body2" color="#e53e3e">
-                Chọn thời gian phù hợp với bạn để tham gia hiến máu tình nguyện
+                Chọn đợt phù hợp để đăng ký nhanh
               </Typography>
             </Box>
-
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Stack spacing={3}>
+            {loadingPeriods ? (
+              <Typography align="center" color="text.secondary">Đang tải...</Typography>
+            ) : periods.length === 0 ? (
+              <Typography align="center" color="text.secondary">Không có đợt hiến máu nào trong tháng này.</Typography>
+            ) : (
+              <>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <DatePicker
-                      label="Từ ngày"
-                      value={fromDate}
-                      onChange={setFromDate}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <DatePicker
-                      label="Đến ngày"
-                      value={toDate}
-                      onChange={setToDate}
-                      renderInput={(params) => (
-                        <TextField {...params} fullWidth />
-                      )}
-                    />
-                  </Grid>
+                  {displayedPeriods.map((period) => (
+                    <Grid item xs={12} md={4} key={period.periodId}> {/* Sửa md={6} thành md={4} */}
+                      <Card sx={{ borderRadius: 2, border: '1px solid #e53e3e', mb: 2 }}>
+                        <CardContent>
+                          {/* Ẩn tên đợt hiến máu */}
+                          {/* <Typography variant="h6" fontWeight="bold" color="#e53e3e">
+                            {period.periodName}
+                          </Typography> */}
+                          <Box sx={{ mb: 1 }}>
+                            {/* Hiển thị thứ trước, sau đó đến tên bệnh viện */}
+                            <span
+                              style={{
+                                fontWeight: 'bold',
+                                fontSize: '1.15rem',
+                                display: 'inline-block',
+                                width: '100%',
+                                textAlign: 'center',
+                                marginBottom: 8,
+                                color: '#e53e3e', // màu chữ đỏ
+                                background: '#ffeaea', // màu nền hồng nhạt giống hình
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 8px #ffd6d6',
+                                letterSpacing: 1,
+                                padding: '4px 0'
+                              }}
+                            >
+                              {(() => {
+                                const from = dayjs(period.periodDateFrom);
+                                // Hàm viết hoa 2 chữ cái đầu
+                                const capitalizeWords = (str) =>
+                                  str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                return capitalizeWords(from.format('dddd'));
+                              })()}
+                            </span>
+                            <Typography variant="body2" sx={{ mb: 1, color: '#000', textAlign: 'left' }}>
+                              {/* Hiển thị ngày và thời gian */}
+                              {(() => {
+                                const from = dayjs(period.periodDateFrom);
+                                const to = dayjs(period.periodDateTo);
+                                const capitalizeWords = (str) =>
+                                  str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                if (from.isSame(to, 'day')) {
+                                  return (
+                                    <>
+                                      <span>Ngày: {from.format('DD/MM/YYYY')}</span><br />
+                                      <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <span>Ngày: {from.format('DD/MM/YYYY')} - {to.format('DD/MM/YYYY')}</span><br />
+                                      <span>{capitalizeWords(from.format('dddd'))} - {capitalizeWords(to.format('dddd'))}</span><br />
+                                      <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                    </>
+                                  );
+                                }
+                              })()}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#e53e3e',
+                                fontWeight: 'bold',
+                                textAlign: 'left', // căn lề trái
+                                mb: 1,
+                                mt: 1,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {getHospitalName(period.hospitalId)}
+                            </Typography>
+                          </Box>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            onClick={() => {
+                              if (user) {
+                                // Lưu thông tin đợt hiến máu đã chọn vào localStorage để BookingPage lấy lại
+                                localStorage.setItem(
+                                  'selectedPeriodInfo',
+                                  JSON.stringify({
+                                    period: period,
+                                    fromDate: period.periodDateFrom,
+                                    toDate: period.periodDateTo
+                                  })
+                                );
+                                navigate('/booking');
+                              } else {
+                                localStorage.setItem('showLoginSnackbar', 'true');
+                                navigate('/login');
+                              }
+                            }}
+                            sx={{ mt: 2 }}
+                          >
+                            Đăng ký ngay
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
-
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleSearch}
-                    disabled={!fromDate || !toDate}
-                    startIcon={<CalendarTodayIcon />}
-                    sx={{ py: 1.5, px: 4 }}
-                  >
-                    Tìm kiếm lịch trình
-                  </Button>
-                </Box>
-              </Stack>
-            </LocalizationProvider>
+                {/* Hiển thị nút "Xem thêm" nếu có nhiều hơn 6 đợt */}
+                {sortedPeriods.length > 6 && (
+                  <Box sx={{ textAlign: 'center', mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => setShowAllPeriods(!showAllPeriods)}
+                    >
+                      {showAllPeriods ? 'Ẩn bớt' : 'Xem thêm'}
+                    </Button>
+                  </Box>
+                )}
+              </>
+            )}
           </Paper>
         </Container>
       </Box>
@@ -655,6 +783,18 @@ const Home = () => {
           </Grid>
         </Box>
       </Container>
+
+      {/* Snackbar popup thông báo */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={1200}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <MuiAlert elevation={6} variant="filled" severity="warning" sx={{ fontSize: '1rem' }}>
+          Vui lòng đăng nhập để đặt lịch
+        </MuiAlert>
+      </Snackbar>
     </Box>
   );
 };

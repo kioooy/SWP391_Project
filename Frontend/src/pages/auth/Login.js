@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -15,10 +15,10 @@ import {
   Alert as MuiAlert,
   InputAdornment,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { login as loginThunk, createTestAccount } from '../../features/auth/authSlice';
-import { useState } from 'react'; // Import useState
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api'; // Sử dụng cùng API_URL với authSlice
@@ -39,6 +39,7 @@ const Login = () => {
   const [showLocationAlert, setShowLocationAlert] = React.useState(false); // State để quản lý Alert
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   // Hiển thị popup nếu có state từ trang Events
   React.useEffect(() => {
@@ -46,6 +47,13 @@ const Login = () => {
       setSnackbar({ open: true, message: location.state.popupMessage || 'Bạn cần đăng nhập để tiếp tục!' });
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (localStorage.getItem('showLoginSnackbar') === 'true') {
+      setOpenSnackbar(true);
+      localStorage.removeItem('showLoginSnackbar');
+    }
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -202,14 +210,16 @@ const Login = () => {
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={() => setShowPassword((show) => !show)}
-                  onMouseDown={e => e.preventDefault()}
-                  edge="end"
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
+                <Tooltip title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}>
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowPassword((show) => !show)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </Tooltip>
               </InputAdornment>
             ),
           }}
@@ -247,8 +257,20 @@ const Login = () => {
           {snackbar.message}
         </MuiAlert>
       </Snackbar>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={1200}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{ mt: '70px' }} // Nhích xuống dưới header (giả sử header cao 70px)
+      >
+        <MuiAlert elevation={6} variant="filled" severity="warning" sx={{ fontSize: '1rem' }}>
+          Vui lòng đăng nhập để đặt lịch
+        </MuiAlert>
+      </Snackbar>
     </Box>
   );
 };
 
-export default Login; 
+export default Login;

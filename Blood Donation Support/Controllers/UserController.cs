@@ -302,6 +302,7 @@ namespace Blood_Donation_Support.Controllers
                     v.Member.Height,
                     v.Member.IsDonor,
                     v.Member.IsRecipient,
+                    v.Member.LastDonationDate,
                     Latitude = v.Member != null && v.Member.Location != null ? (double?)v.Member.Location.Y : null,
                     Longitude = v.Member != null && v.Member.Location != null ? (double?)v.Member.Location.X : null
                 })
@@ -442,6 +443,23 @@ namespace Blood_Donation_Support.Controllers
             var existingMember = await _context.Members.FirstOrDefaultAsync(m => m.UserId == id); // Find the existing Member by UserId
             if (existingMember != null)
             {
+                // Kiểm tra điều kiện hồi phục khi cập nhật IsDonor = true
+                if (model.IsDonor == true)
+                {
+                    var lastTransfusion = await _context.TransfusionRequests
+                        .Where(tr => tr.MemberId == existingMember.UserId && tr.Status == "Completed")
+                        .OrderByDescending(tr => tr.CompletionDate)
+                        .FirstOrDefaultAsync();
+
+                    if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
+                    {
+                        var daysSinceTransfusion = (DateTime.UtcNow - lastTransfusion.CompletionDate.Value).TotalDays;
+                        if (daysSinceTransfusion < 365)
+                        {
+                            return BadRequest(new { message = "Thành viên này vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 365 ngày." });
+                        }
+                    }
+                }
                 // Update Member information if it exists
                 existingMember.BloodTypeId = model.BloodTypeId; // Blood Type ID
                 existingMember.Weight = model.Weight;           // Weight

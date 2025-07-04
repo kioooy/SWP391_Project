@@ -50,6 +50,37 @@ namespace Blood_Donation_Support.Controllers
             return Ok();
         }
 
+        // POST: api/Notification/CreateUrgentDonationRequest
+        [HttpPost("CreateUrgentDonationRequest")]
+        public async Task<IActionResult> CreateUrgentDonationRequest([FromBody] UrgentDonationRequestDTO request)
+        {
+            // Tránh tạo trùng lặp thông báo khẩn cấp chưa đọc
+            var exists = await _context.Notifications.AnyAsync(n => 
+                n.UserId == request.UserId && 
+                n.NotificationType == "UrgentDonationRequest" && 
+                !n.IsRead && 
+                n.IsActive);
+
+            if (!exists)
+            {
+                var notification = new Notification
+                {
+                    UserId = request.UserId,
+                    Title = "Yêu cầu hiến máu khẩn cấp",
+                    Message = request.Message,
+                    NotificationType = "UrgentDonationRequest",
+                    CreatedAt = DateTime.Now,
+                    IsActive = true,
+                    IsRead = false
+                };
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+                return Ok(notification);
+            }
+            // Trả về Ok nếu đã có thông báo tương tự tồn tại để tránh lỗi không cần thiết
+            return Ok(new { message = "Một thông báo khẩn cấp chưa đọc đã tồn tại cho người dùng này." });
+        }
+
         // POST: api/Notification/CreateRecoveryReminder/{userId}
         [HttpPost("CreateRecoveryReminder/{userId}")]
         public async Task<IActionResult> CreateRecoveryReminder(int userId)
@@ -110,5 +141,11 @@ namespace Blood_Donation_Support.Controllers
             }
             return Ok();
         }
+    }
+
+    public class UrgentDonationRequestDTO
+    {
+        public int UserId { get; set; }
+        public string Message { get; set; }
     }
 } 

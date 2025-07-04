@@ -1,10 +1,41 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "Blood Donation Support",
+    "title": "Blood Donation Support API",
     "version": "v1"
   },
   "paths": {
+    "/api/User/login": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Article": {
       "get": {
         "tags": [
@@ -82,44 +113,6 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ArticleDTO"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Article/admin": {
-      "get": {
-        "tags": [
-          "Article"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticleDTO"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticleDTO"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticleDTO"
-                  }
                 }
               }
             }
@@ -207,6 +200,29 @@
         }
       }
     },
+    "/api/Article/{id}/deactivate": {
+      "patch": {
+        "tags": [
+          "Article"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Article/{id}/status": {
       "patch": {
         "tags": [
@@ -249,25 +265,40 @@
         }
       }
     },
-    "/api/Article/{id}/deactivate": {
-      "patch": {
+    "/api/Article/admin": {
+      "get": {
         "tags": [
           "Article"
         ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticleDTO"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticleDTO"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ArticleDTO"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -356,44 +387,6 @@
         }
       }
     },
-    "/api/Blog/admin": {
-      "get": {
-        "tags": [
-          "Blog"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BlogDTO"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BlogDTO"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BlogDTO"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Blog/{id}": {
       "get": {
         "tags": [
@@ -474,6 +467,29 @@
         }
       }
     },
+    "/api/Blog/{id}/deactivate": {
+      "patch": {
+        "tags": [
+          "Blog"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Blog/{id}/status": {
       "patch": {
         "tags": [
@@ -516,37 +532,59 @@
         }
       }
     },
-    "/api/Blog/{id}/deactivate": {
-      "patch": {
+    "/api/Blog/admin": {
+      "get": {
         "tags": [
           "Blog"
         ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlogDTO"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlogDTO"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlogDTO"
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/BloodCompatibility/whole-blood": {
+    "/api/BloodCompatibility/component": {
       "get": {
         "tags": [
           "BloodCompatibility"
         ],
         "parameters": [
           {
-            "name": "recipientBloodType",
+            "name": "nhomMauNguoiNhan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thanhPhan",
             "in": "query",
             "schema": {
               "type": "string"
@@ -577,21 +615,14 @@
         }
       }
     },
-    "/api/BloodCompatibility/component": {
+    "/api/BloodCompatibility/whole-blood": {
       "get": {
         "tags": [
           "BloodCompatibility"
         ],
         "parameters": [
           {
-            "name": "recipientBloodType",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "component",
+            "name": "nhomMauNguoiNhan",
             "in": "query",
             "schema": {
               "type": "string"
@@ -629,60 +660,6 @@
         ],
         "parameters": [
           {
-            "name": "latitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "longitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "radius",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/BloodDistanceSearch/recipients-nearby": {
-      "get": {
-        "tags": [
-          "BloodDistanceSearch"
-        ],
-        "parameters": [
-          {
-            "name": "latitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
-            "name": "longitude",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
-            }
-          },
-          {
             "name": "radius",
             "in": "query",
             "schema": {
@@ -702,6 +679,28 @@
       "get": {
         "tags": [
           "BloodDistanceSearch"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodDistanceSearch/recipients-nearby": {
+      "get": {
+        "tags": [
+          "BloodDistanceSearch"
+        ],
+        "parameters": [
+          {
+            "name": "radius",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -774,7 +773,7 @@
         }
       }
     },
-    "/api/BloodDonationPeriod/{id}/status/admin": {
+    "/api/BloodDonationPeriod/{id}/details/admin,staff": {
       "patch": {
         "tags": [
           "BloodDonationPeriod"
@@ -794,17 +793,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "string"
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
               }
             },
             "text/json": {
               "schema": {
-                "type": "string"
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "type": "string"
+                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
               }
             }
           }
@@ -858,6 +857,60 @@
         }
       }
     },
+    "/api/BloodDonationPeriod/{id}/status/admin": {
+      "patch": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodDonationPeriod/all/admin,staff": {
+      "get": {
+        "tags": [
+          "BloodDonationPeriod"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BloodDonationPeriod/progress/{id}": {
       "get": {
         "tags": [
@@ -881,49 +934,26 @@
         }
       }
     },
-    "/api/BloodDonationPeriod/all/admin,staff": {
-      "get": {
+    "/api/BloodSearch/notify-all-donors": {
+      "post": {
         "tags": [
-          "BloodDonationPeriod"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/BloodDonationPeriod/{id}/details/admin,staff": {
-      "patch": {
-        "tags": [
-          "BloodDonationPeriod"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
+          "BloodSearch"
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+                "$ref": "#/components/schemas/NotifyAllDonorsDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+                "$ref": "#/components/schemas/NotifyAllDonorsDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffUpdateBloodDonationPeriodDTO"
+                "$ref": "#/components/schemas/NotifyAllDonorsDTO"
               }
             }
           }
@@ -931,60 +961,6 @@
         "responses": {
           "200": {
             "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/BloodInventory/available": {
-      "get": {
-        "tags": [
-          "BloodInventory"
-        ],
-        "parameters": [
-          {
-            "name": "recipientBloodType",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "component",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvailableBloodDto"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvailableBloodDto"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AvailableBloodDto"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -1012,59 +988,15 @@
               "type": "integer",
               "format": "int32"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/BloodSearch/request-donors-with-hospital/{recipientBloodTypeId}/{requiredVolume}": {
-      "post": {
-        "tags": [
-          "BloodSearch"
-        ],
-        "parameters": [
-          {
-            "name": "recipientBloodTypeId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
           },
           {
-            "name": "requiredVolume",
-            "in": "path",
-            "required": true,
+            "name": "component",
+            "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/RequestDonorsWithHospitalDTO"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success"
@@ -1256,14 +1188,114 @@
         }
       }
     },
-    "/api/Dashboard/total-number": {
+    "/api/Certificate": {
       "get": {
         "tags": [
-          "Dashboard"
+          "Certificate"
         ],
         "responses": {
           "200": {
             "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Certificate/{id}": {
+      "get": {
+        "tags": [
+          "Certificate"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Certificate/member/{memberId}": {
+      "get": {
+        "tags": [
+          "Certificate"
+        ],
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/CompatibleBloodSearch/available": {
+      "get": {
+        "tags": [
+          "CompatibleBloodSearch"
+        ],
+        "parameters": [
+          {
+            "name": "nhomMauNguoiNhan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thanhPhan",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableBloodDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableBloodDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailableBloodDto"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1281,18 +1313,6 @@
       }
     },
     "/api/Dashboard/donation-analytics": {
-      "get": {
-        "tags": [
-          "Dashboard"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/Dashboard/transfusion-analytics": {
       "get": {
         "tags": [
           "Dashboard"
@@ -1327,21 +1347,22 @@
         }
       }
     },
-    "/api/DonationAlert/LastSuccessfulDonation/{memberId}": {
+    "/api/Dashboard/total-number": {
       "get": {
         "tags": [
-          "DonationAlert"
+          "Dashboard"
         ],
-        "parameters": [
-          {
-            "name": "memberId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
+        "responses": {
+          "200": {
+            "description": "Success"
           }
+        }
+      }
+    },
+    "/api/Dashboard/transfusion-analytics": {
+      "get": {
+        "tags": [
+          "Dashboard"
         ],
         "responses": {
           "200": {
@@ -1373,7 +1394,7 @@
         }
       }
     },
-    "/api/DonationAlert/LoginNotification/{memberId}": {
+    "/api/DonationAlert/LastSuccessfulDonation/{memberId}": {
       "get": {
         "tags": [
           "DonationAlert"
@@ -1396,14 +1417,14 @@
         }
       }
     },
-    "/api/DonationRequest/{id}": {
+    "/api/DonationAlert/LoginNotification/{memberId}": {
       "get": {
         "tags": [
-          "DonationRequest"
+          "DonationAlert"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "memberId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1460,7 +1481,30 @@
         }
       }
     },
-    "/api/DonationRequest/{id}/update-status": {
+    "/api/DonationRequest/{id}": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/{id}/cancel": {
       "patch": {
         "tags": [
           "DonationRequest"
@@ -1476,25 +1520,36 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStatusDonationRequest"
-              }
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/DonationRequest/{id}/reject": {
+      "patch": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "note",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -1544,6 +1599,18 @@
         }
       }
     },
+    "/api/DonationRequest/history": {
+      "get": {
+        "tags": [
+          "DonationRequest"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/DonationRequest/upcoming/all-role": {
       "get": {
         "tags": [
@@ -1553,29 +1620,6 @@
           {
             "name": "memberId",
             "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/DonationRequest/{id}/cancel": {
-      "patch": {
-        "tags": [
-          "DonationRequest"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -1643,6 +1687,129 @@
         }
       }
     },
+    "/api/Notification/CreateRecoveryReminder/{userId}": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/CreateUrgentDonationRequest": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrgentDonationRequestDTO"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrgentDonationRequestDTO"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UrgentDonationRequestDTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/GetUserNotifications/{userId}": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/MarkAllAsRead/{userId}": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Notification/MarkAsRead/{notificationId}": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Reservations": {
       "post": {
         "tags": [
@@ -1652,17 +1819,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReservationDto"
+                "$ref": "#/components/schemas/CreateReservationDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReservationDto"
+                "$ref": "#/components/schemas/CreateReservationDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReservationDto"
+                "$ref": "#/components/schemas/CreateReservationDTO"
               }
             }
           }
@@ -1673,17 +1840,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReservationDto"
+                  "$ref": "#/components/schemas/ReservationDTO"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReservationDto"
+                  "$ref": "#/components/schemas/ReservationDTO"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReservationDto"
+                  "$ref": "#/components/schemas/ReservationDTO"
                 }
               }
             }
@@ -1744,7 +1911,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReservationDto"
+                    "$ref": "#/components/schemas/ReservationDTO"
                   }
                 }
               },
@@ -1752,7 +1919,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReservationDto"
+                    "$ref": "#/components/schemas/ReservationDTO"
                   }
                 }
               },
@@ -1760,7 +1927,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ReservationDto"
+                    "$ref": "#/components/schemas/ReservationDTO"
                   }
                 }
               }
@@ -1953,7 +2120,7 @@
         }
       }
     },
-    "/api/TransfusionRequest/{id}/complete": {
+    "/api/TransfusionRequest/{id}/cancel": {
       "patch": {
         "tags": [
           "TransfusionRequest"
@@ -1976,7 +2143,7 @@
         }
       }
     },
-    "/api/TransfusionRequest/{id}/cancel": {
+    "/api/TransfusionRequest/{id}/complete": {
       "patch": {
         "tags": [
           "TransfusionRequest"
@@ -2011,26 +2178,26 @@
         }
       }
     },
-    "/api/User/login": {
+    "/api/UrgentBloodRequest": {
       "post": {
         "tags": [
-          "User"
+          "UrgentBloodRequest"
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginModel"
+                "$ref": "#/components/schemas/CreateUrgentBloodRequestDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginModel"
+                "$ref": "#/components/schemas/CreateUrgentBloodRequestDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginModel"
+                "$ref": "#/components/schemas/CreateUrgentBloodRequestDTO"
               }
             }
           }
@@ -2040,32 +2207,11 @@
             "description": "Success"
           }
         }
-      }
-    },
-    "/api/User/register": {
-      "post": {
+      },
+      "get": {
         "tags": [
-          "User"
+          "UrgentBloodRequest"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterModel"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterModel"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterModel"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success"
@@ -2073,10 +2219,79 @@
         }
       }
     },
-    "/api/User/{id}/profile": {
+    "/api/UrgentBloodRequest/{id}": {
+      "get": {
+        "tags": [
+          "UrgentBloodRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/UrgentBloodRequest/{id}/accept": {
       "patch": {
         "tags": [
-          "User"
+          "UrgentBloodRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/UrgentBloodRequest/{id}/cancel": {
+      "patch": {
+        "tags": [
+          "UrgentBloodRequest"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/UrgentBloodRequest/{id}/fulfill": {
+      "patch": {
+        "tags": [
+          "UrgentBloodRequest"
         ],
         "parameters": [
           {
@@ -2093,17 +2308,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProfile"
+                "$ref": "#/components/schemas/FulfillUrgentBloodRequestInputDTO"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProfile"
+                "$ref": "#/components/schemas/FulfillUrgentBloodRequestInputDTO"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProfile"
+                "$ref": "#/components/schemas/FulfillUrgentBloodRequestInputDTO"
               }
             }
           }
@@ -2115,10 +2330,10 @@
         }
       }
     },
-    "/api/User/profile": {
+    "/api/UrgentBloodRequest/pending": {
       "get": {
         "tags": [
-          "User"
+          "UrgentBloodRequest"
         ],
         "responses": {
           "200": {
@@ -2127,18 +2342,34 @@
         }
       }
     },
-    "/api/User/search/{citizenNumber}": {
+    "/api/UrgentBloodRequest/search-blood-units": {
       "get": {
         "tags": [
-          "User"
+          "UrgentBloodRequest"
         ],
         "parameters": [
           {
-            "name": "citizenNumber",
-            "in": "path",
+            "name": "RequestedBloodTypeId",
+            "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "RequestedComponentId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "IncludeReserved",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -2224,57 +2455,37 @@
         }
       }
     },
-    "/api/User/create": {
-      "post": {
-        "tags": [
-          "User"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUser"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUser"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUser"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/User/soft-delete": {
+    "/api/User/{id}/profile": {
       "patch": {
         "tags": [
           "User"
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+                "$ref": "#/components/schemas/UpdateProfile"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+                "$ref": "#/components/schemas/UpdateProfile"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+                "$ref": "#/components/schemas/UpdateProfile"
               }
             }
           }
@@ -2327,6 +2538,133 @@
           }
         }
       }
+    },
+    "/api/User/create": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUser"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUser"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/profile": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/register": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/search/{citizenNumber}": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "citizenNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/User/soft-delete": {
+      "patch": {
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftDeleteUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2349,6 +2687,11 @@
         "additionalProperties": false
       },
       "ArticleCreateDTO": {
+        "required": [
+          "content",
+          "status",
+          "title"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -2356,14 +2699,18 @@
             "format": "int32"
           },
           "title": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "content": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "imageUrl": {
             "type": "string",
             "nullable": true
           }
@@ -2394,6 +2741,10 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2412,19 +2763,24 @@
         "additionalProperties": false
       },
       "ArticleUpdateDTO": {
+        "required": [
+          "content",
+          "status",
+          "title"
+        ],
         "type": "object",
         "properties": {
           "title": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "content": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -2448,6 +2804,11 @@
         "additionalProperties": false
       },
       "BlogCreateDTO": {
+        "required": [
+          "content",
+          "status",
+          "title"
+        ],
         "type": "object",
         "properties": {
           "userId": {
@@ -2455,18 +2816,18 @@
             "format": "int32"
           },
           "title": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "content": {
-            "type": "string",
-            "nullable": true
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "imageUrl": {
             "type": "string",
             "nullable": true
           }
@@ -2506,16 +2867,23 @@
         "additionalProperties": false
       },
       "BlogStatusDTO": {
+        "required": [
+          "status"
+        ],
         "type": "object",
         "properties": {
           "status": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
       },
       "BlogUpdateDTO": {
+        "required": [
+          "content",
+          "status"
+        ],
         "type": "object",
         "properties": {
           "title": {
@@ -2523,14 +2891,14 @@
             "nullable": true
           },
           "content": {
-            "type": "string",
-            "nullable": true
-          },
-          "imageUrl": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "status": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "imageUrl": {
             "type": "string",
             "nullable": true
           }
@@ -2662,7 +3030,6 @@
       },
       "CreateBloodDonationPeriodDTO": {
         "required": [
-          "location",
           "periodDateFrom",
           "periodDateTo",
           "periodName",
@@ -2673,11 +3040,6 @@
         "properties": {
           "periodName": {
             "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "location": {
-            "maxLength": 255,
             "minLength": 0,
             "type": "string"
           },
@@ -2740,11 +3102,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "approvalDate": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
           "donationVolume": {
             "type": "integer",
             "format": "int32"
@@ -2760,7 +3117,7 @@
         },
         "additionalProperties": false
       },
-      "CreateReservationDto": {
+      "CreateReservationDTO": {
         "required": [
           "bloodUnitId",
           "expireAt",
@@ -2825,10 +3182,43 @@
           "patientCondition": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateUrgentBloodRequestDTO": {
+        "type": "object",
+        "properties": {
+          "patientName": {
+            "type": "string",
+            "nullable": true
           },
-          "bloodUnitIdToReserve": {
+          "requestedBloodTypeId": {
             "type": "integer",
-            "format": "int32",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactName": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "emergencyLocation": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -2957,6 +3347,22 @@
         "type": "integer",
         "format": "int32"
       },
+      "FulfillUrgentBloodRequestInputDTO": {
+        "type": "object",
+        "properties": {
+          "preemptedTransfusionRequestId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "usedBloodUnitId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "HospitalLocationUpdateDTO": {
         "type": "object",
         "properties": {
@@ -2993,6 +3399,16 @@
             "nullable": true
           },
           "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NotifyAllDonorsDTO": {
+        "type": "object",
+        "properties": {
+          "message": {
             "type": "string",
             "nullable": true
           }
@@ -3074,17 +3490,7 @@
         },
         "additionalProperties": false
       },
-      "RequestDonorsWithHospitalDTO": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ReservationDto": {
+      "ReservationDTO": {
         "type": "object",
         "properties": {
           "reservationId": {
@@ -3143,7 +3549,6 @@
       },
       "StaffUpdateBloodDonationPeriodDTO": {
         "required": [
-          "location",
           "periodDateFrom",
           "periodDateTo",
           "periodName",
@@ -3153,11 +3558,6 @@
         "properties": {
           "periodName": {
             "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "location": {
-            "maxLength": 255,
             "minLength": 0,
             "type": "string"
           },
@@ -3222,29 +3622,6 @@
           "longitude": {
             "type": "number",
             "format": "double",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateStatusDonationRequest": {
-        "required": [
-          "responsibleById",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "responsibleById": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "status": {
-            "minLength": 1,
-            "pattern": "Pending|Approved|Rejected",
-            "type": "string"
-          },
-          "notes": {
-            "type": "string",
             "nullable": true
           }
         },
@@ -3330,12 +3707,26 @@
           }
         },
         "additionalProperties": false
+      },
+      "UrgentDonationRequestDTO": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
       "Bearer": {
         "type": "apiKey",
-        "description": "Please enter JWT with Bearer into field. Example: Bearer {token}",
+        "description": "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: 'Bearer 12345abcdef'",
         "name": "Authorization",
         "in": "header"
       }

@@ -10,7 +10,11 @@ public partial class BloodCompatibilityRule
 
     public bool IsCompatible { get; set; }
 
+    public int? ComponentId { get; set; }
+
     public virtual BloodType BloodGive { get; set; } = null!;
 
     public virtual BloodType BloodRecieve { get; set; } = null!;
+
+    public virtual BloodComponent? Component { get; set; }
 }

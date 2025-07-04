@@ -302,6 +302,7 @@ namespace Blood_Donation_Support.Controllers
                     v.Member.Height,
                     v.Member.IsDonor,
                     v.Member.IsRecipient,
+                    v.Member.LastDonationDate,
                     Latitude = v.Member != null && v.Member.Location != null ? (double?)v.Member.Location.Y : null,
                     Longitude = v.Member != null && v.Member.Location != null ? (double?)v.Member.Location.X : null
                 })

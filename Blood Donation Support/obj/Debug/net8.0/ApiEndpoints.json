@@ -308,12 +308,12 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "recipientBloodType",
+        "Name": "nhomMauNguoiNhan",
         "Type": "System.String",
         "IsRequired": false
       },
       {
-        "Name": "component",
+        "Name": "thanhPhan",
         "Type": "System.String",
         "IsRequired": false
       }
@@ -339,7 +339,7 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "recipientBloodType",
+        "Name": "nhomMauNguoiNhan",
         "Type": "System.String",
         "IsRequired": false
       }
@@ -530,37 +530,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "Blood_Donation_Support.Controllers.BloodInventoryController",
-    "Method": "GetAvailableCompatible",
-    "RelativePath": "api/BloodInventory/available",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "recipientBloodType",
-        "Type": "System.String",
-        "IsRequired": false
-      },
-      {
-        "Name": "component",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.AvailableBloodDto, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
     "Method": "NotifyAllDonors",
     "RelativePath": "api/BloodSearch/notify-all-donors",
@@ -593,6 +562,11 @@
         "Name": "requiredVolume",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "component",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -748,6 +722,37 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.CompatibleBloodSearchController",
+    "Method": "GetAvailableCompatible",
+    "RelativePath": "api/CompatibleBloodSearch/available",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "nhomMauNguoiNhan",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "thanhPhan",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.AvailableBloodDto, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.DashboardController",
@@ -1352,6 +1357,95 @@
         "Name": "id",
         "Type": "System.Int32",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "AcceptUrgentRequest",
+    "RelativePath": "api/UrgentBloodRequest/{id}/accept",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "CancelUrgentBloodRequest",
+    "RelativePath": "api/UrgentBloodRequest/{id}/cancel",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "FulfillUrgentBloodRequest",
+    "RelativePath": "api/UrgentBloodRequest/{id}/fulfill",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Blood_Donation_Support.DTO.FulfillUrgentBloodRequestInputDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "GetPendingUrgentBloodRequests",
+    "RelativePath": "api/UrgentBloodRequest/pending",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UrgentBloodRequestController",
+    "Method": "SearchBloodUnits",
+    "RelativePath": "api/UrgentBloodRequest/search-blood-units",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "RequestedBloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "RequestedComponentId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "IncludeReserved",
+        "Type": "System.Boolean",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

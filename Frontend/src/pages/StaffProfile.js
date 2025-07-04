@@ -65,55 +65,49 @@ const StaffProfile = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
-        Hồ sơ nhân viên
-      </Typography>
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
-          <Card>
+    <Container maxWidth="sm" sx={{ py: 4, background: '#ffeaea', borderRadius: 4, boxShadow: 3, mt: 6 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+        <Avatar sx={{ width: 120, height: 120, bgcolor: 'primary.main', fontSize: '3.5rem', mb: 2, boxShadow: 2 }}>
+          {formData.fullName.charAt(0)}
+        </Avatar>
+        <Typography variant="h4" fontWeight="bold" gutterBottom color="primary.main">
+          {formData.fullName}
+        </Typography>
+        <Chip label="Nhân viên" color="secondary" sx={{ mb: 2, fontWeight: 'bold', fontSize: 16, px: 2, py: 1 }} />
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
+          Hỗ trợ vận hành, kiểm soát dữ liệu và chăm sóc người hiến máu.
+        </Typography>
+        <Button variant="outlined" color="error" sx={{ mt: 1, fontWeight: 'bold' }} onClick={handleLogout}>
+          Đăng xuất
+        </Button>
+      </Box>
+      <Divider sx={{ my: 3 }} />
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6}>
+          <Card sx={{ borderRadius: 3, boxShadow: 1 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-                <Avatar sx={{ width: 120, height: 120, bgcolor: 'primary.main', fontSize: '3rem', mb: 2 }}>
-                  {formData.fullName.charAt(0)}
-                </Avatar>
-                <Typography variant="h5" gutterBottom>{formData.fullName}</Typography>
-                <Chip label="Nhân viên" color="secondary" sx={{ mb: 1, fontWeight: 'bold' }} />
-                <Chip icon={<Bloodtype />} label={`Nhóm máu ${formData.bloodType}`} color="error" sx={{ mb: 1 }} />
-                <Button variant="outlined" color="error" sx={{ mt: 1 }} onClick={handleLogout}>
-                  Đăng xuất
-                </Button>
+              <Typography variant="subtitle2" color="primary" gutterBottom>Thông tin liên hệ</Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}><Phone sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />{formData.phone || 'Chưa cập nhật'}</Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}><Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />{formData.email || 'Chưa cập nhật'}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}><LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />{formData.address || 'Chưa có địa chỉ'}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Card sx={{ borderRadius: 3, boxShadow: 1 }}>
+            <CardContent>
+              <Typography variant="subtitle2" color="primary" gutterBottom>Thông tin cá nhân</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Badge sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                <Typography variant="body2">Số CMND: {formData.citizenNumber || 'Chưa cập nhật'}</Typography>
               </Box>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>Thông tin liên hệ</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}><Phone sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />{formData.phone}</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}><Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />{formData.email}</Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}><LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />{formData.address || 'Chưa có địa chỉ'}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Cake sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                <Typography variant="body2">Ngày sinh: {formData.dateOfBirth || 'Chưa cập nhật'}</Typography>
               </Box>
-              <Divider sx={{ my: 2 }} />
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>Thông tin cá nhân</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Badge sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
-                  <Typography variant="body2">Số CMND: {formData.citizenNumber || 'Chưa cập nhật'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Cake sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
-                  <Typography variant="body2">Ngày sinh: {formData.dateOfBirth || 'Chưa cập nhật'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Wc sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
-                  <Typography variant="body2">Giới tính: {formData.gender || 'Chưa cập nhật'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Height sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
-                  <Typography variant="body2">Chiều cao: {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
-                  <Typography variant="body2">Cân nặng: {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}</Typography>
-                </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Wc sx={{ mr: 1.5, color: 'text.secondary', fontSize: 18 }} />
+                <Typography variant="body2">Giới tính: {formData.gender || 'Chưa cập nhật'}</Typography>
               </Box>
             </CardContent>
           </Card>

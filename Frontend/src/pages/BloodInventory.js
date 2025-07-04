@@ -307,52 +307,60 @@ const BloodInventory = () => {
         </DialogTitle>
         <DialogContent>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Nhóm máu</InputLabel>
-              <Select name="bloodTypeId" value={formData.bloodTypeId} onChange={(e) => setFormData({...formData, bloodTypeId: e.target.value})}>
-                {bloodTypes.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Thành phần máu</InputLabel>
-              <Select name="componentId" value={formData.componentId} onChange={(e) => setFormData({...formData, componentId: e.target.value})}>
-                {components.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <TextField
-              label="Thể tích (ml)"
-              type="number"
-              fullWidth
-              margin="normal"
-              value={formData.volume}
-              onChange={(e) => setFormData({...formData, volume: e.target.value})}
-            />
-             {selectedBlood && (
-              <TextField
-                label="Thể tích còn lại (ml)"
-                type="number"
-                fullWidth
-                margin="normal"
-                value={formData.remainingVolume}
-                onChange={(e) => setFormData({...formData, remainingVolume: e.target.value})}
-              />
+            {/* Khi chỉnh sửa chỉ cho phép sửa thể tích còn lại và trạng thái */}
+            {!selectedBlood && (
+              <>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Nhóm máu</InputLabel>
+                  <Select name="bloodTypeId" value={formData.bloodTypeId} onChange={(e) => setFormData({...formData, bloodTypeId: e.target.value})}>
+                    {bloodTypes.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Thành phần máu</InputLabel>
+                  <Select name="componentId" value={formData.componentId} onChange={(e) => setFormData({...formData, componentId: e.target.value})}>
+                    {components.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <TextField
+                  label="Thể tích (ml)"
+                  type="number"
+                  fullWidth
+                  margin="normal"
+                  value={formData.volume}
+                  onChange={(e) => setFormData({...formData, volume: e.target.value})}
+                />
+                <DatePicker
+                  label="Ngày nhập kho"
+                  value={formData.addDate}
+                  onChange={(newValue) => setFormData({ ...formData, addDate: newValue })}
+                  renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                />
+              </>
             )}
-            <DatePicker
-              label="Ngày nhập kho"
-              value={formData.addDate}
-              onChange={(newValue) => setFormData({ ...formData, addDate: newValue })}
-              renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
-              disabled={!selectedBlood}
-            />
             {selectedBlood && (
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Trạng thái</InputLabel>
-                <Select name="bloodStatus" value={formData.bloodStatus} onChange={(e) => setFormData({...formData, bloodStatus: e.target.value})}>
+              <>
+                <TextField
+                  label="Thể tích còn lại (ml)"
+                  type="number"
+                  fullWidth
+                  margin="normal"
+                  value={formData.remainingVolume}
+                  onChange={(e) => setFormData({...formData, remainingVolume: e.target.value})}
+                />
+                <TextField
+                  label="Trạng thái"
+                  select
+                  fullWidth
+                  margin="normal"
+                  value={formData.bloodStatus}
+                  onChange={(e) => setFormData({...formData, bloodStatus: e.target.value})}
+                >
                   <MenuItem value="Available">Có sẵn</MenuItem>
                   <MenuItem value="Reserved">Đã đặt</MenuItem>
                   <MenuItem value="Expired">Hết hạn</MenuItem>
-                </Select>
-              </FormControl>
+                </TextField>
+              </>
             )}
           </LocalizationProvider>
         </DialogContent>

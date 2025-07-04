@@ -177,8 +177,9 @@ const DonationRequestManagement = () => {
       case 'Pending':
         return <Chip label="Chờ duyệt" sx={{ backgroundColor: '#795548', color: 'white' }} />;
       case 'Rejected':
-      case 'Cancelled':
         return <Chip label="Đã từ chối" color="error" />;
+      case 'Cancelled':
+        return <Chip label="Đã hủy" sx={{ backgroundColor: '#795548', color: 'white' }} />;
       case 'Completed':
         return <Chip label="Hoàn Thành" color="success" />;
       default:
@@ -225,15 +226,6 @@ const DonationRequestManagement = () => {
           <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
         </Paper>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
-          onClick={() => setStatusFilter('Pending')}
-          elevation={statusFilter === 'Pending' ? 6 : 1}
-        >
-          <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
-          <Typography variant="h4" fontWeight="bold">{pendingCount}</Typography>
-          <Chip label="Chờ duyệt" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
-        </Paper>
-        <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
           onClick={() => setStatusFilter('Approved')}
           elevation={statusFilter === 'Approved' ? 6 : 1}
@@ -252,13 +244,22 @@ const DonationRequestManagement = () => {
           <Chip label="Hoàn thành" color="success" sx={{ mt: 1 }} />
         </Paper>
         <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 4 : 1 }}
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected') ? 4 : 1 }}
           onClick={() => setStatusFilter('Rejected')}
-          elevation={(statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 6 : 1}
+          elevation={statusFilter === 'Rejected' ? 6 : 1}
         >
           <Typography variant="subtitle1" color="text.secondary">Đã từ chối</Typography>
-          <Typography variant="h4" fontWeight="bold">{rejectedCount}</Typography>
+          <Typography variant="h4" fontWeight="bold">{requests.filter(r => r.status === 'Rejected').length}</Typography>
           <Chip label="Đã từ chối" color="error" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Cancelled') ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Cancelled') ? 4 : 1 }}
+          onClick={() => setStatusFilter('Cancelled')}
+          elevation={statusFilter === 'Cancelled' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã hủy</Typography>
+          <Typography variant="h4" fontWeight="bold">{requests.filter(r => r.status === 'Cancelled').length}</Typography>
+          <Chip label="Đã hủy" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
         </Paper>
       </Box>
 

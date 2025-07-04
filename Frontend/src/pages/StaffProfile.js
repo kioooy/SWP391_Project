@@ -65,7 +65,7 @@ const StaffProfile = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4, background: '#ffeaea', borderRadius: 4, boxShadow: 3, mt: 6 }}>
+    <Container maxWidth="sm" sx={{ py: 4, background: '#e3f2fd', borderRadius: 4, boxShadow: 3, mt: 6 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
         <Avatar sx={{ width: 120, height: 120, bgcolor: 'primary.main', fontSize: '3.5rem', mb: 2, boxShadow: 2 }}>
           {formData.fullName.charAt(0)}

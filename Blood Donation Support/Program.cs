@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,27 +42,41 @@ builder.Services.AddScoped<Blood_Donation_Support.Controllers.BloodCompatibility
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Blood Donation Support", Version = "v1" });
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Blood Donation Support API", Version = "v1" });
+
+    // Cấu hình để sắp xếp các API trong Swagger UI
+    c.OrderActionsBy(apiDesc =>
     {
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Please enter JWT with Bearer into field. Example: Bearer {token}",
+        // Đặt API login lên đầu
+        if (apiDesc.RelativePath != null && apiDesc.RelativePath.Contains("api/User/login", StringComparison.OrdinalIgnoreCase))
+        {
+            return "0 - Authentication";
+        }
+        // Đặt các API khác theo thứ tự mặc định của chúng
+        return apiDesc.RelativePath;
+    });
+
+    // Cấu hình JWT Bearer
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: 'Bearer 12345abcdef'",
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            new string[] { }
         }
     });
 });
@@ -87,7 +103,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Blood Donation Support API v1");
+        c.DocExpansion(DocExpansion.None); // Đặt tất cả các thẻ API ở trạng thái rút gọn
+    });
 }
 
 app.UseHttpsRedirection();

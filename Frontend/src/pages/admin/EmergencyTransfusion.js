@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
   Container,
   Typography,
@@ -12,8 +13,12 @@ import {
   Select,
   MenuItem,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
+const token = localStorage.getItem("token");
 
 const statusOptions = ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"];
 
@@ -24,108 +29,132 @@ const statusLabelMap = {
   CANCELLED: "Đã hủy",
 };
 
-const mockData = [
-  {
-    id: 1,
-    patientName: "Nguyễn Văn A",
-    bloodType: "O+",
-    status: "PENDING",
-    createdAt: "2025-07-02T10:30:00",
-  },
-  {
-    id: 2,
-    patientName: "Trần Thị B",
-    bloodType: "A-",
-    status: "PROCESSING",
-    createdAt: "2025-07-01T14:00:00",
-  },
-];
-
 const EmergencyTransfusionPage = () => {
-  const [data, setData] = useState(mockData);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const isAdmin = true;
 
-  const handleUpdateStatus = (id, newStatus) => {
-    setData((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: newStatus } : item
-      )
-    );
+  const fetchUrgentRequests = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/UrgentBloodRequest`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setData(res.data);
+    } catch (err) {
+      console.error("Lỗi khi lấy danh sách yêu cầu máu:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa đơn này?")) {
-      setData((prev) => prev.filter((item) => item.id !== id));
+  useEffect(() => {
+    fetchUrgentRequests();
+  }, []);
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      await axios.patch(
+        `${API_URL}/UrgentBloodRequest/${id}/status`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setData((prev) =>
+        prev.map((item) =>
+          item.urgentRequestId === id ? { ...item, status: newStatus } : item
+        )
+      );
+    } catch (err) {
+      console.error("Lỗi cập nhật trạng thái:", err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa yêu cầu này?")) return;
+    try {
+      await axios.delete(`${API_URL}/UrgentBloodRequest/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setData((prev) => prev.filter((item) => item.urgentRequestId !== id));
+    } catch (err) {
+      console.error("Lỗi xóa yêu cầu:", err);
     }
   };
 
   return (
     <Container maxWidth="lg" style={{ padding: "32px 0" }}>
       <Typography variant="h4" gutterBottom>
-        Quản Lý Truyền Máu Khẩn Cấp
+        Quản Lý Yêu Cầu Máu Khẩn Cấp
       </Typography>
       <Paper elevation={3} style={{ padding: "16px" }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <strong>Bệnh nhân</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Nhóm máu</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Ngày yêu cầu</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Trạng thái</strong>
-                </TableCell>
-                {isAdmin && (
+        {loading ? (
+          <CircularProgress />
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
                   <TableCell>
-                    <strong>Hành động</strong>
-                  </TableCell>
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.patientName}</TableCell>
-                  <TableCell>{item.bloodType}</TableCell>
-                  <TableCell>
-                    {new Date(item.createdAt).toLocaleString()}
+                    <strong>Bệnh nhân</strong>
                   </TableCell>
                   <TableCell>
-                    <Select
-                      value={item.status}
-                      size="small"
-                      onChange={(e) =>
-                        handleUpdateStatus(item.id, e.target.value)
-                      }
-                    >
-                      {statusOptions.map((status) => (
-                        <MenuItem key={status} value={status}>
-                          {statusLabelMap[status]}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                    <strong>Nhóm máu</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Ngày yêu cầu</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Trạng thái</strong>
                   </TableCell>
                   {isAdmin && (
                     <TableCell>
-                      <IconButton
-                        onClick={() => handleDelete(item.id)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <strong>Hành động</strong>
                     </TableCell>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {data.map((item) => (
+                  <TableRow key={item.urgentRequestId}>
+                    <TableCell>{item.patientName}</TableCell>
+                    <TableCell>{item.bloodType?.bloodTypeName}</TableCell>
+                    <TableCell>
+                      {new Date(item.requestDate).toLocaleString("vi-VN")}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={item.status}
+                        size="small"
+                        onChange={(e) =>
+                          handleUpdateStatus(
+                            item.urgentRequestId,
+                            e.target.value
+                          )
+                        }
+                      >
+                        {statusOptions.map((status) => (
+                          <MenuItem key={status} value={status}>
+                            {statusLabelMap[status]}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <IconButton
+                          onClick={() => handleDelete(item.urgentRequestId)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
     </Container>
   );

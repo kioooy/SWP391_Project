@@ -25,9 +25,11 @@ import {
   MenuItem,
   TextField,
   Snackbar,
+  Stack,
 } from '@mui/material';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import HealthSurveyReview from '../components/HealthSurveyReview';
 
 const DonationRequestManagement = () => {
   const { user } = useSelector((state) => state.auth);
@@ -48,6 +50,9 @@ const DonationRequestManagement = () => {
   const [actionMode, setActionMode] = useState(''); // 'complete' hoặc 'cancel'
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  // Thêm dialog hiển thị PatientCondition
+  const [openPatientCondition, setOpenPatientCondition] = useState(false);
 
   const fetchRequests = async () => {
     try {
@@ -84,19 +89,16 @@ const DonationRequestManagement = () => {
 
   const handleRejectRequest = async () => {
     if (!selectedRequest || !user) return;
-    if (!notes.trim()) {
-      setSnackbar({ open: true, message: 'Vui lòng nhập lý do từ chối!', severity: 'error' });
-      return;
-    }
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/reject?note=${encodeURIComponent(notes)}`, {}, {
+      const reason = notes.trim() ? notes : 'Yêu cầu bị từ chối bởi nhân viên';
+      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/reject?note=${encodeURIComponent(reason)}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(
         requests.map((req) =>
           req.donationId === selectedRequest.donationId
-            ? { ...req, status: 'Rejected', notes: notes }
+            ? { ...req, status: 'Rejected', notes: reason }
             : req
         )
       );
@@ -149,19 +151,18 @@ const DonationRequestManagement = () => {
         );
         setSnackbar({ open: true, message: 'Đã hoàn thành yêu cầu!', severity: 'success' });
       } else if (actionMode === 'cancel') {
-        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/cancel`, {
-          notes: 'Đã hủy bởi nhân viên',
-        }, {
-          headers: { Authorization: `Bearer ${token}` },
+        const reason = actionRequest.notes && actionRequest.notes.trim() ? actionRequest.notes : 'Yêu cầu bị từ chối bởi nhân viên';
+        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/reject?note=${encodeURIComponent(reason)}`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         setRequests(
           requests.map((req) =>
             req.donationId === actionRequest.donationId
-              ? { ...req, status: 'Cancelled', notes: 'Đã hủy bởi nhân viên' }
+              ? { ...req, status: 'Rejected', notes: reason }
               : req
           )
         );
-        setSnackbar({ open: true, message: 'Đã hủy yêu cầu!', severity: 'success' });
+        setSnackbar({ open: true, message: 'Yêu cầu đã bị từ chối.', severity: 'success' });
       }
     } catch (err) {
       setSnackbar({ open: true, message: 'Có lỗi xảy ra!', severity: 'error' });
@@ -295,7 +296,12 @@ const DonationRequestManagement = () => {
                   <TableCell>
                     {dayjs(req.preferredDonationDate).format('DD/MM/YYYY')}
                   </TableCell>
-                  <TableCell>{`${req.periodId} - ${req.periodName}`}</TableCell>
+                  <TableCell>{`${req.periodId} - ${req.periodName}`}
+                    <Box mt={1}>
+                      <Typography variant="body2" color="primary" fontWeight="bold">Sức khỏe</Typography>
+                      <Button variant="outlined" size="small" onClick={() => { setSelectedRequest(req); setOpenPatientCondition(true); }}>Chi tiết</Button>
+                    </Box>
+                  </TableCell>
                   <TableCell>{getStatusChip(req.status)}</TableCell>
                   <TableCell>{req.status === 'Cancelled' && req.notes ? <b>{req.notes}</b> : req.notes}</TableCell>
                   <TableCell>
@@ -333,9 +339,9 @@ const DonationRequestManagement = () => {
                           variant="contained"
                           color="error"
                           size="small"
-                          onClick={() => handleOpenActionDialog(req, 'cancel')}
+                          onClick={() => handleOpenDialog(req, 'Reject')}
                         >
-                          Hủy
+                          Từ chối
                         </Button>
                       </Box>
                     )}
@@ -387,11 +393,11 @@ const DonationRequestManagement = () => {
       {/* Dialog xác nhận hoàn thành/hủy */}
       <Dialog open={openActionDialog} onClose={handleCloseActionDialog}>
         <DialogTitle>
-          {actionMode === 'complete' ? 'Xác nhận hoàn thành yêu cầu' : 'Xác nhận hủy yêu cầu'}
+          {actionMode === 'complete' ? 'Xác nhận hoàn thành yêu cầu' : 'Xác nhận từ chối yêu cầu'}
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Bạn có chắc chắn muốn {actionMode === 'complete' ? 'đánh dấu hoàn thành' : 'hủy'} yêu cầu này không?
+            Bạn có chắc chắn muốn {actionMode === 'complete' ? 'đánh dấu hoàn thành' : 'từ chối'} yêu cầu này không?
           </DialogContentText>
           {actionMode === 'complete' && (
             <TextField
@@ -422,6 +428,57 @@ const DonationRequestManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog hiển thị PatientCondition */}
+      {openPatientCondition && selectedRequest && (
+        <Dialog open={openPatientCondition} onClose={() => setOpenPatientCondition(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Chi tiết sức khỏe</DialogTitle>
+          <DialogContent dividers>
+            {(() => {
+              let data = selectedRequest.patientCondition || selectedRequest.PatientCondition;
+              let parsed = null;
+              try {
+                parsed = typeof data === 'string' ? JSON.parse(data) : data;
+              } catch (e) { parsed = null; }
+              if (parsed && typeof parsed === 'object') {
+                return <HealthSurveyReview formData={parsed} />;
+              }
+              // Nếu không parse được thì hiển thị dạng text, mỗi mục một dòng và chuyển mã số thành mô tả
+              if (typeof data === 'string') {
+                const codeMap = {
+                  '5.1': 'Khỏi bệnh sau khi mắc một trong các bệnh: thương hàn, nhiễm trùng máu, bị rắn cắn, viêm tắc động mạch, viêm tắc tĩnh mạch, viêm tủy, viêm tủy xương?',
+                  '5.2': 'Sút cân nhanh không rõ nguyên nhân?',
+                  '5.3': 'Nổi hạch kéo dài?',
+                  '5.4': 'Thực hiện thủ thuật y tế xâm lấn (chữa răng, châm cứu, lăn kim, nội soi,…)?',
+                  '5.5': 'Xăm, xỏ lỗ tai, lỗ mũi hoặc các vị trí khác trên cơ thể?',
+                  '5.6': 'Sử dụng ma túy?',
+                  '5.7': 'Tiếp xúc trực tiếp với máu, dịch tiết của người khác hoặc bị thương bởi kim tiêm?',
+                  '5.8': 'Sinh sống chung với người nhiễm bệnh Viêm gan siêu vi B?',
+                  '5.9': 'Quan hệ tình dục với người nhiễm viêm gan siêu vi B, C, HIV, giang mai hoặc người có nguy cơ nhiễm viêm gan siêu vi B, C, HIV, giang mai?',
+                  '5.10': 'Quan hệ tình dục với người cùng giới?',
+                  '5.11': 'Không',
+                };
+                return (
+                  <Box>
+                    {data.split(';').map((item, idx) => {
+                      const trimmed = item.trim();
+                      return (
+                        <Typography key={idx} sx={{ mb: 0.5 }}>
+                          {codeMap[trimmed] || trimmed}
+                        </Typography>
+                      );
+                    })}
+                  </Box>
+                );
+              }
+              return <Typography>Không có thông tin</Typography>;
+            })()}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenPatientCondition(false)}>Đóng</Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
       <Snackbar
         open={snackbar.open}

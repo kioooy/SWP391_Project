@@ -56,6 +56,7 @@ namespace Blood_Donation_Support.Controllers
                 dr.CompletionDate,                         // Completion Date
                 dr.CancelledDate,                          // Cancelled Date
                 dr.RejectedDate,                           // Rejected Date
+                dr.PatientCondition,                       // Patient Condition
             })
             .ToListAsync());
         }
@@ -99,6 +100,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.CompletionDate,                         // Completion Date
                     dr.CancelledDate,                          // Cancelled Date
                     dr.RejectedDate,                           // Rejected Date                
+                    dr.PatientCondition,                       // Patient Condition
                 })
                 .ToListAsync());
         }
@@ -137,6 +139,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.CompletionDate,                         // Completion Date
                     dr.CancelledDate,                          // Cancelled Date
                     dr.RejectedDate,                           // Rejected Date                
+                    dr.PatientCondition,                       // Patient Condition
                 })
                 .ToListAsync();
 
@@ -326,6 +329,7 @@ namespace Blood_Donation_Support.Controllers
             existingRequest.RejectedDate = DateTime.Now;
             existingRequest.Status = "Rejected";
             existingRequest.Notes = $"Lý do từ chối của bác sĩ phụ trách {name}: {note}";
+            existingRequest.PatientCondition = "Rejected";
             _context.Entry(existingRequest).State = EntityState.Modified;
 
             var period = await _context.BloodDonationPeriods
@@ -368,13 +372,14 @@ namespace Blood_Donation_Support.Controllers
                 return NotFound($"Not Found DonationRequestsId: {id}.");
 
             existingRequest.CancelledDate = DateTime.Now;
-            existingRequest.Status = "Cancelled";
             if (roleName == "Member")
             {
+                existingRequest.Status = "Cancelled";
                 existingRequest.Notes = "Đã hủy bởi người dùng";
             }
             else
             {
+                existingRequest.Status = "Rejected";
                 existingRequest.Notes = $"Hủy bởi {roleName}: {name}";
             }
             _context.Entry(existingRequest).State = EntityState.Modified;

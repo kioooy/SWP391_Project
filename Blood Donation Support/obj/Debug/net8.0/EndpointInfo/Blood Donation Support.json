@@ -1108,7 +1108,7 @@
         }
       }
     },
-    "/api/BloodUnit/{id}/update-status": {
+    "/api/BloodUnit/{id}/status-discard": {
       "patch": {
         "tags": [
           "BloodUnit"
@@ -1124,25 +1124,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BloodUnitStatusUpdateDTO"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BloodUnitStatusUpdateDTO"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/BloodUnitStatusUpdateDTO"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Success"
@@ -2950,16 +2931,6 @@
           "memberId": {
             "type": "integer",
             "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "BloodUnitStatusUpdateDTO": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false

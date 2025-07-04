@@ -24,9 +24,6 @@ namespace Blood_Donation_Support.DTO
         public string? Notes { get; set; }
 
         public string? PatientCondition { get; set; }
-
-        // Optional: For the "Shortcut Flow" where a staff creates and approves in one step
-        public int? BloodUnitIdToReserve { get; set; }
     }
     public class ApproveTransfusionRequestInput
     {

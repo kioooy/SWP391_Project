@@ -25,6 +25,7 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -47,6 +48,9 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
+
+// Thiết lập locale cho dayjs NGAY SAU import, nhưng TRƯỚC bất kỳ code nào khác
+dayjs.locale('vi');
 
 const Home = () => {
   const navigate = useNavigate();
@@ -269,8 +273,8 @@ const Home = () => {
 
   // Sắp xếp các đợt hiến máu theo ngày bắt đầu tăng dần
   const sortedPeriods = [...periods].sort((a, b) => dayjs(a.periodDateFrom) - dayjs(b.periodDateFrom));
-  // Lấy 4 đợt gần nhất
-  const displayedPeriods = showAllPeriods ? sortedPeriods : sortedPeriods.slice(0, 4);
+  // Lấy 6 đợt gần nhất
+  const displayedPeriods = showAllPeriods ? sortedPeriods : sortedPeriods.slice(0, 6);
 
   // Hàm lấy tên bệnh viện từ hospitalId
   const getHospitalName = (hospitalId) => {
@@ -314,9 +318,9 @@ const Home = () => {
           <Paper
             elevation={8}
             sx={{
-              p: 4,
+              p: 6, // tăng padding nếu muốn
               borderRadius: 3,
-              maxWidth: 700,
+              maxWidth: 1000, // tăng từ 700 lên 1000
               mx: 'auto',
               background: '#fff',
               backdropFilter: 'blur(10px)',
@@ -341,7 +345,7 @@ const Home = () => {
               <>
                 <Grid container spacing={2}>
                   {displayedPeriods.map((period) => (
-                    <Grid item xs={12} md={6} key={period.periodId}>
+                    <Grid item xs={12} md={4} key={period.periodId}> {/* Sửa md={6} thành md={4} */}
                       <Card sx={{ borderRadius: 2, border: '1px solid #e53e3e', mb: 2 }}>
                         <CardContent>
                           {/* Ẩn tên đợt hiến máu */}
@@ -349,48 +353,70 @@ const Home = () => {
                             {period.periodName}
                           </Typography> */}
                           <Box sx={{ mb: 1 }}>
-                            {/* Highlight tên bệnh viện trên 1 dòng riêng */}
+                            {/* Hiển thị thứ trước, sau đó đến tên bệnh viện */}
                             <span
                               style={{
-                                background: '#ffeaea',
-                                color: '#e53e3e',
                                 fontWeight: 'bold',
-                                padding: '2px 8px',
-                                borderRadius: '6px',
-                                fontSize: '1rem',
+                                fontSize: '1.15rem',
                                 display: 'inline-block',
                                 width: '100%',
                                 textAlign: 'center',
-                                marginBottom: 8
+                                marginBottom: 8,
+                                color: '#e53e3e', // màu chữ đỏ
+                                background: '#ffeaea', // màu nền hồng nhạt giống hình
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 8px #ffd6d6',
+                                letterSpacing: 1,
+                                padding: '4px 0'
+                              }}
+                            >
+                              {(() => {
+                                const from = dayjs(period.periodDateFrom);
+                                // Hàm viết hoa 2 chữ cái đầu
+                                const capitalizeWords = (str) =>
+                                  str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                return capitalizeWords(from.format('dddd'));
+                              })()}
+                            </span>
+                            <Typography variant="body2" sx={{ mb: 1, color: '#000', textAlign: 'left' }}>
+                              {/* Hiển thị ngày và thời gian */}
+                              {(() => {
+                                const from = dayjs(period.periodDateFrom);
+                                const to = dayjs(period.periodDateTo);
+                                const capitalizeWords = (str) =>
+                                  str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                if (from.isSame(to, 'day')) {
+                                  return (
+                                    <>
+                                      <span>Ngày: {from.format('DD/MM/YYYY')}</span><br />
+                                      <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                    </>
+                                  );
+                                } else {
+                                  return (
+                                    <>
+                                      <span>Ngày: {from.format('DD/MM/YYYY')} - {to.format('DD/MM/YYYY')}</span><br />
+                                      <span>{capitalizeWords(from.format('dddd'))} - {capitalizeWords(to.format('dddd'))}</span><br />
+                                      <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                    </>
+                                  );
+                                }
+                              })()}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#e53e3e',
+                                fontWeight: 'bold',
+                                textAlign: 'left', // căn lề trái
+                                mb: 1,
+                                mt: 1,
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {getHospitalName(period.hospitalId)}
-                            </span>
+                            </Typography>
                           </Box>
-                          <Typography variant="body2" sx={{ mb: 1, color: '#000' }}>
-                            {/* Hiển thị ngày và thời gian: nếu khác ngày thì tách ngày và giờ riêng */}
-                            {(() => {
-                              const from = dayjs(period.periodDateFrom);
-                              const to = dayjs(period.periodDateTo);
-                              if (from.isSame(to, 'day')) {
-                                // Nếu cùng ngày, hiển thị ngày 1 lần và khoảng thời gian
-                                return (
-                                  <>
-                                    <span>Ngày: {from.format('DD/MM/YYYY')}</span><br />
-                                    <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
-                                  </>
-                                );
-                              } else {
-                                // Nếu khác ngày, tách ngày và thời gian riêng
-                                return (
-                                  <>
-                                    <span>Ngày: {from.format('DD/MM/YYYY')} - {to.format('DD/MM/YYYY')}</span><br />
-                                    <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
-                                  </>
-                                );
-                              }
-                            })()}
-                          </Typography>
                           <Button
                             variant="contained"
                             color="primary"
@@ -421,7 +447,8 @@ const Home = () => {
                     </Grid>
                   ))}
                 </Grid>
-                {sortedPeriods.length > 4 && (
+                {/* Hiển thị nút "Xem thêm" nếu có nhiều hơn 6 đợt */}
+                {sortedPeriods.length > 6 && (
                   <Box sx={{ textAlign: 'center', mt: 2 }}>
                     <Button
                       variant="outlined"

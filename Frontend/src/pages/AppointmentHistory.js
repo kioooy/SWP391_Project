@@ -274,13 +274,6 @@ const AppointmentHistory = () => {
 
   return (
     <Container maxWidth="lg">
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{ color: "#4285f4", fontWeight: 600, mb: 4 }}
-      >
-        Lịch hẹn sắp tới
-      </Typography>
       {upcomingAppointments.length > 0 ? (
         upcomingAppointments.map((appointment, index) => (
           <Box key={index} sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

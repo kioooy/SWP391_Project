@@ -200,6 +200,29 @@
         }
       }
     },
+    "/api/Article/{id}/activate": {
+      "patch": {
+        "tags": [
+          "Article"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Article/{id}/deactivate": {
       "patch": {
         "tags": [
@@ -1161,6 +1184,18 @@
               "format": "int32"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodUnit/expire-check": {
+      "patch": {
+        "tags": [
+          "BloodUnit"
         ],
         "responses": {
           "200": {
@@ -2724,6 +2759,13 @@
             "nullable": true
           },
           "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "status": {
             "type": "string",
             "nullable": true
           }

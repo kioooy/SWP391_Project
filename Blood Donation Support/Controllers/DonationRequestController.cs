@@ -442,11 +442,7 @@ namespace Blood_Donation_Support.Controllers
                 query = query.Where(dr => dr.MemberId == memberId.Value);
             }
 
-            var result = await _context.DonationRequests
-                .Where(dr =>
-                    (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
-                    dr.Period.PeriodDateFrom >= DateTime.Today
-                )
+            var result = await query
                 .Select(dr => new {
                     dr.DonationId,
                     dr.Status,
@@ -457,7 +453,7 @@ namespace Blood_Donation_Support.Controllers
                     dr.Period.PeriodDateTo,
                     dr.RequestDate,
                     DonationVolume = dr.DonationVolume,
-                    MemberBloodType = dr.Member.BloodType.BloodTypeName // hoặc BloodTypeCode nếu cần
+                    MemberBloodType = dr.Member.BloodType.BloodTypeName
                 })
                 .ToListAsync();
 

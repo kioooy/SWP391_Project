@@ -64,12 +64,14 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         const resultAction = await dispatch(loginThunk(values)).unwrap();
-        const userId = resultAction.userId; // Lấy userId từ kết quả đăng nhập
-        const token = resultAction.token; // Lấy token từ kết quả đăng nhập
+        const userId = resultAction.userId;
+        const token = resultAction.token;
         // Lưu role vào localStorage
         if (resultAction.role) {
           localStorage.setItem('role', resultAction.role);
         }
+        // Lưu userId vào localStorage cho các chức năng khác
+        localStorage.setItem('user', JSON.stringify({ UserId: userId, ...resultAction }));
 
         // Sau khi đăng nhập thành công, cố gắng lấy và cập nhật vị trí
         if (userId && token) {

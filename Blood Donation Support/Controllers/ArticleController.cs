@@ -33,7 +33,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl
+                    ImageUrl = a.ImageUrl,
+                    IsActive = a.IsActive,
+                    Status = a.Status
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -53,7 +55,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl
+                    ImageUrl = a.ImageUrl,
+                    IsActive = a.IsActive,
+                    Status = a.Status
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -73,7 +77,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl
+                    ImageUrl = a.ImageUrl,
+                    IsActive = a.IsActive,
+                    Status = a.Status
                 })
                 .FirstOrDefaultAsync();
 
@@ -147,6 +153,22 @@ namespace Blood_Donation_Support.Controllers
                 return NotFound();
 
             Article.IsActive = false;
+            Article.UpdatedDate = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+        // Activate Article (Admin Only)
+        // PATCH: api/Article/{id}/activate
+        [HttpPatch("{id}/activate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ActivateArticle(int id)
+        {
+            var Article = await _context.Articles.FindAsync(id);
+            if (Article == null)
+                return NotFound();
+
+            Article.IsActive = true;
             Article.UpdatedDate = DateTime.Now;
 
             await _context.SaveChangesAsync();

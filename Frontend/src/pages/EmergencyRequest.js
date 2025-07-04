@@ -223,6 +223,64 @@ const EmergencyRequest = () => {
     }
   };
 
+  const reasonOptions = [
+    {
+      value: 'Tai nạn giao thông',
+      label: 'Tai nạn giao thông',
+      desc: 'Gây mất máu nhiều do va chạm xe máy, ô tô hoặc tai nạn đường bộ nghiêm trọng.'
+    },
+    {
+      value: 'Tai nạn lao động / sinh hoạt',
+      label: 'Tai nạn lao động / sinh hoạt',
+      desc: 'Té ngã, đập đầu, bị vật rơi trúng, tai nạn khi làm việc gây chấn thương nặng, mất máu.'
+    },
+    {
+      value: 'Băng huyết sau sinh',
+      label: 'Băng huyết sau sinh',
+      desc: 'Xuất huyết ồ ạt sau khi sinh thường hoặc sinh mổ, là một tình huống cấp cứu sản khoa.'
+    },
+    {
+      value: 'Vỡ thai ngoài tử cung',
+      label: 'Vỡ thai ngoài tử cung',
+      desc: 'Một biến chứng nguy hiểm trong thai kỳ, gây xuất huyết nội cần truyền máu khẩn cấp.'
+    },
+    {
+      value: 'Xuất huyết tiêu hóa',
+      label: 'Xuất huyết tiêu hóa',
+      desc: 'Nôn ra máu, đi ngoài phân đen do vỡ tĩnh mạch thực quản hoặc loét dạ dày nặng.'
+    },
+    {
+      value: 'Vết thương do dao / súng',
+      label: 'Vết thương do dao / súng',
+      desc: 'Bị đâm, chém, hoặc trúng đạn dẫn đến mất máu cấp.'
+    },
+    {
+      value: 'Chấn thương nội tạng',
+      label: 'Chấn thương nội tạng',
+      desc: 'Vỡ lách, gan hoặc các cơ quan nội tạng do tai nạn, chấn thương mạnh vào bụng.'
+    },
+    {
+      value: 'Phẫu thuật khẩn cấp',
+      label: 'Phẫu thuật khẩn cấp',
+      desc: 'Mổ cấp cứu không lường trước, thường trong các ca chấn thương hoặc bệnh lý cấp.'
+    },
+    {
+      value: 'Sốc mất máu',
+      label: 'Sốc mất máu',
+      desc: 'Tình trạng huyết áp tụt, mạch yếu do mất máu nhiều, đe dọa tính mạng.'
+    },
+    {
+      value: 'Tai nạn thể thao',
+      label: 'Tai nạn thể thao',
+      desc: 'Chấn thương nặng trong khi chơi thể thao như gãy xương, tổn thương mạch máu.'
+    },
+    {
+      value: 'Khác',
+      label: 'Khác',
+      desc: 'Trường hợp khẩn cấp khác không nằm trong danh sách trên.'
+    },
+  ];
+
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
@@ -260,15 +318,37 @@ const EmergencyRequest = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Lý do cần máu"
-                multiline
-                rows={3}
-                value={formData.reason}
-                onChange={handleReasonChange}
-              />
+              <FormControl fullWidth>
+                <InputLabel>Lý do cần máu</InputLabel>
+                <Select
+                  value={formData.reason}
+                  label="Lý do cần máu"
+                  onChange={handleChange('reason')}
+                >
+                  {reasonOptions.map((option, idx) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      <Box>
+                        <Typography fontWeight="bold">{idx + 1}. {option.label}</Typography>
+                        <Typography variant="caption" color="text.secondary">{option.desc}</Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
+
+            {formData.reason === 'Khác' && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Nhập lý do khác"
+                  multiline
+                  rows={2}
+                  value={formData.notes}
+                  onChange={handleChange('notes')}
+                />
+              </Grid>
+            )}
           </Grid>
         );
 
@@ -329,17 +409,6 @@ const EmergencyRequest = () => {
                 onChange={handleChange('cccd')}
                 error={!!errors.cccd}
                 helperText={errors.cccd}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Ghi chú thêm"
-                multiline
-                rows={3}
-                value={formData.notes}
-                onChange={handleChange('notes')}
               />
             </Grid>
           </Grid>

@@ -15,8 +15,6 @@ const isTokenExpired = (token) => {
   }
 };
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
@@ -26,7 +24,7 @@ export const login = createAsyncThunk(
         citizenNumber: credentials.citizenId,
         password: credentials.password,
       };
-      const response = await axios.post(`${API_URL}/User/login`, payload);
+      const response = await axios.post('/api/User/login', payload);
       localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
@@ -40,7 +38,7 @@ export const register = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       console.log('Sending registration data to API:', userData);
-      const response = await axios.post(`${API_URL}/User/register`, userData);
+      const response = await axios.post('/api/User/register', userData);
       localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
@@ -74,8 +72,7 @@ export const fetchUserProfile = createAsyncThunk(
     try {
       const token = localStorage.getItem('token');
       if (!token) return rejectWithValue('No token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      const response = await axios.get(`${API_URL}/User/profile`, {
+      const response = await axios.get('/api/User/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const userData = response.data[0];

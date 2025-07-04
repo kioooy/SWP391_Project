@@ -116,8 +116,7 @@ const UserProfileRecipient = () => {
         setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
         return;
       }
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-      const response = await axios.get(`${API_URL}/User/profile`, {
+      const response = await axios.get('/api/User/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const userData = response.data[0];
@@ -159,9 +158,7 @@ const UserProfileRecipient = () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        // Lấy lịch sử truyền máu đã hoàn thành
-        const res = await axios.get(`${apiUrl}/TransfusionHistory`, {
+        const res = await axios.get('/api/TransfusionHistory', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCompletedTransfusionHistory(res.data || []);
@@ -200,8 +197,7 @@ const UserProfileRecipient = () => {
       }
       const token = localStorage.getItem('token');
       if (token && user?.userId) {
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        await axios.put(`${apiUrl}/User/${user?.userId}/location`, {
+        await axios.put(`/api/User/${user?.userId}/location`, {
           latitude,
           longitude,
           address

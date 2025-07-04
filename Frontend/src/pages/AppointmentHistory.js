@@ -274,13 +274,6 @@ const AppointmentHistory = () => {
 
   return (
     <Container maxWidth="lg">
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{ color: "#4285f4", fontWeight: 600, mb: 4 }}
-      >
-        Lịch hẹn sắp tới
-      </Typography>
       {upcomingAppointments.length > 0 ? (
         upcomingAppointments.map((appointment, index) => (
           <Box key={index} sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -395,12 +388,38 @@ const AppointmentHistory = () => {
         </DialogActions>
       </Dialog>
       {/* Dialog xác nhận hủy lịch hẹn */}
-      <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog}>
-        <DialogTitle>Xác nhận hủy lịch hẹn</DialogTitle>
-        <DialogContent>Bạn có chắc chắn muốn hủy lịch hẹn này không?</DialogContent>
+      <Dialog open={openCancelDialog} onClose={handleCloseCancelDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>
+          Xác nhận hủy lịch hẹn
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Bạn có chắc chắn muốn hủy lịch hẹn này không?
+          </Typography>
+          {appointmentToCancel && (
+            <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+              <Typography variant="subtitle2" fontWeight="bold" color="primary.main">
+                Thông tin lịch hẹn:
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <strong>Ngày hẹn:</strong> {appointmentToCancel.periodDateFrom ? dayjs(appointmentToCancel.periodDateFrom).format('DD/MM/YYYY') : 'Không xác định'}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học
+              </Typography>
+            </Box>
+          )}
+          <Typography variant="body2" color="error.main" sx={{ mt: 2, fontStyle: 'italic' }}>
+            ⚠️ Hành động này không thể hoàn tác. Lịch hẹn sẽ bị hủy vĩnh viễn.
+          </Typography>
+        </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseCancelDialog}>Không</Button>
-          <Button onClick={handleConfirmCancel} color="error" variant="contained">Hủy lịch hẹn</Button>
+          <Button onClick={handleCloseCancelDialog} variant="outlined">
+            Không hủy
+          </Button>
+          <Button onClick={handleConfirmCancel} variant="contained" color="error">
+            Xác nhận hủy
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

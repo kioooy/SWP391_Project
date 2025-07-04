@@ -10,7 +10,8 @@ namespace Blood_Donation_Support.DTO
         public DateTime? PublishedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public string? ImageUrl { get; set; }
-
+        public bool IsActive { get; set; }
+        public string Status { get; set; }
     }
 
     public class ArticleCreateDTO

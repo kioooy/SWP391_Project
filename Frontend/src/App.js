@@ -39,7 +39,6 @@ import UserProfileRecipient from "./pages/UserProfileRecipient";
 import RequireRecipient from "./components/RequireRecipient";
 import BlogDetail from "./pages/BlogDetail";
 import ArticleManage from "./pages/admin/ArticleManage";
-import BloodStorageManage from "./pages/admin/BloodStorageManage";
 import BlogManage from "./pages/admin/BlogManage";
 import Unauthorized from "./pages/Unauthorized";
 import SidebarLayout from "./layouts/SidebarLayout";
@@ -169,14 +168,6 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <BloodInventory />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/manage-blood-storage"
-          element={
-            <RequireAuth roles={["Admin", "Staff"]}>
-              <BloodStorageManage />
             </RequireAuth>
           }
         />

@@ -69,6 +69,7 @@ const MainContainer = styled(Box)(({ theme }) => ({
 const ContentContainer = styled(Container)(({ theme }) => ({
   flex: 1,
   padding: theme.spacing(3),
+  marginTop: theme.spacing(8), // Thêm margin-top để tránh bị header che
 }));
 
 const StyledLink = styled(RouterLink)(({ theme }) => ({
@@ -230,7 +231,6 @@ const MainLayout = () => {
       { path: "/manage-blood-periods", label: "Quản lý đợt hiến máu", icon: <BloodtypeIcon /> },
       { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
       { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
-      { path: "/transfusion-management", label: "Quản lý truyền máu", icon: <LocalHospitalIcon /> },
       { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
       { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
       { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
@@ -242,7 +242,6 @@ const MainLayout = () => {
       { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
       { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
       { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
-      { path: "/transfusion-management", label: "Quản lý truyền máu", icon: <LocalHospitalIcon /> },
       { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
       { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
       { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },

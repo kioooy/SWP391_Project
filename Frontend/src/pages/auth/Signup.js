@@ -147,7 +147,6 @@ const occupations = [
 ];
 
 const bloodTypes = [
-  { id: 0, label: 'Chưa biết' },
   { id: 1, label: 'A+' },
   { id: 2, label: 'A-' },
   { id: 3, label: 'B+' },

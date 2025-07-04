@@ -43,6 +43,7 @@ public class BloodUnitController : ControllerBase
                 bu.RemainingVolume,         // Remaining Volume (mL)
                 bu.Notes,                   // Notes (if any)
             })
+            .Where(bu => bu.BloodStatus != "Discarded")
             .ToListAsync();
 
         return Ok(bloodUnits);
@@ -107,7 +108,7 @@ public class BloodUnitController : ControllerBase
             AddDate = DateOnly.FromDateTime(DateTime.Now),  // Date Added (default today)
             ExpiryDate = DateOnly.FromDateTime(DateTime.Now.AddDays(shelfLifeDays)),     // Expiry Date
             Volume = model.Volume,                          // Volume (mL)
-            BloodStatus = model.BloodStatus ?? "Available", // Blood Status (default to "Available" if null)
+            BloodStatus = "Available", // Blood Status (default to "Available" if null)
             RemainingVolume = model.Volume,                 // Remaining Volume (mL) equals initial volume for new units
             MemberId = model.MemberId 
         };
@@ -158,7 +159,7 @@ public class BloodUnitController : ControllerBase
         bloodUnit.Volume = model.Volume;                    // Volume (mL)
         bloodUnit.RemainingVolume = model.remainingVolume;  // Remaining Volume (mL)
         bloodUnit.BloodStatus = model.BloodStatus;          // Blood Status
-        bloodUnit.MemberId = model.MemberId; // Member ID
+        bloodUnit.MemberId = model.MemberId;                // Member ID
 
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try
@@ -175,11 +176,11 @@ public class BloodUnitController : ControllerBase
             throw;
         }
     }
-    // Update blood unit status (e.g., for discarding)
-    // PATCH: api/BloodUnit/{id}/update-status
-    [HttpPatch("{id}/update-status")]
+    // Delete blood unit status (Soft Delete)
+    // PATCH: api/BloodUnit/{id}/status-discard
+    [HttpPatch("{id}/status-discard")]
     [Authorize(Roles = "Admin, Staff")]
-    public async Task<IActionResult> UpdateBloodUnitStatus(int id, [FromBody] BloodUnitStatusUpdateDTO model)
+    public async Task<IActionResult> UpdateBloodUnitStatus(int id)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -189,12 +190,42 @@ public class BloodUnitController : ControllerBase
             return NotFound();
 
         // Update the BloodStatus
-        bloodUnit.BloodStatus = model.Status;
+        bloodUnit.BloodStatus = "Discarded";
             
         _context.BloodUnits.Update(bloodUnit);
         await _context.SaveChangesAsync();
             
         return Ok(bloodUnit);
+    }
+    // Expire blood unit check 
+    // PATCH: api/BloodUnit/{id}/status-discard
+    [HttpPatch("expire-check")]
+    [Authorize(Roles = "Admin, Staff")]
+    public async Task<IActionResult> ExpireBloodUnitCheck()
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var bloodUnit = await _context.BloodUnits
+            .Where(bu => (bu.BloodStatus == "Available" || bu.BloodStatus == "PartialUsed" || bu.BloodStatus == "Reserved")
+                && bu.ExpiryDate < DateOnly.FromDateTime(DateTime.Now))
+            .ToListAsync(); // Check if there are any blood units that are expired
+
+        if (bloodUnit == null)
+            return NotFound();
+
+        // Update the BloodStatus for all expired units
+        foreach (var unit in bloodUnit)
+        {
+            unit.BloodStatus = "Expired";
+        }
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = $"Updated {bloodUnit.Count} Expired Blood Units",
+            ExpiredUnits = bloodUnit
+        });
     }
     // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
     [HttpGet("compatible")]

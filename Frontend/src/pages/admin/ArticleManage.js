@@ -43,6 +43,9 @@ const ArticleManage = () => {
   const [editArticle, setEditArticle] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -52,13 +55,7 @@ const ArticleManage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        const data = res.data.map((a) => ({
-          ...a,
-          Status: "Published",
-          IsActive: true,
-        }));
-
+        const data = res.data;
         setArticles(data);
         setFilteredArticles(data);
       } catch (error) {
@@ -90,25 +87,50 @@ const ArticleManage = () => {
   };
 
   const handleViewDetail = (id) => {
-    const found = articles.find((a) => a.ArticleId === id);
+    const found = articles.find((a) => a.ArticleId === id || a.articleId === id);
     setSelectedArticle(found);
+    setOpenDetailDialog(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const id = articleToDelete.ArticleId;
-    const updated = articles.filter((a) => a.ArticleId !== id);
-    setArticles(updated);
-    setFilteredArticles(updated);
-    if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
-    setConfirmDeleteOpen(false);
-    setArticleToDelete(null);
-    alert("🗑️ Đã xóa bài viết thành công!");
+    try {
+      await axios.patch(`${API_URL}/Article/${id}/deactivate`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Lấy lại danh sách mới từ backend
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArticles(res.data);
+      setFilteredArticles(res.data);
+      if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
+      setConfirmDeleteOpen(false);
+      setArticleToDelete(null);
+      alert("🗑️ Đã xóa bài viết thành công!");
+    } catch (error) {
+      alert("Lỗi khi xóa bài viết!");
+    }
   };
 
   const handleEdit = (id) => {
-    const found = articles.find((a) => a.ArticleId === id);
-    setEditArticle({ ...found });
-    setIsEditOpen(true);
+    const found = articles.find((a) => a.ArticleId === id || a.articleId === id);
+    if (found) {
+      let statusRaw = found.Status || found.status;
+      let status = statusRaw === 'Published' ? 'Published' : statusRaw === 'Draft' ? 'Draft' : 'Draft';
+      setEditArticle({
+        ArticleId: found.ArticleId || found.articleId,
+        Title: found.Title || found.title || '',
+        Content: found.Content || found.content || '',
+        Status: status,
+        IsActive: found.IsActive !== undefined ? found.IsActive : found.isActive,
+        PublishedDate: found.PublishedDate || found.publishedDate,
+        UpdatedDate: found.UpdatedDate || found.updatedDate,
+        UserId: found.UserId || found.userId,
+        ImageUrl: found.ImageUrl || found.imageUrl,
+      });
+      setIsEditOpen(true);
+    }
   };
 
   const handleUpdate = async () => {
@@ -117,26 +139,35 @@ const ArticleManage = () => {
       return;
     }
 
-    const now = new Date().toISOString().split("T")[0];
-    const updated = articles.map((a) =>
-      a.ArticleId === editArticle.ArticleId
-        ? { ...editArticle, UpdatedDate: now }
-        : a
-    );
-    await axios.put(
-      `${API_URL}/Article/${editArticle.ArticleId}`,
-      editArticle,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    setArticles(updated);
-    setFilteredArticles(updated);
-    setIsEditOpen(false);
-    setEditArticle(null);
-    alert("✅ Cập nhật bài viết thành công!");
+    const payload = {
+      Title: editArticle.Title,
+      Content: editArticle.Content,
+      Status: editArticle.Status,
+    };
+
+    try {
+      await axios.put(
+        `${API_URL}/Article/${editArticle.ArticleId}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const updated = articles.map((a) =>
+        a.ArticleId === editArticle.ArticleId
+          ? { ...a, ...payload, UpdatedDate: new Date().toISOString().split("T")[0] }
+          : a
+      );
+      setArticles(updated);
+      setFilteredArticles(updated);
+      setIsEditOpen(false);
+      setEditArticle(null);
+      alert("✅ Cập nhật bài viết thành công!");
+    } catch (error) {
+      alert("Lỗi khi cập nhật bài viết! " + (error.response?.data || ''));
+    }
   };
 
   const handleCreate = async () => {
@@ -146,20 +177,11 @@ const ArticleManage = () => {
       return;
     }
 
-    const newId = (
-      Math.max(...articles.map((a) => +a.ArticleId || 0), 0) + 1
-    ).toString();
-    const now = new Date().toISOString().split("T")[0];
-
     const item = {
-      ArticleId: newId,
-      UserId: "999",
+      UserId: user?.UserId,
       Title,
       Content,
       Status,
-      IsActive: true,
-      PublishedDate: now,
-      UpdatedDate: now,
     };
 
     await axios.post(`${API_URL}/Article`, item, {
@@ -167,79 +189,66 @@ const ArticleManage = () => {
         Authorization: `Bearer ${token}`,
       },
     });
-    const updated = [item, ...articles];
-    setArticles(updated);
-    setFilteredArticles(updated);
+    // Sau khi tạo xong, lấy lại danh sách từ backend
+    const res = await axios.get(`${API_URL}/Article/admin`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setArticles(res.data);
+    setFilteredArticles(res.data);
     setIsCreateOpen(false);
     alert("✅ Tạo bài viết thành công!");
     setNewArticle({ Title: "", Content: "", Status: "" });
   };
 
   const handleToggleStatus = async (id) => {
-    const updated = articles.map((a) => {
-      if (a.ArticleId === id) {
-        const newStatus = a.Status === "Published" ? "Draft" : "Published";
-
-        axios
-          .patch(
-            `${API_URL}/Article/${id}/status`,
-            { status: newStatus },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-          .then(() => {
-            const newArticles = articles.map((article) =>
-              article.ArticleId === id
-                ? {
-                    ...article,
-                    Status: newStatus,
-                    UpdatedDate: new Date().toISOString().split("T")[0],
-                  }
-                : article
-            );
-            setArticles(newArticles);
-            setFilteredArticles(newArticles);
-          })
-          .catch((error) => {
-            console.error("Lỗi cập nhật trạng thái:", error);
-          });
-
-        return a;
-      }
-      return a;
-    });
-  };
-
-  const handleToggleActive = async (id) => {
+    const article = articles.find(a => a.ArticleId === id || a.articleId === id);
+    if (!article) return;
+    const currentStatus = article.Status || article.status;
+    const newStatus = currentStatus === "Published" ? "Draft" : "Published";
     try {
       await axios.patch(
-        `${API_URL}/Article/${id}/deactivate`,
-        {},
+        `${API_URL}/Article/${id}/status`,
+        { Status: newStatus },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
-      const updated = articles.map((a) => {
-        if (a.ArticleId === id) {
-          return {
-            ...a,
-            IsActive: false,
-            UpdatedDate: new Date().toISOString().split("T")[0],
-          };
-        }
-        return a;
+      // Reload lại danh sách từ backend
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      setArticles(updated);
-      setFilteredArticles(updated);
+      setArticles(res.data);
+      setFilteredArticles(res.data);
     } catch (error) {
-      console.error("Lỗi khi deactivate bài viết:", error);
+      alert("Lỗi khi cập nhật trạng thái bài viết!");
+    }
+  };
+
+  const handleChangeActive = async (id, value) => {
+    try {
+      if (value === "inactive") {
+        await axios.patch(
+          `${API_URL}/Article/${id}/deactivate`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        await axios.patch(
+          `${API_URL}/Article/${id}/activate`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      // Reload lại danh sách
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArticles(res.data);
+      setFilteredArticles(res.data);
+    } catch (error) {
+      alert("Lỗi khi cập nhật trạng thái kích hoạt!");
     }
   };
 
@@ -295,18 +304,34 @@ const ArticleManage = () => {
           </TableHead>
           <TableBody>
             {paginatedArticles.map((article) => (
-              <TableRow key={article.ArticleId}>
-                <TableCell>{article.Title}</TableCell>
-                <TableCell>{article.Status}</TableCell>
-                <TableCell>{article.IsActive ? "✅" : "⛔"}</TableCell>
-                <TableCell>{article.PublishedDate}</TableCell>
-                <TableCell>{article.UpdatedDate}</TableCell>
+              <TableRow key={article.ArticleId || article.articleId}>
+                <TableCell>{article.Title || article.title}</TableCell>
+                <TableCell>
+                  {(article.Status || article.status)
+                    ? ((article.Status || article.status) === 'Published' ? 'Đã xuất bản'
+                      : (article.Status || article.status) === 'Draft' ? 'Bản nháp'
+                      : (article.Status || article.status))
+                    : 'Không xác định'}
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={(article.IsActive !== undefined ? article.IsActive : article.isActive) ? 'active' : 'inactive'}
+                    onChange={e => handleChangeActive(article.ArticleId || article.articleId, e.target.value)}
+                    size="small"
+                    sx={{ minWidth: 120 }}
+                  >
+                    <MenuItem value="active">Kích hoạt</MenuItem>
+                    <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
+                  </Select>
+                </TableCell>
+                <TableCell>{article.PublishedDate || article.publishedDate}</TableCell>
+                <TableCell>{article.UpdatedDate || article.updatedDate}</TableCell>
                 <TableCell>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button
                       size="small"
                       variant="outlined"
-                      onClick={() => handleViewDetail(article.ArticleId)}
+                      onClick={() => handleViewDetail(article.ArticleId || article.articleId)}
                     >
                       Xem
                     </Button>
@@ -314,38 +339,9 @@ const ArticleManage = () => {
                       size="small"
                       variant="contained"
                       color="primary"
-                      onClick={() => handleEdit(article.ArticleId)}
+                      onClick={() => handleEdit(article.ArticleId || article.articleId)}
                     >
                       Sửa
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="secondary"
-                      onClick={() => handleToggleStatus(article.ArticleId)}
-                    >
-                      {article.Status === "Published"
-                        ? "Chuyển thành Draft"
-                        : "Xuất bản"}
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color={article.IsActive ? "warning" : "success"}
-                      onClick={() => handleToggleActive(article.ArticleId)}
-                    >
-                      {article.IsActive ? "Vô hiệu hóa" : "Kích hoạt"}
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      onClick={() => {
-                        setArticleToDelete(article);
-                        setConfirmDeleteOpen(true);
-                      }}
-                    >
-                      Xóa
                     </Button>
                   </div>
                 </TableCell>
@@ -371,47 +367,50 @@ const ArticleManage = () => {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
       {selectedArticle && (
-        <Card
-          style={{
-            marginTop: 24,
-            padding: 16,
-            backgroundColor: "#f0f4f8",
-            borderRadius: 12,
-          }}
-        >
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              📝 Chi tiết bài viết
-            </Typography>
+        <Dialog open={openDetailDialog} onClose={() => { setOpenDetailDialog(false); setSelectedArticle(null); }} maxWidth="md" fullWidth>
+          <DialogTitle>📝 Chi tiết bài viết</DialogTitle>
+          <DialogContent>
             <div style={{ display: "grid", rowGap: 12 }}>
               <div>
-                <strong>🆔 ID:</strong> {selectedArticle.ArticleId}
+                <strong>🆔 ID:</strong> {selectedArticle.ArticleId || selectedArticle.articleId}
               </div>
               <div>
-                <strong>👤 User ID:</strong> {selectedArticle.UserId}
+                <strong>👤 User ID:</strong> {selectedArticle.UserId || selectedArticle.userId}
               </div>
               <div>
-                <strong>📌 Tiêu đề:</strong> {selectedArticle.Title}
+                <strong>📌 Tiêu đề:</strong> {selectedArticle.Title || selectedArticle.title}
               </div>
               <div>
-                <strong>📝 Nội dung:</strong> {selectedArticle.Content}
+                <strong>📝 Nội dung:</strong> {selectedArticle.Content || selectedArticle.content}
               </div>
               <div>
-                <strong>📊 Trạng thái:</strong> {selectedArticle.Status}
+                <strong>📊 Trạng thái:</strong> 
+                {(selectedArticle.Status || selectedArticle.status) === 'Published'
+                  ? 'Đã xuất bản'
+                  : (selectedArticle.Status || selectedArticle.status) === 'Draft'
+                    ? 'Bản nháp'
+                    : (selectedArticle.Status || selectedArticle.status) || 'Không xác định'}
               </div>
               <div>
-                <strong>🔒 Kích hoạt:</strong>{" "}
-                {selectedArticle.IsActive ? "Có" : "Không"}
+                <strong>🔒 Kích hoạt:</strong> 
+                {(selectedArticle.IsActive === true || selectedArticle.isActive === true)
+                  ? 'Có'
+                  : (selectedArticle.IsActive === false || selectedArticle.isActive === false)
+                    ? 'Không'
+                    : 'Không xác định'}
               </div>
               <div>
-                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate}
+                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate || selectedArticle.publishedDate}
               </div>
               <div>
-                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate}
+                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate || selectedArticle.updatedDate}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDetailDialog(false)}>Đóng</Button>
+          </DialogActions>
+        </Dialog>
       )}
 
       {/* Xác nhận xóa */}
@@ -481,7 +480,7 @@ const ArticleManage = () => {
       </Dialog>
 
       {/* Modal chỉnh sửa */}
-      <Dialog open={isEditOpen} onClose={() => setIsEditOpen(false)}>
+      <Dialog open={isEditOpen} onClose={() => { setIsEditOpen(false); setEditArticle(null); }}>
         <DialogTitle>Chỉnh sửa bài viết</DialogTitle>
         <DialogContent>
           <TextField
@@ -507,14 +506,12 @@ const ArticleManage = () => {
           <FormControl fullWidth margin="normal">
             <InputLabel>Trạng thái</InputLabel>
             <Select
-              value={editArticle?.Status || ""}
-              onChange={(e) =>
-                setEditArticle({ ...editArticle, Status: e.target.value })
-              }
+              value={editArticle?.Status || 'Draft'}
+              onChange={(e) => setEditArticle({ ...editArticle, Status: e.target.value })}
               label="Trạng thái"
             >
-              <MenuItem value="Draft">Draft</MenuItem>
-              <MenuItem value="Published">Published</MenuItem>
+              <MenuItem value="Draft">Bản nháp</MenuItem>
+              <MenuItem value="Published">Đã xuất bản</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>

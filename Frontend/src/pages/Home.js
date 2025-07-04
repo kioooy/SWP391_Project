@@ -44,6 +44,17 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ScienceIcon from '@mui/icons-material/Science';
 import BookOnlineIcon from '@mui/icons-material/BookOnline';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import EventIcon from '@mui/icons-material/Event';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import ScaleIcon from '@mui/icons-material/Scale';
+import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import PermContactCalendarIcon from '@mui/icons-material/PermContactCalendar';
+import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
@@ -51,6 +62,109 @@ import MuiAlert from '@mui/material/Alert';
 
 // Thiết lập locale cho dayjs NGAY SAU import, nhưng TRƯỚC bất kỳ code nào khác
 dayjs.locale('vi');
+
+const stats = [
+  { icon: <BloodtypeIcon color="primary" sx={{ fontSize: 40 }} />, label: 'Đơn vị máu đã tiếp nhận', value: '12,345+' },
+  { icon: <VolunteerActivismIcon color="secondary" sx={{ fontSize: 40 }} />, label: 'Người hiến máu', value: '8,900+' },
+  { icon: <EventIcon color="error" sx={{ fontSize: 40 }} />, label: 'Sự kiện đã tổ chức', value: '120+' },
+];
+
+const benefits = [
+  {
+    icon: <FavoriteIcon sx={{ fontSize: 40, color: '#e53935' }} />,
+    title: 'Sức khỏe được kiểm tra',
+    description: 'Được khám và tư vấn sức khỏe miễn phí, phát hiện sớm các bệnh lý về máu'
+  },
+  {
+    icon: <LocalHospitalIcon sx={{ fontSize: 40, color: '#e53935' }} />,
+    title: 'Ưu tiên khi cần máu',
+    description: 'Được ưu tiên cấp máu khi cần truyền máu với số lượng tương đương lượng máu đã hiến'
+  },
+  {
+    icon: <CardGiftcardIcon sx={{ fontSize: 40, color: '#e53935' }} />,
+    title: 'Nhận quà tặng',
+    description: 'Nhận quà tặng và giấy chứng nhận hiến máu tình nguyện sau mỗi lần hiến máu'
+  },
+  {
+    icon: <EmojiEventsIcon sx={{ fontSize: 40, color: '#e53935' }} />,
+    title: 'Vinh danh',
+    description: 'Được vinh danh và khen thưởng khi đạt các cột mốc hiến máu tình nguyện'
+  }
+];
+
+const eligibilityCriteria = [
+  {
+    icon: <PersonOutlineIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Mang theo chứng minh nhân dân/hộ chiếu'
+  },
+  {
+    icon: <LocalCafeIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Không nghiện ma túy, rượu bia và các chất kích thích'
+  },
+  {
+    icon: <ScaleIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Cân nặng: Nam ≥ 45 Kg; Nữ ≥ 45 kg'
+  },
+  {
+    icon: <MonitorHeartIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Không mắc các bệnh mãn tính hoặc cấp tính về tim mạch, huyết áp, hô hấp, dạ dày...'
+  },
+  {
+    icon: <StraightenIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Chỉ số huyết sắc tố (Hb) ≥120g/l (≥125g/l nếu hiến từ 350ml trở lên).'
+  },
+  {
+    icon: <PermContactCalendarIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Thời gian tối thiểu giữa 2 lần hiến máu là 12 tuần đối với cả Nam và Nữ'
+  },
+  {
+    icon: <SpellcheckIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Kết quả test nhanh âm tính với kháng nguyên bề mặt của siêu vi B'
+  },
+  {
+    icon: <LocalHospitalIcon sx={{ fontSize: 30, color: '#1976d2' }} />,
+    description: 'Không mắc hoặc không có hành vi nguy cơ lây nhiễm HIV, không nhiễm viêm gan B, viêm gan C, và các virus lây qua đường truyền máu'
+  }
+];
+
+const bloodBanks = [
+  {
+    id: 1,
+    name: 'Bệnh viện Chợ Rẫy',
+    address: '201B Nguyễn Chí Thanh, Phường 12, Quận 5, TP.HCM',
+    phone: '028 3855 4137',
+    email: 'contact@choray.vn',
+    workingHours: '7:00 - 17:00',
+    bloodTypes: ['A+', 'B+', 'O+', 'AB+', 'A-', 'B-', 'O-', 'AB-']
+  },
+  {
+    id: 2,
+    name: 'Bệnh viện Nhân dân 115',
+    address: '527 Sư Vạn Hạnh, Phường 12, Quận 10, TP.HCM',
+    phone: '028 3865 4249',
+    email: 'info@benhvien115.com.vn',
+    workingHours: '7:00 - 17:00',
+    bloodTypes: ['A+', 'B+', 'O+', 'AB+', 'A-', 'B-', 'O-', 'AB-']
+  },
+  {
+    id: 3,
+    name: 'Bệnh viện Đại học Y Dược',
+    address: '215 Hồng Bàng, Phường 11, Quận 5, TP.HCM',
+    phone: '028 3855 8411',
+    email: 'info@bvdaihocyduoc.com.vn',
+    workingHours: '7:00 - 17:00',
+    bloodTypes: ['A+', 'B+', 'O+', 'AB+', 'A-', 'B-', 'O-', 'AB-']
+  },
+  {
+    id: 4,
+    name: 'Viện Huyết học - Truyền máu Trung ương',
+    address: '14 Trần Thái Tông, Cầu Giấy, Hà Nội',
+    phone: '024 3784 2141',
+    email: 'contact@viethuyethoc.vn',
+    workingHours: '7:00 - 17:00',
+    bloodTypes: ['A+', 'B+', 'O+', 'AB+', 'A-', 'B-', 'O-', 'AB-']
+  }
+];
 
 const Home = () => {
   const navigate = useNavigate();

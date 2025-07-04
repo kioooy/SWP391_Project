@@ -94,6 +94,22 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.ArticleController",
+    "Method": "ActivateArticle",
+    "RelativePath": "api/Article/{id}/activate",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.ArticleController",
     "Method": "DeactivateArticle",
     "RelativePath": "api/Article/{id}/deactivate",
     "HttpMethod": "PATCH",
@@ -637,7 +653,7 @@
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
     "Method": "UpdateBloodUnitStatus",
-    "RelativePath": "api/BloodUnit/{id}/update-status",
+    "RelativePath": "api/BloodUnit/{id}/status-discard",
     "HttpMethod": "PATCH",
     "IsController": true,
     "Order": 0,
@@ -645,11 +661,6 @@
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.BloodUnitStatusUpdateDTO",
         "IsRequired": true
       }
     ],
@@ -679,6 +690,16 @@
         "IsRequired": false
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "ExpireBloodUnitCheck",
+    "RelativePath": "api/BloodUnit/expire-check",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

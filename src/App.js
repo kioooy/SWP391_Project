@@ -1,0 +1,255 @@
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import AuthLayout from "./layouts/AuthLayout";
+import MainLayout from "./layouts/MainLayout";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import Home from "./pages/Home";
+import FAQ from "./pages/FAQ";
+import Events from "./pages/Events";
+import Article from "./pages/News";
+import ArticleDetail from "./pages/NewsDetail";
+import BookingPage from "./pages/BookingPage";
+import BookingTransfusion from "./pages/BookingTransfusion";
+import TransfusionHistory from "./pages/TransfusionHistory";
+import { selectIsAuthenticated } from "./features/auth/authSlice";
+import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+
+import TransfusionManagement from "./pages/TransfusionManagement ";
+import BloodDonationCertificate from "./pages/Certificate";
+import SearchByDistance from "./pages/SearchByDistance";
+import EmergencyRequest from "./pages/EmergencyRequest";
+import BloodInventory from "./pages/BloodInventory";
+import UserProfile from "./pages/UserProfile";
+import SearchDistance from "./pages/SearchDistance";
+import Dashboard from "./pages/Dashboard";
+import AppointmentHistory from "./pages/AppointmentHistory";
+import HospitalLocationEdit from "./pages/HospitalLocationEdit";
+import BloodSearch from "./pages/BloodSearch";
+import BloodDonationPeriodManagement from "./pages/BloodDonationPeriodManagement";
+import News from "./pages/News";
+import NewsDetail from "./pages/NewsDetail";
+import DonationRequestManagement from "./pages/DonationRequestManagement";
+import { RequireAuth } from "./components/RequireAuth";
+import BlogPage from "./pages/BlogPage";
+import UserProfileRecipient from "./pages/UserProfileRecipient";
+import RequireRecipient from "./components/RequireRecipient";
+import BlogDetail from "./pages/BlogDetail";
+import ArticleManage from "./pages/admin/ArticleManage";
+import BloodStorageManage from "./pages/admin/BloodStorageManage";
+import BlogManage from "./pages/admin/BlogManage";
+import Unauthorized from "./pages/Unauthorized";
+import SidebarLayout from "./layouts/SidebarLayout";
+import AdminProfile from "./pages/admin/AdminProfile";
+import StaffProfile from "./pages/StaffProfile";
+import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
+import TransfusionManage from "./pages/admin/TransfusionManage";
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
+const App = () => {
+  console.log("DEBUG App.js loaded");
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const role = useSelector((state) => state.auth.user?.role);
+  console.log("isAuthenticated in App.js:", isAuthenticated);
+
+  return (
+    <Routes>
+      {/* Auth Routes */}
+      <Route element={<AuthLayout />}>
+        <Route
+          path="/login"
+          element={!isAuthenticated ? <Login /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/signup"
+          element={!isAuthenticated ? <Signup /> : <Navigate to="/" replace />}
+        />
+      </Route>
+
+      {/* Main Routes */}
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/article" element={<Article />} />
+        <Route path="/article/:id" element={<ArticleDetail />} />
+        <Route path="/booking" element={<BookingPage />} />
+        <Route path="/booking-transfusion" element={<BookingTransfusion />} />
+        <Route path="/transfusion-history" element={<TransfusionHistory />} />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth roles={["Member"]}>
+              <UserProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/user-profile-recipient"
+          element={
+            <RequireRecipient>
+              <UserProfileRecipient />
+            </RequireRecipient>
+          }
+        />
+        <Route path="/certificate" element={<BloodDonationCertificate />} />
+        <Route path="/search-distance" element={<SearchByDistance />} />
+        <Route path="/emergency-request" element={<EmergencyRequest />} />
+        <Route path="/blood-search" element={<BloodSearch />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:postId" element={<BlogDetail />} />
+        <Route path="/history" element={<AppointmentHistory />} />
+      </Route>
+
+      {/* Sidebar Layout cho các trang quản lý */}
+      <Route element={<SidebarLayout />}>
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <UserProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile-admin"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <AdminProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/emergency-transfusion"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <EmergencyTransfusionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile-staff"
+          element={
+            <RequireAuth roles={["Staff"]}>
+              <StaffProfile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <Dashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-requests"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <DonationRequestManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-blood-periods"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodDonationPeriodManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/blood-inventory"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodInventory />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-blood-storage"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodStorageManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/transfusion-management"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <TransfusionManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-article"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <ArticleManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-blog"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BlogManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/emergency-transfusion"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <EmergencyTransfusionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/hospital-location"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <HospitalLocationEdit />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-roles"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <div>Quản lý vai trò (đang phát triển)</div>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-users"
+          element={
+            <RequireAuth roles={["Admin"]}>
+              <div>Quản lý người dùng (đang phát triển)</div>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/certificate"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodDonationCertificate />
+            </RequireAuth>
+          }
+        />
+      </Route>
+
+      {/* Fallback Route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+export default App;

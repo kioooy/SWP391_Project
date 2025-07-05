@@ -1,10 +1,10 @@
 ﻿namespace Blood_Donation_Support.Model;
 
-public partial class BloodComponent
+public class BloodComponent
 {
     public int ComponentId { get; set; }
 
-    public string ComponentName { get; set; } = null!;
+    public required string ComponentName { get; set; }
 
     public string? Description { get; set; }
 

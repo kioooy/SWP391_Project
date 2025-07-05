@@ -45,7 +45,6 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
 import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
-import TransfusionManage from "./pages/admin/TransfusionManage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -70,7 +69,7 @@ const App = () => {
         />
       </Route>
 
-      {/* Main Routes */}
+      {/* Main Routes cho user thường */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/faq" element={<FAQ />} />
@@ -99,13 +98,12 @@ const App = () => {
         <Route path="/certificate" element={<BloodDonationCertificate />} />
         <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />
-        <Route path="/blood-search" element={<BloodSearch />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:postId" element={<BlogDetail />} />
         <Route path="/history" element={<AppointmentHistory />} />
       </Route>
 
-      {/* Sidebar Layout cho các trang quản lý */}
+      {/* Sidebar Layout cho staff/admin - TẤT CẢ route quản trị chỉ ở đây */}
       <Route element={<SidebarLayout />}>
         <Route
           path="/profile"
@@ -120,14 +118,6 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin"]}>
               <AdminProfile />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/emergency-transfusion"
-          element={
-            <RequireAuth roles={["Admin"]}>
-              <EmergencyTransfusionPage />
             </RequireAuth>
           }
         />
@@ -175,7 +165,7 @@ const App = () => {
           path="/transfusion-management"
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
-              <TransfusionManage />
+              <TransfusionManagement />
             </RequireAuth>
           }
         />
@@ -232,6 +222,15 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <BloodDonationCertificate />
+            </RequireAuth>
+          }
+        />
+        {/* Đưa blood-search vào layout quản trị */}
+        <Route
+          path="/blood-search"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodSearch />
             </RequireAuth>
           }
         />

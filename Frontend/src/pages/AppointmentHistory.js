@@ -404,9 +404,9 @@ const AppointmentHistory = () => {
               <Typography variant="body2" sx={{ mt: 1 }}>
                 <strong>Ngày hẹn:</strong> {appointmentToCancel.periodDateFrom ? dayjs(appointmentToCancel.periodDateFrom).format('DD/MM/YYYY') : 'Không xác định'}
               </Typography>
-              <Typography variant="body2">
-                <strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học
-              </Typography>
+              {/* <Typography variant="body2"> */}
+                {/* <strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học */}
+              {/* </Typography> */}
             </Box>
           )}
           <Typography variant="body2" color="error.main" sx={{ mt: 2, fontStyle: 'italic' }}>

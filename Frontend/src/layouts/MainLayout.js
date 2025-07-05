@@ -232,7 +232,7 @@ const MainLayout = () => {
       { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
       { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
       { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
-      { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
+      { path: "/manage-blog", label: "Quản lý bài viết", icon: <EditNoteIcon /> },
       { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
     ];
   } else if (currentUser && currentUser.role === 'Admin') {
@@ -243,7 +243,7 @@ const MainLayout = () => {
       { path: "/manage-requests", label: "Quản Lý Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
       { path: "/blood-inventory", label: "Quản lý kho máu", icon: <BloodtypeIcon /> },
       { path: "/manage-article", label: "Quản lý tài liệu", icon: <MenuBookIcon /> },
-      { path: "/manage-blog", label: "Quản lý blog", icon: <EditNoteIcon /> },
+      { path: "/manage-blog", label: "Quản lý bài viết", icon: <EditNoteIcon /> },
       { path: "/manage-blood-storage", label: "Quản lý kho máu (chi tiết)", icon: <BloodtypeIcon /> },
     ];
   } else {
@@ -252,16 +252,16 @@ const MainLayout = () => {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
-        { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
-        { path: "/blood-search", label: "Tra Cứu Nhóm Máu ", icon: <BloodtypeIcon /> },
+        { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
+        // { path: "/blood-search", label: "Tra Cứu Nhóm Máu ", icon: <BloodtypeIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
       ];
     } else {
       menuItems = [
         { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
         { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
-        { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
-        { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
+        { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
+        // { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <EventIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <VerifiedIcon /> },
         { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
@@ -284,8 +284,8 @@ const MainLayout = () => {
     const recipientMenu = [
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { label: "Tin Tức", isNews: true, icon: <ArticleIcon /> },
-      { path: "/blog", label: "Blog", icon: <EditNoteIcon /> },
-      { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
+      { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
+      // { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
       { path: "/booking-transfusion", label: "Đặt Lịch Truyền Máu", icon: <EventIcon /> },
       { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },

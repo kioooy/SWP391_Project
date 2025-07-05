@@ -83,7 +83,7 @@ const BloodDonationCertificate = () => {
       } catch (err) {
         setError(
           err.response?.data?.message ||
-            "Không thể tải chứng chỉ. Vui lòng thử lại."
+            "Bạn chưa có chứng chỉ hiến máu nào."
         );
         console.error("Error fetching certificates:", err);
       } finally {

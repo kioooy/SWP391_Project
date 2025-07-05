@@ -607,6 +607,27 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(new { message = "User location updated successfully." });
         }
+
+        // GET: api/User/members
+        [HttpGet("members")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> GetAllMembers()
+        {
+            var members = await _context.Members
+                .Include(m => m.User)
+                .Where(m => m.User.IsActive)
+                .Select(m => new {
+                    userId = m.UserId,
+                    fullName = m.User.FullName,
+                    email = m.User.Email,
+                    weight = m.Weight,
+                    height = m.Height,
+                    bloodTypeId = m.BloodTypeId
+                })
+                .ToListAsync();
+
+            return Ok(members);
+        }
     }
 
 }

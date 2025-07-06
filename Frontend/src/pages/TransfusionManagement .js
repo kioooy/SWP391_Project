@@ -117,7 +117,7 @@ const useTransfusionStore = () => {
   };
 };
 
-const TransfusionManagement = () => {
+const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, showOnlyApproved = false, showCreateButton = false }) => {
   const user = useSelector(selectUser);
   const { transfusions, loading, error, updateTransfusion, clearError, reloadTransfusions } = useTransfusionStore();
   const [editDialog, setEditDialog] = useState({
@@ -290,6 +290,11 @@ const TransfusionManagement = () => {
         severity: "success",
       });
       handleCloseApproveDialog();
+      
+      // Call callback if provided
+      if (onApprovalComplete) {
+        onApprovalComplete();
+      }
       await reloadTransfusions();
     } catch (err) {
       console.error("Error approving transfusion request:", err);
@@ -389,6 +394,16 @@ const TransfusionManagement = () => {
 
   // Filter transfusions based on status and date
   const filteredTransfusions = transfusions.filter(transfusion => {
+    // Show only pending if specified
+    if (showOnlyPending && transfusion.status !== "Pending") {
+      return false;
+    }
+    
+    // Show only approved if specified
+    if (showOnlyApproved && transfusion.status !== "Approved") {
+      return false;
+    }
+    
     // Filter by status
     if (statusFilter !== "All" && transfusion.status !== statusFilter) {
       return false;
@@ -422,7 +437,7 @@ const TransfusionManagement = () => {
         // Lấy danh sách member
         const resMembers = await axios.get("/api/User/members", { headers: { Authorization: `Bearer ${token}` } });
         setMembers(resMembers.data || []);
-        // console.log("Fetched members:", resMembers.data); // Debug log
+        console.log("Fetched members for dropdown:", resMembers.data); // Debug log
         // Lấy danh sách nhóm máu
         const resBloodTypes = await axios.get("/api/BloodType", { headers: { Authorization: `Bearer ${token}` } });
         setBloodTypes(resBloodTypes.data || []);
@@ -609,13 +624,15 @@ const TransfusionManagement = () => {
           )}
         </Box>
         
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setOpenCreateDialog(true)}
-        >
-          Tạo yêu cầu truyền máu
-        </Button>
+        {showCreateButton && (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setOpenCreateDialog(true)}
+          >
+            Tạo yêu cầu truyền máu
+          </Button>
+        )}
       </Box>
 
       {/* Bảng truyền máu */}
@@ -1056,16 +1073,18 @@ const TransfusionManagement = () => {
               fullWidth
               options={members}
               getOptionLabel={(option) => 
-                `${option.fullName || ''} ${option.email ? `(${option.email})` : ''} ${option.citizenNumber ? `(CCCD: ${option.citizenNumber})` : ''} ${option.phoneNumber ? `(SĐT: ${option.phoneNumber})` : ''}`.trim()
+                `${option.fullName || ''}${option.citizenNumber ? ` (CCCD: ${option.citizenNumber})` : ''}`.trim()
               }
               filterOptions={filterOptions}
               value={members.find(m => m.userId === createForm.MemberId) || null}
               onChange={(event, newValue) => {
+                console.log('Chọn người nhận:', newValue);
+                console.log('BloodTypeId sẽ set:', newValue && newValue.bloodTypeId ? newValue.bloodTypeId : '');
                 setCreateForm(prevForm => ({
                   ...prevForm,
                   MemberId: newValue ? newValue.userId : "",
                   BloodTypeId: newValue && newValue.bloodTypeId ? newValue.bloodTypeId : "",
-                  BloodComponentId: "", // Reset BloodComponentId khi đổi member
+                  BloodComponentId: "",
                 }));
               }}
               isOptionEqualToValue={(option, value) => option.userId === value.userId}

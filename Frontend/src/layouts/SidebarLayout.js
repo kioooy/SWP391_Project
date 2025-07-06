@@ -10,6 +10,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import WorkflowIcon from '@mui/icons-material/AccountTree';
 import { useSelector } from "react-redux";
 
 const drawerWidth = 250;
@@ -23,6 +24,7 @@ const SidebarLayout = () => {
   const menuItems = [
     { path: user?.role === 'Admin' ? "/profile-admin" : user?.role === 'Staff' ? "/profile-staff" : "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
     { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+    { path: "/blood-workflow", label: "Quy trình truyền máu", icon: <WorkflowIcon /> },
     { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
     { path: "/transfusion-management", label: "Truyền máu", icon: <LocalHospitalIcon /> },
     { path: "/blood-search", label: "Tìm kiếm máu", icon: <BloodtypeIcon /> },

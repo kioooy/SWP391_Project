@@ -170,7 +170,8 @@ namespace Blood_Donation_Support.Controllers
                 DonationCount = 0, // Số lần hiến máu (mặc định là 0)
                 LastDonationDate = null, // Ngày hiến máu gần nhất (mặc định là null)
                 RecoveryDueDate = null, // Ngày hồi phục (mặc định là null)
-                LastCheckupDate = null // Ngày cập nhật sức khỏe gần nhất (mặc định là null)
+                LastCheckupDate = null, // Ngày cập nhật sức khỏe gần nhất (mặc định là null)
+                Location = null, // Location is not provided in the model
             };
 
             _context.Members.Add(member);
@@ -615,13 +616,13 @@ namespace Blood_Donation_Support.Controllers
         {
             var members = await _context.Members
                 .Include(m => m.User)
-                .Where(m => m.User.IsActive)
+                .Include(m => m.BloodType)
+                .Where(m => m.User != null && m.User.IsActive)
                 .Select(m => new {
                     userId = m.UserId,
-                    fullName = m.User.FullName,
-                    email = m.User.Email,
-                    weight = m.Weight,
-                    height = m.Height,
+                    fullName = m.User != null ? m.User.FullName : null,
+                    citizenNumber = m.User != null ? m.User.CitizenNumber : null,
+                    email = m.User != null ? m.User.Email : null,
                     bloodTypeId = m.BloodTypeId
                 })
                 .ToListAsync();

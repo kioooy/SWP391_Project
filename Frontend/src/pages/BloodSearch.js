@@ -35,7 +35,7 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 
-const BloodSearch = () => {
+const BloodSearch = ({ onSearchComplete }) => {
   const [searchForm, setSearchForm] = useState({
     recipientBloodTypeId: "",
     requiredVolume: "",
@@ -107,19 +107,45 @@ const BloodSearch = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // Thêm log chi tiết trước khi gọi API
+      console.log("=== DEBUG BLOOD SEARCH ===");
+      console.log("recipientBloodTypeId:", searchForm.recipientBloodTypeId, "Type:", typeof searchForm.recipientBloodTypeId);
+      console.log("requiredVolume:", searchForm.requiredVolume, "Type:", typeof searchForm.requiredVolume);
+      console.log("component:", searchForm.component, "Type:", typeof searchForm.component);
+      console.log("token:", token ? "Có token" : "Không có token");
+      
       const url = `/api/BloodSearch/search-with-hospital-location/${searchForm.recipientBloodTypeId}/${searchForm.requiredVolume}` +
         (searchForm.component ? `?component=${encodeURIComponent(searchForm.component)}` : '');
+      
+      console.log("API URL:", url);
+      console.log("Full URL:", window.location.origin + url);
+      
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      console.log("API Response:", response.data);
       setSearchResults(response.data);
+      
+      // Call callback if provided
+      if (onSearchComplete) {
+        onSearchComplete(response.data);
+      }
+      
       setSnackbar({
         open: true,
         message: "Tìm kiếm thành công!",
         severity: "success",
       });
     } catch (error) {
-      console.error("Error searching blood:", error, error.response?.data);
+      console.error("=== ERROR DETAILS ===");
+      console.error("Error searching blood:", error);
+      console.error("Error response:", error.response);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error message:", error.message);
+      
       setSnackbar({
         open: true,
         message: error.response?.data?.message || error.response?.data?.error || "Tìm kiếm thất bại!",

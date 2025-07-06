@@ -45,6 +45,7 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
 import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
+import BloodWorkflowDashboard from "./pages/BloodWorkflowDashboard";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -198,6 +199,14 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <HospitalLocationEdit />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/blood-workflow"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <BloodWorkflowDashboard />
             </RequireAuth>
           }
         />

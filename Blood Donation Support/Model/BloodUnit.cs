@@ -32,5 +32,8 @@ public partial class BloodUnit
 
     public virtual BloodComponent Component { get; set; } = null!;
 
-    public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();
+    // public virtual ICollection<TransfusionRequest> TransfusionRequests { get; set; } = new List<TransfusionRequest>();  // Đã xóa khỏi database
+
+    // Navigation property mới cho bảng liên kết
+    public virtual ICollection<TransfusionRequestBloodUnit> TransfusionRequestBloodUnits { get; set; } = new List<TransfusionRequestBloodUnit>();
 }

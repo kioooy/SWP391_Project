@@ -26,7 +26,7 @@ const SidebarLayout = () => {
     { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { path: "/blood-workflow", label: "Quy trình truyền máu", icon: <WorkflowIcon /> },
     { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
-    { path: "/transfusion-management", label: "Truyền máu", icon: <LocalHospitalIcon /> },
+    // { path: "/transfusion-management", label: "Truyền máu", icon: <LocalHospitalIcon /> },
     { path: "/blood-search", label: "Tìm kiếm máu", icon: <BloodtypeIcon /> },
     { path: "/manage-blood-periods", label: "Đợt hiến máu", icon: <BloodtypeIcon /> },
     { path: "/blood-inventory", label: "Kho máu tổng hợp", icon: <BloodtypeIcon /> },

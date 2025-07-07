@@ -15,6 +15,8 @@ import {
   TableRow,
   Paper,
   TablePagination,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import axios from "axios";
 
@@ -38,11 +40,13 @@ const BlogManage = () => {
   const [editBlog, setEditBlog] = useState(null);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const res = await axios.get(`${API_URL}/blogs/admin`, {
+        const res = await axios.get(`${API_URL}/Blog/admin`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -129,6 +133,8 @@ const BlogManage = () => {
         IsActive: true,
       });
       setIsCreateOpen(false);
+      setSnackbarMessage("Bài viết đã được tạo thành công!");
+      setSnackbarOpen(true);
     } catch (error) {
       console.error("Lỗi tạo blog:", error);
       alert("Tạo bài viết thất bại.");
@@ -181,6 +187,8 @@ const BlogManage = () => {
       setFilteredBlogs(updated);
       setIsEditOpen(false);
       setEditBlog(null);
+      setSnackbarMessage("Bài viết đã được cập nhật thành công!");
+      setSnackbarOpen(true);
     } catch (error) {
       console.error("Lỗi khi cập nhật blog:", error);
       alert("Cập nhật blog thất bại.");
@@ -260,6 +268,10 @@ const BlogManage = () => {
     setIsDetailOpen(true);
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" gutterBottom>
@@ -294,6 +306,8 @@ const BlogManage = () => {
               <TableCell>Tiêu đề</TableCell>
               <TableCell>Trạng thái</TableCell>
               <TableCell>Kích hoạt</TableCell>
+              <TableCell>Ngày đăng</TableCell>
+              <TableCell>Ngày cập nhật</TableCell>
               <TableCell>Hành động</TableCell>
             </TableRow>
           </TableHead>
@@ -317,6 +331,8 @@ const BlogManage = () => {
                   <TableCell>{b.Title}</TableCell>
                   <TableCell>{b.Status}</TableCell>
                   <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>
+                  <TableCell>{b.PublishedDate}</TableCell>
+                  <TableCell>{b.UpdatedDate}</TableCell>
                   <TableCell>
                     <Button
                       variant="text"
@@ -491,6 +507,16 @@ const BlogManage = () => {
           <Button onClick={() => setIsDetailOpen(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="success">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

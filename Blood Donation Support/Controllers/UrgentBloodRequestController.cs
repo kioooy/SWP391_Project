@@ -220,7 +220,8 @@ namespace Blood_Donation_Support.Controllers
             if (model.PreemptedTransfusionRequestId.HasValue)
             {
                 var preemptedTransfusionRequest = await _context.TransfusionRequests
-                    .Include(tr => tr.BloodUnit)
+                    .Include(tr => tr.TransfusionRequestBloodUnits)
+                    .ThenInclude(trbu => trbu.BloodUnit)
                     .FirstOrDefaultAsync(tr => tr.TransfusionId == model.PreemptedTransfusionRequestId.Value);
 
                 if (preemptedTransfusionRequest != null)
@@ -231,9 +232,13 @@ namespace Blood_Donation_Support.Controllers
                     }
 
                     // Kiểm tra tương thích máu trước khi ưu tiên
-                    if (preemptedTransfusionRequest.BloodUnitId.HasValue)
+                    var assignedBloodUnits = preemptedTransfusionRequest.TransfusionRequestBloodUnits
+                        .Where(trbu => trbu.Status == "Assigned")
+                        .ToList();
+
+                    foreach (var assignedUnit in assignedBloodUnits)
                     {
-                        var bloodUnitToPreempt = await _context.BloodUnits.FindAsync(preemptedTransfusionRequest.BloodUnitId.Value);
+                        var bloodUnitToPreempt = assignedUnit.BloodUnit;
                         if (bloodUnitToPreempt != null)
                         {
                             var isCompatible = await _context.BloodCompatibilityRules.AnyAsync(
@@ -256,10 +261,12 @@ namespace Blood_Donation_Support.Controllers
                     }
 
                     // Hủy BloodReservation liên quan đến TransfusionRequest bị ưu tiên
-                    if (preemptedTransfusionRequest.BloodUnitId.HasValue)
+                    foreach (var assignedUnit in assignedBloodUnits)
                     {
+                        var bloodUnitId = assignedUnit.BloodUnitId;
+                        
                         var activeReservations = await _context.BloodReservations
-                            .Where(r => r.BloodUnitId == preemptedTransfusionRequest.BloodUnitId.Value && r.Status == "Active")
+                            .Where(r => r.BloodUnitId == bloodUnitId && r.Status == "Active")
                             .ToListAsync();
 
                         foreach (var reservation in activeReservations)
@@ -269,12 +276,16 @@ namespace Blood_Donation_Support.Controllers
                         }
 
                         // Giải phóng BloodUnit nếu nó đang được Reserved bởi yêu cầu này
-                        var preemptedBloodUnit = await _context.BloodUnits.FindAsync(preemptedTransfusionRequest.BloodUnitId.Value);
+                        var preemptedBloodUnit = await _context.BloodUnits.FindAsync(bloodUnitId);
                         if (preemptedBloodUnit != null && preemptedBloodUnit.BloodStatus == "Reserved")
                         {
                             preemptedBloodUnit.BloodStatus = "Available";
                             _context.BloodUnits.Update(preemptedBloodUnit);
                         }
+
+                        // Cập nhật trạng thái bản ghi liên kết
+                        assignedUnit.Status = "Cancelled";
+                        _context.TransfusionRequestBloodUnits.Update(assignedUnit);
                     }
                 }
             }

@@ -10,7 +10,7 @@ public partial class TransfusionRequest
 
     public int ComponentId { get; set; }
 
-    public int? BloodUnitId { get; set; }
+    // public int? BloodUnitId { get; set; }  // Đã xóa khỏi database
 
     public int? ResponsibleById { get; set; }
 
@@ -38,9 +38,12 @@ public partial class TransfusionRequest
 
     public virtual BloodType BloodType { get; set; } = null!;
 
-    public virtual BloodUnit? BloodUnit { get; set; }
+    // public virtual BloodUnit? BloodUnit { get; set; }  // Đã xóa khỏi database
 
     public virtual BloodComponent Component { get; set; } = null!;
+
+    // Navigation property mới cho nhiều túi máu
+    public virtual ICollection<TransfusionRequestBloodUnit> TransfusionRequestBloodUnits { get; set; } = new List<TransfusionRequestBloodUnit>();
 
     public virtual Member Member { get; set; } = null!;
 

@@ -450,7 +450,8 @@ public partial class BloodDonationSupportContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_TransfusionRequestBloodUnits_TransfusionRequests");
 
-            entity.HasOne(d => d.BloodUnit).WithMany()
+            entity.HasOne(d => d.BloodUnit)
+                .WithMany(bu => bu.TransfusionRequestBloodUnits)
                 .HasForeignKey(d => d.BloodUnitId)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName("FK_TransfusionRequestBloodUnits_BloodUnits");

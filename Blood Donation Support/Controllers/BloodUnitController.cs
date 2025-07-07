@@ -249,4 +249,33 @@ public class BloodUnitController : ControllerBase
 
         return Ok(units);
     }
+    // GET: api/BloodUnit/suitable?bloodTypeId=1&componentId=1&requiredVolume=1000
+    [HttpGet("suitable")]
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> GetSuitableBloodUnits(int bloodTypeId, int componentId, int requiredVolume)
+    {
+        // Lấy tất cả các túi máu phù hợp (đúng nhóm máu, thành phần, còn hạn, còn đủ thể tích > 0)
+        var now = DateOnly.FromDateTime(DateTime.Now);
+        var units = await _context.BloodUnits
+            .Where(bu => bu.BloodTypeId == bloodTypeId
+                      && bu.ComponentId == componentId
+                      && bu.BloodStatus == "Available"
+                      && bu.RemainingVolume > 0
+                      && bu.ExpiryDate >= now)
+            .OrderBy(bu => bu.ExpiryDate) // Ưu tiên túi gần hết hạn
+            .Select(bu => new {
+                bu.BloodUnitId,
+                bu.BloodTypeId,
+                BloodTypeName = bu.BloodType.BloodTypeName,
+                bu.ComponentId,
+                ComponentName = bu.Component.ComponentName,
+                bu.RemainingVolume,
+                bu.BloodStatus,
+                bu.ExpiryDate
+            })
+            .ToListAsync();
+
+        // FE/BE sẽ tự chọn/gợi ý nhiều túi để đủ requiredVolume
+        return Ok(units);
+    }
 }

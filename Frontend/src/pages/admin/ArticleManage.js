@@ -21,6 +21,8 @@ import {
   Select,
   MenuItem,
   TablePagination,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import axios from "axios";
 
@@ -44,6 +46,7 @@ const ArticleManage = () => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -107,9 +110,9 @@ const ArticleManage = () => {
       if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
       setConfirmDeleteOpen(false);
       setArticleToDelete(null);
-      alert("🗑️ Đã xóa bài viết thành công!");
+      setSnackbar({ open: true, message: '🗑️ Đã xóa bài viết thành công!', severity: 'success' });
     } catch (error) {
-      alert("Lỗi khi xóa bài viết!");
+      setSnackbar({ open: true, message: '❌ Lỗi khi xóa bài viết!', severity: 'error' });
     }
   };
 
@@ -135,7 +138,7 @@ const ArticleManage = () => {
 
   const handleUpdate = async () => {
     if (!editArticle.Title || !editArticle.Content || !editArticle.Status) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin!', severity: 'warning' });
       return;
     }
 
@@ -155,25 +158,24 @@ const ArticleManage = () => {
           },
         }
       );
-      const updated = articles.map((a) =>
-        a.ArticleId === editArticle.ArticleId
-          ? { ...a, ...payload, UpdatedDate: new Date().toISOString().split("T")[0] }
-          : a
-      );
-      setArticles(updated);
-      setFilteredArticles(updated);
+      // Lấy lại danh sách mới từ backend
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArticles(res.data);
+      setFilteredArticles(res.data);
       setIsEditOpen(false);
       setEditArticle(null);
-      alert("✅ Cập nhật bài viết thành công!");
+      setSnackbar({ open: true, message: '✅ Cập nhật bài viết thành công!', severity: 'success' });
     } catch (error) {
-      alert("Lỗi khi cập nhật bài viết! " + (error.response?.data || ''));
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật bài viết! ' + (error.response?.data || ''), severity: 'error' });
     }
   };
 
   const handleCreate = async () => {
     const { Title, Content, Status } = newArticle;
     if (!Title || !Content || !Status) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin!', severity: 'warning' });
       return;
     }
 
@@ -184,20 +186,24 @@ const ArticleManage = () => {
       Status,
     };
 
-    await axios.post(`${API_URL}/Article`, item, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    // Sau khi tạo xong, lấy lại danh sách từ backend
-    const res = await axios.get(`${API_URL}/Article/admin`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setArticles(res.data);
-    setFilteredArticles(res.data);
-    setIsCreateOpen(false);
-    alert("✅ Tạo bài viết thành công!");
-    setNewArticle({ Title: "", Content: "", Status: "" });
+    try {
+      await axios.post(`${API_URL}/Article`, item, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // Sau khi tạo xong, lấy lại danh sách từ backend
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArticles(res.data);
+      setFilteredArticles(res.data);
+      setIsCreateOpen(false);
+      setSnackbar({ open: true, message: '✅ Tạo bài viết thành công!', severity: 'success' });
+      setNewArticle({ Title: "", Content: "", Status: "" });
+    } catch (error) {
+      setSnackbar({ open: true, message: '❌ Lỗi khi tạo bài viết! ' + (error.response?.data || ''), severity: 'error' });
+    }
   };
 
   const handleToggleStatus = async (id) => {
@@ -221,8 +227,9 @@ const ArticleManage = () => {
       });
       setArticles(res.data);
       setFilteredArticles(res.data);
+      setSnackbar({ open: true, message: `✅ Cập nhật trạng thái bài viết thành công!`, severity: 'success' });
     } catch (error) {
-      alert("Lỗi khi cập nhật trạng thái bài viết!");
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật trạng thái bài viết!', severity: 'error' });
     }
   };
 
@@ -247,8 +254,14 @@ const ArticleManage = () => {
       });
       setArticles(res.data);
       setFilteredArticles(res.data);
+      setPage(0);
+      setSnackbar({ 
+        open: true, 
+        message: value === 'inactive' ? '🛑 Đã vô hiệu hóa bài viết!' : '✅ Đã kích hoạt bài viết!', 
+        severity: value === 'inactive' ? 'warning' : 'success' 
+      });
     } catch (error) {
-      alert("Lỗi khi cập nhật trạng thái kích hoạt!");
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật trạng thái kích hoạt!', severity: 'error' });
     }
   };
 
@@ -522,6 +535,22 @@ const ArticleManage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar thông báo */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={3000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

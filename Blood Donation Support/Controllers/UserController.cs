@@ -170,7 +170,8 @@ namespace Blood_Donation_Support.Controllers
                 DonationCount = 0, // Số lần hiến máu (mặc định là 0)
                 LastDonationDate = null, // Ngày hiến máu gần nhất (mặc định là null)
                 RecoveryDueDate = null, // Ngày hồi phục (mặc định là null)
-                LastCheckupDate = null // Ngày cập nhật sức khỏe gần nhất (mặc định là null)
+                LastCheckupDate = null, // Ngày cập nhật sức khỏe gần nhất (mặc định là null)
+                Location = null, // Location is not provided in the model
             };
 
             _context.Members.Add(member);
@@ -606,6 +607,27 @@ namespace Blood_Donation_Support.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "User location updated successfully." });
+        }
+
+        // GET: api/User/members
+        [HttpGet("members")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> GetAllMembers()
+        {
+            var members = await _context.Members
+                .Include(m => m.User)
+                .Include(m => m.BloodType)
+                .Where(m => m.User != null && m.User.IsActive)
+                .Select(m => new {
+                    userId = m.UserId,
+                    fullName = m.User != null ? m.User.FullName : null,
+                    citizenNumber = m.User != null ? m.User.CitizenNumber : null,
+                    email = m.User != null ? m.User.Email : null,
+                    bloodTypeId = m.BloodTypeId
+                })
+                .ToListAsync();
+
+            return Ok(members);
         }
     }
 

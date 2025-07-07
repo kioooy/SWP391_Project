@@ -502,8 +502,9 @@ const Home = () => {
                                 if (from.isSame(to, 'day')) {
                                   return (
                                     <>
-                                      <span>Ngày: {from.format('DD/MM/YYYY')}</span><br />
-                                      <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                      <span style={{ fontWeight: 'bold' }}>Ngày:</span> {from.format('DD/MM/YYYY')}
+                                      <br />
+                                      <span style={{ fontWeight: 'bold' }}>Thời gian:</span> {from.format('HH:mm')} - {to.format('HH:mm')}
                                     </>
                                   );
                                 } else {
@@ -517,19 +518,8 @@ const Home = () => {
                                 }
                               })()}
                             </Typography>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                color: '#e53e3e',
-                                fontWeight: 'bold',
-                                textAlign: 'left', // căn lề trái
-                                mb: 1,
-                                mt: 1,
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {getHospitalName(period.hospitalId)}
-                            </Typography>
+                            {/* Bỏ comment đoạn này nếu muốn hiển thị lại tên bệnh viện */}
+                            <></>
                           </Box>
                           <Button
                             variant="contained"

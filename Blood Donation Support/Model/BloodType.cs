@@ -1,10 +1,10 @@
 ﻿namespace Blood_Donation_Support.Model;
 
-public partial class BloodType
+public class BloodType
 {
     public int BloodTypeId { get; set; }
 
-    public string BloodTypeName { get; set; } = null!;
+    public required string BloodTypeName { get; set; }
 
     public virtual ICollection<BloodCompatibilityRule> BloodCompatibilityRuleBloodGives { get; set; } = new List<BloodCompatibilityRule>();
 

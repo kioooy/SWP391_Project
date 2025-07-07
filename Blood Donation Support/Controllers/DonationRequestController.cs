@@ -258,6 +258,10 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
 
+            var period = _context.BloodDonationPeriods.FirstOrDefault(p => p.PeriodId == existingRequest.PeriodId);
+            if (DateTime.Now < period.PeriodDateFrom || DateTime.Now > period.PeriodDateTo)
+                return BadRequest($"Chưa tới thời gian diễn ra đợt hiến máu");
+
             // Update the status Donation request 
             existingRequest.Status = model.Status;
             existingRequest.CompletionDate = DateTime.Now;

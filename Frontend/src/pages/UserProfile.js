@@ -747,10 +747,10 @@ const UserProfile = () => {
                                 : 'Không xác định'}
                             </Typography>
                           </Grid>
-                          <Grid item xs={12}>
+                          {/* <Grid item xs={12}>
                             <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
                             <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
-                          </Grid>
+                          </Grid> */}
                         </Grid>
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
                             <Button
@@ -881,9 +881,9 @@ const UserProfile = () => {
               <Typography variant="body2" sx={{ mt: 1 }}>
                 <strong>Ngày hẹn:</strong> {appointmentToCancel.periodDateFrom ? dayjs(appointmentToCancel.periodDateFrom).format('DD/MM/YYYY') : 'Không xác định'}
               </Typography>
-              <Typography variant="body2">
+              {/* <Typography variant="body2">
                 <strong>Địa điểm:</strong> {appointmentToCancel.Name || hospitalName || 'Chưa có thông tin bệnh viện'}
-              </Typography>
+              </Typography> */}
             </Box>
           )}
           <Typography variant="body2" color="error.main" sx={{ mt: 2, fontStyle: 'italic' }}>

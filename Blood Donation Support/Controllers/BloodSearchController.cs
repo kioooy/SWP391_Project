@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using System.Linq;
 using Blood_Donation_Support.Data;
 
 namespace Blood_Donation_Support.Controllers;
@@ -40,18 +42,19 @@ public class BloodSearchController : ControllerBase
             .Select(r => r.BloodGiveId)
             .ToListAsync();
 
-        var donorsFromDb = await _context.Members
+        // Lấy tất cả members trước, sau đó filter trên memory để tránh lỗi LINQ translation
+        var allMembers = await _context.Members
             .Include(m => m.User)
+            .Include(m => m.BloodType)
             .Where(m => m.IsDonor == true 
                         && m.BloodTypeId.HasValue
-                        && compatibleBloodTypeIds.Contains(m.BloodTypeId.Value)
-                        && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84)
-                        && !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && EF.Functions.DateDiffDay(tr.CompletionDate.Value, now) < 365))
+                        && compatibleBloodTypeIds.Contains(m.BloodTypeId.Value))
             .Select(m => new
             {
                 m.UserId,
                 m.User.FullName,
                 m.BloodTypeId,
+                BloodTypeName = m.BloodType.BloodTypeName,
                 m.Weight,
                 m.Height,
                 m.LastDonationDate,
@@ -62,6 +65,22 @@ public class BloodSearchController : ControllerBase
             })
             .ToListAsync();
 
+        // Lấy transfusion requests để check
+        var completedTransfusions = await _context.TransfusionRequests
+            .Where(tr => tr.Status == "Completed" && tr.CompletionDate.HasValue)
+            .Select(tr => new { tr.MemberId, tr.CompletionDate })
+            .ToListAsync();
+
+        // Filter trên memory - sử dụng DateTime comparison thay vì EF.Functions
+        var donorsFromDb = allMembers.Where(m => 
+            (m.LastDonationDate == null || 
+             (now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84) &&
+            !completedTransfusions.Any(tr => 
+                tr.MemberId == m.UserId && 
+                tr.CompletionDate.HasValue && 
+                (now - tr.CompletionDate.Value).TotalDays < 365)
+        ).ToList();
+
         var suggestedDonors = donorsFromDb
             .Select(m =>
             {
@@ -70,6 +89,7 @@ public class BloodSearchController : ControllerBase
                     m.UserId,
                     m.FullName,
                     m.BloodTypeId,
+                    m.BloodTypeName,
                     m.Weight,
                     m.Height,
                     m.LastDonationDate,
@@ -119,6 +139,8 @@ public class BloodSearchController : ControllerBase
             }
             
             var availableBloodUnits = await _context.BloodUnits
+                .Include(bu => bu.BloodType)
+                .Include(bu => bu.Component)
                 .Where(bu => bu.BloodTypeId == recipientBloodTypeId
                           && bu.BloodStatus == "Available"
                           && bu.RemainingVolume >= requiredVolume
@@ -128,6 +150,8 @@ public class BloodSearchController : ControllerBase
                     bu.BloodUnitId,
                     bu.BloodTypeId,
                     bu.ComponentId,
+                    BloodTypeName = bu.BloodType.BloodTypeName,
+                    ComponentName = bu.Component.ComponentName,
                     bu.RemainingVolume,
                     bu.BloodStatus,
                     bu.ExpiryDate
@@ -166,10 +190,16 @@ public class BloodSearchController : ControllerBase
         {
             var now = DateTime.Now;
             // Lấy tất cả member là người hiến máu (IsDonor == true) và đã hồi phục (chưa từng hiến hoặc đã đủ 84 ngày kể từ lần hiến máu gần nhất)
-            var donors = await _context.Members
-                .Where(m => m.IsDonor == true && (m.LastDonationDate == null || EF.Functions.DateDiffDay(m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), now) >= 84)) //trả về số chênh lệnh 2 ngày   EF.Functions.DateDiffDay(<ngày bắt đầu>, <ngày kết thúc>) > 84 ngày thì trả về true
-                .Select(m => new { m.UserId, m.User.FullName }) // Chỉ lấy UserId và FullName
+            var allDonors = await _context.Members
+                .Where(m => m.IsDonor == true)
+                .Select(m => new { m.UserId, m.User.FullName, m.LastDonationDate }) // Chỉ lấy UserId và FullName
                 .ToListAsync();
+
+            // Filter trên memory để tránh lỗi LINQ translation
+            var donors = allDonors.Where(m => 
+                m.LastDonationDate == null || 
+                (now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84
+            ).Select(m => new { m.UserId, m.FullName }).ToList();
 
             // Tạo một HttpClient để gửi HTTP request đi nơi khác (ở đây là nội bộ)
             var client = _httpClientFactory.CreateClient();

@@ -65,7 +65,7 @@ public partial class BloodDonationSupportContext : DbContext
             entity.ToTable("Blog");
 
             entity.Property(e => e.Content).HasColumnType("ntext");
-            entity.Property(e => e.ImageUrl).HasMaxLength(255);
+            entity.Property(e => e.ImageUrl);
             entity.Property(e => e.PublishedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -88,7 +88,7 @@ public partial class BloodDonationSupportContext : DbContext
             entity.ToTable("Article");
 
             entity.Property(e => e.Content).HasColumnType("ntext");
-            entity.Property(e => e.ImageUrl).HasMaxLength(255);
+            entity.Property(e => e.ImageUrl);
             entity.Property(e => e.PublishedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");

@@ -1,4 +1,4 @@
-using Blood_Donation_Support.DTO;
+﻿using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,9 +33,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl,
                     IsActive = a.IsActive,
-                    Status = a.Status
+                    Status = a.Status,
+                    ImageUrl = a.ImageUrl,
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -55,9 +55,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl,
                     IsActive = a.IsActive,
-                    Status = a.Status
+                    Status = a.Status,
+                    ImageUrl = a.ImageUrl,
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -77,9 +77,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl,
                     IsActive = a.IsActive,
-                    Status = a.Status
+                    Status = a.Status,
+                    ImageUrl = a.ImageUrl,
                 })
                 .FirstOrDefaultAsync();
 
@@ -92,8 +92,18 @@ namespace Blood_Donation_Support.Controllers
         // POST: api/Article
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<ArticleDTO>> CreateArticle([FromBody] ArticleCreateDTO dto)
+        public async Task<ActionResult<ArticleDTO>> CreateArticle([FromForm] ArticleCreateDTO dto)
         {
+            if (dto.ImageUrl == null || dto.ImageUrl.Length == 0)
+                return BadRequest("Thiếu Ảnh Tải Lên.");
+
+            var memoryStream = new MemoryStream();
+            await dto.ImageUrl.CopyToAsync(memoryStream); // Copy the uploaded file to memory stream
+            byte[] imageBytes = memoryStream.ToArray();   // Convert memory stream to byte array
+            string imageUrl = "imageName:" + dto.ImageUrl.FileName +
+                              ";imageType:" + dto.ImageUrl.ContentType +
+                              ";base64:" + Convert.ToBase64String(imageBytes);
+            
             var Article = new Article
             {
                 UserId = dto.UserId,
@@ -102,7 +112,7 @@ namespace Blood_Donation_Support.Controllers
                 Status = dto.Status,
                 IsActive = true,
                 PublishedDate = DateTime.Now,
-                ImageUrl = dto.ImageUrl
+                ImageUrl = imageUrl
             };
             _context.Articles.Add(Article);
             await _context.SaveChangesAsync();
@@ -112,8 +122,19 @@ namespace Blood_Donation_Support.Controllers
         // PUT: api/Article/{id}
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateArticle(int id, [FromBody] ArticleUpdateDTO dto)
+        public async Task<IActionResult> UpdateArticle(int id, [FromForm] ArticleUpdateDTO dto)
         {
+            string imageUrl = string.Empty;
+            if (dto.ImageUrl != null || dto.ImageUrl.Length > 0) // If ImageUrl is provided
+            {
+                var memoryStream = new MemoryStream();
+                await dto.ImageUrl.CopyToAsync(memoryStream); // Copy the uploaded file to memory stream
+                byte[] imageBytes = memoryStream.ToArray();   // Convert memory stream to byte array
+                imageUrl = "imageName:" + dto.ImageUrl.FileName +
+                           ";imageType:" + dto.ImageUrl.ContentType +
+                           ";base64:" + Convert.ToBase64String(imageBytes);
+            }
+
             var Article = await _context.Articles.FindAsync(id);
             if (Article == null)
                 return NotFound();
@@ -122,6 +143,7 @@ namespace Blood_Donation_Support.Controllers
             Article.Content = dto.Content;
             Article.Status = dto.Status;
             Article.UpdatedDate = DateTime.Now;
+            Article.ImageUrl = imageUrl;
 
             await _context.SaveChangesAsync();
             return NoContent();

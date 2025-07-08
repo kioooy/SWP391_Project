@@ -1,10 +1,11 @@
 using Blood_Donation_Support.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +80,10 @@ builder.Services.AddSwaggerGen(c =>
             new string[] { }
         }
     });
+
+    // Add support for file uploads
+    c.OperationFilter<SwaggerFileOperationFilter>();
+
 });
 
 // Add CORS services
@@ -110,6 +115,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+
 app.UseHttpsRedirection();
 
 // Use CORS policy
@@ -121,3 +127,39 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// For Swagger file upload support
+public class SwaggerFileOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        var fileParameters = context.MethodInfo.GetParameters()
+            .Where(p => p.ParameterType.GetProperties()
+                .Any(prop => prop.PropertyType == typeof(IFormFile)))
+            .ToList();
+
+        if (fileParameters.Count > 0)
+        {
+            // Set content type for request body
+            if (operation.RequestBody == null)
+            {
+                operation.RequestBody = new OpenApiRequestBody();
+            }
+
+            // Ensure we have a dictionary for content types
+            if (operation.RequestBody.Content == null)
+            {
+                operation.RequestBody.Content = new Dictionary<string, OpenApiMediaType>();
+            }
+
+            // Clear existing content types and add multipart/form-data
+            operation.RequestBody.Content.Clear();
+            operation.RequestBody.Content.Add("multipart/form-data", new OpenApiMediaType
+            {
+                Schema = context.SchemaGenerator.GenerateSchema(context.MethodInfo.GetParameters()
+                    .First(p => p.ParameterType.GetProperties()
+                        .Any(prop => prop.PropertyType == typeof(IFormFile))).ParameterType, context.SchemaRepository)
+            });
+        }
+    }
+}

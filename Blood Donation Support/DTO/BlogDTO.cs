@@ -5,11 +5,14 @@ namespace Blood_Donation_Support.DTO
     public class BlogDTO
     {
         public int PostId { get; set; }
+        public int UserId { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
         public required string ImageUrl { get; set; }
+        public required string Status { get; set; }
+        public bool IsActive { get; set; }
     }
 
     public class BlogCreateDTO

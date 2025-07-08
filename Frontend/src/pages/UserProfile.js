@@ -421,8 +421,8 @@ const UserProfile = () => {
     if (!editFormData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editFormData.email)) {
       errors.email = 'Email không hợp lệ hoặc chứa ký tự đặc biệt.';
     }
-    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang
-    if (!editFormData.address || /[^a-zA-Z0-9\s,.-]/.test(editFormData.address)) {
+    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang, dấu gạch chéo và cho phép tiếng Việt có dấu
+    if (!editFormData.address || /[^\p{L}0-9\s,./-]/u.test(editFormData.address)) {
       errors.address = 'Địa chỉ không được chứa ký tự đặc biệt.';
     }
     setFormErrors(errors);
@@ -824,7 +824,7 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.address || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') })}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^\p{L}0-9\s,./-]/gu, '') })}
             sx={{ mb: 2 }}
             error={!!formErrors.address}
             helperText={formErrors.address}

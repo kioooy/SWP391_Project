@@ -526,11 +526,13 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     } ${option.citizenNumber || ''} ${option.email || ''} ${option.phoneNumber || ''}`,
   });
 
+
   const navigate = useNavigate();
 
   // Thêm hàm chuyển tab sang tìm kiếm máu (nếu có props hoặc context), hoặc mở dialog tạo yêu cầu huy động máu
   const handleConnectDonor = () => {
     navigate("/blood-search");
+
   };
 
   return (
@@ -949,7 +951,9 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                   onClick={handleConnectDonor}
                   sx={{ mb: 2, alignSelf: 'flex-start' }}
                 >
+
                   Tìm người hiến phù hợp
+
                 </Button>
               </>
             ) : (

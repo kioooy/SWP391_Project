@@ -445,17 +445,22 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     if (showOnlyPending && transfusion.status !== "Pending") {
       return false;
     }
-    
     // Show only approved if specified
     if (showOnlyApproved && transfusion.status !== "Approved") {
       return false;
     }
-    
     // Filter by status
-    if (statusFilter !== "All" && transfusion.status !== statusFilter) {
-      return false;
+    if (statusFilter === 'All') {
+      // Không lọc gì cả
+    } else if (statusFilter === 'Rejected') {
+      if (transfusion.status !== 'Rejected' && transfusion.status !== 'Cancelled') {
+        return false;
+      }
+    } else {
+      if (transfusion.status !== statusFilter) {
+        return false;
+      }
     }
-    
     // Filter by date range
     if (dateFilter.startDate || dateFilter.endDate) {
       const requestDate = new Date(transfusion.requestDate);
@@ -519,6 +524,17 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       option.fullName || ''       
     } ${option.citizenNumber || ''} ${option.email || ''} ${option.phoneNumber || ''}`,
   });
+
+  // Thêm hàm chuyển tab sang tìm kiếm máu (nếu có props hoặc context), hoặc mở dialog tạo yêu cầu huy động máu
+  const handleConnectDonor = () => {
+    // Nếu có props chuyển tab từ cha thì gọi, ví dụ:
+    if (typeof window !== 'undefined') {
+      // Gợi ý: có thể dùng event hoặc context để chuyển tab ngoài dashboard
+      window.dispatchEvent(new CustomEvent('openBloodSearchTab'));
+    }
+    // Hoặc mở dialog tạo yêu cầu huy động máu ở đây nếu muốn
+    // setOpenCreateMobilizationDialog(true);
+  };
 
   return (
     <Box {...layoutProps} sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", ...layoutProps?.sx }}>
@@ -926,7 +942,19 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             {/* Danh sách máu phù hợp từ API suitable */}
             <Typography variant="subtitle2" sx={{ mt: 2 }}>Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):</Typography>
             {suitableBloodUnits.length === 0 ? (
-              <Typography color="error">Không có túi máu phù hợp!</Typography>
+              <>
+                <Typography color="error" sx={{ mb: 2 }}>
+                  Không có túi máu phù hợp trong kho!
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleConnectDonor}
+                  sx={{ mb: 2, alignSelf: 'flex-start' }}
+                >
+                  Kết nối người hiến máu
+                </Button>
+              </>
             ) : (
               <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1 }}>
                 {suitableBloodUnits.map(unit => {
@@ -979,7 +1007,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
           <Button
             variant="contained"
             onClick={handleConfirmApprove}
-            disabled={approveSelectedUnits.length === 0 || totalSelectedVolume < requiredVolume || approveLoading}
+            disabled={suitableBloodUnits.length === 0 || approveSelectedUnits.length === 0 || totalSelectedVolume < requiredVolume || approveLoading}
           >
             {approveLoading ? "Đang duyệt..." : "Duyệt"}
           </Button>

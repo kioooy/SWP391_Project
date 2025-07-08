@@ -79,6 +79,13 @@ const BloodWorkflowDashboard = () => {
     fetchWorkflowData();
   }, []);
 
+  // Lắng nghe event chuyển tab sang 'Tìm kiếm máu' khi bấm nút 'Kết nối người hiến máu'
+  useEffect(() => {
+    const handler = () => setCurrentTab(1);
+    window.addEventListener('openBloodSearchTab', handler);
+    return () => window.removeEventListener('openBloodSearchTab', handler);
+  }, []);
+
   const fetchWorkflowData = async () => {
     setLoading(true);
     try {

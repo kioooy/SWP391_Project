@@ -72,18 +72,7 @@ const BloodWorkflowDashboard = () => {
       icon: <SearchIcon />,
       color: "info",
     },
-    {
-      label: "Xử lý trường hợp",
-      description: "Duyệt yêu cầu hoặc kết nối với người hiến máu",
-      icon: <ApprovalIcon />,
-      color: "warning",
-    },
-    {
-      label: "Thực hiện truyền máu",
-      description: "Theo dõi và hoàn thành quá trình truyền máu",
-      icon: <CheckCircleIcon />,
-      color: "success",
-    },
+    // Đã xóa các bước: Xử lý trường hợp, Thực hiện truyền máu
   ];
 
   useEffect(() => {
@@ -204,14 +193,12 @@ const BloodWorkflowDashboard = () => {
   return (
     <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-          Quản Lý Quy Trình Hiến Máu Toàn Diện
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Dashboard tích hợp quản lý từ yêu cầu cần máu đến hoàn tất hiến máu
-        </Typography>
-      </Box>
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
+        Quản Lý Quy Trình Hiến Máu Toàn Diện
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Dashboard tích hợp quản lý từ yêu cầu cần máu đến hoàn tất hiến máu
+      </Typography>
 
       {/* Workflow Stepper */}
       <Card sx={{ mb: 3 }}>
@@ -282,79 +269,19 @@ const BloodWorkflowDashboard = () => {
                 </Box>
               }
             />
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <ApprovalIcon />
-                  <Typography>Xử lý trường hợp</Typography>
-                  {stats.pendingRequests > 0 && (
-                    <Chip
-                      label={stats.pendingRequests}
-                      size="small"
-                      color="error"
-                    />
-                  )}
-                </Box>
-              }
-            />
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <CheckCircleIcon />
-                  <Typography>Thực hiện truyền máu</Typography>
-                </Box>
-              }
-            />
           </Tabs>
 
-          <Box sx={{ p: 3 }}>
-            {currentTab === 0 && (
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Quản lý yêu cầu cần máu
-                </Typography>
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Tạo và quản lý các yêu cầu cần máu từ bệnh nhân. Hệ thống sẽ tự động tìm kiếm máu phù hợp.
-                </Alert>
-                <TransfusionManagement 
-                  onApprovalComplete={handleApprovalComplete}
-                  showCreateButton={true}
-                />
-              </Box>
-            )}
-            {currentTab === 1 && (
-              <BloodSearch onSearchComplete={handleSearchComplete} />
-            )}
-            {currentTab === 2 && (
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Xử lý trường hợp - Duyệt yêu cầu hoặc kết nối người hiến
-                </Typography>
-                {stats.availableBloodUnits > 0 ? (
-                  <Box>
-                    <Alert severity="success" sx={{ mb: 2 }}>
-                      Có {stats.availableBloodUnits} đơn vị máu sẵn sàng. Tiến hành duyệt yêu cầu.
-                    </Alert>
-                    <TransfusionManagement 
-                      onApprovalComplete={handleApprovalComplete}
-                      showOnlyPending={true}
-                    />
-                  </Box>
-                ) : (
-                  <EmergencyCaseHandler 
-                    searchResults={workflowData.searchResults}
-                    onCaseResolved={handleApprovalComplete}
-                  />
-                )}
-              </Box>
-            )}
-            {currentTab === 3 && (
-              <TransfusionManagement 
-                onApprovalComplete={handleApprovalComplete}
-                showOnlyApproved={true}
-              />
-            )}
-          </Box>
+          {/* Chỉ giữ 1 lớp Box cho nội dung tab */}
+          {currentTab === 0 && (
+            <TransfusionManagement 
+              onApprovalComplete={handleApprovalComplete}
+              showCreateButton={true}
+              layoutProps={{ p: 3 }}
+            />
+          )}
+          {currentTab === 1 && (
+            <BloodSearch onSearchComplete={handleSearchComplete} />
+          )}
         </CardContent>
       </Card>
 

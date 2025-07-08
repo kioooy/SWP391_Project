@@ -28,6 +28,7 @@ const SidebarLayout = () => {
     { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
     // { path: "/transfusion-management", label: "Truyền máu", icon: <LocalHospitalIcon /> },
     { path: "/blood-search", label: "Tìm kiếm máu", icon: <BloodtypeIcon /> },
+    { path: "/donor-mobilization", label: "Huy động người hiến", icon: <GroupIcon /> },
     { path: "/manage-blood-periods", label: "Đợt hiến máu", icon: <BloodtypeIcon /> },
     { path: "/blood-inventory", label: "Kho máu tổng hợp", icon: <BloodtypeIcon /> },
     { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },

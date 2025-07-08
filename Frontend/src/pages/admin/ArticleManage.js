@@ -268,7 +268,7 @@ const ArticleManage = () => {
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h5" style={{ marginBottom: 16 }}>
-        Quản lý bài viết
+        📝 Quản lý bài viết
       </Typography>
 
       <div

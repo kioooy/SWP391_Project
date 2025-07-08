@@ -17,6 +17,8 @@ import {
   TablePagination,
   Snackbar,
   Alert,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import axios from "axios";
 
@@ -51,15 +53,8 @@ const BlogManage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-
-        const data = res.data.map((blog) => ({
-          ...blog,
-          Status: "Published",
-          IsActive: true,
-        }));
-
-        setBlogs(data);
-        setFilteredBlogs(data);
+        setBlogs(res.data);
+        setFilteredBlogs(res.data);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách blogs:", error);
       }
@@ -94,7 +89,7 @@ const BlogManage = () => {
 
     try {
       const res = await axios.post(
-        `${API_URL}/blogs`,
+        `${API_URL}/Blog`,
         {
           // userId: currentUserId,
           title: Title,
@@ -142,26 +137,30 @@ const BlogManage = () => {
   };
 
   const handleEdit = (b) => {
-    setEditBlog({ ...b });
+    setEditBlog({
+      postId: b.postId,
+      title: b.title,
+      content: b.content,
+      status: b.status,
+      imageUrl: b.imageUrl,
+    });
     setIsEditOpen(true);
   };
 
   const handleUpdate = async () => {
-    const { PostId, Title, Content, ImageUrl, Status } = editBlog;
-
-    if (!Title || !Content || !ImageUrl) {
+    const { postId, title, content, imageUrl, status } = editBlog;
+    if (!title || !content || !imageUrl) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-
     try {
       await axios.put(
-        `${API_URL}/blogs/${PostId}`,
+        `${API_URL}/Blog/${postId}`,
         {
-          title: Title,
-          content: Content,
-          imageUrl: ImageUrl,
-          status: Status,
+          title,
+          content,
+          imageUrl,
+          status,
         },
         {
           headers: {
@@ -169,22 +168,12 @@ const BlogManage = () => {
           },
         }
       );
-
-      const updated = blogs.map((b) =>
-        b.PostId === PostId
-          ? {
-              ...b,
-              Title,
-              Content,
-              ImageUrl,
-              Status,
-              UpdatedDate: new Date().toISOString().split("T")[0],
-            }
-          : b
-      );
-
-      setBlogs(updated);
-      setFilteredBlogs(updated);
+      // Reload lại danh sách
+      const res = await axios.get(`${API_URL}/Blog/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBlogs(res.data);
+      setFilteredBlogs(res.data);
       setIsEditOpen(false);
       setEditBlog(null);
       setSnackbarMessage("Bài viết đã được cập nhật thành công!");
@@ -195,74 +184,6 @@ const BlogManage = () => {
     }
   };
 
-  const handleToggleStatus = async (id) => {
-    const targetBlog = blogs.find((b) => b.PostId === id);
-    if (!targetBlog) return;
-
-    const newStatus = targetBlog.Status === "Published" ? "Draft" : "Published";
-
-    try {
-      await axios.patch(
-        `${API_URL}/blogs/${id}/status`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const updated = blogs.map((b) =>
-        b.PostId === id
-          ? {
-              ...b,
-              Status: newStatus,
-              UpdatedDate: new Date().toISOString().split("T")[0],
-            }
-          : b
-      );
-
-      setBlogs(updated);
-      setFilteredBlogs(updated);
-    } catch (error) {
-      console.error("Lỗi khi đổi trạng thái blog:", error);
-      alert("Đổi trạng thái thất bại.");
-    }
-  };
-
-  const handleToggleActive = async (id) => {
-    const blog = blogs.find((b) => b.PostId === id);
-    if (!blog || !blog.IsActive) return;
-
-    try {
-      await axios.patch(
-        `${API_URL}/blogs/${id}/deactivate`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const updated = blogs.map((b) =>
-        b.PostId === id
-          ? {
-              ...b,
-              IsActive: false,
-              UpdatedDate: new Date().toISOString().split("T")[0],
-            }
-          : b
-      );
-
-      setBlogs(updated);
-      setFilteredBlogs(updated);
-    } catch (error) {
-      console.error("Lỗi khi deactivate blog:", error);
-      alert("Không thể vô hiệu hóa bài viết.");
-    }
-  };
-
   const handleViewDetail = (b) => {
     setSelectedBlog(b);
     setIsDetailOpen(true);
@@ -270,6 +191,47 @@ const BlogManage = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
+  };
+
+  const handleChangeActive = async (id, value) => {
+    const blog = blogs.find(b => b.PostId === id || b.postId === id);
+    if (!blog) {
+      setSnackbarOpen(true);
+      setSnackbarMessage('❌ Không tìm thấy blog để cập nhật trạng thái!');
+      return;
+    }
+    try {
+      if (value === "inactive") {
+        await axios.patch(
+          `${API_URL}/Blog/${id}/deactivate`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        await axios.patch(
+          `${API_URL}/Blog/${id}/activate`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      // Reload lại danh sách
+      const res = await axios.get(`${API_URL}/Blog/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBlogs(res.data);
+      setFilteredBlogs(res.data);
+      setPage(0);
+      setSnackbarOpen(true);
+      setSnackbarMessage(value === 'inactive' ? '🛑 Đã vô hiệu hóa blog!' : '✅ Đã kích hoạt blog!');
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setSnackbarOpen(true);
+        setSnackbarMessage('❌ Blog không tồn tại hoặc đã bị xóa!');
+      } else {
+        setSnackbarOpen(true);
+        setSnackbarMessage('❌ Lỗi khi cập nhật trạng thái kích hoạt!');
+      }
+    }
   };
 
   return (
@@ -300,71 +262,61 @@ const BlogManage = () => {
 
       <TableContainer component={Paper}>
         <Table>
-          <TableHead>
+          <TableHead style={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell>Hình ảnh</TableCell>
-              <TableCell>Tiêu đề</TableCell>
-              <TableCell>Trạng thái</TableCell>
-              <TableCell>Kích hoạt</TableCell>
-              <TableCell>Ngày đăng</TableCell>
-              <TableCell>Ngày cập nhật</TableCell>
-              <TableCell>Hành động</TableCell>
+              <TableCell><strong>Tiêu đề</strong></TableCell>
+              <TableCell><strong>Trạng thái</strong></TableCell>
+              <TableCell><strong>Kích hoạt</strong></TableCell>
+              <TableCell><strong>Ngày đăng</strong></TableCell>
+              <TableCell><strong>Ngày cập nhật</strong></TableCell>
+              <TableCell><strong>Hành động</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredBlogs
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((b) => (
-                <TableRow key={b.PostId}>
+              .map((b, idx) => (
+                <TableRow key={b.PostId || b.postId || idx}>
+                  <TableCell>{b.Title || b.title}</TableCell>
                   <TableCell>
-                    <img
-                      src={b.ImageUrl}
-                      alt={b.Title}
-                      style={{
-                        width: 80,
-                        height: 50,
-                        objectFit: "cover",
-                        borderRadius: 4,
-                      }}
-                    />
+                    {b.status === 'Published'
+                      ? 'Đã xuất bản'
+                      : b.status === 'Draft'
+                        ? 'Bản nháp'
+                        : 'Không xác định'}
                   </TableCell>
-                  <TableCell>{b.Title}</TableCell>
-                  <TableCell>{b.Status}</TableCell>
-                  <TableCell>{b.IsActive ? "Có" : "Không"}</TableCell>
-                  <TableCell>{b.PublishedDate}</TableCell>
-                  <TableCell>{b.UpdatedDate}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="text"
+                    <Select
+                      value={b.isActive ? 'active' : 'inactive'}
+                      onChange={e => handleChangeActive(b.postId, e.target.value)}
                       size="small"
-                      onClick={() => handleViewDetail(b)}
+                      sx={{ minWidth: 120 }}
                     >
-                      👁 Xem
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleEdit(b)}
-                      style={{ margin: "0 4px" }}
-                    >
-                      ✏️ Sửa
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleToggleStatus(b.PostId)}
-                    >
-                      Đổi trạng thái
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleToggleActive(b.PostId)}
-                      color="error"
-                      style={{ marginLeft: 4 }}
-                    >
-                      {b.IsActive ? "Vô hiệu hóa" : "Kích hoạt"}
-                    </Button>
+                      <MenuItem value="active">Kích hoạt</MenuItem>
+                      <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
+                    </Select>
+                  </TableCell>
+                  <TableCell>{b.PublishedDate || b.publishedDate}</TableCell>
+                  <TableCell>{b.UpdatedDate || b.updatedDate}</TableCell>
+                  <TableCell>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleViewDetail(b)}
+                      >
+                        Xem
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleEdit(b)}
+                      >
+                        Sửa
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -436,28 +388,31 @@ const BlogManage = () => {
           <TextField
             label="Tiêu đề"
             fullWidth
-            value={editBlog?.Title || ""}
-            onChange={(e) =>
-              setEditBlog({ ...editBlog, Title: e.target.value })
-            }
+            value={editBlog?.title || ''}
+            onChange={(e) => setEditBlog({ ...editBlog, title: e.target.value })}
           />
           <TextField
             label="Nội dung"
             fullWidth
             multiline
             rows={4}
-            value={editBlog?.Content || ""}
-            onChange={(e) =>
-              setEditBlog({ ...editBlog, Content: e.target.value })
-            }
+            value={editBlog?.content || ''}
+            onChange={(e) => setEditBlog({ ...editBlog, content: e.target.value })}
           />
+          <Select
+            label="Trạng thái"
+            value={editBlog?.status || 'Draft'}
+            onChange={(e) => setEditBlog({ ...editBlog, status: e.target.value })}
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value="Published">Đã xuất bản</MenuItem>
+            <MenuItem value="Draft">Bản nháp</MenuItem>
+          </Select>
           <TextField
             label="URL ảnh"
             fullWidth
-            value={editBlog?.ImageUrl || ""}
-            onChange={(e) =>
-              setEditBlog({ ...editBlog, ImageUrl: e.target.value })
-            }
+            value={editBlog?.imageUrl || ''}
+            onChange={(e) => setEditBlog({ ...editBlog, imageUrl: e.target.value })}
           />
         </DialogContent>
         <DialogActions>
@@ -475,31 +430,38 @@ const BlogManage = () => {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>👁 Chi tiết bài viết</DialogTitle>
+        <DialogTitle>📝 Chi tiết bài viết</DialogTitle>
         <DialogContent style={{ paddingTop: 12 }}>
           {selectedBlog && (
-            <div style={{ display: "grid", gap: 12 }}>
-              <Typography variant="h6">{selectedBlog.Title}</Typography>
-              <img
-                src={selectedBlog.ImageUrl}
-                alt="Ảnh blog"
-                style={{ width: "100%", borderRadius: 4 }}
-              />
-              <Typography variant="body1" style={{ whiteSpace: "pre-line" }}>
-                {selectedBlog.Content}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                📅 Xuất bản: {selectedBlog.PublishedDate}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                📝 Cập nhật: {selectedBlog.UpdatedDate}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                ⚙️ Trạng thái: {selectedBlog.Status}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                ✅ Kích hoạt: {selectedBlog.IsActive ? "Có" : "Không"}
-              </Typography>
+            <div style={{ display: "grid", rowGap: 12 }}>
+              <div>
+                <strong>🆔 ID:</strong> {selectedBlog.PostId || selectedBlog.postId}
+              </div>
+              <div>
+                <strong>👤 User ID:</strong> {selectedBlog.UserId || selectedBlog.userId}
+              </div>
+              <div>
+                <strong>📌 Tiêu đề:</strong> {selectedBlog.Title || selectedBlog.title}
+              </div>
+              <div>
+                <strong>📝 Nội dung:</strong> {selectedBlog.Content || selectedBlog.content}
+              </div>
+              <div>
+                <strong>🖼️ Ảnh:</strong> <br/>
+                <img src={selectedBlog.ImageUrl || selectedBlog.imageUrl} alt="Ảnh blog" style={{ width: "100%", borderRadius: 4, marginTop: 4 }} />
+              </div>
+              <div>
+                <strong>📊 Trạng thái:</strong> {selectedBlog.Status || selectedBlog.status}
+              </div>
+              <div>
+                <strong>🔒 Kích hoạt:</strong> {(selectedBlog.IsActive === true || selectedBlog.isActive === true) ? 'Có' : (selectedBlog.IsActive === false || selectedBlog.isActive === false) ? 'Không' : 'Không xác định'}
+              </div>
+              <div>
+                <strong>📅 Ngày đăng:</strong> {selectedBlog.PublishedDate || selectedBlog.publishedDate}
+              </div>
+              <div>
+                <strong>🔄 Cập nhật:</strong> {selectedBlog.UpdatedDate || selectedBlog.updatedDate}
+              </div>
             </div>
           )}
         </DialogContent>

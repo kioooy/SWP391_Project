@@ -29,6 +29,7 @@ namespace Blood_Donation_Support.Controllers
                 .Select(a => new ArticleDTO
                 {
                     ArticleId = a.ArticleId,
+                    UserId = a.UserId,
                     Title = a.Title,
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
@@ -51,6 +52,7 @@ namespace Blood_Donation_Support.Controllers
                 .Select(a => new ArticleDTO
                 {
                     ArticleId = a.ArticleId,
+                    UserId = a.UserId,
                     Title = a.Title,
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
@@ -73,6 +75,7 @@ namespace Blood_Donation_Support.Controllers
                 .Select(a => new ArticleDTO
                 {
                     ArticleId = a.ArticleId,
+                    UserId = a.UserId,
                     Title = a.Title,
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,

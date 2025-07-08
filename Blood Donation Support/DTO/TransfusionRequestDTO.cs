@@ -28,8 +28,12 @@ namespace Blood_Donation_Support.DTO
     public class ApproveTransfusionRequestInput
     {
         [Required]
-        public int BloodUnitId { get; set; }
+        public List<BloodUnitUsage> BloodUnits { get; set; }
         public string? Notes { get; set; }
     }
-
+    public class BloodUnitUsage
+    {
+        public int BloodUnitId { get; set; }
+        public int VolumeUsed { get; set; }
+    }
 }

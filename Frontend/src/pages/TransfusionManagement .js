@@ -117,7 +117,7 @@ const useTransfusionStore = () => {
   };
 };
 
-const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, showOnlyApproved = false, showCreateButton = false }) => {
+const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, showOnlyApproved = false, showCreateButton = false, layoutProps = {} }) => {
   const user = useSelector(selectUser);
   const { transfusions, loading, error, updateTransfusion, clearError, reloadTransfusions } = useTransfusionStore();
   const [editDialog, setEditDialog] = useState({
@@ -152,10 +152,10 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   // States và hàm cho dialog Approve
   const [openApproveDialog, setOpenApproveDialog] = useState(false);
   const [transfusionToApprove, setTransfusionToApprove] = useState(null);
-  const [approveBloodUnitId, setApproveBloodUnitId] = useState("");
+  const [approveSelectedUnits, setApproveSelectedUnits] = useState([]); // [{bloodUnitId, volume}]
   const [approveNotes, setApproveNotes] = useState("");
   const [approveLoading, setApproveLoading] = useState(false);
-  const [bloodUnits, setBloodUnits] = useState([]); // Để lựa chọn BloodUnit
+  const [suitableBloodUnits, setSuitableBloodUnits] = useState([]); // Danh sách máu phù hợp từ API
 
   // States và hàm cho dialog Complete
   const [openCompleteDialog, setOpenCompleteDialog] = useState(false);
@@ -260,28 +260,70 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   // ----- Hàm xử lý cho các Dialog Approve/Complete/Cancel -----
 
   // Approve Dialog
-  const handleOpenApproveDialog = (transfusion) => {
+  const handleOpenApproveDialog = async (transfusion) => {
     setTransfusionToApprove(transfusion);
     setOpenApproveDialog(true);
-    setApproveBloodUnitId(""); // Reset input
-    setApproveNotes(""); // Reset notes
+    setApproveSelectedUnits([]);
+    setApproveNotes("");
+    // Gọi API suitable
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`/api/BloodUnit/suitable`, {
+        params: {
+          bloodTypeId: transfusion.bloodTypeId,
+          componentId: transfusion.componentId,
+          requiredVolume: transfusion.transfusionVolume
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSuitableBloodUnits(res.data || []);
+    } catch (err) {
+      setSuitableBloodUnits([]);
+    }
   };
 
   const handleCloseApproveDialog = () => {
     setOpenApproveDialog(false);
     setTransfusionToApprove(null);
-    setApproveBloodUnitId("");
+    setApproveSelectedUnits([]);
     setApproveNotes("");
+    setSuitableBloodUnits([]);
   };
+
+  // Hàm chọn máu (multi-select, cộng dồn thể tích)
+  const handleSelectBloodUnit = (bloodUnitId, maxVolume) => {
+    // Nếu đã chọn thì bỏ chọn, chưa chọn thì thêm với volume mặc định maxVolume
+    setApproveSelectedUnits(prev => {
+      const exists = prev.find(u => u.bloodUnitId === bloodUnitId);
+      if (exists) {
+        return prev.filter(u => u.bloodUnitId !== bloodUnitId);
+      } else {
+        return [...prev, { bloodUnitId, volume: maxVolume }];
+      }
+    });
+  };
+
+  // Hàm thay đổi thể tích lấy từ từng túi
+  const handleChangeUnitVolume = (bloodUnitId, value, maxVolume) => {
+    let v = value === "" ? "" : parseInt(value);
+    if (v !== "" && v > maxVolume) v = maxVolume;
+    setApproveSelectedUnits(prev => prev.map(u => u.bloodUnitId === bloodUnitId ? { ...u, volume: v } : u));
+  };
+
+  // Tổng thể tích đã chọn
+  const totalSelectedVolume = approveSelectedUnits.reduce((sum, u) => sum + u.volume, 0);
+  const requiredVolume = transfusionToApprove?.transfusionVolume || 0;
 
   const handleConfirmApprove = async () => {
     setApproveLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(`/api/TransfusionRequest/${transfusionToApprove.transfusionId}/approve`, {
-        bloodUnitId: parseInt(approveBloodUnitId),
+      const payload = {
+        bloodUnits: approveSelectedUnits.map(u => ({ bloodUnitId: u.bloodUnitId, volumeUsed: u.volume })),
         notes: approveNotes || null,
-      }, {
+      };
+      console.log("[APPROVE] PATCH payload:", payload);
+      await axios.patch(`/api/TransfusionRequest/${transfusionToApprove.transfusionId}/approve`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSnackbar({
@@ -290,15 +332,20 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
         severity: "success",
       });
       handleCloseApproveDialog();
-      
-      // Call callback if provided
       if (onApprovalComplete) {
         onApprovalComplete();
       }
       await reloadTransfusions();
     } catch (err) {
-      console.error("Error approving transfusion request:", err);
-      const errorMessage = err.response?.data?.message || "Duyệt yêu cầu thất bại.";
+      // Đã xóa log kiểm thử chức năng duyệt yêu cầu truyền máu
+      let errorMessage = "Duyệt yêu cầu thất bại.";
+      if (err.response?.data) {
+        if (typeof err.response.data === "string") {
+          errorMessage = err.response.data;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
       setSnackbar({
         open: true,
         message: errorMessage,
@@ -446,11 +493,6 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
         const resBloodComponents = await axios.get("/api/BloodComponent", { headers: { Authorization: `Bearer ${token}` } });
         setBloodComponents(resBloodComponents.data || []);
         console.log("Blood components loaded:", resBloodComponents.data);
-        
-        // Lấy danh sách blood units cho việc duyệt
-        const resBloodUnits = await axios.get("/api/BloodUnit/available", { headers: { Authorization: `Bearer ${token}` } });
-        setBloodUnits(resBloodUnits.data || []);
-        // console.log("Fetched blood units:", resBloodUnits.data);
       } catch (err) {
         console.error("Error fetching data for dropdowns:", err);
       }
@@ -479,50 +521,58 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   });
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      {/* Thống kê */}
-      <Grid container spacing={2} sx={{ mb: 3, justifyContent: "center" }}>
-        {getStatistics().map(({ status, count }) => (
-          <Grid item xs={12} sm={6} md={3} key={status}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {transfusionStatusTranslations[status] || status}
-                    </Typography>
-                    <Typography variant="h4" fontWeight="bold">
-                      {count}
-                    </Typography>
-                  </Box>
-                  <Chip label={transfusionStatusTranslations[status] || status} color={getStatusColor(status)} size="small" />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Bộ lọc và nút tạo mới */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {/* Status Filter */}
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Lọc theo trạng thái</InputLabel>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              label="Lọc theo trạng thái"
-            >
-              <MenuItem value="All">Tất cả trạng thái</MenuItem>
-              <MenuItem value="Pending">Đang chờ</MenuItem>
-              <MenuItem value="Approved">Đã duyệt</MenuItem>
-              <MenuItem value="Completed">Hoàn thành</MenuItem>
-              <MenuItem value="Cancelled">Đã hủy</MenuItem>
-              <MenuItem value="Rejected">Từ chối</MenuItem>
-            </Select>
-          </FormControl>
-          
+    <Box {...layoutProps} sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", ...layoutProps?.sx }}>
+      {/* Bộ lọc trạng thái dạng Paper giống DonationRequestManagement */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #9e9e9e' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
+          onClick={() => setStatusFilter('All')}
+          elevation={statusFilter === 'All' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Tất cả</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.length}</Typography>
+          <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Approved')}
+          elevation={statusFilter === 'Approved' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Approved').length}</Typography>
+          <Chip label="Đã duyệt" color="warning" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Completed')}
+          elevation={statusFilter === 'Completed' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Hoàn thành</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Completed').length}</Typography>
+          <Chip label="Hoàn thành" color="success" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 4 : 1 }}
+          onClick={() => setStatusFilter('Rejected')}
+          elevation={(statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã từ chối/Hủy</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length}</Typography>
+          <Chip label="Đã từ chối/Hủy" color="error" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Pending')}
+          elevation={statusFilter === 'Pending' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Pending').length}</Typography>
+          <Chip label="Chờ duyệt" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
+        </Paper>
+      </Box>
+      {/* Bộ lọc ngày và nút tạo mới giữ nguyên */}
+      <Card sx={{ mb: 2, p: 2 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
           {/* Date Range Filter */}
           <TextField
             label="Từ ngày"
@@ -531,11 +581,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
             InputLabelProps={{ shrink: true }}
             sx={{ minWidth: 150 }}
-            inputProps={{
-              max: dateFilter.endDate || undefined
-            }}
+            inputProps={{ max: dateFilter.endDate || undefined }}
           />
-          
           <TextField
             label="Đến ngày"
             type="date"
@@ -543,12 +590,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
             InputLabelProps={{ shrink: true }}
             sx={{ minWidth: 150 }}
-            inputProps={{
-              min: dateFilter.startDate || undefined
-            }}
+            inputProps={{ min: dateFilter.startDate || undefined }}
           />
-          
-          {/* Quick Date Filters */}
           <FormControl sx={{ minWidth: 120 }}>
             <InputLabel>Lọc nhanh</InputLabel>
             <Select
@@ -556,7 +599,6 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               onChange={(e) => {
                 const today = new Date();
                 const value = e.target.value;
-                
                 switch(value) {
                   case 'today':
                     setDateFilter({
@@ -608,32 +650,17 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               <MenuItem value="lastMonth">Tháng trước</MenuItem>
             </Select>
           </FormControl>
-          
-          {/* Clear Filters Button */}
-          {(statusFilter !== "All" || dateFilter.startDate || dateFilter.endDate) && (
+          {showCreateButton && (
             <Button
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                setStatusFilter("All");
-                setDateFilter({ startDate: null, endDate: null });
-              }}
+              variant="contained"
+              color="primary"
+              onClick={() => setOpenCreateDialog(true)}
             >
-              Xóa bộ lọc
+              Tạo yêu cầu truyền máu
             </Button>
           )}
         </Box>
-        
-        {showCreateButton && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setOpenCreateDialog(true)}
-          >
-            Tạo yêu cầu truyền máu
-          </Button>
-        )}
-      </Box>
+      </Card>
 
       {/* Bảng truyền máu */}
       <Card>
@@ -712,12 +739,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         <Typography variant="body2" fontWeight="medium">
                           {transfusion?.fullName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Cân nặng: N/A
-                        </Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          Chiều cao: N/A
-                        </Typography>
+                        {/* Đã xóa hiển thị cân nặng và chiều cao ở danh sách ngoài */}
                       </Box>
                     </TableCell>
                     {/* Chi tiết máu */}
@@ -728,9 +750,6 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {bloodComponentTranslations[transfusion?.componentName] || transfusion?.componentName || 'N/A'}
-                        </Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          N/A
                         </Typography>
                       </Box>
                     </TableCell>
@@ -751,7 +770,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     <TableCell>
                       {transfusion.responsibleById ? (
                         <Typography variant="body2" fontWeight="medium">
-                          Mã NV: {transfusion.responsibleById}
+                          {transfusion.responsibleByName || 'Chưa rõ'}
                         </Typography>
                       ) : (
                         <Typography variant="body2" color="text.secondary" fontStyle="italic">
@@ -761,7 +780,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     </TableCell>
                     {/* Trạng thái */}
                     <TableCell>
-                      <Chip label={transfusion?.status} color={getStatusColor(transfusion?.status)} size="small" />
+                      <Chip label={transfusionStatusTranslations[transfusion?.status] || transfusion?.status} color={getStatusColor(transfusion?.status)} size="small" />
                     </TableCell>
                     {/* Ghi chú */}
                     <TableCell>
@@ -789,31 +808,43 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                           {transfusion.status === "Pending" && (
                             <Tooltip title="Duyệt yêu cầu">
-                              <IconButton color="success" onClick={(e) => { e.stopPropagation(); handleOpenApproveDialog(transfusion); }} disabled={loading}>
-                                <SaveIcon /> {/* Biểu tượng Duyệt */}
-                              </IconButton>
+                              <Button
+                                variant="contained"
+                                color="success"
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handleOpenApproveDialog(transfusion); }}
+                                disabled={loading}
+                              >
+                                Duyệt
+                              </Button>
                             </Tooltip>
                           )}
                           {transfusion.status === "Approved" && (
                             <Tooltip title="Hoàn thành yêu cầu">
-                              <IconButton color="primary" onClick={(e) => { e.stopPropagation(); handleOpenCompleteDialog(transfusion); }} disabled={loading}>
-                                <SaveIcon /> {/* Biểu tượng Hoàn thành */}
-                              </IconButton>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handleOpenCompleteDialog(transfusion); }}
+                                disabled={loading}
+                              >
+                                Hoàn thành
+                              </Button>
                             </Tooltip>
                           )}
                           {(transfusion.status === "Pending" || transfusion.status === "Approved") && (
                             <Tooltip title="Hủy yêu cầu">
-                              <IconButton color="warning" onClick={(e) => { e.stopPropagation(); handleOpenCancelDialog(transfusion); }} disabled={loading}>
-                                <CancelIcon /> {/* Biểu tượng Hủy */}
-                              </IconButton>
+                              <Button
+                                variant="outlined"
+                                color="warning"
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); handleOpenCancelDialog(transfusion); }}
+                                disabled={loading}
+                              >
+                                Hủy
+                              </Button>
                             </Tooltip>
                           )}
-                           {/* Nút chỉnh sửa chung, giữ lại cho các thay đổi khác nếu cần */}
-                          <Tooltip title="Chỉnh sửa chung">
-                            <IconButton color="info" onClick={(e) => { e.stopPropagation(); handleEditClick(transfusion); }} disabled={loading}>
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
                         </Box>
                       )}
                     </TableCell>
@@ -892,32 +923,47 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             <Typography variant="body1">
               Yêu cầu: <strong>{transfusionToApprove?.transfusionVolume} ml {transfusionToApprove?.componentName} ({transfusionToApprove?.bloodTypeName})</strong>
             </Typography>
-            <FormControl fullWidth required>
-              <InputLabel id="blood-unit-select-label">Chọn Đơn vị máu</InputLabel>
-              <Select
-                labelId="blood-unit-select-label"
-                value={approveBloodUnitId}
-                label="Chọn Đơn vị máu"
-                onChange={(e) => setApproveBloodUnitId(e.target.value)}
-              >
-                {bloodUnits.filter(unit => 
-                  unit.bloodStatus === "Available" &&
-                  unit.componentId === transfusionToApprove?.componentId &&
-                  unit.bloodTypeId === transfusionToApprove?.bloodTypeId &&
-                  unit.remainingVolume >= transfusionToApprove?.transfusionVolume &&
-                  new Date(unit.expiryDate) >= new Date()
-                ).map((unit) => (
-                  <MenuItem key={unit.bloodUnitId} value={unit.bloodUnitId}>
-                    ID: {unit.bloodUnitId} | Lượng còn lại: {unit.remainingVolume}ml | HSD: {formatDateTime(unit.expiryDate)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {!approveBloodUnitId && (
-                <Typography color="error" variant="caption" sx={{ mt: 1 }}>
-                  Vui lòng chọn một đơn vị máu phù hợp.
-                </Typography>
-              )}
-            </FormControl>
+            {/* Danh sách máu phù hợp từ API suitable */}
+            <Typography variant="subtitle2" sx={{ mt: 2 }}>Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):</Typography>
+            {suitableBloodUnits.length === 0 ? (
+              <Typography color="error">Không có túi máu phù hợp!</Typography>
+            ) : (
+              <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1 }}>
+                {suitableBloodUnits.map(unit => {
+                  const selected = approveSelectedUnits.find(u => u.bloodUnitId === unit.bloodUnitId);
+                  return (
+                    <Box key={unit.bloodUnitId} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={!!selected}
+                        onChange={() => handleSelectBloodUnit(unit.bloodUnitId, unit.remainingVolume)}
+                      />
+                      <Typography variant="body2">
+                        {unit.BloodTypeName || unit.bloodTypeName || 'N/A'}
+                        {" | "}
+                        {bloodComponentTranslations[unit.ComponentName || unit.componentName] || unit.ComponentName || unit.componentName || 'N/A'}
+                        {" | ID: "}{unit.bloodUnitId}
+                        {" | Lượng còn lại: "}{unit.remainingVolume}ml
+                        {" | HSD: "}{formatDateTime(unit.expiryDate)}
+                      </Typography>
+                      {selected && (
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={selected.volume}
+                          onChange={e => handleChangeUnitVolume(unit.bloodUnitId, e.target.value, unit.remainingVolume)}
+                          inputProps={{ min: 1, max: unit.remainingVolume, style: { width: 70 } }}
+                          sx={{ ml: 1 }}
+                        />
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Tổng thể tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
+            </Typography>
             <TextField
               label="Ghi chú duyệt (Tùy chọn)"
               value={approveNotes}
@@ -933,7 +979,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
           <Button
             variant="contained"
             onClick={handleConfirmApprove}
-            disabled={!approveBloodUnitId || approveLoading}
+            disabled={approveSelectedUnits.length === 0 || totalSelectedVolume < requiredVolume || approveLoading}
           >
             {approveLoading ? "Đang duyệt..." : "Duyệt"}
           </Button>
@@ -997,6 +1043,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Người nhận:</Typography>
                 <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.fullName || 'N/A'}</Typography>
+                <Typography variant="body2" color="text.secondary">Cân nặng: {selectedTransfusionForDetails.weight ? `${selectedTransfusionForDetails.weight} kg` : 'N/A'}</Typography>
+                <Typography variant="body2" color="text.secondary">Chiều cao: {selectedTransfusionForDetails.height ? `${selectedTransfusionForDetails.height} cm` : 'N/A'}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Nhóm máu:</Typography>
@@ -1031,6 +1079,10 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Người phụ trách:</Typography>
                 <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleById ? `Mã NV: ${selectedTransfusionForDetails.responsibleById}` : 'Chưa phân công'}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" color="text.secondary">Tên người phụ trách:</Typography>
+                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleByName || 'Chưa rõ'}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Tình trạng bệnh nhân:</Typography>

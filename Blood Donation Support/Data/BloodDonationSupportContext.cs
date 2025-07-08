@@ -40,6 +40,8 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<TransfusionRequest> TransfusionRequests { get; set; }
 
+    public virtual DbSet<TransfusionRequestBloodUnit> TransfusionRequestBloodUnits { get; set; }
+
     public virtual DbSet<Hospital> Hospitals { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -189,6 +191,11 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasForeignKey(d => d.MemberId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__BloodUnit__Membe__1332DBDC");
+
+            // Navigation property cũ đã xóa
+            // entity.HasMany(d => d.TransfusionRequests).WithOne(p => p.BloodUnit)
+            //     .HasForeignKey(d => d.BloodUnitId)
+            //     .HasConstraintName("FK__Transfusi__Blood__6FE99F9F");
         });
 
         modelBuilder.Entity<DonationRequest>(entity =>
@@ -312,9 +319,9 @@ public partial class BloodDonationSupportContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Transfusi__Blood__6E01572D");
 
-            entity.HasOne(d => d.BloodUnit).WithMany(p => p.TransfusionRequests)
-                .HasForeignKey(d => d.BloodUnitId)
-                .HasConstraintName("FK__Transfusi__Blood__6FE99F9F");
+            // entity.HasOne(d => d.BloodUnit).WithMany(p => p.TransfusionRequests)  // Đã xóa khỏi database
+            //     .HasForeignKey(d => d.BloodUnitId)
+            //     .HasConstraintName("FK__Transfusi__Blood__6FE99F9F");
 
             entity.HasOne(d => d.Component).WithMany(p => p.TransfusionRequests)
                 .HasForeignKey(d => d.ComponentId)
@@ -422,6 +429,37 @@ public partial class BloodDonationSupportContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<TransfusionRequestBloodUnit>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_TransfusionRequestBloodUnits_Id");
+
+            entity.ToTable("TransfusionRequestBloodUnits");
+
+            entity.Property(e => e.AssignedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            entity.HasOne(d => d.TransfusionRequest).WithMany(p => p.TransfusionRequestBloodUnits)
+                .HasForeignKey(d => d.TransfusionRequestId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_TransfusionRequestBloodUnits_TransfusionRequests");
+
+            entity.HasOne(d => d.BloodUnit)
+                .WithMany(bu => bu.TransfusionRequestBloodUnits)
+                .HasForeignKey(d => d.BloodUnitId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_TransfusionRequestBloodUnits_BloodUnits");
+
+            // Đảm bảo không trùng lặp
+            entity.HasIndex(e => new { e.TransfusionRequestId, e.BloodUnitId })
+                .IsUnique()
+                .HasDatabaseName("UQ_TransfusionRequestBloodUnits_Request_Unit");
         });
 
         OnModelCreatingPartial(modelBuilder);

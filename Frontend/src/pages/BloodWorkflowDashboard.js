@@ -72,18 +72,7 @@ const BloodWorkflowDashboard = () => {
       icon: <SearchIcon />,
       color: "info",
     },
-    {
-      label: "Xử lý trường hợp",
-      description: "Duyệt yêu cầu hoặc kết nối với người hiến máu",
-      icon: <ApprovalIcon />,
-      color: "warning",
-    },
-    {
-      label: "Thực hiện truyền máu",
-      description: "Theo dõi và hoàn thành quá trình truyền máu",
-      icon: <CheckCircleIcon />,
-      color: "success",
-    },
+    // Đã xóa các bước: Xử lý trường hợp, Thực hiện truyền máu
   ];
 
   useEffect(() => {
@@ -202,16 +191,14 @@ const BloodWorkflowDashboard = () => {
   const stats = getWorkflowStats();
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", p: 3 }}>
+    <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-          Quản Lý Quy Trình Hiến Máu Toàn Diện
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Dashboard tích hợp quản lý từ yêu cầu cần máu đến hoàn tất hiến máu
-        </Typography>
-      </Box>
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
+        Quản Lý Quy Trình Hiến Máu Toàn Diện
+      </Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Dashboard tích hợp quản lý từ yêu cầu cần máu đến hoàn tất hiến máu
+      </Typography>
 
       {/* Workflow Stepper */}
       <Card sx={{ mb: 3 }}>
@@ -256,94 +243,6 @@ const BloodWorkflowDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <Badge badgeContent={stats.emergencyRequests} color="error">
-                <NotificationsIcon color="error" sx={{ fontSize: 40, mb: 1 }} />
-              </Badge>
-              <Typography variant="h6" fontWeight="bold">
-                {stats.pendingRequests}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Yêu cầu chờ xử lý
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <ApprovalIcon color="info" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h6" fontWeight="bold">
-                {stats.approvedRequests}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Đã duyệt
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <CheckCircleIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h6" fontWeight="bold">
-                {stats.completedRequests}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Hoàn thành
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <PersonIcon color="warning" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h6" fontWeight="bold">
-                {stats.activeDonations}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Hiến máu đang thực hiện
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Blood Availability Status */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <BloodIcon color="primary" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h6" fontWeight="bold">
-                {stats.availableBloodUnits}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Đơn vị máu có sẵn
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent sx={{ textAlign: "center" }}>
-              <PersonIcon color="success" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h6" fontWeight="bold">
-                {stats.suggestedDonors}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Người hiến phù hợp
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
       {/* Main Content Tabs */}
       <Card>
         <CardContent sx={{ p: 0 }}>
@@ -370,79 +269,19 @@ const BloodWorkflowDashboard = () => {
                 </Box>
               }
             />
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <ApprovalIcon />
-                  <Typography>Xử lý trường hợp</Typography>
-                  {stats.pendingRequests > 0 && (
-                    <Chip
-                      label={stats.pendingRequests}
-                      size="small"
-                      color="error"
-                    />
-                  )}
-                </Box>
-              }
-            />
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <CheckCircleIcon />
-                  <Typography>Thực hiện truyền máu</Typography>
-                </Box>
-              }
-            />
           </Tabs>
 
-          <Box sx={{ p: 3 }}>
-            {currentTab === 0 && (
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Quản lý yêu cầu cần máu
-                </Typography>
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Tạo và quản lý các yêu cầu cần máu từ bệnh nhân. Hệ thống sẽ tự động tìm kiếm máu phù hợp.
-                </Alert>
-                <TransfusionManagement 
-                  onApprovalComplete={handleApprovalComplete}
-                  showCreateButton={true}
-                />
-              </Box>
-            )}
-            {currentTab === 1 && (
-              <BloodSearch onSearchComplete={handleSearchComplete} />
-            )}
-            {currentTab === 2 && (
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Xử lý trường hợp - Duyệt yêu cầu hoặc kết nối người hiến
-                </Typography>
-                {stats.availableBloodUnits > 0 ? (
-                  <Box>
-                    <Alert severity="success" sx={{ mb: 2 }}>
-                      Có {stats.availableBloodUnits} đơn vị máu sẵn sàng. Tiến hành duyệt yêu cầu.
-                    </Alert>
-                    <TransfusionManagement 
-                      onApprovalComplete={handleApprovalComplete}
-                      showOnlyPending={true}
-                    />
-                  </Box>
-                ) : (
-                  <EmergencyCaseHandler 
-                    searchResults={workflowData.searchResults}
-                    onCaseResolved={handleApprovalComplete}
-                  />
-                )}
-              </Box>
-            )}
-            {currentTab === 3 && (
-              <TransfusionManagement 
-                onApprovalComplete={handleApprovalComplete}
-                showOnlyApproved={true}
-              />
-            )}
-          </Box>
+          {/* Chỉ giữ 1 lớp Box cho nội dung tab */}
+          {currentTab === 0 && (
+            <TransfusionManagement 
+              onApprovalComplete={handleApprovalComplete}
+              showCreateButton={true}
+              layoutProps={{ p: 3 }}
+            />
+          )}
+          {currentTab === 1 && (
+            <BloodSearch onSearchComplete={handleSearchComplete} />
+          )}
         </CardContent>
       </Card>
 

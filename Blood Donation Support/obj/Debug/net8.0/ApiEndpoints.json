@@ -373,6 +373,52 @@
     ]
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodComponentController",
+    "Method": "GetBloodComponents",
+    "RelativePath": "api/BloodComponent",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.BloodComponentDTO, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodComponentController",
+    "Method": "GetBloodComponent",
+    "RelativePath": "api/BloodComponent/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Blood_Donation_Support.DTO.BloodComponentDTO",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodDistanceSearchController",
     "Method": "GetNearbyDonors",
     "RelativePath": "api/BloodDistanceSearch/donors-nearby",
@@ -588,6 +634,52 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodTypeController",
+    "Method": "GetBloodTypes",
+    "RelativePath": "api/BloodType",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.BloodTypeDTO, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodTypeController",
+    "Method": "GetBloodType",
+    "RelativePath": "api/BloodType/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Blood_Donation_Support.DTO.BloodTypeDTO",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
     "Method": "GetAllBloodUnits",
     "RelativePath": "api/BloodUnit",
@@ -700,6 +792,32 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetSuitableBloodUnits",
+    "RelativePath": "api/BloodUnit/suitable",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "componentId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "requiredVolume",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -1292,7 +1410,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.ApproveTransfusionRequestInput",
+        "Type": "Blood_Donation_Support.Controllers.TransfusionRequestController\u002BApproveTransfusionRequestInput",
         "IsRequired": true
       }
     ],
@@ -1590,6 +1708,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "GetAllMembers",
+    "RelativePath": "api/User/members",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

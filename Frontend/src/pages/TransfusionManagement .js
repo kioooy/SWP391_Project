@@ -117,7 +117,7 @@ const useTransfusionStore = () => {
   };
 };
 
-const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, showOnlyApproved = false, showCreateButton = false }) => {
+const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, showOnlyApproved = false, showCreateButton = false, layoutProps = {} }) => {
   const user = useSelector(selectUser);
   const { transfusions, loading, error, updateTransfusion, clearError, reloadTransfusions } = useTransfusionStore();
   const [editDialog, setEditDialog] = useState({
@@ -521,150 +521,114 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   });
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box {...layoutProps} sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", ...layoutProps?.sx }}>
       {/* Bộ lọc và nút tạo mới */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 2,
-          alignItems: 'center',
-          mb: 2,
-          justifyContent: 'flex-start'
-        }}
-      >
-        {/* Status Filter */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 2,
-            mb: 0,
-            overflowX: 'auto',
-            flexWrap: 'nowrap',
-            alignItems: 'center',
-            justifyContent: 'flex-start'
-          }}
-        >
-          {["All", ...statusOptions].map((status) => (
-            <Paper
-              key={status}
-              sx={{
-                p: 2,
-                minWidth: 150,
-                textAlign: 'center',
-                cursor: 'pointer',
-                border: statusFilter === status ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                boxShadow: statusFilter === status ? 4 : 1,
-                backgroundColor: statusFilter === status ? '#e3f2fd' : '#fff'
-              }}
-              onClick={() => setStatusFilter(status)}
-              elevation={statusFilter === status ? 6 : 1}
+      <Card sx={{ mb: 2, p: 2 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
+          {/* Status Filter */}
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel>Trạng thái</InputLabel>
+            <Select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              label="Trạng thái"
             >
-              <Typography variant="subtitle1" color="text.secondary">
-                {transfusionStatusTranslations[status] || status}
-              </Typography>
-              <Typography variant="h4" fontWeight="bold">
-                {status === "All"
-                  ? transfusions.length
-                  : transfusions.filter((t) => t.status === status).length}
-              </Typography>
-              <Chip label={transfusionStatusTranslations[status] || status} color={getStatusColor(status)} sx={{ mt: 1 }} />
-            </Paper>
-          ))}
+              <MenuItem value="All">Tất cả</MenuItem>
+              {statusOptions.map((status) => (
+                <MenuItem key={status} value={status}>
+                  {transfusionStatusTranslations[status] || status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {/* Date Range Filter */}
+          <TextField
+            label="Từ ngày"
+            type="date"
+            value={dateFilter.startDate || ''}
+            onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150 }}
+            inputProps={{ max: dateFilter.endDate || undefined }}
+          />
+          <TextField
+            label="Đến ngày"
+            type="date"
+            value={dateFilter.endDate || ''}
+            onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 150 }}
+            inputProps={{ min: dateFilter.startDate || undefined }}
+          />
+          <FormControl sx={{ minWidth: 120 }}>
+            <InputLabel>Lọc nhanh</InputLabel>
+            <Select
+              value=""
+              onChange={(e) => {
+                const today = new Date();
+                const value = e.target.value;
+                switch(value) {
+                  case 'today':
+                    setDateFilter({
+                      startDate: today.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0]
+                    });
+                    break;
+                  case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    setDateFilter({
+                      startDate: yesterday.toISOString().split('T')[0],
+                      endDate: yesterday.toISOString().split('T')[0]
+                    });
+                    break;
+                  case 'thisWeek':
+                    const startOfWeek = new Date(today);
+                    startOfWeek.setDate(today.getDate() - today.getDay());
+                    setDateFilter({
+                      startDate: startOfWeek.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0]
+                    });
+                    break;
+                  case 'thisMonth':
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    setDateFilter({
+                      startDate: startOfMonth.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0]
+                    });
+                    break;
+                  case 'lastMonth':
+                    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    setDateFilter({
+                      startDate: lastMonth.toISOString().split('T')[0],
+                      endDate: endOfLastMonth.toISOString().split('T')[0]
+                    });
+                    break;
+                  default:
+                    break;
+                }
+              }}
+              label="Lọc nhanh"
+            >
+              <MenuItem value="today">Hôm nay</MenuItem>
+              <MenuItem value="yesterday">Hôm qua</MenuItem>
+              <MenuItem value="thisWeek">Tuần này</MenuItem>
+              <MenuItem value="thisMonth">Tháng này</MenuItem>
+              <MenuItem value="lastMonth">Tháng trước</MenuItem>
+            </Select>
+          </FormControl>
+          {showCreateButton && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setOpenCreateDialog(true)}
+            >
+              Tạo yêu cầu truyền máu
+            </Button>
+          )}
         </Box>
-        {/* Date Range Filter */}
-        <TextField
-          label="Từ ngày"
-          type="date"
-          value={dateFilter.startDate || ''}
-          onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 150 }}
-          inputProps={{
-            max: dateFilter.endDate || undefined
-          }}
-        />
-        <TextField
-          label="Đến ngày"
-          type="date"
-          value={dateFilter.endDate || ''}
-          onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: 150 }}
-          inputProps={{
-            min: dateFilter.startDate || undefined
-          }}
-        />
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Lọc nhanh</InputLabel>
-          <Select
-            value=""
-            onChange={(e) => {
-              const today = new Date();
-              const value = e.target.value;
-              
-              switch(value) {
-                case 'today':
-                  setDateFilter({
-                    startDate: today.toISOString().split('T')[0],
-                    endDate: today.toISOString().split('T')[0]
-                  });
-                  break;
-                case 'yesterday':
-                  const yesterday = new Date(today);
-                  yesterday.setDate(yesterday.getDate() - 1);
-                  setDateFilter({
-                    startDate: yesterday.toISOString().split('T')[0],
-                    endDate: yesterday.toISOString().split('T')[0]
-                  });
-                  break;
-                case 'thisWeek':
-                  const startOfWeek = new Date(today);
-                  startOfWeek.setDate(today.getDate() - today.getDay());
-                  setDateFilter({
-                    startDate: startOfWeek.toISOString().split('T')[0],
-                    endDate: today.toISOString().split('T')[0]
-                  });
-                  break;
-                case 'thisMonth':
-                  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                  setDateFilter({
-                    startDate: startOfMonth.toISOString().split('T')[0],
-                    endDate: today.toISOString().split('T')[0]
-                  });
-                  break;
-                case 'lastMonth':
-                  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                  const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-                  setDateFilter({
-                    startDate: lastMonth.toISOString().split('T')[0],
-                    endDate: endOfLastMonth.toISOString().split('T')[0]
-                  });
-                  break;
-                default:
-                  break;
-              }
-            }}
-            label="Lọc nhanh"
-          >
-            <MenuItem value="today">Hôm nay</MenuItem>
-            <MenuItem value="yesterday">Hôm qua</MenuItem>
-            <MenuItem value="thisWeek">Tuần này</MenuItem>
-            <MenuItem value="thisMonth">Tháng này</MenuItem>
-            <MenuItem value="lastMonth">Tháng trước</MenuItem>
-          </Select>
-        </FormControl>
-        {showCreateButton && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setOpenCreateDialog(true)}
-          >
-            Tạo yêu cầu truyền máu
-          </Button>
-        )}
-      </Box>
+      </Card>
 
       {/* Bảng truyền máu */}
       <Card>
@@ -743,12 +707,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         <Typography variant="body2" fontWeight="medium">
                           {transfusion?.fullName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Cân nặng: N/A
-                        </Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          Chiều cao: N/A
-                        </Typography>
+                        {/* Đã xóa hiển thị cân nặng và chiều cao ở danh sách ngoài */}
                       </Box>
                     </TableCell>
                     {/* Chi tiết máu */}
@@ -759,9 +718,6 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {bloodComponentTranslations[transfusion?.componentName] || transfusion?.componentName || 'N/A'}
-                        </Typography>
-                        <Typography variant="caption" display="block" color="text.secondary">
-                          N/A
                         </Typography>
                       </Box>
                     </TableCell>
@@ -782,7 +738,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     <TableCell>
                       {transfusion.responsibleById ? (
                         <Typography variant="body2" fontWeight="medium">
-                          Mã NV: {transfusion.responsibleById}
+                          {transfusion.responsibleByName || 'Chưa rõ'}
                         </Typography>
                       ) : (
                         <Typography variant="body2" color="text.secondary" fontStyle="italic">
@@ -792,7 +748,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     </TableCell>
                     {/* Trạng thái */}
                     <TableCell>
-                      <Chip label={transfusion?.status} color={getStatusColor(transfusion?.status)} size="small" />
+                      <Chip label={transfusionStatusTranslations[transfusion?.status] || transfusion?.status} color={getStatusColor(transfusion?.status)} size="small" />
                     </TableCell>
                     {/* Ghi chú */}
                     <TableCell>
@@ -1055,6 +1011,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Người nhận:</Typography>
                 <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.fullName || 'N/A'}</Typography>
+                <Typography variant="body2" color="text.secondary">Cân nặng: {selectedTransfusionForDetails.weight ? `${selectedTransfusionForDetails.weight} kg` : 'N/A'}</Typography>
+                <Typography variant="body2" color="text.secondary">Chiều cao: {selectedTransfusionForDetails.height ? `${selectedTransfusionForDetails.height} cm` : 'N/A'}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Nhóm máu:</Typography>
@@ -1089,6 +1047,10 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Người phụ trách:</Typography>
                 <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleById ? `Mã NV: ${selectedTransfusionForDetails.responsibleById}` : 'Chưa phân công'}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" color="text.secondary">Tên người phụ trách:</Typography>
+                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleByName || 'Chưa rõ'}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary">Tình trạng bệnh nhân:</Typography>

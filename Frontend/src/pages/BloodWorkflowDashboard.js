@@ -66,13 +66,7 @@ const BloodWorkflowDashboard = () => {
       icon: <AddIcon />,
       color: "primary",
     },
-    {
-      label: "Tìm kiếm máu",
-      description: "Tìm kiếm máu phù hợp trong kho hoặc huy động người hiến",
-      icon: <SearchIcon />,
-      color: "info",
-    },
-    // Đã xóa các bước: Xử lý trường hợp, Thực hiện truyền máu
+    // Đã xóa bước tìm kiếm máu
   ];
 
   useEffect(() => {
@@ -253,42 +247,12 @@ const BloodWorkflowDashboard = () => {
       {/* Main Content Tabs */}
       <Card>
         <CardContent sx={{ p: 0 }}>
-          <Tabs
-            value={currentTab}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ borderBottom: 1, borderColor: "divider" }}
-          >
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <AddIcon />
-                  <Typography>Yêu cầu cần máu</Typography>
-                </Box>
-              }
-            />
-            <Tab
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <SearchIcon />
-                  <Typography>Tìm kiếm máu</Typography>
-                </Box>
-              }
-            />
-          </Tabs>
-
-          {/* Chỉ giữ 1 lớp Box cho nội dung tab */}
-          {currentTab === 0 && (
-            <TransfusionManagement 
-              onApprovalComplete={handleApprovalComplete}
-              showCreateButton={true}
-              layoutProps={{ p: 3 }}
-            />
-          )}
-          {currentTab === 1 && (
-            <BloodSearch onSearchComplete={handleSearchComplete} />
-          )}
+          {/* Chỉ giữ 1 tab: Yêu cầu cần máu */}
+          <TransfusionManagement 
+            onApprovalComplete={handleApprovalComplete}
+            showCreateButton={true}
+            layoutProps={{ p: 3 }}
+          />
         </CardContent>
       </Card>
 

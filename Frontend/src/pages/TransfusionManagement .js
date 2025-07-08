@@ -40,6 +40,7 @@ import { useSelector } from 'react-redux';
 import { selectUser } from '../features/auth/authSlice';
 import axios from "axios";
 import { Autocomplete, createFilterOptions } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 // Thay thế useTransfusionStore bằng kết nối API thật và bổ sung các trường mới
 const useTransfusionStore = () => {
@@ -525,15 +526,13 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     } ${option.citizenNumber || ''} ${option.email || ''} ${option.phoneNumber || ''}`,
   });
 
+
+  const navigate = useNavigate();
+
   // Thêm hàm chuyển tab sang tìm kiếm máu (nếu có props hoặc context), hoặc mở dialog tạo yêu cầu huy động máu
   const handleConnectDonor = () => {
-    // Nếu có props chuyển tab từ cha thì gọi, ví dụ:
-    if (typeof window !== 'undefined') {
-      // Gợi ý: có thể dùng event hoặc context để chuyển tab ngoài dashboard
-      window.dispatchEvent(new CustomEvent('openBloodSearchTab'));
-    }
-    // Hoặc mở dialog tạo yêu cầu huy động máu ở đây nếu muốn
-    // setOpenCreateMobilizationDialog(true);
+    navigate("/blood-search");
+
   };
 
   return (
@@ -952,7 +951,9 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                   onClick={handleConnectDonor}
                   sx={{ mb: 2, alignSelf: 'flex-start' }}
                 >
-                  Kết nối người hiến máu
+
+                  Tìm người hiến phù hợp
+
                 </Button>
               </>
             ) : (

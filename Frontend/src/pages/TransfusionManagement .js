@@ -522,25 +522,57 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
 
   return (
     <Box {...layoutProps} sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", ...layoutProps?.sx }}>
-      {/* Bộ lọc và nút tạo mới */}
+      {/* Bộ lọc trạng thái dạng Paper giống DonationRequestManagement */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #9e9e9e' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
+          onClick={() => setStatusFilter('All')}
+          elevation={statusFilter === 'All' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Tất cả</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.length}</Typography>
+          <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Approved')}
+          elevation={statusFilter === 'Approved' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Approved').length}</Typography>
+          <Chip label="Đã duyệt" color="warning" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Completed')}
+          elevation={statusFilter === 'Completed' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Hoàn thành</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Completed').length}</Typography>
+          <Chip label="Hoàn thành" color="success" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 4 : 1 }}
+          onClick={() => setStatusFilter('Rejected')}
+          elevation={(statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Đã từ chối/Hủy</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length}</Typography>
+          <Chip label="Đã từ chối/Hủy" color="error" sx={{ mt: 1 }} />
+        </Paper>
+        <Paper
+          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
+          onClick={() => setStatusFilter('Pending')}
+          elevation={statusFilter === 'Pending' ? 6 : 1}
+        >
+          <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
+          <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Pending').length}</Typography>
+          <Chip label="Chờ duyệt" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
+        </Paper>
+      </Box>
+      {/* Bộ lọc ngày và nút tạo mới giữ nguyên */}
       <Card sx={{ mb: 2, p: 2 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
-          {/* Status Filter */}
-          <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Trạng thái</InputLabel>
-            <Select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              label="Trạng thái"
-            >
-              <MenuItem value="All">Tất cả</MenuItem>
-              {statusOptions.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {transfusionStatusTranslations[status] || status}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
           {/* Date Range Filter */}
           <TextField
             label="Từ ngày"

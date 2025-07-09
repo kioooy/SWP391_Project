@@ -102,7 +102,7 @@ const DonorMobilization = () => {
                 startIcon={sending ? <CircularProgress size={20} /> : null}
                 fullWidth
               >
-                {sending ? "Đang gửi..." : "Gửi thông báo broadcast"}
+                {sending ? "Đang gửi..." : "Gửi thông báo tới tất cả người hiến đủ điều kiện"}
               </Button>
             </Grid>
           </Grid>

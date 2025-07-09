@@ -138,6 +138,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     TransfusionVolume: "",
     Notes: "",
   });
+  const [createFormError, setCreateFormError] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [newlyCreatedId, setNewlyCreatedId] = useState(null); // Track newly created request
   const [statusFilter, setStatusFilter] = useState("All"); // Filter for status
@@ -991,7 +992,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               </Box>
             )}
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Tổng thể tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
+              Tổng dung tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
             </Typography>
             <TextField
               label="Ghi chú duyệt (Tùy chọn)"
@@ -1211,10 +1212,35 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             <TextField
               label="Lượng máu (ml)"
               value={createForm.TransfusionVolume}
-              onChange={e => setCreateForm({ ...createForm, TransfusionVolume: e.target.value.replace(/[^0-9]/g, '') })}
+              onChange={e => {
+                let value = e.target.value.replace(/[^0-9]/g, '');
+                // Giới hạn lượng máu nếu thành phần là Hồng cầu, Huyết tương, Tiểu cầu
+                const selectedComponent = bloodComponents.find(bc => String(bc.componentId) === String(createForm.BloodComponentId));
+                const limitedComponents = ["Red Blood Cells", "Plasma", "Platelets"];
+                if (selectedComponent && limitedComponents.includes(selectedComponent.componentName)) {
+                  if (value !== '' && Number(value) > 300) {
+                    value = '300';
+                    setCreateFormError("Lượng máu tối đa cho thành phần này là 300ml");
+                  } else {
+                    setCreateFormError("");
+                  }
+                } else {
+                  setCreateFormError("");
+                }
+                setCreateForm({ ...createForm, TransfusionVolume: value });
+              }}
               required
               type="number"
-              inputProps={{ min: 1 }}
+              inputProps={{ min: 1, max: (() => {
+                const selectedComponent = bloodComponents.find(bc => String(bc.componentId) === String(createForm.BloodComponentId));
+                const limitedComponents = ["Red Blood Cells", "Plasma", "Platelets"];
+                if (selectedComponent && limitedComponents.includes(selectedComponent.componentName)) {
+                  return 300;
+                }
+                return undefined;
+              })() }}
+              error={!!createFormError}
+              helperText={createFormError}
             />
             <TextField
               label="Ghi chú"

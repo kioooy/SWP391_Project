@@ -79,6 +79,15 @@ const BloodSearch = ({ onSearchComplete }) => {
     "Platelets": "Tiểu cầu",
   };
 
+  // Đối tượng ánh xạ dịch thuật cho trạng thái máu
+  const bloodStatusTranslations = {
+    "Available": "Có sẵn",
+    "Reserved": "Đã đặt",
+    "Used": "Đã sử dụng",
+    "Expired": "Hết hạn",
+    // Thêm các trạng thái khác nếu có
+  };
+
   useEffect(() => {
     const fetchBloodTypes = async () => {
       try {
@@ -308,7 +317,7 @@ const BloodSearch = ({ onSearchComplete }) => {
                               <TableCell>{formatDateTime(unit.expiryDate)}</TableCell>
                               <TableCell>
                                 <Chip 
-                                  label={unit.bloodStatus} 
+                                  label={bloodStatusTranslations[unit.bloodStatus] || unit.bloodStatus} 
                                   color={unit.bloodStatus === "Available" ? "success" : "warning"} 
                                   size="small" 
                                 />

@@ -195,12 +195,9 @@ const BloodWorkflowDashboard = () => {
     <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-        Quản Lý Quy Trình Hiến Máu Toàn Diện
+        Quản Lý Quy Trình Hiến Máu
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Dashboard tích hợp quản lý từ yêu cầu cần máu đến hoàn tất hiến máu
-      </Typography>
-
+    
       {/* Workflow Stepper */}
       <Card sx={{ mb: 3 }}>
         <CardContent>

@@ -41,6 +41,7 @@ public class BloodSearchController : ControllerBase
         var compatibleBloodTypeIds = await compatibleBloodTypeIdsQuery
             .Select(r => r.BloodGiveId)
             .ToListAsync();
+        Console.WriteLine($"[DEBUG] compatibleBloodTypeIds: {string.Join(",", compatibleBloodTypeIds)}");
 
         // Lấy tất cả members trước, sau đó filter trên memory để tránh lỗi LINQ translation
         var allMembers = await _context.Members
@@ -61,15 +62,22 @@ public class BloodSearchController : ControllerBase
                 m.IsDonor,
                 m.IsRecipient,
                 m.DonationCount,
-                m.Location
+                m.Location,
+                PhoneNumber = m.User.PhoneNumber
             })
             .ToListAsync();
+        Console.WriteLine($"[DEBUG] allMembers.Count = {allMembers.Count}");
+        foreach (var m in allMembers)
+        {
+            Console.WriteLine($"[DEBUG] allMember: UserId={m.UserId}, BloodTypeId={m.BloodTypeId}, IsDonor={m.IsDonor}, LastDonationDate={m.LastDonationDate}");
+        }
 
         // Lấy transfusion requests để check
         var completedTransfusions = await _context.TransfusionRequests
             .Where(tr => tr.Status == "Completed" && tr.CompletionDate.HasValue)
             .Select(tr => new { tr.MemberId, tr.CompletionDate })
             .ToListAsync();
+        Console.WriteLine($"[DEBUG] completedTransfusions.Count = {completedTransfusions.Count}");
 
         // Filter trên memory - sử dụng DateTime comparison thay vì EF.Functions
         var donorsFromDb = allMembers.Where(m => 
@@ -80,6 +88,11 @@ public class BloodSearchController : ControllerBase
                 tr.CompletionDate.HasValue && 
                 (now - tr.CompletionDate.Value).TotalDays < 365)
         ).ToList();
+        Console.WriteLine($"[DEBUG] donorsFromDb.Count = {donorsFromDb.Count}");
+        foreach (var d in donorsFromDb)
+        {
+            Console.WriteLine($"[DEBUG] donor: UserId={d.UserId}, LastDonationDate={d.LastDonationDate}");
+        }
 
         var suggestedDonors = donorsFromDb
             .Select(m =>
@@ -96,42 +109,26 @@ public class BloodSearchController : ControllerBase
                     m.IsDonor,
                     m.IsRecipient,
                     m.DonationCount,
+                    m.PhoneNumber
                 };
             })
             .ToList<object>();
+        Console.WriteLine($"[DEBUG] suggestedDonors.Count = {suggestedDonors.Count}");
 
         return suggestedDonors;
     }
 
-    [HttpGet("search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}")]
-    public async Task<IActionResult> SearchBloodWithHospitalLocation(
+    // API duy nhất: Tìm máu trong kho, nếu không có thì trả về luôn suggestedDonors
+    [HttpGet("search-blood-units/{recipientBloodTypeId}/{requiredVolume}")]
+    public async Task<IActionResult> SearchBloodUnits(
         int recipientBloodTypeId, 
         int requiredVolume,
-        [FromQuery] string? component = null)
+        [FromQuery] int? componentId = null)
     {
         try
         {
-            int? targetComponentId = null;
+            int? targetComponentId = componentId;
 
-            if (!string.IsNullOrWhiteSpace(component))
-            {
-                if (component.Equals("whole-blood", StringComparison.OrdinalIgnoreCase) || 
-                    component.Equals("whole blood", StringComparison.OrdinalIgnoreCase))
-                {
-                    targetComponentId = null; // Máu toàn phần
-                }
-                else
-                {
-                    var componentEntry = await _context.BloodComponents
-                                                .FirstOrDefaultAsync(c => c.ComponentName.ToLower() == component.ToLower());
-
-                    if (componentEntry == null)
-                        return BadRequest("Invalid component type.");
-                    
-                    targetComponentId = componentEntry.ComponentId;
-                }
-            }
-            
             var hospital = await _context.Hospitals.FirstOrDefaultAsync();
             if (hospital?.Location == null)
             {
@@ -157,19 +154,17 @@ public class BloodSearchController : ControllerBase
                     bu.ExpiryDate
                 })
                 .ToListAsync();
+            Console.WriteLine($"[DEBUG] availableBloodUnits.Count = {availableBloodUnits.Count}");
 
-            if (availableBloodUnits.Any())
+            List<object> suggestedDonors = new List<object>();
+            if (!availableBloodUnits.Any())
             {
-                return Ok(new {
-                    availableBloodUnits,
-                    suggestedDonors = new object[0]
-                });
+                Console.WriteLine($"[DEBUG] Không có máu phù hợp, gọi FindAndRankDonors");
+                suggestedDonors = await FindAndRankDonors(recipientBloodTypeId, null);
             }
-            
-            var suggestedDonors = await FindAndRankDonors(recipientBloodTypeId, targetComponentId);
 
             return Ok(new {
-                availableBloodUnits = new object[0],
+                availableBloodUnits,
                 suggestedDonors
             });
         }

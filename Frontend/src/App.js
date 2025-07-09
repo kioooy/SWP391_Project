@@ -46,6 +46,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
 import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
 import BloodWorkflowDashboard from "./pages/BloodWorkflowDashboard";
+import DonorMobilization from "./pages/DonorMobilization";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -240,6 +241,14 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <BloodSearch />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/donor-mobilization"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <DonorMobilization />
             </RequireAuth>
           }
         />

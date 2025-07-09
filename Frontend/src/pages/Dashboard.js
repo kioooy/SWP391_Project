@@ -19,10 +19,17 @@ const Dashboard = () => {
   const [transfusionAnalytics, setTransfusionAnalytics] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
 
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
     const fetchApi = async (url, setter, emptyValue = null) => {
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) {
           setter(emptyValue);
           return;
@@ -38,11 +45,11 @@ const Dashboard = () => {
       }
     };
 
-    fetchApi('/api/Dashboard/total-number', setSummary, null);
-    fetchApi('/api/Dashboard/blood-inventory', setBloodInventory, null);
-    fetchApi('/api/Dashboard/donation-analytics', setDonationAnalytics, null);
-    fetchApi('/api/Dashboard/transfusion-analytics', setTransfusionAnalytics, null);
-    fetchApi('/api/Dashboard/recent-activity', setRecentActivity, []);
+    fetchApi(`${API_URL}/Dashboard/total-number`, setSummary, null);
+    fetchApi(`${API_URL}/Dashboard/blood-inventory`, setBloodInventory, null);
+    fetchApi(`${API_URL}/Dashboard/donation-analytics`, setDonationAnalytics, null);
+    fetchApi(`${API_URL}/Dashboard/transfusion-analytics`, setTransfusionAnalytics, null);
+    fetchApi(`${API_URL}/Dashboard/recent-activity`, setRecentActivity, []);
   }, []);
 
   const getStatusChip = (status) => {
@@ -92,50 +99,50 @@ const Dashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Bloodtype sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-              <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Bloodtype sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                <Box>
                 <Typography variant="h6" color="text.secondary">Đơn vị máu</Typography>
                 <Typography variant="h4">{summary?.totalBloodUnits ?? '-'}</Typography>
+                </Box>
               </Box>
-            </Box>
-            <LinearProgress variant="determinate" value={70} />
+              <LinearProgress variant="determinate" value={70} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Đạt 70% mục tiêu</Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <People sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
-              <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <People sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
+                <Box>
                 <Typography variant="h6" color="text.secondary">Thành viên</Typography>
                 <Typography variant="h4">{summary?.totalMembers ?? '-'}</Typography>
+                </Box>
               </Box>
-            </Box>
-            <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
               <TrendingUp sx={{ mr: 0.5 }} />Tăng so với tháng trước
-            </Typography>
+              </Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <LocalHospital sx={{ fontSize: 40, color: 'error.main', mr: 2 }} />
-              <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <LocalHospital sx={{ fontSize: 40, color: 'error.main', mr: 2 }} />
+                <Box>
                 <Typography variant="h6" color="text.secondary">Yêu cầu hiến máu</Typography>
                 <Typography variant="h4">{summary?.totalDonationRequests ?? '-'}</Typography>
+                </Box>
               </Box>
-            </Box>
-            <Typography variant="body2" color="error.main" sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="body2" color="error.main" sx={{ display: 'flex', alignItems: 'center' }}>
               <TrendingDown sx={{ mr: 0.5 }} />Giảm so với tháng trước
-            </Typography>
+              </Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <Card><CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <CalendarToday sx={{ fontSize: 40, color: 'warning.main', mr: 2 }} />
-              <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <CalendarToday sx={{ fontSize: 40, color: 'warning.main', mr: 2 }} />
+                <Box>
                 <Typography variant="h6" color="text.secondary">Yêu cầu truyền máu</Typography>
                 <Typography variant="h4">{summary?.totalTransfusionRequests ?? '-'}</Typography>
               </Box>
@@ -147,7 +154,7 @@ const Dashboard = () => {
 
       {/* Blood Inventory */}
       <Card sx={{ mb: 4 }}>
-        <CardContent>
+            <CardContent>
           <Typography variant="h6" gutterBottom>Thống kê kho máu</Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
@@ -193,8 +200,8 @@ const Dashboard = () => {
               </TableContainer>
             </Grid>
           </Grid>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
       {/* Donation Analytics */}
       <Card sx={{ mb: 4 }}>
@@ -225,8 +232,8 @@ const Dashboard = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-            </Grid>
-            <Grid item xs={12} md={4}>
+        </Grid>
+        <Grid item xs={12} md={4}>
               <Typography variant="subtitle1">Top nhân viên phụ trách</Typography>
               <TableContainer>
                 <Table size="small">
@@ -248,12 +255,12 @@ const Dashboard = () => {
               </TableContainer>
             </Grid>
           </Grid>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
       {/* Transfusion Analytics */}
       <Card sx={{ mb: 4 }}>
-        <CardContent>
+            <CardContent>
           <Typography variant="h6" gutterBottom>Thống kê truyền máu</Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} md={4}>
@@ -325,7 +332,7 @@ const Dashboard = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-            </Grid>
+        </Grid>
             <Grid item xs={12} md={4}>
               <Typography variant="subtitle1">Top nhóm máu truyền</Typography>
               <TableContainer>
@@ -391,13 +398,13 @@ const Dashboard = () => {
                     <TableCell>{row.type}</TableCell>
                     <TableCell>{row.requestDate?.slice(0, 10)}</TableCell>
                     <TableCell>{getStatusChip(row.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
     </Container>
   );
 };

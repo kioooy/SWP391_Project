@@ -59,8 +59,14 @@ const ArticleManage = () => {
           },
         });
         const data = res.data;
-        setArticles(data);
-        setFilteredArticles(data);
+        // Sắp xếp: active trước, inactive sau
+        const sorted = [...data].sort((a, b) => {
+          const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+          const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+          return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+        });
+        setArticles(sorted);
+        setFilteredArticles(sorted);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách bài viết:", error);
       }
@@ -84,9 +90,15 @@ const ArticleManage = () => {
     const value = e.target.value;
     setSearchTerm(value);
     const filtered = articles.filter((a) =>
-      a.Title.toLowerCase().includes(value.toLowerCase())
+      (a.Title || a.title || '').toLowerCase().includes(value.toLowerCase())
     );
-    setFilteredArticles(filtered);
+    // Sắp xếp lại: active trước, inactive sau
+    const sorted = [...filtered].sort((a, b) => {
+      const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+      const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+      return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+    });
+    setFilteredArticles(sorted);
   };
 
   const handleViewDetail = (id) => {
@@ -225,8 +237,14 @@ const ArticleManage = () => {
       const res = await axios.get(`${API_URL}/Article/admin`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setArticles(res.data);
-      setFilteredArticles(res.data);
+      // Sắp xếp lại: active trước, inactive sau
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setArticles(sorted);
+      setFilteredArticles(sorted);
       setSnackbar({ open: true, message: `✅ Cập nhật trạng thái bài viết thành công!`, severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật trạng thái bài viết!', severity: 'error' });
@@ -252,8 +270,14 @@ const ArticleManage = () => {
       const res = await axios.get(`${API_URL}/Article/admin`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setArticles(res.data);
-      setFilteredArticles(res.data);
+      // Sắp xếp lại: active trước, inactive sau
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setArticles(sorted);
+      setFilteredArticles(sorted);
       setPage(0);
       setSnackbar({ 
         open: true, 
@@ -317,7 +341,14 @@ const ArticleManage = () => {
           </TableHead>
           <TableBody>
             {paginatedArticles.map((article) => (
-              <TableRow key={article.ArticleId || article.articleId}>
+              <TableRow
+                key={article.ArticleId || article.articleId}
+                style={
+                  article.isActive === false || article.IsActive === false
+                    ? { backgroundColor: '#f5f5f5', color: '#aaa' }
+                    : {}
+                }
+              >
                 <TableCell>{article.Title || article.title}</TableCell>
                 <TableCell>
                   {(article.Status || article.status)

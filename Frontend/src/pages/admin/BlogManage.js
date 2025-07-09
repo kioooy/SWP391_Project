@@ -25,6 +25,7 @@ import axios from "axios";
 const BlogManage = () => {
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [blogs, setBlogs] = useState([]);
@@ -53,8 +54,14 @@ const BlogManage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setBlogs(res.data);
-        setFilteredBlogs(res.data);
+        // Sắp xếp: blog active lên trước, inactive xuống cuối
+        const sorted = [...res.data].sort((a, b) => {
+          const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+          const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+          return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+        });
+        setBlogs(sorted);
+        setFilteredBlogs(sorted);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách blogs:", error);
       }
@@ -74,9 +81,15 @@ const BlogManage = () => {
     const value = e.target.value;
     setSearchTerm(value);
     const filtered = blogs.filter((b) =>
-      b.Title.toLowerCase().includes(value.toLowerCase())
+      (b.Title || b.title || '').toLowerCase().includes(value.toLowerCase())
     );
-    setFilteredBlogs(filtered);
+    // Sắp xếp lại: active trước, inactive sau
+    const sorted = [...filtered].sort((a, b) => {
+      const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+      const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+      return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+    });
+    setFilteredBlogs(sorted);
   };
 
   const handleCreate = async () => {
@@ -91,7 +104,7 @@ const BlogManage = () => {
       const res = await axios.post(
         `${API_URL}/Blog`,
         {
-          // userId: currentUserId,
+          userId: user?.UserId || user?.userId,
           title: Title,
           content: Content,
           imageUrl: ImageUrl,
@@ -218,8 +231,14 @@ const BlogManage = () => {
       const res = await axios.get(`${API_URL}/Blog/admin`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBlogs(res.data);
-      setFilteredBlogs(res.data);
+      // Sắp xếp lại: active trước, inactive sau
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setBlogs(sorted);
+      setFilteredBlogs(sorted);
       setPage(0);
       setSnackbarOpen(true);
       setSnackbarMessage(value === 'inactive' ? '🛑 Đã vô hiệu hóa blog!' : '✅ Đã kích hoạt blog!');
@@ -276,7 +295,14 @@ const BlogManage = () => {
             {filteredBlogs
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((b, idx) => (
-                <TableRow key={b.PostId || b.postId || idx}>
+                <TableRow
+                  key={b.PostId || b.postId || idx}
+                  style={
+                    b.isActive === false || b.IsActive === false
+                      ? { backgroundColor: '#f5f5f5', color: '#aaa' }
+                      : {}
+                  }
+                >
                   <TableCell>{b.Title || b.title}</TableCell>
                   <TableCell>
                     {b.status === 'Published'
@@ -300,22 +326,22 @@ const BlogManage = () => {
                   <TableCell>{b.UpdatedDate || b.updatedDate}</TableCell>
                   <TableCell>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
+                    <Button
+                      size="small"
+                      variant="outlined"
                         color="primary"
                         onClick={() => handleViewDetail(b)}
-                      >
+                    >
                         Xem
-                      </Button>
-                      <Button
-                        size="small"
+                    </Button>
+                    <Button
+                      size="small"
                         variant="contained"
                         color="primary"
                         onClick={() => handleEdit(b)}
                       >
                         Sửa
-                      </Button>
+                    </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -367,6 +393,15 @@ const BlogManage = () => {
               setNewBlog({ ...newBlog, ImageUrl: e.target.value })
             }
           />
+          <Select
+            label="Trạng thái"
+            value={newBlog.Status}
+            onChange={(e) => setNewBlog({ ...newBlog, Status: e.target.value })}
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value="Published">Đã xuất bản</MenuItem>
+            <MenuItem value="Draft">Bản nháp</MenuItem>
+          </Select>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -474,8 +509,12 @@ const BlogManage = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity="success">
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarMessage.includes('vô hiệu hóa') ? 'warning' : 'success'}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

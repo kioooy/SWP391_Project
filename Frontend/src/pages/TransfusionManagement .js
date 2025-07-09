@@ -489,7 +489,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       try {
         // Lấy danh sách member
         const resMembers = await axios.get("/api/User/members", { headers: { Authorization: `Bearer ${token}` } });
-        setMembers(resMembers.data || []);
+        setMembers((resMembers.data || []).filter(m => m.isRecipient === true));
         console.log("Fetched members for dropdown:", resMembers.data); // Debug log
         // Lấy danh sách nhóm máu
         const resBloodTypes = await axios.get("/api/BloodType", { headers: { Authorization: `Bearer ${token}` } });
@@ -1211,10 +1211,14 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             <TextField
               label="Lượng máu (ml)"
               value={createForm.TransfusionVolume}
-              onChange={e => setCreateForm({ ...createForm, TransfusionVolume: e.target.value.replace(/[^0-9]/g, '') })}
+              onChange={e => {
+                let val = e.target.value.replace(/[^0-9]/g, '');
+                if (val !== '' && Number(val) > 300) val = '300';
+                setCreateForm({ ...createForm, TransfusionVolume: val });
+              }}
               required
               type="number"
-              inputProps={{ min: 1 }}
+              inputProps={{ min: 1, max: 300 }}
             />
             <TextField
               label="Ghi chú"
@@ -1233,6 +1237,10 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               // Validate
               if (!createForm.MemberId || !createForm.BloodTypeId || !createForm.BloodComponentId || !createForm.TransfusionVolume) {
                 setSnackbar({ open: true, message: "Vui lòng nhập đầy đủ thông tin!", severity: "error" });
+                return;
+              }
+              if (Number(createForm.TransfusionVolume) > 300) {
+                setSnackbar({ open: true, message: "Số lượng máu tối đa là 300ml!", severity: "error" });
                 return;
               }
               setCreateLoading(true);

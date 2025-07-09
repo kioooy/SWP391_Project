@@ -623,7 +623,10 @@ namespace Blood_Donation_Support.Controllers
                     fullName = m.User != null ? m.User.FullName : null,
                     citizenNumber = m.User != null ? m.User.CitizenNumber : null,
                     email = m.User != null ? m.User.Email : null,
-                    bloodTypeId = m.BloodTypeId
+                    bloodTypeId = m.BloodTypeId,
+                    isRecipient = m.IsRecipient,
+                    isDonor = m.IsDonor,
+                    role = m.User != null && m.User.Role != null ? m.User.Role.Name : null
                 })
                 .ToListAsync();
 

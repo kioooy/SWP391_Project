@@ -22,6 +22,13 @@ import {
 } from "@mui/material";
 import axios from "axios";
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const pad = n => n.toString().padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+};
+
 const BlogManage = () => {
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
   const token = localStorage.getItem("token");
@@ -45,6 +52,8 @@ const BlogManage = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [newBlogImagePreview, setNewBlogImagePreview] = useState("");
+  const [editBlogImagePreview, setEditBlogImagePreview] = useState("");
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -255,8 +264,8 @@ const BlogManage = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      <Typography variant="h5" gutterBottom>
-        📝 Quản lý blog
+      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#E53935', mb: 4 }}>
+        Quản Lý Blog
       </Typography>
 
       <div
@@ -322,8 +331,8 @@ const BlogManage = () => {
                       <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
                     </Select>
                   </TableCell>
-                  <TableCell>{b.PublishedDate || b.publishedDate}</TableCell>
-                  <TableCell>{b.UpdatedDate || b.updatedDate}</TableCell>
+                  <TableCell>{formatDateTime(b.PublishedDate || b.publishedDate)}</TableCell>
+                  <TableCell>{formatDateTime(b.UpdatedDate || b.updatedDate)}</TableCell>
                   <TableCell>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button
@@ -389,10 +398,37 @@ const BlogManage = () => {
             label="URL ảnh"
             fullWidth
             value={newBlog.ImageUrl}
-            onChange={(e) =>
-              setNewBlog({ ...newBlog, ImageUrl: e.target.value })
-            }
+            onChange={e => {
+              setNewBlog({ ...newBlog, ImageUrl: e.target.value });
+              setNewBlogImagePreview("");
+            }}
           />
+          <input
+            accept="image/jpeg,image/png"
+            type="file"
+            style={{ marginTop: 8 }}
+            onChange={e => {
+              const file = e.target.files[0];
+              if (!file) return;
+              if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                return;
+              }
+              if (file.size > 1024 * 1024) {
+                alert('Ảnh phải nhỏ hơn 1MB!');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = ev => {
+                setNewBlogImagePreview(ev.target.result);
+                setNewBlog({ ...newBlog, ImageUrl: ev.target.result });
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          {newBlogImagePreview && (
+            <img src={newBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          )}
           <Select
             label="Trạng thái"
             value={newBlog.Status}
@@ -447,8 +483,37 @@ const BlogManage = () => {
             label="URL ảnh"
             fullWidth
             value={editBlog?.imageUrl || ''}
-            onChange={(e) => setEditBlog({ ...editBlog, imageUrl: e.target.value })}
+            onChange={e => {
+              setEditBlog({ ...editBlog, imageUrl: e.target.value });
+              setEditBlogImagePreview("");
+            }}
           />
+          <input
+            accept="image/jpeg,image/png"
+            type="file"
+            style={{ marginTop: 8 }}
+            onChange={e => {
+              const file = e.target.files[0];
+              if (!file) return;
+              if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                return;
+              }
+              if (file.size > 1024 * 1024) {
+                alert('Ảnh phải nhỏ hơn 1MB!');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = ev => {
+                setEditBlogImagePreview(ev.target.result);
+                setEditBlog({ ...editBlog, imageUrl: ev.target.result });
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          {editBlogImagePreview && (
+            <img src={editBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
@@ -492,10 +557,10 @@ const BlogManage = () => {
                 <strong>🔒 Kích hoạt:</strong> {(selectedBlog.IsActive === true || selectedBlog.isActive === true) ? 'Có' : (selectedBlog.IsActive === false || selectedBlog.isActive === false) ? 'Không' : 'Không xác định'}
               </div>
               <div>
-                <strong>📅 Ngày đăng:</strong> {selectedBlog.PublishedDate || selectedBlog.publishedDate}
+                <strong>📅 Ngày đăng:</strong> {formatDateTime(selectedBlog.PublishedDate || selectedBlog.publishedDate)}
               </div>
               <div>
-                <strong>🔄 Cập nhật:</strong> {selectedBlog.UpdatedDate || selectedBlog.updatedDate}
+                <strong>🔄 Cập nhật:</strong> {formatDateTime(selectedBlog.UpdatedDate || selectedBlog.updatedDate)}
               </div>
             </div>
           )}

@@ -589,7 +589,7 @@ const UserProfile = () => {
                   <Chip label="Không xác định loại tài khoản" color="warning" sx={{ mb: 1, fontWeight: 'bold' }} />
                 )}
                 <Chip
-                  icon={<Bloodtype />}
+                  icon={<Bloodtype sx={{ fontSize: 20 }} />}
                   label={`Nhóm máu ${formData.bloodType}`}
                   color="error"
                   sx={{ mb: 1 }}
@@ -618,15 +618,15 @@ const UserProfile = () => {
                   Thông tin liên hệ
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <Phone sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+                  <Phone sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.phone}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+                  <Email sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.email}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
+                  <LocationOn sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
 
@@ -660,31 +660,31 @@ const UserProfile = () => {
                   Thông tin cá nhân
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Badge sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Số CMND:</strong> {formData.citizenNumber || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Cake sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Ngày sinh:</strong> {formData.dateOfBirth || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Wc sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Giới tính:</strong> {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Height sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Height sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Chiều cao:</strong> {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Cân nặng:</strong> {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}
                   </Typography>

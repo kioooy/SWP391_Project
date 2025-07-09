@@ -26,6 +26,13 @@ import {
 } from "@mui/material";
 import axios from "axios";
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const pad = n => n.toString().padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+};
+
 const ArticleManage = () => {
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
   const token = localStorage.getItem("token");
@@ -47,6 +54,8 @@ const ArticleManage = () => {
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [newArticleImagePreview, setNewArticleImagePreview] = useState("");
+  const [editArticleImagePreview, setEditArticleImagePreview] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -291,8 +300,8 @@ const ArticleManage = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      <Typography variant="h5" style={{ marginBottom: 16 }}>
-        📝 Quản lý bài viết
+      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#E53935', mb: 4 }}>
+        Quản Lý Tài Liệu
       </Typography>
 
       <div
@@ -368,8 +377,8 @@ const ArticleManage = () => {
                     <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
                   </Select>
                 </TableCell>
-                <TableCell>{article.PublishedDate || article.publishedDate}</TableCell>
-                <TableCell>{article.UpdatedDate || article.updatedDate}</TableCell>
+                <TableCell>{formatDateTime(article.PublishedDate || article.publishedDate)}</TableCell>
+                <TableCell>{formatDateTime(article.UpdatedDate || article.updatedDate)}</TableCell>
                 <TableCell>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button
@@ -444,10 +453,10 @@ const ArticleManage = () => {
                     : 'Không xác định'}
               </div>
               <div>
-                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate || selectedArticle.publishedDate}
+                <strong>📅 Ngày đăng:</strong> {formatDateTime(selectedArticle.PublishedDate || selectedArticle.publishedDate)}
               </div>
               <div>
-                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate || selectedArticle.updatedDate}
+                <strong>🔄 Cập nhật:</strong> {formatDateTime(selectedArticle.UpdatedDate || selectedArticle.updatedDate)}
               </div>
             </div>
           </DialogContent>
@@ -514,6 +523,41 @@ const ArticleManage = () => {
               <MenuItem value="Published">Published</MenuItem>
             </Select>
           </FormControl>
+          <TextField
+            label="URL ảnh"
+            fullWidth
+            value={newArticle.ImageUrl || ''}
+            onChange={e => {
+              setNewArticle({ ...newArticle, ImageUrl: e.target.value });
+              setNewArticleImagePreview("");
+            }}
+          />
+          <input
+            accept="image/jpeg,image/png"
+            type="file"
+            style={{ marginTop: 8 }}
+            onChange={e => {
+              const file = e.target.files[0];
+              if (!file) return;
+              if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                return;
+              }
+              if (file.size > 1024 * 1024) {
+                alert('Ảnh phải nhỏ hơn 1MB!');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = ev => {
+                setNewArticleImagePreview(ev.target.result);
+                setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          {newArticleImagePreview && (
+            <img src={newArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -558,6 +602,41 @@ const ArticleManage = () => {
               <MenuItem value="Published">Đã xuất bản</MenuItem>
             </Select>
           </FormControl>
+          <TextField
+            label="URL ảnh"
+            fullWidth
+            value={editArticle?.ImageUrl || ''}
+            onChange={e => {
+              setEditArticle({ ...editArticle, ImageUrl: e.target.value });
+              setEditArticleImagePreview("");
+            }}
+          />
+          <input
+            accept="image/jpeg,image/png"
+            type="file"
+            style={{ marginTop: 8 }}
+            onChange={e => {
+              const file = e.target.files[0];
+              if (!file) return;
+              if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                return;
+              }
+              if (file.size > 1024 * 1024) {
+                alert('Ảnh phải nhỏ hơn 1MB!');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = ev => {
+                setEditArticleImagePreview(ev.target.result);
+                setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          {editArticleImagePreview && (
+            <img src={editArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>

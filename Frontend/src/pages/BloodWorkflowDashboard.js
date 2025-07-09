@@ -60,13 +60,7 @@ const BloodWorkflowDashboard = () => {
   });
 
   const steps = [
-    {
-      label: "Yêu cầu cần máu",
-      description: "Tạo và quản lý yêu cầu cần máu từ bệnh nhân",
-      icon: <AddIcon />,
-      color: "primary",
-    },
-    // Đã xóa bước tìm kiếm máu
+    // Đã xóa bước yêu cầu cần máu
   ];
 
   useEffect(() => {
@@ -195,54 +189,8 @@ const BloodWorkflowDashboard = () => {
     <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-        Quản Lý Quy Trình Hiến Máu Toàn Diện
+        Quản Lý Quy Trình Truyền Máu
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Dashboard tích hợp quản lý từ yêu cầu cần máu đến hoàn tất hiến máu
-      </Typography>
-
-      {/* Workflow Stepper */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Stepper activeStep={activeStep} orientation="horizontal">
-            {steps.map((step, index) => (
-              <Step key={index} completed={getStepStatus(index) === "completed"}>
-                <StepLabel
-                  icon={
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        bgcolor: getStepColor(index) === "success" ? "success.main" : 
-                                getStepColor(index) === "primary" ? "primary.main" :
-                                getStepColor(index) === "info" ? "info.main" :
-                                getStepColor(index) === "warning" ? "warning.main" :
-                                "grey.300",
-                        color: "white",
-                      }}
-                    >
-                      {step.icon}
-                    </Box>
-                  }
-                  onClick={() => handleStepChange(index)}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {step.label}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {step.description}
-                  </Typography>
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </CardContent>
-      </Card>
 
       {/* Main Content Tabs */}
       <Card>

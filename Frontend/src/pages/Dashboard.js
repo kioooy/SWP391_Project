@@ -89,6 +89,14 @@ const Dashboard = () => {
   const componentTransfusion = transfusionAnalytics?.component || [];
   const totalTransfusionVolume = transfusionAnalytics?.totalDonationVolume || 0;
 
+  // Đối tượng ánh xạ dịch thuật cho thành phần máu
+  const bloodComponentTranslations = {
+    "Whole Blood": "Máu toàn phần",
+    "Red Blood Cells": "Hồng cầu",
+    "Plasma": "Huyết tương",
+    "Platelets": "Tiểu cầu",
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -191,7 +199,7 @@ const Dashboard = () => {
                   <TableBody>
                     {bloodByComponent.map((row) => (
                       <TableRow key={row.componentId}>
-                        <TableCell>{row.componentName}</TableCell>
+                        <TableCell>{bloodComponentTranslations[row.componentName] || row.componentName}</TableCell>
                         <TableCell align="right">{row.count}</TableCell>
                       </TableRow>
                     ))}
@@ -367,7 +375,7 @@ const Dashboard = () => {
                   <TableBody>
                     {componentTransfusion.map((row, idx) => (
                       <TableRow key={idx}>
-                        <TableCell>{row.componentName}</TableCell>
+                        <TableCell>{bloodComponentTranslations[row.componentName] || row.componentName}</TableCell>
                         <TableCell align="right">{row.count}</TableCell>
                       </TableRow>
                     ))}

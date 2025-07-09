@@ -47,6 +47,7 @@ import StaffProfile from "./pages/StaffProfile";
 import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
 import BloodWorkflowDashboard from "./pages/BloodWorkflowDashboard";
 import DonorMobilization from "./pages/DonorMobilization";
+import UrgentRequestManage from "./pages/admin/UrgentRequestManage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -79,7 +80,6 @@ const App = () => {
         <Route path="/article" element={<Article />} />
         <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
-        <Route path="/booking-transfusion" element={<BookingTransfusion />} />
         <Route path="/transfusion-history" element={<TransfusionHistory />} />
         <Route
           path="/profile"
@@ -188,6 +188,14 @@ const App = () => {
           }
         />
         <Route
+          path="/manage-urgent-request"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <UrgentRequestManage />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/emergency-transfusion"
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
@@ -249,6 +257,14 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <DonorMobilization />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/booking-transfusion"
+          element={
+            <RequireAuth roles={["Staff"]}>
+              <BookingTransfusion />
             </RequireAuth>
           }
         />

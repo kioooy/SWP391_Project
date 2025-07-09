@@ -17,6 +17,7 @@ const DonorMobilization = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [notifiedDonors, setNotifiedDonors] = useState([]);
 
   useEffect(() => {
     const fetchBloodTypes = async () => {
@@ -66,9 +67,10 @@ const DonorMobilization = () => {
     setSending(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.post("/api/BloodSearch/notify-all-donors", { message }, { headers: { Authorization: `Bearer ${token}` } });
-      setSnackbar({ open: true, message: "Đã gửi thông báo đến tất cả người hiến đủ điều kiện!", severity: "success" });
+      const response = await axios.post("/api/BloodSearch/notify-all-donors", { message }, { headers: { Authorization: `Bearer ${token}` } });
+      setSnackbar({ open: true, message: response.data.message || "Đã gửi thông báo đến tất cả người hiến đủ điều kiện!", severity: "success" });
       setMessage("");
+      setNotifiedDonors(response.data.notifiedDonors || []);
     } catch (error) {
       setSnackbar({ open: true, message: error.response?.data?.message || "Gửi thông báo thất bại!", severity: "error" });
     } finally {
@@ -102,7 +104,8 @@ const DonorMobilization = () => {
                 startIcon={sending ? <CircularProgress size={20} /> : null}
                 fullWidth
               >
-                {sending ? "Đang gửi..." : "Gửi thông báo"}
+
+                {sending ? "Đang gửi..." : "Gửi thông báo tới tất cả người hiến đủ điều kiện"}
               </Button>
             </Grid>
           </Grid>
@@ -121,6 +124,40 @@ const DonorMobilization = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      {/* Hiển thị danh sách người nhận thông báo nếu có */}
+      {notifiedDonors.length > 0 && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2 }}>Danh sách người nhận thông báo</Typography>
+            <TableContainer component={Paper}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Họ tên</TableCell>
+                    <TableCell>Nhóm máu</TableCell>
+                    <TableCell>Số điện thoại</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Cân nặng</TableCell>
+                    <TableCell>Chiều cao</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {notifiedDonors.map((donor, idx) => (
+                    <TableRow key={donor.userId || idx}>
+                      <TableCell>{donor.fullName}</TableCell>
+                      <TableCell>{donor.bloodTypeName}</TableCell>
+                      <TableCell>{donor.phoneNumber || 'Ẩn'}</TableCell>
+                      <TableCell>{donor.email || 'Ẩn'}</TableCell>
+                      <TableCell>{donor.weight ? `${donor.weight} kg` : 'N/A'}</TableCell>
+                      <TableCell>{donor.height ? `${donor.height} cm` : 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 };

@@ -37,6 +37,7 @@ const SidebarLayout = () => {
       { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },
       { path: "/manage-blog", label: "Blog", icon: <EditNoteIcon /> },
     ] : []),
+
     // { path: "/hospital-location", label: "Vị trí bệnh viện", icon: <LocalHospitalIcon /> },
     // { path: "/manage-roles", label: "Vai trò", icon: <PersonIcon /> },
     // { path: "/manage-users", label: "Người dùng", icon: <GroupIcon /> },

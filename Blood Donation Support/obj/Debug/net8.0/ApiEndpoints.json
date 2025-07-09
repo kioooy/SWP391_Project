@@ -625,8 +625,8 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
-    "Method": "SearchBloodWithHospitalLocation",
-    "RelativePath": "api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}",
+    "Method": "SearchBloodUnits",
+    "RelativePath": "api/BloodSearch/search-blood-units/{recipientBloodTypeId}/{requiredVolume}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -642,8 +642,8 @@
         "IsRequired": true
       },
       {
-        "Name": "component",
-        "Type": "System.String",
+        "Name": "componentId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
@@ -1462,6 +1462,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetMyTransfusionHistory",
+    "RelativePath": "api/TransfusionRequest/my-history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

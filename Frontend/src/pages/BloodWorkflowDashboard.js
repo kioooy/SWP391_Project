@@ -60,13 +60,7 @@ const BloodWorkflowDashboard = () => {
   });
 
   const steps = [
-    {
-      label: "Yêu cầu cần máu",
-      description: "Tạo và quản lý yêu cầu cần máu từ bệnh nhân",
-      icon: <AddIcon />,
-      color: "primary",
-    },
-    // Đã xóa bước tìm kiếm máu
+    // Đã xóa bước yêu cầu cần máu
   ];
 
   useEffect(() => {
@@ -195,6 +189,7 @@ const BloodWorkflowDashboard = () => {
     <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
+
         Quản Lý Quy Trình Hiến Máu
       </Typography>
     

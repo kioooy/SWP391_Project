@@ -79,13 +79,15 @@ const BloodSearch = ({ onSearchComplete }) => {
     "Platelets": "Tiểu cầu",
   };
 
-  // Đối tượng ánh xạ dịch thuật cho trạng thái máu
+
+  // Thêm đối tượng ánh xạ trạng thái máu sang tiếng Việt ở đầu file
   const bloodStatusTranslations = {
-    "Available": "Có sẵn",
-    "Reserved": "Đã đặt",
+    "Available": "Sẵn sàng",
+    "Reserved": "Đã đặt chỗ",
     "Used": "Đã sử dụng",
+    "PartialUsed": "Đã sử dụng một phần",
     "Expired": "Hết hạn",
-    // Thêm các trạng thái khác nếu có
+    "Inactive": "Không hoạt động",
   };
 
   useEffect(() => {

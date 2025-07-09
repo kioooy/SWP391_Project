@@ -64,6 +64,7 @@ const EmergencyRequest = () => {
     { id: 6, name: 'AB-' },
     { id: 7, name: 'O+' },
     { id: 8, name: 'O-' },
+    { id: 99, name: 'Không rõ' },
   ];
 
   const components = [
@@ -133,6 +134,29 @@ const EmergencyRequest = () => {
     }
   };
 
+  const handleLocationChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, '');
+    setFormData({
+      ...formData,
+      location: value,
+    });
+    if (errors.location) {
+      setErrors({ ...errors, location: '' });
+    }
+  };
+
+  // Chỉ cho nhập số và tối đa 12 ký tự cho CCCD
+  const handleCCCDChange = (event) => {
+    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+    setFormData({
+      ...formData,
+      cccd: value,
+    });
+    if (errors.cccd) {
+      setErrors({ ...errors, cccd: '' });
+    }
+  };
+
   const validateStep = () => {
     const newErrors = {};
     if (activeStep === 0) {
@@ -153,6 +177,9 @@ const EmergencyRequest = () => {
         newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
       }
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
+      else if (/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
+        newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm.';
+      }
       if (!formData.cccd) {
         newErrors.cccd = 'Vui lòng nhập số CCCD';
       } else if (!/^\d{12}$/.test(formData.cccd)) {
@@ -182,23 +209,18 @@ const EmergencyRequest = () => {
           setErrors({ ...errors, bloodType: 'Nhóm máu không hợp lệ' });
           return;
         }
-        // Chuẩn bị payload
+        // Chuẩn bị payload cho UrgentBloodRequestController
         const payload = {
-          BloodTypeId: selectedBloodType.id,
-          ComponentId: selectedComponentId,
-          TransfusionVolume: 500, // Giá trị mặc định 500ml cho yêu cầu khẩn cấp
-          IsEmergency: true,
-          PreferredReceiveDate: null,
+          PatientName: formData.patientName,
+          RequestedBloodTypeId: selectedBloodType.id,
+          Reason: formData.reason,
+          ContactName: formData.contactName,
+          ContactPhone: formData.contactPhone,
+          ContactEmail: formData.contactEmail,
+          EmergencyLocation: formData.location,
           Notes: formData.notes,
-          PatientCondition: formData.reason,
         };
-        // Lấy token từ localStorage (hoặc redux)
-        const token = localStorage.getItem('token');
-        await axios.post('/api/TransfusionRequest', payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await axios.post('/api/UrgentBloodRequest', payload);
         setSnackbar({ open: true, message: 'Gửi yêu cầu thành công!', severity: 'success' });
         setActiveStep(0);
         setFormData({
@@ -395,20 +417,21 @@ const EmergencyRequest = () => {
                 fullWidth
                 label="Địa chỉ"
                 value={formData.location}
-                onChange={handleChange('location')}
+                onChange={handleLocationChange}
                 error={!!errors.location}
                 helperText={errors.location}
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Số CCCD"
                 value={formData.cccd}
-                onChange={handleChange('cccd')}
+                onChange={handleCCCDChange}
                 error={!!errors.cccd}
                 helperText={errors.cccd}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
               />
             </Grid>
           </Grid>

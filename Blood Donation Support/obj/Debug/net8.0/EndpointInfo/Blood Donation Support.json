@@ -1089,7 +1089,7 @@
         }
       }
     },
-    "/api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}": {
+    "/api/BloodSearch/search-blood-units/{recipientBloodTypeId}/{requiredVolume}": {
       "get": {
         "tags": [
           "BloodSearch"
@@ -1114,10 +1114,11 @@
             }
           },
           {
-            "name": "component",
+            "name": "componentId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -2391,6 +2392,18 @@
               "format": "int32"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/TransfusionRequest/my-history": {
+      "get": {
+        "tags": [
+          "TransfusionRequest"
         ],
         "responses": {
           "200": {

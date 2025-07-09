@@ -80,7 +80,7 @@ const DonorMobilization = () => {
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Huy động người hiến</Typography>
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Gửi thông báo</Typography>
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2}>
@@ -104,6 +104,7 @@ const DonorMobilization = () => {
                 startIcon={sending ? <CircularProgress size={20} /> : null}
                 fullWidth
               >
+
                 {sending ? "Đang gửi..." : "Gửi thông báo tới tất cả người hiến đủ điều kiện"}
               </Button>
             </Grid>

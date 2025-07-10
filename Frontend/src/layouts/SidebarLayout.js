@@ -11,6 +11,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import WorkflowIcon from '@mui/icons-material/AccountTree';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SearchIcon from '@mui/icons-material/Search';
 import { useSelector } from "react-redux";
 
 const drawerWidth = 300;
@@ -24,6 +26,7 @@ const SidebarLayout = () => {
   const menuItems = [
     { path: user?.role === 'Admin' ? "/profile-admin" : user?.role === 'Staff' ? "/profile-staff" : "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
     { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+<<<<<<< Updated upstream
     { path: "/blood-workflow", label: "Truyền Máu", icon: <WorkflowIcon /> },
     { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
     { path: "/manage-urgent-request", label: "Yêu cầu khẩn", icon: <AssignmentIcon /> },
@@ -38,6 +41,18 @@ const SidebarLayout = () => {
       { path: "/manage-blog", label: "Blog", icon: <EditNoteIcon /> },
     ] : []),
 
+=======
+    { path: "/blood-workflow", label: "Truyền máu", icon: <WorkflowIcon /> },
+    { path: "/manage-requests", label: "Yêu cầu", icon: <AssignmentIcon /> },
+    { path: "/blood-search", label: "Tìm máu", icon: <BloodtypeIcon /> },
+    { path: "/donor-mobilization", label: "Huy động", icon: <GroupIcon /> },
+    { path: "/search-distance", label: "Tìm quanh bạn", icon: <LocationOnIcon /> },
+    { path: "/search-by-distance", label: "Tìm nâng cao", icon: <SearchIcon /> },
+    { path: "/manage-blood-periods", label: "Đợt hiến", icon: <BloodtypeIcon /> },
+    { path: "/blood-inventory", label: "Kho máu", icon: <BloodtypeIcon /> },
+    { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },
+    { path: "/manage-blog", label: "Blog", icon: <EditNoteIcon /> },
+>>>>>>> Stashed changes
     // { path: "/hospital-location", label: "Vị trí bệnh viện", icon: <LocalHospitalIcon /> },
     // { path: "/manage-roles", label: "Vai trò", icon: <PersonIcon /> },
     // { path: "/manage-users", label: "Người dùng", icon: <GroupIcon /> },
@@ -86,7 +101,7 @@ const SidebarLayout = () => {
                 }
               }}
             >
-              <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
+              <ListItemIcon sx={{ color: '#E53935' }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} primaryTypographyProps={{ noWrap: true }} />
             </ListItem>
           ))}

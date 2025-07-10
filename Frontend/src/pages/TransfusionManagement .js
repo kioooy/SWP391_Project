@@ -190,12 +190,13 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   const statusOptions = ["Approved", "Pending", "Completed", "Cancelled", "Rejected"]; // Cập nhật để khớp với BE
 
   const getStatusColor = (status) => {
+    // Màu giống DonationRequestManagement.js
     const colors = {
-      "Approved": "error", // Thay đổi màu cho Approved thành đỏ
-      "Pending": "info", // Màu mới cho trạng thái Pending
-      "Completed": "success",
-      "Cancelled": "warning", // Màu mới cho trạng thái Cancelled
-      "Rejected": "error",
+      "Approved": "warning", // Đã duyệt - cam
+      "Pending": "default", // Chờ duyệt - nâu
+      "Completed": "success", // Hoàn thành - xanh lá
+      "Cancelled": "default", // Đã hủy - nâu
+      "Rejected": "error", // Đã từ chối - đỏ
     };
     return colors[status] || "default";
   };
@@ -796,7 +797,16 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     </TableCell>
                     {/* Trạng thái */}
                     <TableCell>
-                      <Chip label={transfusionStatusTranslations[transfusion?.status] || transfusion?.status} color={getStatusColor(transfusion?.status)} size="small" />
+                      <Chip 
+                        label={transfusionStatusTranslations[transfusion?.status] || transfusion?.status} 
+                        color={getStatusColor(transfusion?.status)} 
+                        size="small"
+                        sx={
+                          transfusion?.status === 'Pending' ? { backgroundColor: '#795548', color: 'white' } :
+                          transfusion?.status === 'Cancelled' ? { backgroundColor: '#795548', color: 'white' } :
+                          undefined
+                        }
+                      />
                     </TableCell>
                     {/* Ghi chú */}
                     <TableCell>

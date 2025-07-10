@@ -260,6 +260,22 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BlogController",
+    "Method": "ActivateBlog",
+    "RelativePath": "api/Blog/{id}/activate",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BlogController",
     "Method": "DeactivateBlog",
     "RelativePath": "api/Blog/{id}/deactivate",
     "HttpMethod": "PATCH",
@@ -363,6 +379,52 @@
     "ReturnTypes": [
       {
         "Type": "Blood_Donation_Support.DTO.BloodCompatibilityResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodComponentController",
+    "Method": "GetBloodComponents",
+    "RelativePath": "api/BloodComponent",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.BloodComponentDTO, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodComponentController",
+    "Method": "GetBloodComponent",
+    "RelativePath": "api/BloodComponent/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Blood_Donation_Support.DTO.BloodComponentDTO",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -563,8 +625,8 @@
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodSearchController",
-    "Method": "SearchBloodWithHospitalLocation",
-    "RelativePath": "api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}",
+    "Method": "SearchBloodUnits",
+    "RelativePath": "api/BloodSearch/search-blood-units/{recipientBloodTypeId}/{requiredVolume}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -580,12 +642,58 @@
         "IsRequired": true
       },
       {
-        "Name": "component",
-        "Type": "System.String",
+        "Name": "componentId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodTypeController",
+    "Method": "GetBloodTypes",
+    "RelativePath": "api/BloodType",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[Blood_Donation_Support.DTO.BloodTypeDTO, Blood Donation Support, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodTypeController",
+    "Method": "GetBloodType",
+    "RelativePath": "api/BloodType/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "Blood_Donation_Support.DTO.BloodTypeDTO",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
@@ -700,6 +808,32 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.BloodUnitController",
+    "Method": "GetSuitableBloodUnits",
+    "RelativePath": "api/BloodUnit/suitable",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bloodTypeId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "componentId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "requiredVolume",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -1292,7 +1426,7 @@
       },
       {
         "Name": "model",
-        "Type": "Blood_Donation_Support.DTO.ApproveTransfusionRequestInput",
+        "Type": "Blood_Donation_Support.Controllers.TransfusionRequestController\u002BApproveTransfusionRequestInput",
         "IsRequired": true
       }
     ],
@@ -1328,6 +1462,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.TransfusionRequestController",
+    "Method": "GetMyTransfusionHistory",
+    "RelativePath": "api/TransfusionRequest/my-history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -1590,6 +1734,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Blood_Donation_Support.Controllers.UserController",
+    "Method": "GetAllMembers",
+    "RelativePath": "api/User/members",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

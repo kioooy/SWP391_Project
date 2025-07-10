@@ -50,6 +50,7 @@ const BloodSearch = ({ onSearchComplete }) => {
   const [searchResults, setSearchResults] = useState(null);
   const [donorRequestResults, setDonorRequestResults] = useState(null);
   const [bloodTypes, setBloodTypes] = useState([]);
+  const [components, setComponents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [donorRequestLoading, setDonorRequestLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -78,6 +79,17 @@ const BloodSearch = ({ onSearchComplete }) => {
     "Platelets": "Tiểu cầu",
   };
 
+
+  // Thêm đối tượng ánh xạ trạng thái máu sang tiếng Việt ở đầu file
+  const bloodStatusTranslations = {
+    "Available": "Sẵn sàng",
+    "Reserved": "Đã đặt chỗ",
+    "Used": "Đã sử dụng",
+    "PartialUsed": "Đã sử dụng một phần",
+    "Expired": "Hết hạn",
+    "Inactive": "Không hoạt động",
+  };
+
   useEffect(() => {
     const fetchBloodTypes = async () => {
       try {
@@ -90,8 +102,20 @@ const BloodSearch = ({ onSearchComplete }) => {
         console.error("Error fetching blood types:", error);
       }
     };
-
+    // Lấy danh sách thành phần máu
+    const fetchComponents = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("/api/BloodComponent", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setComponents(response.data || []);
+      } catch (error) {
+        console.error("Error fetching blood components:", error);
+      }
+    };
     fetchBloodTypes();
+    fetchComponents();
   }, []);
 
   const handleSearch = async () => {
@@ -107,25 +131,19 @@ const BloodSearch = ({ onSearchComplete }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      
-      // Thêm log chi tiết trước khi gọi API
-      console.log("=== DEBUG BLOOD SEARCH ===");
-      console.log("recipientBloodTypeId:", searchForm.recipientBloodTypeId, "Type:", typeof searchForm.recipientBloodTypeId);
-      console.log("requiredVolume:", searchForm.requiredVolume, "Type:", typeof searchForm.requiredVolume);
-      console.log("component:", searchForm.component, "Type:", typeof searchForm.component);
-      console.log("token:", token ? "Có token" : "Không có token");
-      
-      const url = `/api/BloodSearch/search-with-hospital-location/${searchForm.recipientBloodTypeId}/${searchForm.requiredVolume}` +
-        (searchForm.component ? `?component=${encodeURIComponent(searchForm.component)}` : '');
-      
-      console.log("API URL:", url);
-      console.log("Full URL:", window.location.origin + url);
-      
+      // Log debug mới
+      console.log("[DEBUG] Tìm kiếm máu:", {
+        recipientBloodTypeId: searchForm.recipientBloodTypeId,
+        requiredVolume: searchForm.requiredVolume,
+        componentId: searchForm.component || null
+      });
+      const url = `/api/BloodSearch/search-blood-units/${searchForm.recipientBloodTypeId}/${searchForm.requiredVolume}` +
+        (searchForm.component ? `?componentId=${searchForm.component}` : '');
+      console.log("[DEBUG] API URL:", url);
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      console.log("API Response:", response.data);
+      console.log("[DEBUG] API Response:", response.data);
       setSearchResults(response.data);
       
       // Call callback if provided
@@ -139,12 +157,12 @@ const BloodSearch = ({ onSearchComplete }) => {
         severity: "success",
       });
     } catch (error) {
-      console.error("=== ERROR DETAILS ===");
-      console.error("Error searching blood:", error);
-      console.error("Error response:", error.response);
-      console.error("Error response data:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      console.error("Error message:", error.message);
+      // Log debug lỗi mới
+      console.error("[DEBUG] Error searching blood:", error);
+      console.error("[DEBUG] Error response:", error.response);
+      console.error("[DEBUG] Error response data:", error.response?.data);
+      console.error("[DEBUG] Error status:", error.response?.status);
+      console.error("[DEBUG] Error message:", error.message);
       
       setSnackbar({
         open: true,
@@ -202,12 +220,12 @@ const BloodSearch = ({ onSearchComplete }) => {
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>
-        Tìm kiếm máu và huy động người hiến
+        Tìm kiếm máu và người hiến phù hợp
       </Typography>
 
       <Grid container spacing={3}>
         {/* Tìm kiếm máu phù hợp */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Card>
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
@@ -242,10 +260,11 @@ const BloodSearch = ({ onSearchComplete }) => {
                     label="Thành phần máu"
                   >
                     <MenuItem value="">Tất cả</MenuItem>
-                    <MenuItem value="Whole Blood">Máu toàn phần</MenuItem>
-                    <MenuItem value="Red Blood Cells">Hồng cầu</MenuItem>
-                    <MenuItem value="Plasma">Huyết tương</MenuItem>
-                    <MenuItem value="Platelets">Tiểu cầu</MenuItem>
+                    {components.map((c) => (
+                      <MenuItem key={c.componentId} value={c.componentId}>
+                        {bloodComponentTranslations[c.componentName] || c.componentName}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
 
@@ -276,7 +295,7 @@ const BloodSearch = ({ onSearchComplete }) => {
                   <Typography variant="h6" sx={{ mb: 2 }}>
                     Kết quả tìm kiếm
                   </Typography>
-                  
+                  {/* Danh sách máu trong kho */}
                   {searchResults.availableBloodUnits && searchResults.availableBloodUnits.length > 0 ? (
                     <TableContainer component={Paper} variant="outlined">
                       <Table size="small">
@@ -300,7 +319,7 @@ const BloodSearch = ({ onSearchComplete }) => {
                               <TableCell>{formatDateTime(unit.expiryDate)}</TableCell>
                               <TableCell>
                                 <Chip 
-                                  label={unit.bloodStatus} 
+                                  label={bloodStatusTranslations[unit.bloodStatus] || unit.bloodStatus} 
                                   color={unit.bloodStatus === "Available" ? "success" : "warning"} 
                                   size="small" 
                                 />
@@ -311,39 +330,44 @@ const BloodSearch = ({ onSearchComplete }) => {
                       </Table>
                     </TableContainer>
                   ) : (
-                    <Alert severity="warning">
-                      Không tìm thấy máu phù hợp trong kho. Vui lòng huy động người hiến.
-                    </Alert>
-                  )}
-
-                  {searchResults.suggestedDonors && searchResults.suggestedDonors.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        Người hiến phù hợp ({searchResults.suggestedDonors.length} người)
-                      </Typography>
-                      <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Tên</TableCell>
-                              <TableCell>Nhóm máu</TableCell>
-                              <TableCell>SĐT</TableCell>
-                              <TableCell>Email</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {searchResults.suggestedDonors.map((donor, idx) => (
-                              <TableRow key={donor.userId || idx}>
-                                <TableCell>{donor.fullName || donor.FullName}</TableCell>
-                                <TableCell>{donor.bloodTypeName || donor.BloodTypeName}</TableCell>
-                                <TableCell>{donor.phoneNumber || donor.PhoneNumber || '-'}</TableCell>
-                                <TableCell>{donor.email || donor.Email || '-'}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Box>
+                    <>
+                      <Alert severity="warning" sx={{ mb: 2 }}>
+                        Không tìm thấy máu phù hợp trong kho. Vui lòng chuyển sang trang <b>Huy động người hiến</b> để liên hệ người hiến phù hợp.
+                      </Alert>
+                      {searchResults.suggestedDonors && searchResults.suggestedDonors.length > 0 ? (
+                        <>
+                          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                            Danh sách người hiến phù hợp:
+                          </Typography>
+                          <TableContainer component={Paper} variant="outlined">
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Họ tên</TableCell>
+                                  <TableCell>Nhóm máu</TableCell>
+                                  <TableCell>Cân nặng</TableCell>
+                                  <TableCell>Chiều cao</TableCell>
+                                  <TableCell>Số điện thoại</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {searchResults.suggestedDonors.map((donor) => (
+                                  <TableRow key={donor.userId}>
+                                    <TableCell>{donor.fullName}</TableCell>
+                                    <TableCell>{donor.bloodTypeName}</TableCell>
+                                    <TableCell>{donor.weight} kg</TableCell>
+                                    <TableCell>{donor.height} cm</TableCell>
+                                    <TableCell>{donor.phoneNumber || 'Ẩn'}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </>
+                      ) : (
+                        <Alert severity="info">Không có người hiến phù hợp.</Alert>
+                      )}
+                    </>
                   )}
                 </Box>
               )}
@@ -352,101 +376,7 @@ const BloodSearch = ({ onSearchComplete }) => {
         </Grid>
 
         {/* Huy động người hiến */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                <NotificationsIcon color="primary" />
-                <Typography variant="h6">Huy động người hiến</Typography>
-              </Box>
-              
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Nhóm máu cần huy động</InputLabel>
-                  <Select
-                    value={donorRequestForm.recipientBloodTypeId}
-                    onChange={(e) => setDonorRequestForm({ ...donorRequestForm, recipientBloodTypeId: e.target.value })}
-                    label="Nhóm máu cần huy động"
-                  >
-                    {bloodTypes
-                      .filter(bt => bt.bloodTypeName !== "Không Biết")
-                      .map(bt => (
-                      <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>
-                        {bloodTypeTranslations[bt.bloodTypeName] || bt.bloodTypeName}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <TextField
-                  label="Lượng máu cần (ml)"
-                  type="number"
-                  value={donorRequestForm.requiredVolume}
-                  onChange={(e) => setDonorRequestForm({ ...donorRequestForm, requiredVolume: e.target.value })}
-                  inputProps={{ min: 1 }}
-                  fullWidth
-                />
-
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleRequestDonors}
-                  disabled={donorRequestLoading}
-                  startIcon={donorRequestLoading ? <CircularProgress size={20} /> : <NotificationsIcon />}
-                  fullWidth
-                >
-                  {donorRequestLoading ? "Đang gửi yêu cầu..." : "Huy động người hiến"}
-                </Button>
-              </Box>
-
-              {/* Kết quả huy động */}
-              {donorRequestResults && (
-                <Box sx={{ mt: 3 }}>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    Kết quả huy động
-                  </Typography>
-                  
-                  <Alert severity="success">
-                    Đã gửi thông báo đến {donorRequestResults.notifiedDonorsCount || 0} người hiến phù hợp.
-                  </Alert>
-
-                  {donorRequestResults.notifiedDonors && donorRequestResults.notifiedDonors.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        Danh sách người hiến đã được thông báo
-                      </Typography>
-                      <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Tên</TableCell>
-                              <TableCell>Nhóm máu</TableCell>
-                              <TableCell>SĐT</TableCell>
-                              <TableCell>Trạng thái</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {donorRequestResults.notifiedDonors.map((donor) => (
-                              <TableRow key={donor.userId}>
-                                <TableCell>{donor.fullName}</TableCell>
-                                <TableCell>{donor.bloodTypeName}</TableCell>
-                                <TableCell>{donor.phoneNumber}</TableCell>
-                                <TableCell>
-                                  <Chip label="Đã thông báo" color="success" size="small" />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* PHẦN NÀY ĐÃ ĐƯỢC TÁCH RIÊNG, XÓA HOÀN TOÀN */}
       </Grid>
 
       {/* Hướng dẫn sử dụng */}
@@ -455,29 +385,14 @@ const BloodSearch = ({ onSearchComplete }) => {
           <Typography variant="h6" sx={{ mb: 2 }}>
             Hướng dẫn sử dụng
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="primary" sx={{ mb: 1 }}>
-                🔍 Tìm kiếm máu phù hợp:
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                1. Chọn nhóm máu cần tìm<br/>
-                2. Chọn thành phần máu<br/>
-                3. Nhập lượng máu cần thiết<br/>
-                4. Hệ thống sẽ tìm kiếm máu phù hợp trong kho và người hiến
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="primary" sx={{ mb: 1 }}>
-                📢 Huy động người hiến:
-              </Typography>
-              <Typography variant="body2">
-                1. Chọn nhóm máu cần huy động<br/>
-                2. Nhập lượng máu cần thiết<br/>
-                3. Hệ thống sẽ gửi thông báo đến người hiến phù hợp
-              </Typography>
-            </Grid>
-          </Grid>
+          <Typography variant="body2">
+            <b>🔍 Tìm kiếm máu phù hợp:</b><br/>
+            1. Chọn nhóm máu cần tìm<br/>
+            2. Chọn thành phần máu (nếu cần)<br/>
+            3. Nhập lượng máu cần thiết<br/>
+            4. Nhấn "Tìm kiếm máu" để tra cứu kho máu phù hợp<br/>
+            5. Nếu không có máu phù hợp, hãy chuyển sang trang "Huy động người hiến" để gửi thông báo tới cộng đồng người hiến máu.<br/>
+          </Typography>
         </CardContent>
       </Card>
 

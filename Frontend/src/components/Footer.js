@@ -133,7 +133,7 @@ const Footer = () => {
               <ContactItem>
                 <EmailIcon />
                 <Typography variant="body2">
-                  Email: lienlac@bthh.org.vn
+                  Email: bv.tmhh@tphcm.gov.vn
                 </Typography>
               </ContactItem>
 

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using System.Linq;
 using Blood_Donation_Support.Data;
+using Blood_Donation_Support.Model;
 
 namespace Blood_Donation_Support.Controllers;
 
@@ -41,6 +42,7 @@ public class BloodSearchController : ControllerBase
         var compatibleBloodTypeIds = await compatibleBloodTypeIdsQuery
             .Select(r => r.BloodGiveId)
             .ToListAsync();
+        Console.WriteLine($"[DEBUG] compatibleBloodTypeIds: {string.Join(",", compatibleBloodTypeIds)}");
 
         // Lấy tất cả members trước, sau đó filter trên memory để tránh lỗi LINQ translation
         var allMembers = await _context.Members
@@ -61,15 +63,22 @@ public class BloodSearchController : ControllerBase
                 m.IsDonor,
                 m.IsRecipient,
                 m.DonationCount,
-                m.Location
+                m.Location,
+                PhoneNumber = m.User.PhoneNumber
             })
             .ToListAsync();
+        Console.WriteLine($"[DEBUG] allMembers.Count = {allMembers.Count}");
+        foreach (var m in allMembers)
+        {
+            Console.WriteLine($"[DEBUG] allMember: UserId={m.UserId}, BloodTypeId={m.BloodTypeId}, IsDonor={m.IsDonor}, LastDonationDate={m.LastDonationDate}");
+        }
 
         // Lấy transfusion requests để check
         var completedTransfusions = await _context.TransfusionRequests
             .Where(tr => tr.Status == "Completed" && tr.CompletionDate.HasValue)
             .Select(tr => new { tr.MemberId, tr.CompletionDate })
             .ToListAsync();
+        Console.WriteLine($"[DEBUG] completedTransfusions.Count = {completedTransfusions.Count}");
 
         // Filter trên memory - sử dụng DateTime comparison thay vì EF.Functions
         var donorsFromDb = allMembers.Where(m => 
@@ -80,6 +89,11 @@ public class BloodSearchController : ControllerBase
                 tr.CompletionDate.HasValue && 
                 (now - tr.CompletionDate.Value).TotalDays < 365)
         ).ToList();
+        Console.WriteLine($"[DEBUG] donorsFromDb.Count = {donorsFromDb.Count}");
+        foreach (var d in donorsFromDb)
+        {
+            Console.WriteLine($"[DEBUG] donor: UserId={d.UserId}, LastDonationDate={d.LastDonationDate}");
+        }
 
         var suggestedDonors = donorsFromDb
             .Select(m =>
@@ -96,42 +110,26 @@ public class BloodSearchController : ControllerBase
                     m.IsDonor,
                     m.IsRecipient,
                     m.DonationCount,
+                    m.PhoneNumber
                 };
             })
             .ToList<object>();
+        Console.WriteLine($"[DEBUG] suggestedDonors.Count = {suggestedDonors.Count}");
 
         return suggestedDonors;
     }
 
-    [HttpGet("search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}")]
-    public async Task<IActionResult> SearchBloodWithHospitalLocation(
+    // API duy nhất: Tìm máu trong kho, nếu không có thì trả về luôn suggestedDonors
+    [HttpGet("search-blood-units/{recipientBloodTypeId}/{requiredVolume}")]
+    public async Task<IActionResult> SearchBloodUnits(
         int recipientBloodTypeId, 
         int requiredVolume,
-        [FromQuery] string? component = null)
+        [FromQuery] int? componentId = null)
     {
         try
         {
-            int? targetComponentId = null;
+            int? targetComponentId = componentId;
 
-            if (!string.IsNullOrWhiteSpace(component))
-            {
-                if (component.Equals("whole-blood", StringComparison.OrdinalIgnoreCase) || 
-                    component.Equals("whole blood", StringComparison.OrdinalIgnoreCase))
-                {
-                    targetComponentId = null; // Máu toàn phần
-                }
-                else
-                {
-                    var componentEntry = await _context.BloodComponents
-                                                .FirstOrDefaultAsync(c => c.ComponentName.ToLower() == component.ToLower());
-
-                    if (componentEntry == null)
-                        return BadRequest("Invalid component type.");
-                    
-                    targetComponentId = componentEntry.ComponentId;
-                }
-            }
-            
             var hospital = await _context.Hospitals.FirstOrDefaultAsync();
             if (hospital?.Location == null)
             {
@@ -157,19 +155,17 @@ public class BloodSearchController : ControllerBase
                     bu.ExpiryDate
                 })
                 .ToListAsync();
+            Console.WriteLine($"[DEBUG] availableBloodUnits.Count = {availableBloodUnits.Count}");
 
-            if (availableBloodUnits.Any())
+            List<object> suggestedDonors = new List<object>();
+            if (!availableBloodUnits.Any())
             {
-                return Ok(new {
-                    availableBloodUnits,
-                    suggestedDonors = new object[0]
-                });
+                Console.WriteLine($"[DEBUG] Không có máu phù hợp, gọi FindAndRankDonors");
+                suggestedDonors = await FindAndRankDonors(recipientBloodTypeId, null);
             }
-            
-            var suggestedDonors = await FindAndRankDonors(recipientBloodTypeId, targetComponentId);
 
             return Ok(new {
-                availableBloodUnits = new object[0],
+                availableBloodUnits,
                 suggestedDonors
             });
         }
@@ -181,7 +177,7 @@ public class BloodSearchController : ControllerBase
 
     // Chỉ cho phép Admin hoặc Staff thực hiện API này
     [Authorize(Roles = "Admin,Staff")]
-    // Định nghĩa endpoint POST /api/BloodSearch/notify-all-donors
+//POST /api/BloodSearch/notify-all-donors
     [HttpPost("notify-all-donors")]
     // Nhận dữ liệu từ body request dưới dạng NotifyAllDonorsDTO
     public async Task<IActionResult> NotifyAllDonors([FromBody] NotifyAllDonorsDTO request)
@@ -189,57 +185,59 @@ public class BloodSearchController : ControllerBase
         try
         {
             var now = DateTime.Now;
-            // Lấy tất cả member là người hiến máu (IsDonor == true) và đã hồi phục (chưa từng hiến hoặc đã đủ 84 ngày kể từ lần hiến máu gần nhất)
             var allDonors = await _context.Members
+                .Include(m => m.User)
                 .Where(m => m.IsDonor == true)
-                .Select(m => new { m.UserId, m.User.FullName, m.LastDonationDate }) // Chỉ lấy UserId và FullName
+                .Select(m => new { m.UserId, m.User.FullName, m.User.PhoneNumber, m.User.Email, m.LastDonationDate, m.Weight, m.Height, m.BloodTypeId, m.BloodType.BloodTypeName })
                 .ToListAsync();
 
-            // Filter trên memory để tránh lỗi LINQ translation
-            var donors = allDonors.Where(m => 
-                m.LastDonationDate == null || 
+            var donors = allDonors.Where(m =>
+                m.LastDonationDate == null ||
                 (now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84
-            ).Select(m => new { m.UserId, m.FullName }).ToList();
+            ).ToList();
 
-            // Tạo một HttpClient để gửi HTTP request đi nơi khác (ở đây là nội bộ)
-            var client = _httpClientFactory.CreateClient();
-            // Tạo URL nội bộ để gọi API gửi thông báo khẩn cấp, đây là vc tái sử dụng API gửi thông báo khẩn cấp bên nofi controller
-            var notificationUrl = $"{Request.Scheme}://{Request.Host}/api/Notification/CreateUrgentDonationRequest";
-            // Biến đếm số lượng gửi thông báo thành công
             int notifiedCount = 0;
-            // Lặp qua từng người hiến máu hợp lệ
+            var notifiedDonors = new List<object>();
             foreach (var donor in donors)
             {
                 try
                 {
-                    // Tạo object chứa thông tin gửi thông báo cho từng người
-                    var notificationDto = new
+                    var notification = new Notification
                     {
-                        UserId = donor.UserId, // ID người nhận thông báo
-                        Message = request.Message // Nội dung thông báo do client gửi lên
+                        UserId = donor.UserId,
+                        Title = "Thông báo từ bệnh viện",
+                        Message = request.Message,
+                        CreatedAt = DateTime.Now,
+                        NotificationType = "General",
+                        IsActive = true,
+                        IsRead = false
                     };
-                    // Chuyển object trên thành JSON, đóng gói vào StringContent để gửi HTTP POST
-                    var jsonContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(notificationDto), System.Text.Encoding.UTF8, "application/json");
-                    // Gửi POST request đến API Notification
-                    var response = await client.PostAsync(notificationUrl, jsonContent);
-                    // Nếu gửi thành công thì tăng biến đếm
-                    if (response.IsSuccessStatusCode)
-                    {
-                        notifiedCount++;
-                    }
+                    _context.Notifications.Add(notification);
+                    notifiedCount++;
+                    notifiedDonors.Add(new {
+                        donor.UserId,
+                        donor.FullName,
+                        donor.PhoneNumber,
+                        donor.Email,
+                        donor.Weight,
+                        donor.Height,
+                        donor.BloodTypeId,
+                        donor.BloodTypeName
+                    });
                 }
                 catch (Exception ex)
                 {
-                    // Nếu lỗi khi gửi cho một người, ghi log lỗi nhưng không dừng vòng lặp
-                    Console.WriteLine($"Error notifying donor: {ex.Message}");
+                    Console.WriteLine($"Error creating notification: {ex.Message}");
                 }
             }
-            // Trả về kết quả tổng số người đã gửi thông báo thành công
-            return Ok(new { message = $"Đã gửi thông báo đến {notifiedCount} người hiến máu đã hồi phục." });
+            await _context.SaveChangesAsync();
+            return Ok(new {
+                message = $"Đã gửi thông báo đến {notifiedCount} người hiến máu đã hồi phục.",
+                notifiedDonors
+            });
         }
         catch (Exception ex)
         {
-            // Nếu có lỗi tổng thể, trả về lỗi cho client
             return BadRequest(new { error = ex.Message });
         }
     }

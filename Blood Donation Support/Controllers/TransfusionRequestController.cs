@@ -20,6 +20,35 @@ namespace Blood_Donation_Support.Controllers
             _context = context;
         }
 
+        [HttpGet("my-history")]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> GetMyTransfusionHistory()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var member = await _context.Members.FirstOrDefaultAsync(m => m.UserId == int.Parse(userId));
+            if (member == null) return NotFound("Member not found.");
+            var history = await _context.TransfusionRequests
+                .Where(tr => tr.MemberId == member.UserId)
+                .Include(tr => tr.BloodType)
+                .Include(tr => tr.Component)
+                .OrderByDescending(tr => tr.RequestDate)
+                .Select(tr => new {
+                    tr.TransfusionId,
+                    tr.BloodType.BloodTypeName,
+                    tr.Component.ComponentName,
+                    tr.TransfusionVolume,
+                    tr.Status,
+                    tr.RequestDate,
+                    tr.ApprovalDate,
+                    tr.CompletionDate,
+                    tr.CancelledDate,
+                    tr.Notes,
+                    tr.PatientCondition
+                })
+                .ToListAsync();
+            return Ok(history);
+        }
+
         // POST: api/TransfusionRequest (Tạo mới yêu cầu truyền máu - flow thường)
         [HttpPost]
         [Authorize(Roles = "Member,Staff,Admin")]
@@ -93,7 +122,7 @@ namespace Blood_Donation_Support.Controllers
                 IsEmergency = model.IsEmergency,
                 TransfusionVolume = model.TransfusionVolume,
                 PreferredReceiveDate = model.PreferredReceiveDate,
-                RequestDate = DateTime.UtcNow,
+                RequestDate = DateTime.Now,
                 Status = "Pending",
                 Notes = model.Notes,
                 PatientCondition = model.PatientCondition
@@ -131,11 +160,14 @@ namespace Blood_Donation_Support.Controllers
                     tr.TransfusionId,
                     tr.MemberId,
                     tr.Member.User.FullName,
+                    Weight = tr.Member.Weight,
+                    Height = tr.Member.Height,
                     tr.BloodTypeId,
                     tr.BloodType.BloodTypeName,
                     tr.ComponentId,
                     tr.Component.ComponentName,
                     tr.ResponsibleById,
+                    ResponsibleByName = tr.ResponsibleBy != null ? tr.ResponsibleBy.FullName : null,
                     tr.IsEmergency,
                     tr.TransfusionVolume,
                     tr.PreferredReceiveDate,
@@ -168,11 +200,14 @@ namespace Blood_Donation_Support.Controllers
                     tr.TransfusionId,
                     tr.MemberId,
                     tr.Member.User.FullName,
+                    Weight = tr.Member.Weight,
+                    Height = tr.Member.Height,
                     tr.BloodTypeId,
                     tr.BloodType.BloodTypeName,
                     tr.ComponentId,
                     tr.Component.ComponentName,
                     tr.ResponsibleById,
+                    ResponsibleByName = tr.ResponsibleBy != null ? tr.ResponsibleBy.FullName : null,
                     tr.IsEmergency,
                     tr.TransfusionVolume,
                     tr.PreferredReceiveDate,
@@ -289,13 +324,13 @@ namespace Blood_Donation_Support.Controllers
                         TransfusionRequestId = id,
                         BloodUnitId = buUsage.BloodUnitId,
                         AssignedVolume = buUsage.VolumeUsed,
-                        AssignedDate = DateTime.UtcNow,
+                        AssignedDate = DateTime.Now,
                         Status = "Reserved"
                     });
                 }
                 transfusionRequest.Status = "Approved";
                 transfusionRequest.Notes = model.Notes;
-                transfusionRequest.ApprovalDate = DateTime.UtcNow;
+                transfusionRequest.ApprovalDate = DateTime.Now;
                 _context.TransfusionRequests.Update(transfusionRequest);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -360,7 +395,7 @@ namespace Blood_Donation_Support.Controllers
 
                 // Cập nhật trạng thái Yêu cầu Truyền máu
                 transfusionRequest.Status = "Completed";
-                transfusionRequest.CompletionDate = DateTime.UtcNow;
+                transfusionRequest.CompletionDate = DateTime.Now;
                 _context.TransfusionRequests.Update(transfusionRequest);
 
                 var member = await _context.Members.FindAsync(transfusionRequest.MemberId);

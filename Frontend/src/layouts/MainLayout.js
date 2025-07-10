@@ -286,7 +286,6 @@ const MainLayout = () => {
       { label: "Tin Tức", isNews: true, icon: <ArticleIcon /> },
       { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
       // { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
-      { path: "/booking-transfusion", label: "Đặt Lịch Truyền Máu", icon: <EventIcon /> },
       { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
     ];

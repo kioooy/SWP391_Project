@@ -29,11 +29,14 @@ namespace Blood_Donation_Support.Controllers
                 .Select(b => new BlogDTO
                 {
                     PostId = b.PostId,
+                    UserId = b.UserId,
                     Title = b.Title,
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
                     ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
+                    Status = b.Status,
+                    IsActive = b.IsActive
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -49,11 +52,14 @@ namespace Blood_Donation_Support.Controllers
                 .Select(b => new BlogDTO
                 {
                     PostId = b.PostId,
+                    UserId = b.UserId,
                     Title = b.Title,
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
                     ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
+                    Status = b.Status,
+                    IsActive = b.IsActive
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -69,11 +75,14 @@ namespace Blood_Donation_Support.Controllers
                 .Select(b => new BlogDTO
                 {
                     PostId = b.PostId,
+                    UserId = b.UserId,
                     Title = b.Title,
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
                     ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
+                    Status = b.Status,
+                    IsActive = b.IsActive
                 })
                 .FirstOrDefaultAsync();
             if (blog == null)
@@ -162,11 +171,33 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeactivateBlog(int id)
         {
+            Console.WriteLine($"[DEBUG] Nhận yêu cầu deactivate blog id: {id}");
+            var total = _context.Blogs.Count();
+            Console.WriteLine($"[DEBUG] Tổng số blog trong DB: {total}");
+            var blog = await _context.Blogs.FindAsync(id);
+            if (blog == null)
+            {
+                Console.WriteLine($"[DEBUG] Không tìm thấy blog với id: {id}");
+                return NotFound();
+            }
+            blog.IsActive = false;
+            blog.UpdatedDate = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // PATCH: api/blogs/{id}/activate
+        [HttpPatch("{id}/activate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ActivateBlog(int id)
+        {
             var blog = await _context.Blogs.FindAsync(id);
             if (blog == null)
                 return NotFound();
-            blog.IsActive = false;
+
+            blog.IsActive = true;
             blog.UpdatedDate = DateTime.Now;
+
             await _context.SaveChangesAsync();
             return NoContent();
         }

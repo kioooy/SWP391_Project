@@ -21,8 +21,17 @@ import {
   Select,
   MenuItem,
   TablePagination,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import axios from "axios";
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const pad = n => n.toString().padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+};
 
 const ArticleManage = () => {
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
@@ -44,6 +53,9 @@ const ArticleManage = () => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [newArticleImagePreview, setNewArticleImagePreview] = useState("");
+  const [editArticleImagePreview, setEditArticleImagePreview] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -56,8 +68,14 @@ const ArticleManage = () => {
           },
         });
         const data = res.data;
-        setArticles(data);
-        setFilteredArticles(data);
+        // Sắp xếp: active trước, inactive sau
+        const sorted = [...data].sort((a, b) => {
+          const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+          const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+          return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+        });
+        setArticles(sorted);
+        setFilteredArticles(sorted);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách bài viết:", error);
       }
@@ -81,9 +99,15 @@ const ArticleManage = () => {
     const value = e.target.value;
     setSearchTerm(value);
     const filtered = articles.filter((a) =>
-      a.Title.toLowerCase().includes(value.toLowerCase())
+      (a.Title || a.title || '').toLowerCase().includes(value.toLowerCase())
     );
-    setFilteredArticles(filtered);
+    // Sắp xếp lại: active trước, inactive sau
+    const sorted = [...filtered].sort((a, b) => {
+      const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+      const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+      return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+    });
+    setFilteredArticles(sorted);
   };
 
   const handleViewDetail = (id) => {
@@ -107,9 +131,9 @@ const ArticleManage = () => {
       if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
       setConfirmDeleteOpen(false);
       setArticleToDelete(null);
-      alert("🗑️ Đã xóa bài viết thành công!");
+      setSnackbar({ open: true, message: '🗑️ Đã xóa bài viết thành công!', severity: 'success' });
     } catch (error) {
-      alert("Lỗi khi xóa bài viết!");
+      setSnackbar({ open: true, message: '❌ Lỗi khi xóa bài viết!', severity: 'error' });
     }
   };
 
@@ -135,7 +159,7 @@ const ArticleManage = () => {
 
   const handleUpdate = async () => {
     if (!editArticle.Title || !editArticle.Content || !editArticle.Status) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin!', severity: 'warning' });
       return;
     }
 
@@ -155,25 +179,24 @@ const ArticleManage = () => {
           },
         }
       );
-      const updated = articles.map((a) =>
-        a.ArticleId === editArticle.ArticleId
-          ? { ...a, ...payload, UpdatedDate: new Date().toISOString().split("T")[0] }
-          : a
-      );
-      setArticles(updated);
-      setFilteredArticles(updated);
+      // Lấy lại danh sách mới từ backend
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArticles(res.data);
+      setFilteredArticles(res.data);
       setIsEditOpen(false);
       setEditArticle(null);
-      alert("✅ Cập nhật bài viết thành công!");
+      setSnackbar({ open: true, message: '✅ Cập nhật bài viết thành công!', severity: 'success' });
     } catch (error) {
-      alert("Lỗi khi cập nhật bài viết! " + (error.response?.data || ''));
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật bài viết! ' + (error.response?.data || ''), severity: 'error' });
     }
   };
 
   const handleCreate = async () => {
     const { Title, Content, Status } = newArticle;
     if (!Title || !Content || !Status) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin!', severity: 'warning' });
       return;
     }
 
@@ -184,20 +207,24 @@ const ArticleManage = () => {
       Status,
     };
 
-    await axios.post(`${API_URL}/Article`, item, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    // Sau khi tạo xong, lấy lại danh sách từ backend
-    const res = await axios.get(`${API_URL}/Article/admin`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setArticles(res.data);
-    setFilteredArticles(res.data);
-    setIsCreateOpen(false);
-    alert("✅ Tạo bài viết thành công!");
-    setNewArticle({ Title: "", Content: "", Status: "" });
+    try {
+      await axios.post(`${API_URL}/Article`, item, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // Sau khi tạo xong, lấy lại danh sách từ backend
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArticles(res.data);
+      setFilteredArticles(res.data);
+      setIsCreateOpen(false);
+      setSnackbar({ open: true, message: '✅ Tạo bài viết thành công!', severity: 'success' });
+      setNewArticle({ Title: "", Content: "", Status: "" });
+    } catch (error) {
+      setSnackbar({ open: true, message: '❌ Lỗi khi tạo bài viết! ' + (error.response?.data || ''), severity: 'error' });
+    }
   };
 
   const handleToggleStatus = async (id) => {
@@ -219,10 +246,17 @@ const ArticleManage = () => {
       const res = await axios.get(`${API_URL}/Article/admin`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setArticles(res.data);
-      setFilteredArticles(res.data);
+      // Sắp xếp lại: active trước, inactive sau
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setArticles(sorted);
+      setFilteredArticles(sorted);
+      setSnackbar({ open: true, message: `✅ Cập nhật trạng thái bài viết thành công!`, severity: 'success' });
     } catch (error) {
-      alert("Lỗi khi cập nhật trạng thái bài viết!");
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật trạng thái bài viết!', severity: 'error' });
     }
   };
 
@@ -245,17 +279,29 @@ const ArticleManage = () => {
       const res = await axios.get(`${API_URL}/Article/admin`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setArticles(res.data);
-      setFilteredArticles(res.data);
+      // Sắp xếp lại: active trước, inactive sau
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setArticles(sorted);
+      setFilteredArticles(sorted);
+      setPage(0);
+      setSnackbar({ 
+        open: true, 
+        message: value === 'inactive' ? '🛑 Đã vô hiệu hóa bài viết!' : '✅ Đã kích hoạt bài viết!', 
+        severity: value === 'inactive' ? 'warning' : 'success' 
+      });
     } catch (error) {
-      alert("Lỗi khi cập nhật trạng thái kích hoạt!");
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật trạng thái kích hoạt!', severity: 'error' });
     }
   };
 
   return (
     <div style={{ padding: 24 }}>
-      <Typography variant="h5" style={{ marginBottom: 16 }}>
-        Quản lý bài viết
+      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#E53935', mb: 4 }}>
+        Quản Lý Tài Liệu
       </Typography>
 
       <div
@@ -304,7 +350,14 @@ const ArticleManage = () => {
           </TableHead>
           <TableBody>
             {paginatedArticles.map((article) => (
-              <TableRow key={article.ArticleId || article.articleId}>
+              <TableRow
+                key={article.ArticleId || article.articleId}
+                style={
+                  article.isActive === false || article.IsActive === false
+                    ? { backgroundColor: '#f5f5f5', color: '#aaa' }
+                    : {}
+                }
+              >
                 <TableCell>{article.Title || article.title}</TableCell>
                 <TableCell>
                   {(article.Status || article.status)
@@ -324,8 +377,8 @@ const ArticleManage = () => {
                     <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
                   </Select>
                 </TableCell>
-                <TableCell>{article.PublishedDate || article.publishedDate}</TableCell>
-                <TableCell>{article.UpdatedDate || article.updatedDate}</TableCell>
+                <TableCell>{formatDateTime(article.PublishedDate || article.publishedDate)}</TableCell>
+                <TableCell>{formatDateTime(article.UpdatedDate || article.updatedDate)}</TableCell>
                 <TableCell>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Button
@@ -400,10 +453,10 @@ const ArticleManage = () => {
                     : 'Không xác định'}
               </div>
               <div>
-                <strong>📅 Ngày đăng:</strong> {selectedArticle.PublishedDate || selectedArticle.publishedDate}
+                <strong>📅 Ngày đăng:</strong> {formatDateTime(selectedArticle.PublishedDate || selectedArticle.publishedDate)}
               </div>
               <div>
-                <strong>🔄 Cập nhật:</strong> {selectedArticle.UpdatedDate || selectedArticle.updatedDate}
+                <strong>🔄 Cập nhật:</strong> {formatDateTime(selectedArticle.UpdatedDate || selectedArticle.updatedDate)}
               </div>
             </div>
           </DialogContent>
@@ -470,6 +523,41 @@ const ArticleManage = () => {
               <MenuItem value="Published">Published</MenuItem>
             </Select>
           </FormControl>
+          <TextField
+            label="URL ảnh"
+            fullWidth
+            value={newArticle.ImageUrl || ''}
+            onChange={e => {
+              setNewArticle({ ...newArticle, ImageUrl: e.target.value });
+              setNewArticleImagePreview("");
+            }}
+          />
+          <input
+            accept="image/jpeg,image/png"
+            type="file"
+            style={{ marginTop: 8 }}
+            onChange={e => {
+              const file = e.target.files[0];
+              if (!file) return;
+              if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                return;
+              }
+              if (file.size > 1024 * 1024) {
+                alert('Ảnh phải nhỏ hơn 1MB!');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = ev => {
+                setNewArticleImagePreview(ev.target.result);
+                setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          {newArticleImagePreview && (
+            <img src={newArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -514,6 +602,41 @@ const ArticleManage = () => {
               <MenuItem value="Published">Đã xuất bản</MenuItem>
             </Select>
           </FormControl>
+          <TextField
+            label="URL ảnh"
+            fullWidth
+            value={editArticle?.ImageUrl || ''}
+            onChange={e => {
+              setEditArticle({ ...editArticle, ImageUrl: e.target.value });
+              setEditArticleImagePreview("");
+            }}
+          />
+          <input
+            accept="image/jpeg,image/png"
+            type="file"
+            style={{ marginTop: 8 }}
+            onChange={e => {
+              const file = e.target.files[0];
+              if (!file) return;
+              if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                return;
+              }
+              if (file.size > 1024 * 1024) {
+                alert('Ảnh phải nhỏ hơn 1MB!');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = ev => {
+                setEditArticleImagePreview(ev.target.result);
+                setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          {editArticleImagePreview && (
+            <img src={editArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>
@@ -522,6 +645,22 @@ const ArticleManage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar thông báo */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={3000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

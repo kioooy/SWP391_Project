@@ -421,8 +421,8 @@ const UserProfile = () => {
     if (!editFormData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editFormData.email)) {
       errors.email = 'Email không hợp lệ hoặc chứa ký tự đặc biệt.';
     }
-    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang
-    if (!editFormData.address || /[^a-zA-Z0-9\s,.-]/.test(editFormData.address)) {
+    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang, dấu gạch chéo và cho phép tiếng Việt có dấu
+    if (!editFormData.address || /[^\p{L}0-9\s,./-]/u.test(editFormData.address)) {
       errors.address = 'Địa chỉ không được chứa ký tự đặc biệt.';
     }
     setFormErrors(errors);
@@ -589,7 +589,7 @@ const UserProfile = () => {
                   <Chip label="Không xác định loại tài khoản" color="warning" sx={{ mb: 1, fontWeight: 'bold' }} />
                 )}
                 <Chip
-                  icon={<Bloodtype />}
+                  icon={<Bloodtype sx={{ fontSize: 20 }} />}
                   label={`Nhóm máu ${formData.bloodType}`}
                   color="error"
                   sx={{ mb: 1 }}
@@ -618,15 +618,15 @@ const UserProfile = () => {
                   Thông tin liên hệ
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <Phone sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+                  <Phone sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.phone}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+                  <Email sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.email}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
+                  <LocationOn sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
 
@@ -660,31 +660,31 @@ const UserProfile = () => {
                   Thông tin cá nhân
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Badge sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Số CMND:</strong> {formData.citizenNumber || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Cake sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Ngày sinh:</strong> {formData.dateOfBirth || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Wc sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Giới tính:</strong> {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Height sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Height sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Chiều cao:</strong> {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Cân nặng:</strong> {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}
                   </Typography>
@@ -824,7 +824,7 @@ const UserProfile = () => {
             fullWidth
             variant="outlined"
             value={editFormData.address || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^a-zA-Z0-9\s,.-]/g, '') })}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^\p{L}0-9\s,./-]/gu, '') })}
             sx={{ mb: 2 }}
             error={!!formErrors.address}
             helperText={formErrors.address}

@@ -154,24 +154,6 @@ const UserProfileRecipient = () => {
     fetchUserProfile();
   }, []);
 
-  useEffect(() => {
-    const fetchCompletedTransfusionHistory = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
-        // Lấy lịch sử truyền máu đã hoàn thành
-        const res = await axios.get(`${apiUrl}/TransfusionHistory`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setCompletedTransfusionHistory(res.data || []);
-      } catch (error) {
-        setCompletedTransfusionHistory([]);
-      }
-    };
-    fetchCompletedTransfusionHistory();
-  }, []);
-
   const handleUpdateLocation = async () => {
     setLocationLoading(true);
     setLocationError(null);
@@ -229,29 +211,6 @@ const UserProfileRecipient = () => {
     }
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  function TabPanel(props) {
-    const { children, value, index, ...other } = props;
-    return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`simple-tabpanel-${index}`}
-        aria-labelledby={`simple-tab-${index}`}
-        {...other}
-      >
-        {value === index && (
-          <Box sx={{ p: 3 }}>
-            {children}
-          </Box>
-        )}
-      </div>
-    );
-  }
-
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -281,7 +240,7 @@ const UserProfileRecipient = () => {
                   <Chip label="Tài khoản truyền máu" color="info" sx={{ mb: 1, fontWeight: 'bold' }} />
                 )}
                 <Chip
-                  icon={<Bloodtype />}
+                  icon={<Bloodtype sx={{ fontSize: 20 }} />}
                   label={`Nhóm máu ${formData.bloodType}`}
                   color="error"
                   sx={{ mb: 1 }}
@@ -310,15 +269,15 @@ const UserProfileRecipient = () => {
                   Thông tin liên hệ
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <Phone sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+                  <Phone sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.phone}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <Email sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+                  <Email sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.email}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  <LocationOn sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
+                  <LocationOn sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -348,31 +307,31 @@ const UserProfileRecipient = () => {
                   Thông tin cá nhân
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Badge sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Badge sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Số CMND:</strong> {formData.citizenNumber || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Cake sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Cake sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Ngày sinh:</strong> {formData.dateOfBirth || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Wc sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Wc sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Giới tính:</strong> {formData.gender === 'male' ? 'Nam' : formData.gender === 'female' ? 'Nữ' : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Height sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <Height sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Chiều cao:</strong> {formData.height ? `${formData.height} cm` : 'Chưa cập nhật'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  <MonitorWeight sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }} />
                   <Typography variant="body1">
                     <strong>Cân nặng:</strong> {formData.weight ? `${formData.weight} kg` : 'Chưa cập nhật'}
                   </Typography>
@@ -391,50 +350,24 @@ const UserProfileRecipient = () => {
             </CardContent>
           </Card>
         </Grid>
-        {/* Lịch sử truyền máu và lịch hẹn sắp tới */}
+        {/* Lịch hẹn sắp tới */}
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={handleTabChange} aria-label="transfusion history tabs">
-                  <Tab label="Lịch sử truyền máu" />
+                <Tabs value={0} aria-label="upcoming appointments tab" sx={{ mb: 2 }}>
                   <Tab label="Lịch hẹn sắp tới" />
                 </Tabs>
               </Box>
-              <TabPanel value={tabValue} index={0}>
-                <Typography variant="h6" gutterBottom>Lịch sử truyền máu đã hoàn thành</Typography>
-                {completedTransfusionHistory.length > 0 ? (
-                  <TableContainer component={Paper}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Ngày</TableCell>
-                          <TableCell>Địa điểm</TableCell>
-                          <TableCell>Nhóm máu</TableCell>
-                          <TableCell>Thể tích (ml)</TableCell>
-                          <TableCell>Trạng thái</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {completedTransfusionHistory.map((row, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell>{row.date}</TableCell>
-                            <TableCell>{row.location}</TableCell>
-                            <TableCell>{row.bloodType}</TableCell>
-                            <TableCell>{row.volume}</TableCell>
-                            <TableCell>{row.status}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                    Chưa có lịch sử truyền máu đã hoàn thành.
-                  </Typography>
-                )}
-              </TabPanel>
-              {/* Tab lịch hẹn sắp tới giữ nguyên hoặc tuỳ chỉnh nếu cần */}
+              {/* Nội dung tab lịch hẹn sắp tới */}
+              {upcomingAppointments.length === 0 ? (
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                  Hiện chưa có lịch hẹn.
+                </Typography>
+              ) : (
+                // ... render danh sách lịch hẹn nếu có ...
+                <></>
+              )}
             </CardContent>
           </Card>
         </Grid>

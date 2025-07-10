@@ -5,6 +5,7 @@ namespace Blood_Donation_Support.DTO
     public class ArticleDTO
     {
         public int ArticleId { get; set; }
+        public int UserId { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
         public DateTime? PublishedDate { get; set; }

@@ -490,6 +490,29 @@
         }
       }
     },
+    "/api/Blog/{id}/activate": {
+      "patch": {
+        "tags": [
+          "Blog"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Blog/{id}/deactivate": {
       "patch": {
         "tags": [
@@ -669,6 +692,84 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BloodCompatibilityResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/BloodComponent": {
+      "get": {
+        "tags": [
+          "BloodComponent"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloodComponentDTO"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloodComponentDTO"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloodComponentDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/BloodComponent/{id}": {
+      "get": {
+        "tags": [
+          "BloodComponent"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BloodComponentDTO"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BloodComponentDTO"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BloodComponentDTO"
                 }
               }
             }
@@ -988,7 +1089,7 @@
         }
       }
     },
-    "/api/BloodSearch/search-with-hospital-location/{recipientBloodTypeId}/{requiredVolume}": {
+    "/api/BloodSearch/search-blood-units/{recipientBloodTypeId}/{requiredVolume}": {
       "get": {
         "tags": [
           "BloodSearch"
@@ -1013,16 +1114,95 @@
             }
           },
           {
-            "name": "component",
+            "name": "componentId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
         "responses": {
           "200": {
             "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodType": {
+      "get": {
+        "tags": [
+          "BloodType"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloodTypeDTO"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloodTypeDTO"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloodTypeDTO"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/BloodType/{id}": {
+      "get": {
+        "tags": [
+          "BloodType"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BloodTypeDTO"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BloodTypeDTO"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BloodTypeDTO"
+                }
+              }
+            }
           }
         }
       }
@@ -1196,6 +1376,44 @@
       "patch": {
         "tags": [
           "BloodUnit"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/BloodUnit/suitable": {
+      "get": {
+        "tags": [
+          "BloodUnit"
+        ],
+        "parameters": [
+          {
+            "name": "bloodTypeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "componentId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "requiredVolume",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -2182,6 +2400,18 @@
         }
       }
     },
+    "/api/TransfusionRequest/my-history": {
+      "get": {
+        "tags": [
+          "TransfusionRequest"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/TransfusionRequest/pending": {
       "get": {
         "tags": [
@@ -2586,6 +2816,18 @@
         }
       }
     },
+    "/api/User/members": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/User/profile": {
       "get": {
         "tags": [
@@ -2686,14 +2928,14 @@
   "components": {
     "schemas": {
       "ApproveTransfusionRequestInput": {
-        "required": [
-          "bloodUnitId"
-        ],
         "type": "object",
         "properties": {
-          "bloodUnitId": {
-            "type": "integer",
-            "format": "int32"
+          "bloodUnits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BloodUnitUsage"
+            },
+            "nullable": true
           },
           "notes": {
             "type": "string",
@@ -2737,6 +2979,10 @@
         "type": "object",
         "properties": {
           "articleId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
             "type": "integer",
             "format": "int32"
           },
@@ -2864,6 +3110,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "userId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "title": {
             "type": "string",
             "nullable": true
@@ -2885,6 +3135,13 @@
           "imageUrl": {
             "type": "string",
             "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -2936,6 +3193,38 @@
             "items": {
               "type": "string"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BloodComponentDTO": {
+        "type": "object",
+        "properties": {
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "componentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BloodTypeDTO": {
+        "type": "object",
+        "properties": {
+          "bloodTypeId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bloodTypeName": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -3012,6 +3301,20 @@
             "type": "string"
           },
           "memberId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BloodUnitUsage": {
+        "type": "object",
+        "properties": {
+          "bloodUnitId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "volumeUsed": {
             "type": "integer",
             "format": "int32"
           }

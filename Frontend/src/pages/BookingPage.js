@@ -861,7 +861,10 @@ const BookingPage = () => {
                         onChange={(e) => setDonationVolume(e.target.value)}
                         label="Lượng máu muốn hiến"
                       >
-                        <MenuItem value={250}>
+                        <MenuItem 
+                          value={250}
+                          disabled={false}
+                        >
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                             <span>250 ml</span>
                             <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
@@ -869,7 +872,10 @@ const BookingPage = () => {
                             </Typography>
                           </Box>
                         </MenuItem>
-                        <MenuItem value={350}>
+                        <MenuItem 
+                          value={350}
+                          disabled={userWeight && userWeight <= 50}
+                        >
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                             <span>350 ml</span>
                             <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
@@ -877,7 +883,10 @@ const BookingPage = () => {
                             </Typography>
                           </Box>
                         </MenuItem>
-                        <MenuItem value={450}>
+                        <MenuItem 
+                          value={450}
+                          disabled={userWeight && userWeight <= 60}
+                        >
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                             <span>450 ml</span>
                             <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
@@ -896,6 +905,7 @@ const BookingPage = () => {
                           Không lấy được cân nặng từ hồ sơ. Vui lòng cập nhật cân nặng trong tài khoản để nhận khuyến nghị!
                         </Typography>
                       )}
+
                     </FormControl>
                   </CardContent>
                 </Card>

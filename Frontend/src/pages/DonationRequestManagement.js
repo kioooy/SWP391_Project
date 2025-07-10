@@ -165,7 +165,17 @@ const DonationRequestManagement = () => {
         setSnackbar({ open: true, message: 'Yêu cầu đã bị từ chối.', severity: 'success' });
       }
     } catch (err) {
-      setSnackbar({ open: true, message: 'Có lỗi xảy ra!', severity: 'error' });
+      let message = 'Có lỗi xảy ra!';
+      if (err.response && err.response.data) {
+        if (typeof err.response.data === 'string') {
+          message = err.response.data;
+        } else if (err.response.data.message) {
+          message = err.response.data.message;
+        } else if (err.response.data.error) {
+          message = err.response.data.error;
+        }
+      }
+      setSnackbar({ open: true, message, severity: 'error' });
     } finally {
       handleCloseActionDialog();
     }

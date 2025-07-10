@@ -2,6 +2,7 @@ using Blood_Donation_Support.Data;
 using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -413,7 +414,48 @@ namespace Blood_Donation_Support.Controllers
             }
         }
 
-        //---Quý Coding Support---
+        // Check for expired donation requests
+        // PATCH: api/DonationRequest/expired_check
+        [HttpPatch("expired_check")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> ExpiredDonationRequestcheck()
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var currentDate = DateOnly.FromDateTime(DateTime.Now);
+            // Find donation requests that have expired (preferred date in past) but haven't been completed, cancelled or rejected
+            var expiredRequests = await _context.DonationRequests
+                .Where(dr => dr.PreferredDonationDate < currentDate &&
+                      (dr.Status != "Completed" || dr.Status != "Cancelled" || dr.Status != "Rejected"))
+                .ToListAsync();
+
+            if (expiredRequests.Count == 0)
+                return NoContent();
+
+            // Update all expired requests
+            foreach (var request in expiredRequests)
+            {
+                request.Status = "Cancelled";
+                request.Notes = $"Hệ thống tự động hủy đơn vào lúc {DateTime.Now} do quá hạn đợt hiến máu ({request.PreferredDonationDate}).";
+                _context.Entry(request).State = EntityState.Modified;
+            }
+
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction if an error occurs
+                throw;
+            }
+        }
+
+        //---Quý Coding---
 
         // Cập nhật donation request (sắp tới) theo role
         // GET: api/DonationRequest/upcoming/all-role

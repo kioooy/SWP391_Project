@@ -19,4 +19,10 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "BloodType name is required")]
         public required string BloodTypeName { get; set; }
     }
-} 
+    public class BloodTypeResponseDTO
+    {
+        public int BloodTypeId { get; set; }
+        public string BloodTypeName { get; set; } = null!;
+    }
+
+}

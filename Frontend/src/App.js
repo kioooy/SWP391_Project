@@ -98,7 +98,6 @@ const App = () => {
           }
         />
         <Route path="/certificate" element={<BloodDonationCertificate />} />
-        <Route path="/search-distance" element={<SearchByDistance />} />
         <Route path="/emergency-request" element={<EmergencyRequest />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:postId" element={<BlogDetail />} />
@@ -261,10 +260,18 @@ const App = () => {
           }
         />
         <Route
-          path="/booking-transfusion"
+          path="/search-distance"
           element={
-            <RequireAuth roles={["Staff"]}>
-              <BookingTransfusion />
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <SearchDistance />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/search-by-distance"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <SearchByDistance />
             </RequireAuth>
           }
         />

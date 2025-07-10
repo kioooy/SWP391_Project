@@ -24,14 +24,14 @@ namespace Blood_Donation_Support.DTO
         public required string Content { get; set; }
         [Required(ErrorMessage = "Status is required")]
         public required string Status { get; set; }
-        public string? ImageUrl { get; set; }
+        [Required(ErrorMessage = "Image is required")]
+        public required string ImageUrl { get; set; }
     }
 
     public class BlogUpdateDTO
     {
-        public required string Title { get; set; }
-        [Required(ErrorMessage = "Content is required")]
-        public required string Content { get; set; }
+        public string? Title { get; set; }
+        public string? Content { get; set; }
         [Required(ErrorMessage = "Status is required")]
         public required string Status { get; set; }
         public string? ImageUrl { get; set; }

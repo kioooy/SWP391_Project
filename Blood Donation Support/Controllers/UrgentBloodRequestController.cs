@@ -50,6 +50,7 @@ namespace Blood_Donation_Support.Controllers
                 PatientName = model.PatientName,
                 RequestedBloodTypeId = model.RequestedBloodTypeId,
                 Reason = model.Reason,
+                CitizenNumber = model.CitizenNumber,
                 ContactName = model.ContactName,
                 ContactPhone = model.ContactPhone,
                 ContactEmail = model.ContactEmail,
@@ -129,6 +130,7 @@ namespace Blood_Donation_Support.Controllers
                     BloodTypeName = urgentRequest.BloodType.BloodTypeName
                 },
                 urgentRequest.Reason,
+                urgentRequest.CitizenNumber,
                 urgentRequest.ContactName,
                 urgentRequest.ContactPhone,
                 urgentRequest.ContactEmail,
@@ -165,6 +167,7 @@ namespace Blood_Donation_Support.Controllers
                     BloodTypeName = ubr.BloodType.BloodTypeName
                 },
                 ubr.Reason,
+                ubr.CitizenNumber,
                 ubr.ContactName,
                 ubr.ContactPhone,
                 ubr.ContactEmail,
@@ -502,6 +505,7 @@ namespace Blood_Donation_Support.Controllers
                     BloodTypeName = ubr.BloodType.BloodTypeName
                 },
                 ubr.Reason,
+                ubr.CitizenNumber,
                 ubr.ContactName,
                 ubr.ContactPhone,
                 ubr.ContactEmail,

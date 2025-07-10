@@ -251,11 +251,6 @@ const BookingPage = () => {
     '8.2': false,
     '8.3': false,
     '8.3_detail': '',
-
-    // Question 9
-    '9.1': false,
-    '9.2': false,
-    '9.3': false,
   });
 
   const handleTabChange = (event, newValue) => {
@@ -370,11 +365,6 @@ const BookingPage = () => {
       return 'Bạn đã chọn "Khác" ở câu hỏi 8 nhưng chưa nhập chi tiết';
     }
 
-    // Kiểm tra câu hỏi 9: Câu hỏi dành cho phụ nữ:
-    if (!formData['9.1'] && !formData['9.2'] && !formData['9.3']) {
-      return 'Bạn chưa trả lời câu hỏi 9: Câu hỏi dành cho phụ nữ:';
-    }
-
     return null; // Không có lỗi
   };
 
@@ -402,7 +392,7 @@ const BookingPage = () => {
       }
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
       const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
-      const responsibleById = 1; // Id của staff/admin phụ trách, tạm thời hardcode
+      const responsibleById = 1; // Id của staff/admin phụ trách, tạm thởi hardcode
       const patientCondition = buildPatientCondition(formData); // tổng hợp từ form
       const requestDate = new Date().toISOString();
       const token = localStorage.getItem('token');
@@ -552,23 +542,6 @@ const BookingPage = () => {
           ...prev,
           [name]: isChecked,
           '6.3': name !== '6.3' && isChecked ? false : prev['6.3'], // Uncheck "Không" if any other option is selected
-        }));
-      }
-    }
-    else if (name.startsWith('9.')) {
-      if (name === '9.3' && isChecked) {
-        // If "Không" is selected, uncheck all others
-        setFormData(prev => ({
-          ...prev,
-          '9.1': false,
-          '9.2': false,
-          '9.3': true,
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          [name]: isChecked,
-          '9.3': name !== '9.3' && isChecked ? false : prev['9.3'], // Uncheck "Không" if any other option is selected
         }));
       }
     }
@@ -1217,27 +1190,6 @@ const BookingPage = () => {
                   </CardContent>
                 </QuestionCard>
 
-                {/* Question 9 */}
-                <QuestionCard>
-                  <CardContent>
-                    <QuestionTitle>9. Câu hỏi dành cho phụ nữ:</QuestionTitle>
-                    <FormGroup>
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['9.1']} onChange={handleCheckboxChange('9.1')} />}
-                        label="Hiện chị đang mang thai hoặc nuôi con dưới 12 tháng tuổi?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['9.2']} onChange={handleCheckboxChange('9.2')} />}
-                        label="Chấm dứt thai kỳ trong 12 tháng gần đây (sảy thai, phá thai, thai ngoài tử cung)?"
-                      />
-                      <StyledFormControlLabel
-                        control={<Checkbox checked={formData['9.3']} onChange={handleCheckboxChange('9.3')} />}
-                        label="Không"
-                      />
-                    </FormGroup>
-                  </CardContent>
-                </QuestionCard>
-
                 {/* Submit Button */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
                   <Button
@@ -1387,18 +1339,6 @@ const BookingPage = () => {
                 {formData['8.1'] && <Typography>- Dùng thuốc kháng sinh, kháng viêm, Aspirin, Corticoid?</Typography>}
                 {formData['8.2'] && <Typography>- Không</Typography>}
                 {formData['8.3'] && <Typography>- Khác (cụ thể): {formData['8.3_detail']}</Typography>}
-              </Stack>
-            </Box>
-
-            {/* Câu 9 */}
-            <Box>
-              <Typography fontWeight="bold" color="primary.main">
-                9. Câu hỏi dành cho phụ nữ:
-              </Typography>
-              <Stack pl={2}>
-                {formData['9.1'] && <Typography>- Hiện chị đang mang thai hoặc nuôi con dưới 12 tháng tuổi?</Typography>}
-                {formData['9.2'] && <Typography>- Chấm dứt thai kỳ trong 12 tháng gần đây (sảy thai, phá thai, thai ngoài tử cung)?</Typography>}
-                {formData['9.3'] && <Typography>- Không</Typography>}
               </Stack>
             </Box>
 

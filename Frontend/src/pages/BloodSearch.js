@@ -219,7 +219,7 @@ const BloodSearch = ({ onSearchComplete }) => {
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", color: '#E53935' }}>
         Tìm kiếm máu và người hiến phù hợp
       </Typography>
 

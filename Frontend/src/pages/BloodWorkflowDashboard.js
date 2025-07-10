@@ -188,8 +188,8 @@ const BloodWorkflowDashboard = () => {
   return (
     <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
-      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-        Quản Lý Quy Trình Truyền Máu
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
+        Quản Lý Yêu Cầu Truyền Máu
       </Typography>
     
       {/* Workflow Stepper */}

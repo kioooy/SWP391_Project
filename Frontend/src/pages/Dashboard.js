@@ -114,8 +114,6 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalBloodUnits ?? '-'}</Typography>
                 </Box>
               </Box>
-              <LinearProgress variant="determinate" value={70} />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Đạt 70% mục tiêu</Typography>
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -127,9 +125,7 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalMembers ?? '-'}</Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
-              <TrendingUp sx={{ mr: 0.5 }} />Tăng so với tháng trước
-              </Typography>
+            
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -141,9 +137,7 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalDonationRequests ?? '-'}</Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="error.main" sx={{ display: 'flex', alignItems: 'center' }}>
-              <TrendingDown sx={{ mr: 0.5 }} />Giảm so với tháng trước
-              </Typography>
+  
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -155,7 +149,6 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalTransfusionRequests ?? '-'}</Typography>
               </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary">Lịch sử truyền máu</Typography>
           </CardContent></Card>
         </Grid>
       </Grid>

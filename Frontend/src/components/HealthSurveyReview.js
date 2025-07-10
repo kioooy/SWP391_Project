@@ -105,17 +105,7 @@ const HealthSurveyReview = ({ formData }) => {
           {formData['8.3'] && <Typography>- Khác (cụ thể): {formData['8.3_detail']}</Typography>}
         </Stack>
       </Box>
-      {/* Câu 9 */}
-      <Box>
-        <Typography fontWeight="bold" color="primary.main">
-          9. Câu hỏi dành cho phụ nữ:
-        </Typography>
-        <Stack pl={2}>
-          {formData['9.1'] && <Typography>- Hiện chị đang mang thai hoặc nuôi con dưới 12 tháng tuổi?</Typography>}
-          {formData['9.2'] && <Typography>- Chấm dứt thai kỳ trong 12 tháng gần đây (sảy thai, phá thai, thai ngoài tử cung)?</Typography>}
-          {formData['9.3'] && <Typography>- Không</Typography>}
-        </Stack>
-      </Box>
+      
     </Stack>
   );
 };

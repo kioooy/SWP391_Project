@@ -344,7 +344,7 @@ const ArticleManage = () => {
                 <strong>Ngày cập nhật</strong>
               </TableCell>
               <TableCell>
-                <strong>Hành động</strong>
+                <strong>Thao tác</strong>
               </TableCell>
             </TableRow>
           </TableHead>
@@ -523,15 +523,6 @@ const ArticleManage = () => {
               <MenuItem value="Published">Published</MenuItem>
             </Select>
           </FormControl>
-          <TextField
-            label="URL ảnh"
-            fullWidth
-            value={newArticle.ImageUrl || ''}
-            onChange={e => {
-              setNewArticle({ ...newArticle, ImageUrl: e.target.value });
-              setNewArticleImagePreview("");
-            }}
-          />
           <input
             accept="image/jpeg,image/png"
             type="file"
@@ -602,15 +593,6 @@ const ArticleManage = () => {
               <MenuItem value="Published">Đã xuất bản</MenuItem>
             </Select>
           </FormControl>
-          <TextField
-            label="URL ảnh"
-            fullWidth
-            value={editArticle?.ImageUrl || ''}
-            onChange={e => {
-              setEditArticle({ ...editArticle, ImageUrl: e.target.value });
-              setEditArticleImagePreview("");
-            }}
-          />
           <input
             accept="image/jpeg,image/png"
             type="file"

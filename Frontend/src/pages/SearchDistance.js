@@ -175,7 +175,7 @@ const SearchDistance = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: "bold", color: '#E53935' }}>
         {isStaff ? 'Tìm kiếm theo khoảng cách' : 'Cập nhật vị trí của bạn'}
       </Typography>
       

@@ -260,12 +260,6 @@ const App = () => {
           }
         />
         <Route
-<<<<<<< Updated upstream
-          path="/booking-transfusion"
-          element={
-            <RequireAuth roles={["Staff"]}>
-              <BookingTransfusion />
-=======
           path="/search-distance"
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
@@ -278,7 +272,6 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <SearchByDistance />
->>>>>>> Stashed changes
             </RequireAuth>
           }
         />

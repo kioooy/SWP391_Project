@@ -26,22 +26,6 @@ const SidebarLayout = () => {
   const menuItems = [
     { path: user?.role === 'Admin' ? "/profile-admin" : user?.role === 'Staff' ? "/profile-staff" : "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
     { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
-<<<<<<< Updated upstream
-    { path: "/blood-workflow", label: "Truyền Máu", icon: <WorkflowIcon /> },
-    { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
-    { path: "/manage-urgent-request", label: "Yêu cầu khẩn", icon: <AssignmentIcon /> },
-    // { path: "/transfusion-management", label: "Truyền máu", icon: <LocalHospitalIcon /> },
-    { path: "/blood-search", label: "Tìm kiếm máu", icon: <BloodtypeIcon /> },
-    { path: "/donor-mobilization", label: "Huy động người hiến", icon: <GroupIcon /> },
-    { path: "/manage-blood-periods", label: "Đợt hiến máu", icon: <BloodtypeIcon /> },
-    { path: "/blood-inventory", label: "Kho máu tổng hợp", icon: <BloodtypeIcon /> },
-    // Chỉ admin mới thấy tài liệu và blog
-    ...(user?.role === 'Admin' ? [
-      { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },
-      { path: "/manage-blog", label: "Blog", icon: <EditNoteIcon /> },
-    ] : []),
-
-=======
     { path: "/blood-workflow", label: "Truyền máu", icon: <WorkflowIcon /> },
     { path: "/manage-requests", label: "Yêu cầu", icon: <AssignmentIcon /> },
     { path: "/blood-search", label: "Tìm máu", icon: <BloodtypeIcon /> },
@@ -52,10 +36,6 @@ const SidebarLayout = () => {
     { path: "/blood-inventory", label: "Kho máu", icon: <BloodtypeIcon /> },
     { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },
     { path: "/manage-blog", label: "Blog", icon: <EditNoteIcon /> },
->>>>>>> Stashed changes
-    // { path: "/hospital-location", label: "Vị trí bệnh viện", icon: <LocalHospitalIcon /> },
-    // { path: "/manage-roles", label: "Vai trò", icon: <PersonIcon /> },
-    // { path: "/manage-users", label: "Người dùng", icon: <GroupIcon /> },
   ];
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods

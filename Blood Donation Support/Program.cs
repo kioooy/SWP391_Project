@@ -81,8 +81,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // Add support for file uploads
-    c.OperationFilter<SwaggerFileOperationFilter>();
+    //// Add support for file uploads
+    //c.OperationFilter<SwaggerFileOperationFilter>();
 
 });
 
@@ -129,37 +129,37 @@ app.MapControllers();
 app.Run();
 
 // For Swagger file upload support
-public class SwaggerFileOperationFilter : IOperationFilter
-{
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
-    {
-        var fileParameters = context.MethodInfo.GetParameters()
-            .Where(p => p.ParameterType.GetProperties()
-                .Any(prop => prop.PropertyType == typeof(IFormFile)))
-            .ToList();
+//public class SwaggerFileOperationFilter : IOperationFilter
+//{
+//    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+//    {
+//        var fileParameters = context.MethodInfo.GetParameters()
+//            .Where(p => p.ParameterType.GetProperties()
+//                .Any(prop => prop.PropertyType == typeof(IFormFile)))
+//            .ToList();
 
-        if (fileParameters.Count > 0)
-        {
-            // Set content type for request body
-            if (operation.RequestBody == null)
-            {
-                operation.RequestBody = new OpenApiRequestBody();
-            }
+//        if (fileParameters.Count > 0)
+//        {
+//            // Set content type for request body
+//            if (operation.RequestBody == null)
+//            {
+//                operation.RequestBody = new OpenApiRequestBody();
+//            }
 
-            // Ensure we have a dictionary for content types
-            if (operation.RequestBody.Content == null)
-            {
-                operation.RequestBody.Content = new Dictionary<string, OpenApiMediaType>();
-            }
+//            // Ensure we have a dictionary for content types
+//            if (operation.RequestBody.Content == null)
+//            {
+//                operation.RequestBody.Content = new Dictionary<string, OpenApiMediaType>();
+//            }
 
-            // Clear existing content types and add multipart/form-data
-            operation.RequestBody.Content.Clear();
-            operation.RequestBody.Content.Add("multipart/form-data", new OpenApiMediaType
-            {
-                Schema = context.SchemaGenerator.GenerateSchema(context.MethodInfo.GetParameters()
-                    .First(p => p.ParameterType.GetProperties()
-                        .Any(prop => prop.PropertyType == typeof(IFormFile))).ParameterType, context.SchemaRepository)
-            });
-        }
-    }
-}
+//            // Clear existing content types and add multipart/form-data
+//            operation.RequestBody.Content.Clear();
+//            operation.RequestBody.Content.Add("multipart/form-data", new OpenApiMediaType
+//            {
+//                Schema = context.SchemaGenerator.GenerateSchema(context.MethodInfo.GetParameters()
+//                    .First(p => p.ParameterType.GetProperties()
+//                        .Any(prop => prop.PropertyType == typeof(IFormFile))).ParameterType, context.SchemaRepository)
+//            });
+//        }
+//    }
+//}

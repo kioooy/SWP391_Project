@@ -97,16 +97,6 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ArticleDTO>> CreateArticle([FromForm] ArticleCreateDTO dto)
         {
-            if (dto.ImageUrl == null || dto.ImageUrl.Length == 0)
-                return BadRequest("Thiếu Ảnh Tải Lên.");
-
-            var memoryStream = new MemoryStream();
-            await dto.ImageUrl.CopyToAsync(memoryStream); // Copy the uploaded file to memory stream
-            byte[] imageBytes = memoryStream.ToArray();   // Convert memory stream to byte array
-            string imageUrl = "imageName:" + dto.ImageUrl.FileName +
-                              ";imageType:" + dto.ImageUrl.ContentType +
-                              ";base64:" + Convert.ToBase64String(imageBytes);
-            
             var Article = new Article
             {
                 UserId = dto.UserId,
@@ -115,7 +105,7 @@ namespace Blood_Donation_Support.Controllers
                 Status = dto.Status,
                 IsActive = true,
                 PublishedDate = DateTime.Now,
-                ImageUrl = imageUrl
+                ImageUrl = dto.ImageUrl
             };
             _context.Articles.Add(Article);
             await _context.SaveChangesAsync();
@@ -123,20 +113,10 @@ namespace Blood_Donation_Support.Controllers
         }
         // Update Article (Admin Only)
         // PUT: api/Article/{id}
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateArticle(int id, [FromForm] ArticleUpdateDTO dto)
         {
-            string imageUrl = string.Empty;
-            if (dto.ImageUrl != null || dto.ImageUrl.Length > 0) // If ImageUrl is provided
-            {
-                var memoryStream = new MemoryStream();
-                await dto.ImageUrl.CopyToAsync(memoryStream); // Copy the uploaded file to memory stream
-                byte[] imageBytes = memoryStream.ToArray();   // Convert memory stream to byte array
-                imageUrl = "imageName:" + dto.ImageUrl.FileName +
-                           ";imageType:" + dto.ImageUrl.ContentType +
-                           ";base64:" + Convert.ToBase64String(imageBytes);
-            }
 
             var Article = await _context.Articles.FindAsync(id);
             if (Article == null)
@@ -146,7 +126,7 @@ namespace Blood_Donation_Support.Controllers
             Article.Content = dto.Content;
             Article.Status = dto.Status;
             Article.UpdatedDate = DateTime.Now;
-            Article.ImageUrl = imageUrl;
+            Article.ImageUrl = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
             return NoContent();

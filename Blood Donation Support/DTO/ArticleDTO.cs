@@ -25,7 +25,7 @@ namespace Blood_Donation_Support.DTO
         [Required(ErrorMessage = "Status is required")]
         public required string Status { get; set; }
         [Required(ErrorMessage = "Image is required")]
-        public required IFormFile ImageUrl { get; set; }
+        public required string ImageUrl { get; set; }
 
     }
 
@@ -34,7 +34,7 @@ namespace Blood_Donation_Support.DTO
         public string? Title { get; set; }
         public string? Content { get; set; }
         public required string Status { get; set; }
-        public IFormFile? ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
 
     }
 

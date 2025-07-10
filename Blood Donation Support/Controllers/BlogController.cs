@@ -34,9 +34,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                     Status = b.Status,
-                    IsActive = b.IsActive
+                    IsActive = b.IsActive,
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -57,9 +57,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                     Status = b.Status,
-                    IsActive = b.IsActive
+                    IsActive = b.IsActive,
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -80,9 +80,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                     Status = b.Status,
-                    IsActive = b.IsActive
+                    IsActive = b.IsActive,
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .FirstOrDefaultAsync();
             if (blog == null)
@@ -95,16 +95,6 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<BlogDTO>> CreateBlog([FromForm] BlogCreateDTO dto)
         {
-            if( dto.ImageUrl == null || dto.ImageUrl.Length == 0)
-                return BadRequest("Thiếu Ảnh Tải Lên.");
-            
-            var memoryStream = new MemoryStream();
-            await dto.ImageUrl.CopyToAsync(memoryStream); // Copy the uploaded file to memory stream
-            byte[] imageBytes = memoryStream.ToArray();   // Convert memory stream to byte array
-            string imageUrl = "imageName:"+ dto.ImageUrl.FileName +
-                              ";imageType:"  + dto.ImageUrl.ContentType + 
-                              ";base64:" + Convert.ToBase64String(imageBytes);
-
             var blog = new Blog
             {
                 UserId = dto.UserId,
@@ -113,8 +103,7 @@ namespace Blood_Donation_Support.Controllers
                 Status = dto.Status,
                 IsActive = true,
                 PublishedDate = DateTime.Now,
-                ImageUrl = imageUrl,
-
+                ImageUrl = dto.ImageUrl,
             };
             _context.Blogs.Add(blog);
             await _context.SaveChangesAsync();
@@ -123,20 +112,10 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // PUT: api/blogs/{id}
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBlog(int id, [FromForm] BlogUpdateDTO dto)
         {
-            string imageUrl = string.Empty;
-            if (dto.ImageUrl != null || dto.ImageUrl.Length > 0) // If ImageUrl is provided
-            {
-                var memoryStream = new MemoryStream();
-                await dto.ImageUrl.CopyToAsync(memoryStream); // Copy the uploaded file to memory stream
-                byte[] imageBytes = memoryStream.ToArray();   // Convert memory stream to byte array
-                imageUrl = "imageName:" + dto.ImageUrl.FileName +
-                           ";imageType:" + dto.ImageUrl.ContentType +
-                           ";base64:" + Convert.ToBase64String(imageBytes);
-            }
 
             var blog = await _context.Blogs.FindAsync(id);
             if (blog == null)
@@ -146,7 +125,7 @@ namespace Blood_Donation_Support.Controllers
             blog.Content = dto.Content;
             blog.Status = dto.Status;
             blog.UpdatedDate = DateTime.Now;
-            blog.ImageUrl = imageUrl;
+            blog.ImageUrl = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
             return NoContent(); 

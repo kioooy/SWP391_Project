@@ -189,8 +189,12 @@ const BloodWorkflowDashboard = () => {
     <Box sx={{ minHeight: "100vh", p: 3 }}>
       {/* Header */}
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
+<<<<<<< Updated upstream
 
         Quản Lý Quy Trình Hiến Máu
+=======
+        Quản Lý Yêu Cầu Truyền Máu
+>>>>>>> Stashed changes
       </Typography>
     
       {/* Workflow Stepper */}

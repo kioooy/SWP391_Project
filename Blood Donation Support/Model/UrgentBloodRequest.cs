@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Blood_Donation_Support.Model
 {
@@ -9,6 +8,7 @@ namespace Blood_Donation_Support.Model
         public string PatientName { get; set; } = null!;
         public int RequestedBloodTypeId { get; set; }
         public string? Reason { get; set; }
+        public string CitizenNumber { get; set; } = null!;
         public string ContactName { get; set; } = null!;
         public string ContactPhone { get; set; } = null!;
         public string? ContactEmail { get; set; }

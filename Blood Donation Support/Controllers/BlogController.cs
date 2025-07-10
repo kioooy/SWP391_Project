@@ -1,4 +1,4 @@
-using Blood_Donation_Support.DTO;
+﻿using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,9 +34,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                     Status = b.Status,
-                    IsActive = b.IsActive
+                    IsActive = b.IsActive,
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -57,9 +57,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                     Status = b.Status,
-                    IsActive = b.IsActive
+                    IsActive = b.IsActive,
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .ToListAsync();
             return Ok(blogs);
@@ -80,9 +80,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = b.Content,
                     PublishedDate = b.PublishedDate,
                     UpdatedDate = b.UpdatedDate,
-                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                     Status = b.Status,
-                    IsActive = b.IsActive
+                    IsActive = b.IsActive,
+                    ImageUrl = b.ImageUrl ?? string.Empty, // If ImageUrl is null, return empty string
                 })
                 .FirstOrDefaultAsync();
             if (blog == null)
@@ -93,38 +93,42 @@ namespace Blood_Donation_Support.Controllers
         // POST: api/blogs
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<BlogDTO>> CreateBlog([FromBody] BlogCreateDTO dto)
+        public async Task<ActionResult<BlogDTO>> CreateBlog([FromForm] BlogCreateDTO dto)
         {
             var blog = new Blog
             {
                 UserId = dto.UserId,
                 Title = dto.Title,
                 Content = dto.Content,
-                ImageUrl = dto.ImageUrl,
                 Status = dto.Status,
                 IsActive = true,
-                PublishedDate = DateTime.Now
+                PublishedDate = DateTime.Now,
+                ImageUrl = dto.ImageUrl,
             };
             _context.Blogs.Add(blog);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetBlog), new { id = blog.PostId }, blog);
+        
         }
 
         // PUT: api/blogs/{id}
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateBlog(int id, [FromBody] BlogUpdateDTO dto)
+        public async Task<IActionResult> UpdateBlog(int id, [FromForm] BlogUpdateDTO dto)
         {
+
             var blog = await _context.Blogs.FindAsync(id);
             if (blog == null)
                 return NotFound();
+
             blog.Title = dto.Title;
             blog.Content = dto.Content;
-            blog.ImageUrl = dto.ImageUrl;
             blog.Status = dto.Status;
             blog.UpdatedDate = DateTime.Now;
+            blog.ImageUrl = dto.ImageUrl;
+
             await _context.SaveChangesAsync();
-            return NoContent();
+            return NoContent(); 
         }
 
         // PATCH: api/blogs/{id}/status

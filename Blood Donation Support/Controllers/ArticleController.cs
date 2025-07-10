@@ -1,4 +1,4 @@
-using Blood_Donation_Support.DTO;
+﻿using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,9 +34,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl,
                     IsActive = a.IsActive,
-                    Status = a.Status
+                    Status = a.Status,
+                    ImageUrl = a.ImageUrl,
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -57,9 +57,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl,
                     IsActive = a.IsActive,
-                    Status = a.Status
+                    Status = a.Status,
+                    ImageUrl = a.ImageUrl,
                 })
                 .ToListAsync();
             return Ok(Article);
@@ -80,9 +80,9 @@ namespace Blood_Donation_Support.Controllers
                     Content = a.Content,
                     PublishedDate = a.PublishedDate,
                     UpdatedDate = a.UpdatedDate,
-                    ImageUrl = a.ImageUrl,
                     IsActive = a.IsActive,
-                    Status = a.Status
+                    Status = a.Status,
+                    ImageUrl = a.ImageUrl,
                 })
                 .FirstOrDefaultAsync();
 
@@ -95,7 +95,7 @@ namespace Blood_Donation_Support.Controllers
         // POST: api/Article
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<ArticleDTO>> CreateArticle([FromBody] ArticleCreateDTO dto)
+        public async Task<ActionResult<ArticleDTO>> CreateArticle([FromForm] ArticleCreateDTO dto)
         {
             var Article = new Article
             {
@@ -113,10 +113,11 @@ namespace Blood_Donation_Support.Controllers
         }
         // Update Article (Admin Only)
         // PUT: api/Article/{id}
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateArticle(int id, [FromBody] ArticleUpdateDTO dto)
+        public async Task<IActionResult> UpdateArticle(int id, [FromForm] ArticleUpdateDTO dto)
         {
+
             var Article = await _context.Articles.FindAsync(id);
             if (Article == null)
                 return NotFound();
@@ -125,6 +126,7 @@ namespace Blood_Donation_Support.Controllers
             Article.Content = dto.Content;
             Article.Status = dto.Status;
             Article.UpdatedDate = DateTime.Now;
+            Article.ImageUrl = dto.ImageUrl;
 
             await _context.SaveChangesAsync();
             return NoContent();

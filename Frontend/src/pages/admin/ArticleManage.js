@@ -54,8 +54,6 @@ const ArticleManage = () => {
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [newArticleImagePreview, setNewArticleImagePreview] = useState("");
-  const [editArticleImagePreview, setEditArticleImagePreview] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -163,16 +161,15 @@ const ArticleManage = () => {
       return;
     }
 
-    const payload = {
-      Title: editArticle.Title,
-      Content: editArticle.Content,
-      Status: editArticle.Status,
-    };
+    const formData = new FormData();
+    formData.append('Title', editArticle.Title);
+    formData.append('Content', editArticle.Content);
+    formData.append('Status', editArticle.Status);
 
     try {
-      await axios.put(
+      await axios.patch(
         `${API_URL}/Article/${editArticle.ArticleId}`,
-        payload,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -195,20 +192,20 @@ const ArticleManage = () => {
 
   const handleCreate = async () => {
     const { Title, Content, Status } = newArticle;
-    if (!Title || !Content || !Status) {
-      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin!', severity: 'warning' });
+    if (!Title || !Content || !Status || !user?.UserId) {
+      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin và đảm bảo bạn là admin!', severity: 'warning' });
       return;
     }
 
-    const item = {
-      UserId: user?.UserId,
-      Title,
-      Content,
-      Status,
-    };
+    const formData = new FormData();
+    formData.append('UserId', String(user.UserId)); // Đảm bảo là chuỗi số
+    formData.append('Title', Title);
+    formData.append('Content', Content);
+    formData.append('Status', Status);
+    formData.append('ImageUrl', 'no-image'); // Gửi giá trị mặc định để backend không lỗi
 
     try {
-      await axios.post(`${API_URL}/Article`, item, {
+      await axios.post(`${API_URL}/Article`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -523,32 +520,6 @@ const ArticleManage = () => {
               <MenuItem value="Published">Published</MenuItem>
             </Select>
           </FormControl>
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setNewArticleImagePreview(ev.target.result);
-                setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
-          {newArticleImagePreview && (
-            <img src={newArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -593,32 +564,6 @@ const ArticleManage = () => {
               <MenuItem value="Published">Đã xuất bản</MenuItem>
             </Select>
           </FormControl>
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setEditArticleImagePreview(ev.target.result);
-                setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
-          {editArticleImagePreview && (
-            <img src={editArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsEditOpen(false)}>Hủy</Button>

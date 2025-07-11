@@ -58,6 +58,15 @@ const DonationRequestManagement = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      // Gọi API tự động hủy các yêu cầu quá hạn trước khi lấy danh sách
+      try {
+        await axios.patch('/api/DonationRequest/expired_check', {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (expiredErr) {
+        // Không cần xử lý lỗi, chỉ log nếu muốn
+        console.warn('Không thể tự động hủy các yêu cầu quá hạn:', expiredErr);
+      }
       const response = await axios.get('/api/DonationRequest', {
         headers: { Authorization: `Bearer ${token}` },
       });

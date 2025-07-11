@@ -13,6 +13,7 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import WorkflowIcon from '@mui/icons-material/AccountTree';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SearchIcon from '@mui/icons-material/Search';
+import WarningIcon from '@mui/icons-material/Warning';
 import { useSelector } from "react-redux";
 
 const drawerWidth = 300;
@@ -28,6 +29,7 @@ const SidebarLayout = () => {
     { path: "/dashboard", label: "Bảng Thông Tin", icon: <DashboardIcon /> },
     { path: "/blood-workflow", label: "Yêu Cầu Truyền Máu", icon: <WorkflowIcon /> },
     { path: "/manage-requests", label: "Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
+    { path: "/manage-urgent-request", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
     { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
     { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
     { path: "/search-distance", label: "Tìm Quanh Bạn", icon: <LocationOnIcon /> },
@@ -40,7 +42,7 @@ const SidebarLayout = () => {
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog", "/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
     : menuItems;
 
   return (

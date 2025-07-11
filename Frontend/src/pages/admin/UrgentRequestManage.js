@@ -42,7 +42,9 @@ const UrgentRequestManage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h5" fontWeight="bold" gutterBottom>Quản lý yêu cầu máu khẩn</Typography>
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
+        Quản Lý Yêu Cầu Máu Khẩn Cấp
+      </Typography>
       <TableContainer component={Paper}>
         <Table>
           <TableHead style={{ background: '#f5f5f5' }}>

@@ -80,7 +80,7 @@ const DonorMobilization = () => {
 
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Gửi thông báo</Typography>
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", color: '#E53935' }}>Gửi thông báo</Typography>
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2}>

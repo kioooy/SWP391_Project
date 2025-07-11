@@ -339,3 +339,8 @@ I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Do
 I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.MvcApplicationPartsAssemblyInfo.cache
 I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\EFCoreSqlServerNetTopologySuite.cs
 I:\Swp391_Group5\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\Blood Donation Support.sourcelink.json
+C:\Users\ACER\Downloads\New folder\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\ACER\Downloads\New folder\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\ACER\Downloads\New folder\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\ACER\Downloads\New folder\SWP391_Project\Blood Donation Support\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\ACER\Downloads\New folder\SWP391_Project\Blood Donation Support\bin\Debug\net8.0\Blood Donation Support.staticwebassets.runtime.json

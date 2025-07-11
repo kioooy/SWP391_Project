@@ -258,7 +258,7 @@ const SearchByDistance = () => {
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Card>
         <CardContent>
-          <Typography variant="h5" align="center" gutterBottom>
+          <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: "bold", color: '#E53935' }}>
             Tìm kiếm theo khoảng cách
           </Typography>
           <Grid container spacing={2}>

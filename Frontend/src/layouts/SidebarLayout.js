@@ -34,6 +34,8 @@ const SidebarLayout = () => {
     { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
     { path: "/search-distance", label: "Tìm Quanh Bạn", icon: <LocationOnIcon /> },
     { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },
+    // Thêm menu quản lý người dùng cho Admin/Staff
+    { path: "/manage-users", label: "Quản Lý Người Dùng", icon: <GroupIcon /> },
     { path: "/manage-blood-periods", label: "Đợt Hiến Máu", icon: <BloodtypeIcon /> },
     { path: "/blood-inventory", label: "Kho Máu", icon: <BloodtypeIcon /> },
     { path: "/manage-article", label: "Tài Liệu", icon: <MenuBookIcon /> },
@@ -42,7 +44,7 @@ const SidebarLayout = () => {
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-roles", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
     : menuItems;
 
   return (

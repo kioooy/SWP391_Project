@@ -48,6 +48,7 @@ import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
 import BloodWorkflowDashboard from "./pages/BloodWorkflowDashboard";
 import DonorMobilization from "./pages/DonorMobilization";
 import UrgentRequestManage from "./pages/admin/UrgentRequestManage";
+import UserManage from './pages/admin/UserManage';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -229,8 +230,8 @@ const App = () => {
         <Route
           path="/manage-users"
           element={
-            <RequireAuth roles={["Admin"]}>
-              <div>Quản lý người dùng (đang phát triển)</div>
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <UserManage />
             </RequireAuth>
           }
         />

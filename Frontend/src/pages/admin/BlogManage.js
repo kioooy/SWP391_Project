@@ -102,46 +102,38 @@ const BlogManage = () => {
   };
 
   const handleCreate = async () => {
-    const { Title, Content, ImageUrl, Status, IsActive } = newBlog;
-
-    if (!Title || !Content || !ImageUrl) {
+    const { Title, Content, ImageUrl, Status } = newBlog;
+    if (!Title || !Content) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-
     try {
-      const res = await axios.post(
+      const formData = new FormData();
+      formData.append('userId', user?.UserId || user?.userId);
+      formData.append('title', Title);
+      formData.append('content', Content);
+      formData.append('status', Status);
+      formData.append('imageUrl', ImageUrl || ''); // Ảnh không bắt buộc
+      await axios.post(
         `${API_URL}/Blog`,
-        {
-          userId: user?.UserId || user?.userId,
-          title: Title,
-          content: Content,
-          imageUrl: ImageUrl,
-          status: Status,
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
-      const created = res.data;
-
-      const newPost = {
-        PostId: created.postId,
-        Title: created.title,
-        Content: created.content,
-        ImageUrl: created.imageUrl,
-        Status: created.status,
-        IsActive: true,
-        PublishedDate: created.publishedDate,
-        UpdatedDate: created.updatedDate ?? created.publishedDate,
-      };
-
-      const updated = [newPost, ...blogs];
-      setBlogs(updated);
-      setFilteredBlogs(updated);
+      // Lấy lại danh sách mới
+      const res = await axios.get(`${API_URL}/Blog/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setBlogs(sorted);
+      setFilteredBlogs(sorted);
       setNewBlog({
         Title: "",
         Content: "",
@@ -171,19 +163,19 @@ const BlogManage = () => {
 
   const handleUpdate = async () => {
     const { postId, title, content, imageUrl, status } = editBlog;
-    if (!title || !content || !imageUrl) {
+    if (!title || !content) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
     try {
-      await axios.put(
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('status', status);
+      formData.append('imageUrl', imageUrl || ''); // Ảnh không bắt buộc
+      await axios.patch(
         `${API_URL}/Blog/${postId}`,
-        {
-          title,
-          content,
-          imageUrl,
-          status,
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -443,7 +435,7 @@ const BlogManage = () => {
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleCreate}>
-            Lưu
+            Tạo
           </Button>
         </DialogActions>
       </Dialog>

@@ -426,8 +426,7 @@ namespace Blood_Donation_Support.Controllers
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
             // Find donation requests that have expired (preferred date in past) but haven't been completed, cancelled or rejected
             var expiredRequests = await _context.DonationRequests
-                .Where(dr => dr.PreferredDonationDate < currentDate &&
-                      (dr.Status != "Completed" || dr.Status != "Cancelled" || dr.Status != "Rejected"))
+                .Where(dr => dr.PreferredDonationDate < currentDate && dr.Status == "Approved")
                 .ToListAsync();
 
             if (expiredRequests.Count == 0)

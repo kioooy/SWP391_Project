@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ACER\\Downloads\\New folder\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj": {}
+    "I:\\Swp391_Group5\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ACER\\Downloads\\New folder\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj": {
+    "I:\\Swp391_Group5\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ACER\\Downloads\\New folder\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj",
+        "projectUniqueName": "I:\\Swp391_Group5\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj",
         "projectName": "Blood Donation Support",
-        "projectPath": "C:\\Users\\ACER\\Downloads\\New folder\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj",
-        "packagesPath": "C:\\Users\\ACER\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ACER\\Downloads\\New folder\\SWP391_Project\\Blood Donation Support\\obj\\",
+        "projectPath": "I:\\Swp391_Group5\\SWP391_Project\\Blood Donation Support\\Blood Donation Support.csproj",
+        "packagesPath": "C:\\Users\\tinbusiness.work\\.nuget\\packages\\",
+        "outputPath": "I:\\Swp391_Group5\\SWP391_Project\\Blood Donation Support\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ACER\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\tinbusiness.work\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -25,7 +25,6 @@
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -114,7 +113,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

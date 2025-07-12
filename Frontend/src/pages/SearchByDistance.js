@@ -308,7 +308,10 @@ const SearchByDistance = () => {
                 label="Bán kính tìm kiếm (km)"
                 type="number"
                 value={radius}
-                onChange={e => setRadius(Number(e.target.value))}
+                onChange={e => {
+                  const val = e.target.value;
+                  setRadius(val === "" ? "" : Number(val));
+                }}
                 fullWidth
                 inputProps={{ min: 0, max: 100, step: 0.1 }}
                 helperText="Nhập số thập phân theo định dạng hệ thống, ví dụ: 0,5 hoặc 0.5 tuỳ máy."
@@ -330,30 +333,34 @@ const SearchByDistance = () => {
       {loading && <Typography align="center" sx={{ mt: 2 }}>Đang tải dữ liệu...</Typography>}
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       {results.length > 0 ? (
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>Kết quả:</Typography>
-            <Grid container spacing={2}>
-              {filteredResults.map((item, idx) => (
-                <Grid item xs={12} key={idx}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle1"><b>UserId:</b> {item.userId}</Typography>
-<Typography variant="body2"><b>Họ tên:</b> {item.fullName}</Typography>
-<Typography variant="body2"><b>SĐT:</b> {item.phone}</Typography>
-<Typography variant="body2"><b>Email:</b> {item.email}</Typography>
-<Typography variant="body2"><b>Nhóm máu:</b> {item.bloodType}</Typography>
-<Typography variant="body2"><b>Địa chỉ:</b> {item.address}</Typography>
-<Typography variant="body2"><b>Cân nặng:</b> {item.weight}</Typography>
-<Typography variant="body2"><b>Chiều cao:</b> {item.height}</Typography>
-<Typography variant="body2"><b>Khoảng cách:</b> {item.distance < 1000 ? `${Math.round(item.distance)} mét` : `${(item.distance/1000).toFixed(2)} km`}</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </CardContent>
-        </Card>
+        <>
+          {console.log('Kết quả trả về từ API:', results)}
+          <Card sx={{ mt: 4 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>Kết quả:</Typography>
+              <Grid container spacing={2}>
+                {filteredResults.map((item, idx) => (
+                  <Grid item xs={12} key={idx}>
+                    {console.log('Distance của item:', item.distance, 'item:', item)}
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="subtitle1"><b>UserId:</b> {item.userId}</Typography>
+                        <Typography variant="body2"><b>Họ tên:</b> {item.fullName}</Typography>
+                        <Typography variant="body2"><b>SĐT:</b> {item.phone}</Typography>
+                        <Typography variant="body2"><b>Email:</b> {item.email}</Typography>
+                        <Typography variant="body2"><b>Nhóm máu:</b> {item.bloodType}</Typography>
+                        <Typography variant="body2"><b>Địa chỉ:</b> {item.address}</Typography>
+                        <Typography variant="body2"><b>Cân nặng:</b> {item.weight}</Typography>
+                        <Typography variant="body2"><b>Chiều cao:</b> {item.height}</Typography>
+                        <Typography variant="body2"><b>Khoảng cách:</b> {typeof item.distance === "number" ? (item.distance < 1000 ? `${Math.round(item.distance)} mét` : `${(item.distance/1000).toFixed(2)} km`) : "Không xác định"}</Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+        </>
       ) : (
         <Card sx={{ mt: 4 }}>
           <CardContent>

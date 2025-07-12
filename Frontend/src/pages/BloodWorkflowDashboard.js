@@ -193,47 +193,49 @@ const BloodWorkflowDashboard = () => {
       </Typography>
     
       {/* Workflow Stepper */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Stepper activeStep={activeStep} orientation="horizontal">
-            {steps.map((step, index) => (
-              <Step key={index} completed={getStepStatus(index) === "completed"}>
-                <StepLabel
-                  icon={
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        bgcolor: getStepColor(index) === "success" ? "success.main" : 
-                                getStepColor(index) === "primary" ? "primary.main" :
-                                getStepColor(index) === "info" ? "info.main" :
-                                getStepColor(index) === "warning" ? "warning.main" :
-                                "grey.300",
-                        color: "white",
-                      }}
-                    >
-                      {step.icon}
-                    </Box>
-                  }
-                  onClick={() => handleStepChange(index)}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {step.label}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {step.description}
-                  </Typography>
-                </StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </CardContent>
-      </Card>
+      {steps.length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Stepper activeStep={activeStep} orientation="horizontal">
+              {steps.map((step, index) => (
+                <Step key={index} completed={getStepStatus(index) === "completed"}>
+                  <StepLabel
+                    icon={
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 40,
+                          height: 40,
+                          borderRadius: "50%",
+                          bgcolor: getStepColor(index) === "success" ? "success.main" : 
+                                  getStepColor(index) === "primary" ? "primary.main" :
+                                  getStepColor(index) === "info" ? "info.main" :
+                                  getStepColor(index) === "warning" ? "warning.main" :
+                                  "grey.300",
+                          color: "white",
+                        }}
+                      >
+                        {step.icon}
+                      </Box>
+                    }
+                    onClick={() => handleStepChange(index)}
+                    sx={{ cursor: "pointer" }}
+                  >
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {step.label}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {step.description}
+                    </Typography>
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Content Tabs */}
       <Card>

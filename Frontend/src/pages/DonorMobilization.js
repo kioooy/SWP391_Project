@@ -79,9 +79,9 @@ const DonorMobilization = () => {
   };
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ backgroundColor: "#fff", minHeight: "100vh" }}>
       <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", color: '#E53935' }}>Gửi thông báo</Typography>
-      <Card sx={{ mb: 3 }}>
+      <Card sx={{ mb: 3, boxShadow: 'none', background: 'none' }}>
         <CardContent>
           <Grid container spacing={2}>
             {/* Xóa toàn bộ các Grid item chọn nhóm máu, thành phần máu, lượng máu cần, và nút tìm người hiến phù hợp */}
@@ -126,7 +126,7 @@ const DonorMobilization = () => {
       </Snackbar>
       {/* Hiển thị danh sách người nhận thông báo nếu có */}
       {notifiedDonors.length > 0 && (
-        <Card sx={{ mt: 3 }}>
+        <Card sx={{ mt: 3, boxShadow: 'none', background: 'none' }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Danh sách người nhận thông báo</Typography>
             <TableContainer component={Paper}>

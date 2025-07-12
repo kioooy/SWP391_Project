@@ -3,7 +3,7 @@ import {
   Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, TextField, Select, MenuItem, TablePagination, FormControl, InputLabel
 } from '@mui/material';
 import axios from 'axios';
-import { Phone, Email, Cake, Wc, LocationOn, Bloodtype, MonitorWeight, Height, Badge, CalendarToday } from '@mui/icons-material';
+import { Phone, Email, Cake, Wc, LocationOn, Bloodtype, MonitorWeight, Height, Badge, CalendarToday, VolunteerActivism, Favorite, HelpOutline } from '@mui/icons-material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 const token = localStorage.getItem('token');
@@ -96,6 +96,7 @@ const UserManage = () => {
         updatedAt: detail.updatedAt || '',
         // Mapping roleId từ name
         roleId: roles.find(r => r.name === detail.name)?.id || '',
+        accountType: detail.isDonor ? 'donor' : (detail.isRecipient ? 'recipient' : '')
       });
       setOpenDialog(true);
     } catch (err) {
@@ -150,13 +151,11 @@ const UserManage = () => {
         DateOfBirth: editUser.dateOfBirth,
         Sex: editUser.sex === 'male' ? true : false,
         Address: editUser.address,
-        RoleId: Number(editUser.roleId),
-        Height: editUser.height,
-        Weight: editUser.weight,
-        // Nếu cần đổi mật khẩu thì mới gửi PasswordHash
-        // PasswordHash: editUser.passwordHash || undefined,
+        BloodTypeId: editUser.bloodTypeId || null,
+        IsDonor: editUser.isDonor,
+        IsRecipient: editUser.isRecipient
       };
-      await axios.patch(`${API_URL}/User/${editUser.userId}`, body, {
+      await axios.patch(`${API_URL}/User/${editUser.userId}/profile`, body, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSnackbar({ open: true, message: 'Cập nhật thành công!', severity: 'success' });
@@ -227,9 +226,7 @@ const UserManage = () => {
           onChange={handleSearch}
           style={{ width: '70%' }}
         />
-        <Button variant="contained" onClick={() => handleOpenDialog()}>
-          ➕ Thêm người dùng
-        </Button>
+        {/* Đã xóa nút Thêm người dùng */}
       </div>
       <TableContainer component={Paper}>
         <Table>
@@ -238,29 +235,37 @@ const UserManage = () => {
               <TableCell><b>Họ tên</b></TableCell>
               <TableCell><b>Số CCCD</b></TableCell>
               <TableCell><b>Email</b></TableCell>
-              <TableCell><b>Vai trò</b></TableCell>
+              <TableCell><b>Loại tài khoản</b></TableCell>
               <TableCell><b>Trạng thái</b></TableCell>
               <TableCell><b>Hành động</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((u, idx) => (
-              <TableRow key={u.userId || idx}>
-                <TableCell>{u.fullName}</TableCell>
-                <TableCell>{u.citizenNumber}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.role}</TableCell>
-                <TableCell>{u.isActive === false ? 'Vô hiệu' : 'Hoạt động'}</TableCell>
-                <TableCell>
-                  <Button size="small" variant="outlined" onClick={() => handleOpenDialog(u)} sx={{ mr: 1 }}>Sửa</Button>
-                  <Button size="small" color="info" variant="contained" onClick={() => handleViewDetail(u)} sx={{ mr: 1 }}>Xem</Button>
-                  <Button size="small" 
-                     sx={{ backgroundColor: 'error.main', color: '#fff', '&:hover': { backgroundColor: 'error.dark' } }}
-                     onClick={() => handleSoftDeleteUser(u.userId)}>
-                     Xóa
-                   </Button>
-                </TableCell>
-              </TableRow>
+            {filteredUsers
+              .filter(u => u.role === "Member" || u.roleId === 3)
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((u, idx) => (
+                <TableRow key={u.userId || idx}>
+                  <TableCell>{u.fullName}</TableCell>
+                  <TableCell>{u.citizenNumber}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>
+                    {(u.isDonor && u.isRecipient && "Hiến & Truyền máu") ||
+                     (u.isDonor && "Hiến máu") ||
+                     (u.isRecipient && "Truyền máu") ||
+                     "Không xác định"}
+                  </TableCell>
+                  <TableCell>{u.isActive === false ? 'Vô hiệu' : 'Hoạt động'}</TableCell>
+                  <TableCell>
+                    <Button size="small" variant="outlined" onClick={() => handleOpenDialog(u)} sx={{ mr: 1 }}>Sửa</Button>
+                    <Button size="small" color="info" variant="contained" onClick={() => handleViewDetail(u)} sx={{ mr: 1 }}>Xem</Button>
+                    <Button size="small" 
+                       sx={{ backgroundColor: 'error.main', color: '#fff', '&:hover': { backgroundColor: 'error.dark' } }}
+                       onClick={() => handleSoftDeleteUser(u.userId)}>
+                       Xóa
+                     </Button>
+                  </TableCell>
+                </TableRow>
             ))}
           </TableBody>
         </Table>
@@ -279,10 +284,44 @@ const UserManage = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editMode ? 'Sửa người dùng' : 'Thêm người dùng'}</DialogTitle>
         <DialogContent style={{ display: 'grid', gap: 12 }}>
-          <TextField label="Họ tên" fullWidth value={editUser?.fullName} onChange={e => setEditUser({ ...editUser, fullName: e.target.value })} />
-          <TextField label="Số CCCD" fullWidth value={editUser?.citizenNumber} onChange={e => setEditUser({ ...editUser, citizenNumber: e.target.value })} />
-          <TextField label="Email" fullWidth value={editUser?.email} onChange={e => setEditUser({ ...editUser, email: e.target.value })} />
-          <TextField label="SĐT" fullWidth value={editUser?.phoneNumber} onChange={e => setEditUser({ ...editUser, phoneNumber: e.target.value })} />
+          <TextField label="Họ tên" fullWidth value={editUser?.fullName} onChange={e => setEditUser({ ...editUser, fullName: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" sx={{ mt: 4 }} />
+          {!editMode && (
+            <TextField 
+              label="Số CCCD" 
+              fullWidth 
+              value={editUser?.citizenNumber} 
+              onChange={e => setEditUser({ ...editUser, citizenNumber: e.target.value })}
+              helperText=""
+              sx={{ mb: 1 }}
+            />
+          )}
+          {!editMode && (
+            <TextField 
+              label="Email" 
+              fullWidth 
+              value={editUser?.email} 
+              onChange={e => setEditUser({ ...editUser, email: e.target.value })}
+              helperText=""
+              sx={{ mb: 1 }}
+            />
+          )}
+          <TextField
+            label="SĐT"
+            fullWidth
+            value={editUser?.phoneNumber}
+            onChange={e => {
+              const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+              setEditUser({ ...editUser, phoneNumber: value });
+            }}
+            type="tel"
+            inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
+            error={editUser?.phoneNumber && editUser.phoneNumber.length !== 10}
+            helperText={
+              editUser?.phoneNumber && editUser.phoneNumber.length !== 10
+                ? "Số điện thoại phải đủ 10 số"
+                : ""
+            }
+          />
           <TextField label="Ngày sinh" type="date" fullWidth InputLabelProps={{ shrink: true }} value={editUser?.dateOfBirth} onChange={e => setEditUser({ ...editUser, dateOfBirth: e.target.value })} />
           <FormControl fullWidth>
             <InputLabel>Giới tính</InputLabel>
@@ -293,9 +332,39 @@ const UserManage = () => {
           </FormControl>
           <TextField label="Địa chỉ" fullWidth value={editUser?.address} onChange={e => setEditUser({ ...editUser, address: e.target.value })} />
           <FormControl fullWidth>
-            <InputLabel>Vai trò</InputLabel>
-            <Select value={editUser?.roleId} label="Vai trò" onChange={e => setEditUser({ ...editUser, roleId: e.target.value })}>
-              {roles.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
+            <InputLabel>Nhóm máu</InputLabel>
+            <Select
+              value={editUser?.bloodTypeName || ''}
+              label="Nhóm máu"
+              onChange={e => setEditUser({ ...editUser, bloodTypeName: e.target.value })}
+            >
+              <MenuItem value="A+">A+</MenuItem>
+              <MenuItem value="A-">A-</MenuItem>
+              <MenuItem value="B+">B+</MenuItem>
+              <MenuItem value="B-">B-</MenuItem>
+              <MenuItem value="AB+">AB+</MenuItem>
+              <MenuItem value="AB-">AB-</MenuItem>
+              <MenuItem value="O+">O+</MenuItem>
+              <MenuItem value="O-">O-</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel>Loại tài khoản</InputLabel>
+            <Select
+              value={editUser?.accountType || ''}
+              label="Loại tài khoản"
+              onChange={e => {
+                const value = e.target.value;
+                setEditUser({
+                  ...editUser,
+                  isDonor: value === 'donor',
+                  isRecipient: value === 'recipient',
+                  accountType: value
+                });
+              }}
+            >
+              <MenuItem value="donor">Hiến máu</MenuItem>
+              <MenuItem value="recipient">Truyền máu</MenuItem>
             </Select>
           </FormControl>
           {!editMode && <TextField label="Mật khẩu" type="password" fullWidth value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />}
@@ -319,6 +388,14 @@ const UserManage = () => {
               <div><Wc sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /><b>Giới tính:</b> {detailUser.sex === true ? 'Nam' : detailUser.sex === false ? 'Nữ' : 'Chưa cập nhật'}</div>
               <div><LocationOn sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /><b>Địa chỉ:</b> {detailUser.address || 'Chưa cập nhật'}</div>
               <div><Bloodtype sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /><b>Nhóm máu:</b> {detailUser.bloodTypeName || 'Chưa cập nhật'}</div>
+              <div>
+                <VolunteerActivism sx={{ color: 'gray', verticalAlign: 'middle', mr: 1 }} />
+                <b>Loại tài khoản:</b>
+                {detailUser.isDonor && detailUser.isRecipient && ' Người hiến & nhận máu'}
+                {detailUser.isDonor && !detailUser.isRecipient && ' Người hiến máu'}
+                {!detailUser.isDonor && detailUser.isRecipient && ' Người nhận máu'}
+                {!detailUser.isDonor && !detailUser.isRecipient && ' Không xác định'}
+              </div>
               <div><MonitorWeight sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /><b>Cân nặng:</b> {detailUser.weight ? `${detailUser.weight} kg` : 'Chưa cập nhật'}</div>
               <div><Height sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /><b>Chiều cao:</b> {detailUser.height ? `${detailUser.height} cm` : 'Chưa cập nhật'}</div>
               <div><CalendarToday sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} /><b>Ngày tạo:</b> {detailUser.createdAt ? new Date(detailUser.createdAt).toLocaleString() : 'Chưa cập nhật'}</div>

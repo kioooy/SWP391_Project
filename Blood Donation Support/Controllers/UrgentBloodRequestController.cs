@@ -42,7 +42,7 @@ namespace Blood_Donation_Support.Controllers
             var bloodTypeExists = await _context.BloodTypes.AnyAsync(bt => bt.BloodTypeId == model.RequestedBloodTypeId);
             if (!bloodTypeExists)
             {
-                return BadRequest(new { error = $"Requested BloodType ID {model.RequestedBloodTypeId} không tồn tại." });
+                return BadRequest(new { error = $"Yêu Cầu Mã Loại Máu {model.RequestedBloodTypeId} không tồn tại." });
             }
 
             var urgentRequest = new UrgentBloodRequest
@@ -274,7 +274,7 @@ namespace Blood_Donation_Support.Controllers
 
                         foreach (var reservation in activeReservations)
                         {
-                            reservation.Status = "Cancelled by Emergency";
+                            reservation.Status = "Hủy Bỏ bởi Khẩn Cấp";
                             _context.BloodReservations.Update(reservation);
                         }
 
@@ -307,7 +307,7 @@ namespace Blood_Donation_Support.Controllers
 
                 if (!isCompatible)
                 {
-                    return BadRequest(new { error = $"Đơn vị máu (ID: {usedBloodUnit.BloodUnitId}) không tương thích với nhóm máu yêu cầu ({requestedBloodType.BloodTypeName})." });
+                    return BadRequest(new { error = $"Đơn vị máu (ID: {usedBloodUnit.BloodType.BloodTypeName}) không tương thích với nhóm máu yêu cầu ({requestedBloodType.BloodTypeName})." });
                 }
 
                 // Kiểm tra trạng thái hiện tại của BloodUnit trước khi đánh dấu là 'Used'

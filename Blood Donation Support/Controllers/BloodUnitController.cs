@@ -89,17 +89,17 @@ public class BloodUnitController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
         if (model == null)
-            return BadRequest("Blood unit data is required."); // Status 400 Bad Request if blood unit data is null
+            return BadRequest("Cần nhập dữ liệu đơn vị máu."); // Status 400 Bad Request if blood unit data is null
 
         if (model.Volume <= 0)
-            return BadRequest("Volume must be positive"); // 
+            return BadRequest("Thể tích phải là số dương."); // 
 
         var shelfLifeDays = await _context.BloodComponents // Fetch shelf life days for the component
             .Where(c => c.ComponentId == model.ComponentId)
             .Select(c => c.ShelfLifeDays)
             .FirstOrDefaultAsync();
         if (shelfLifeDays <= 0)
-            return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
+            return BadRequest("Hạn sử dụng chế phẩm không hợp lệ."); // Status 400 Bad Request if shelf life is invalid
 
         var bloodUnit = new BloodUnit // Create a new instance of BloodUnit
         {
@@ -138,7 +138,7 @@ public class BloodUnitController : ControllerBase
             return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
        
         if (model == null)
-            return BadRequest("Blood unit data is required."); // Status 400 Bad Request if blood unit data is null
+            return BadRequest("Cần nhập dữ liệu đơn vị máu."); // Status 400 Bad Request if blood unit data is null
 
         var bloodUnit = await _context.BloodUnits.FindAsync(id); // Find the existing blood unit by ID
         if (bloodUnit == null)
@@ -221,14 +221,13 @@ public class BloodUnitController : ControllerBase
         }
         await _context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            Message = $"Updated {bloodUnit.Count} Expired Blood Units",
-            ExpiredUnits = bloodUnit
-        });
+        return NoContent(); // Return 204 No Content if successful
     }
-    // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
-    [HttpGet("compatible")]
+
+        // --- Quý Coding: Start ---
+
+        // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
+        [HttpGet("compatible")]
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IActionResult> GetCompatibleBloodUnits(int bloodTypeId, int componentId, int minVolume)
     {
@@ -249,6 +248,7 @@ public class BloodUnitController : ControllerBase
 
         return Ok(units);
     }
+
     // GET: api/BloodUnit/suitable?bloodTypeId=1&componentId=1&requiredVolume=1000
     [HttpGet("suitable")]
     [Authorize(Roles = "Staff,Admin")]
@@ -278,4 +278,6 @@ public class BloodUnitController : ControllerBase
         // FE/BE sẽ tự chọn/gợi ý nhiều túi để đủ requiredVolume
         return Ok(units);
     }
+    // --- Quý Coding: End ---
+
 }

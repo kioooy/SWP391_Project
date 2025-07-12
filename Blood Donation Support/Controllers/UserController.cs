@@ -36,13 +36,18 @@ namespace Blood_Donation_Support.Controllers
                 .FirstOrDefaultAsync(u => u.CitizenNumber == request.CitizenNumber);
             if (user == null)
             {
-                return Unauthorized(new { message = "Invalid citizen number or password" });
+                return Unauthorized(new { message = "Số Cắn Cước Công Dân Này Không Tồn Tại" });
             }
 
             var inputHash = ComputeSha256Hash(request.Password);
             if (user.PasswordHash != inputHash)
             {
-                return Unauthorized(new { message = "Invalid citizen number or password" });
+                return Unauthorized(new { message = "Mật Khẩu Không Chính Xác" });
+            }
+
+            if(user.IsActive == false)
+            {
+                return Unauthorized(new { message = "Tài Khoản Đã Bị Khóa" });
             }
 
             var token = GenerateJwtToken(user);
@@ -208,18 +213,18 @@ namespace Blood_Donation_Support.Controllers
             }
 
             // Cập nhật Email nếu có thay đổi và chưa bị trùng
-    if (!string.IsNullOrEmpty(model.Email) && existingUser.Email != model.Email)
-    {
-        var isEmailTaken = await _context.Users.AnyAsync(u => u.Email == model.Email && u.UserId != id);
-        if (isEmailTaken)
-        {
-            return BadRequest(new { message = "Email đã tồn tại cho người dùng khác." });
-        }
-        existingUser.Email = model.Email;
-    }
+            if (!string.IsNullOrEmpty(model.Email) && existingUser.Email != model.Email)
+            {
+                var isEmailTaken = await _context.Users.AnyAsync(u => u.Email == model.Email && u.UserId != id);
+                if (isEmailTaken)
+                {
+                    return BadRequest(new { message = "Email đã tồn tại cho người dùng khác." });
+                }
+                existingUser.Email = model.Email;
+            }
 
-    // Cập nhật Số điện thoại
-    if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
+            // Cập nhật Số điện thoại
+            if (!string.IsNullOrEmpty(model.PhoneNumber) && existingUser.PhoneNumber != model.PhoneNumber)
             {
                 // Check existing Phone Number
                 var isPhoneNumberTaken = await _context.Users.AnyAsync(u => u.PhoneNumber == model.PhoneNumber && u.UserId != id);
@@ -271,6 +276,9 @@ namespace Blood_Donation_Support.Controllers
             }
             return NoContent(); // Return 204 No Content if successful
         }
+
+        // --- Tín Coding: Start ---
+
         // Get User Profile by UserId
         // api/User/profile
         [HttpGet("profile")]
@@ -407,6 +415,7 @@ namespace Blood_Donation_Support.Controllers
                 user.Member?.IsRecipient
             });
         }
+
         // Update User Profile (admin)
         // PATCH: api/User/{id}
         [HttpPatch("{id}")]
@@ -422,7 +431,7 @@ namespace Blood_Donation_Support.Controllers
 
             var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == model.RoleId);
             if (!roleExists)
-                return BadRequest(new { message = "Invalid RoleId." });
+                return BadRequest(new { message = "Không Thấy Mã ID của Role." });
 
             // Kiểm tra tuổi (phải từ 18 tuổi trở lên)
             var today = DateOnly.FromDateTime(DateTime.Today);
@@ -478,7 +487,7 @@ namespace Blood_Donation_Support.Controllers
                 await _context.SaveChangesAsync(); // Save changes to the database
                 await transaction.CommitAsync(); // Commit the transaction
 
-                return Ok(new { message = "User updated successfully." });
+                return Ok(new { message = "Cập Nhập Người Dùng Thành Công." });
 
             }
             catch (DbUpdateConcurrencyException)
@@ -500,12 +509,12 @@ namespace Blood_Donation_Support.Controllers
 
             if (await _context.Users.AnyAsync(u => u.CitizenNumber == request.CitizenNumber))
             {
-                return BadRequest(new { message = "Citizen Number already exists." });
+                return BadRequest(new { message = "Số CCCD/CMND đã được đăng ký." });
             }
 
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
-                return BadRequest(new { message = "Email already exists." });
+                return BadRequest(new { message = "Email đã được đăng ký." });
             }
 
             var roleExists = await _context.Roles.AnyAsync(r => r.RoleId == request.RoleId);
@@ -519,7 +528,7 @@ namespace Blood_Donation_Support.Controllers
             if (request.DateOfBirth > today.AddYears(-age)) age--;
             if (age < 18)
             {
-                return BadRequest(new { message = "User must be 18 or older." });
+                return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký." });
             }
 
             var user = new User
@@ -556,17 +565,18 @@ namespace Blood_Donation_Support.Controllers
             var user = await _context.Users.FindAsync(request.UserId);
             if (user == null)
             {
-                return NotFound(new { message = "User not found" });
+                return NotFound(new { message = "Không Tìm Thấy Người Dùng" });
             }
             if (!user.IsActive)
             {
-                return BadRequest(new { message = "User already deleted" });
+                return BadRequest(new { message = "Người Dùng Này Đã Bị Xóa" });
             }
             user.IsActive = false;
             user.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
-            return Ok(new { message = "User soft deleted successfully" });
+            return Ok(new { message = "Xóa Người Dùng Thành Công" });
         }
+        // --- Tín Coding: End ---
 
         // Update User Location
         // PUT: api/User/{userId}/location
@@ -582,7 +592,7 @@ namespace Blood_Donation_Support.Controllers
             var user = await _context.Users.Include(u => u.Member).FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null)
             {
-                return NotFound(new { message = "User not found." });
+                return NotFound(new { message = "Không Tìm Thấy Người Dùng." });
             }
 
             // Ensure the user is updating their own location unless they are an Admin
@@ -611,7 +621,7 @@ namespace Blood_Donation_Support.Controllers
 
         // GET: api/User/members
         [HttpGet("members")]
-        [Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> GetAllMembers()
         {
             var members = await _context.Members
@@ -632,6 +642,7 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(members);
         }
-    }
 
+        // --- Quý Coding: End ---
+    }
 }

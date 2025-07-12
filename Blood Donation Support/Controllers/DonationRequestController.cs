@@ -209,7 +209,7 @@ namespace Blood_Donation_Support.Controllers
                 .Where(p => p.PeriodId == model.PeriodId)
                 .FirstOrDefaultAsync();
             if (period == null)
-                return NotFound($"Not Found BloodDonationPeriodId: {model.PeriodId}."); // Return 404 Not Found if the period is not found
+                return NotFound($"Không Tìm Thấy Mã Đợt Hiến Máu: {model.PeriodId}."); // Return 404 Not Found if the period is not found
             else if (period.CurrentQuantity >= 0)
             {
                 period.CurrentQuantity = (period.CurrentQuantity ?? 0) + 1; // Decrement the current quantity by 1
@@ -253,11 +253,11 @@ namespace Blood_Donation_Support.Controllers
         {
             var existingRequest = await _context.DonationRequests.FirstOrDefaultAsync(u => u.DonationId == id && u.Status == "Approved");
             if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}."); // Return 404 Not Found 
+                return NotFound($"Không Tìm Thấy Mã Yêu Cầu Hiến Máu: {id}."); // Return 404 Not Found 
 
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId);
             if (member == null)
-                return NotFound($"Not Found MembersId: {model.MemberId}."); // Return 404 Not Found 
+                return NotFound($"Không Tìm Thấy Mã Người Dùng: {model.MemberId}."); // Return 404 Not Found 
 
             var period = _context.BloodDonationPeriods.FirstOrDefault(p => p.PeriodId == existingRequest.PeriodId);
             if (DateTime.Now < period.PeriodDateFrom || DateTime.Now > period.PeriodDateTo)
@@ -280,7 +280,7 @@ namespace Blood_Donation_Support.Controllers
                 .Select(c => c.ShelfLifeDays)
                 .FirstOrDefaultAsync();
             if (shelfLifeDays <= 0)
-                return BadRequest("Invalid shelf life for the blood component."); // Return 400 Bad Request if shelf life is invalid
+                return BadRequest("Hạn sử dụng của chế phẩm máu không hợp lệ."); // Return 400 Bad Request if shelf life is invalid
 
             var bloodUnit = new BloodUnit
             {
@@ -303,9 +303,9 @@ namespace Blood_Donation_Support.Controllers
 
                 return StatusCode(201, new // Return 201 Created with success messages
                 {
-                    memberMessage = "Member updatd successfully.",
-                    donationRequestMessage = "Donation request created successfully.",
-                    bloodUnitMessage = "Blood unit added successfully.",
+                    memberMessage = "Cập nhật thành viên thành công.",
+                    donationRequestMessage = "Đã tạo yêu cầu hiến máu thành công.",
+                    bloodUnitMessage = "Đã thêm đơn vị máu thành công.",
                 });
             }
             catch (DbUpdateConcurrencyException)
@@ -326,9 +326,9 @@ namespace Blood_Donation_Support.Controllers
 
             var existingRequest = await _context.DonationRequests.FindAsync(id);
             if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}.");
+                return NotFound($"Không Tìm Thấy Mã Yêu Cầu Hiến Máu: {id}.");
             if (existingRequest.ResponsibleById != currentUserId)
-                return BadRequest("You are not authorized to reject this request.");
+                return BadRequest("Bạn Không Có Quyền Hạn Để Từ Chối Yêu Cầu Này.");
 
             existingRequest.ResponsibleById = currentUserId;
             existingRequest.RejectedDate = DateTime.Now;
@@ -341,7 +341,7 @@ namespace Blood_Donation_Support.Controllers
                 .Where(p => p.PeriodId == existingRequest.PeriodId)
                 .FirstOrDefaultAsync();
             if (period == null)
-                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}.");
+                return NotFound($"Không Tìm Thấy Mã Đợt Hiến Máu: {existingRequest.PeriodId}.");
             else if (period.CurrentQuantity > 0)
             {
                 period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1;
@@ -353,7 +353,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return Ok(new { message = $"Donation Requests Id {id} rejected successfully" });
+                return Ok(new { message = $"Đã Hủy Yêu Cầu Hiến Máu {id} Thành Công" });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -374,7 +374,7 @@ namespace Blood_Donation_Support.Controllers
 
             var existingRequest = await _context.DonationRequests.FindAsync(id);
             if (existingRequest == null)
-                return NotFound($"Not Found DonationRequestsId: {id}.");
+                return NotFound($"Không Tìm Thấy Mã Yêu Cầu Hiến Máu: {id}.");
 
             existingRequest.CancelledDate = DateTime.Now;
             if (roleName == "Member")
@@ -393,7 +393,7 @@ namespace Blood_Donation_Support.Controllers
                 .Where(p => p.PeriodId == existingRequest.PeriodId)
                 .FirstOrDefaultAsync();
             if (period == null)
-                return NotFound($"Not Found BloodDonationPeriodId: {existingRequest.PeriodId}.");
+                return NotFound($"Không Tìm Thấy Mã Đợt Hiến Máu: {existingRequest.PeriodId}.");
             else if(period.CurrentQuantity > 0)
             {
                 period.CurrentQuantity = (period.CurrentQuantity ?? 0) - 1;
@@ -405,7 +405,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return Ok(new { message = $"Donation Requests Id {id} cancelled successfully" });
+                return Ok(new { message = $"Đã hủy yêu cầu hiến máu ID {id} thành công" });
             }
             catch (DbUpdateConcurrencyException)
             {

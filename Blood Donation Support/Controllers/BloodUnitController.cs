@@ -110,14 +110,14 @@ public class BloodUnitController : ControllerBase
             Volume = model.Volume,                          // Volume (mL)
             BloodStatus = "Available", // Blood Status (default to "Available" if null)
             RemainingVolume = model.Volume,                 // Remaining Volume (mL) equals initial volume for new units
-            MemberId = model.MemberId 
+            MemberId = null,
         };
 
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try
         {
-            await _context.BloodUnits.AddAsync(bloodUnit); // Add the new blood unit
-            await _context.SaveChangesAsync(); // Save changes to the database
+            await _context.AddAsync(bloodUnit); // Add the new blood unit
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync(); // Commit the transaction
            
             return CreatedAtAction(nameof(GetBloodUnitById), new { id = bloodUnit.BloodUnitId }, bloodUnit); // Return 201 Created with the new blood unit
@@ -144,22 +144,22 @@ public class BloodUnitController : ControllerBase
         if (bloodUnit == null)
             return NotFound(); // Status 404 Not Found if blood unit does not exist
         
-        var shelfLifeDays = await _context.BloodComponents // Fetch shelf life days for the component
-                .Where(c => c.ComponentId == model.ComponentId)
-                .Select(c => c.ShelfLifeDays)
-                .FirstOrDefaultAsync();
-        if (shelfLifeDays <= 0)
-            return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
+        //var shelfLifeDays = await _context.BloodComponents // Fetch shelf life days for the component
+        //        .Where(c => c.ComponentId == model.ComponentId)
+        //        .Select(c => c.ShelfLifeDays)
+        //        .FirstOrDefaultAsync();
+        //if (shelfLifeDays <= 0)
+        //    return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
 
         // Update the properties of the existing blood unit
-        bloodUnit.BloodTypeId = model.BloodTypeId;          // Blood Type ID
-        bloodUnit.ComponentId = model.ComponentId;          // Component ID
-        bloodUnit.AddDate = model.AddDate ?? DateOnly.FromDateTime(DateTime.Now); // Date Added (default to today if null)
-        bloodUnit.ExpiryDate = DateOnly.FromDateTime(model.AddDate?.ToDateTime(TimeOnly.MinValue).AddDays(shelfLifeDays) ?? DateTime.Now.AddDays(shelfLifeDays)); // Expiry Date
-        bloodUnit.Volume = model.Volume;                    // Volume (mL)
+        //bloodUnit.BloodTypeId = model.BloodTypeId;          // Blood Type ID
+        //bloodUnit.ComponentId = model.ComponentId;          // Component ID
+        //bloodUnit.AddDate = model.AddDate ?? DateOnly.FromDateTime(DateTime.Now); // Date Added (default to today if null)
+        //bloodUnit.ExpiryDate = DateOnly.FromDateTime(model.AddDate?.ToDateTime(TimeOnly.MinValue).AddDays(shelfLifeDays) ?? DateTime.Now.AddDays(shelfLifeDays)); // Expiry Date
+        //bloodUnit.Volume = model.Volume;                    // Volume (mL)
         bloodUnit.RemainingVolume = model.remainingVolume;  // Remaining Volume (mL)
         bloodUnit.BloodStatus = model.BloodStatus;          // Blood Status
-        bloodUnit.MemberId = model.MemberId;                // Member ID
+        //bloodUnit.MemberId = model.MemberId;                // Member ID
 
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try

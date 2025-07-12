@@ -24,7 +24,6 @@ import SearchByDistance from "./pages/SearchByDistance";
 import EmergencyRequest from "./pages/EmergencyRequest";
 import BloodInventory from "./pages/BloodInventory";
 import UserProfile from "./pages/UserProfile";
-import SearchDistance from "./pages/SearchDistance";
 import Dashboard from "./pages/Dashboard";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import HospitalLocationEdit from "./pages/HospitalLocationEdit";
@@ -257,14 +256,6 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <DonorMobilization />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/search-distance"
-          element={
-            <RequireAuth roles={["Admin", "Staff"]}>
-              <SearchDistance />
             </RequireAuth>
           }
         />

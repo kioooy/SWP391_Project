@@ -32,18 +32,7 @@ namespace Blood_Donation_Support.Controllers
             var center = hospital.Location;
             _logger.LogInformation("GetNearbyDonors called with hospital center, radius={Radius} meters. Results count: {Count}", radius, 0); 
             var donors = await _context.Members
-                .Where(m => m.IsDonor == true && m.Location != null && m.Location.Distance(center) <= radius)
-                .Include(m => m.User)
-                .Include(m => m.BloodType)
-                .ToListAsync();
-
-            // Lọc tiếp trên C# với điều kiện ngày phục hồi
-            var filteredDonors = donors
-                .Where(m => (m.LastDonationDate == null ||
-                            (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84)
-                        // Loại trừ member vừa truyền máu xong (trong vòng 365 ngày)
-                        && !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && (DateTime.Now - tr.CompletionDate.Value).TotalDays < 365)
-                )
+                .Where(m => m.IsDonor == true && m.Location != null)
                 .Select(m => new {
                     m.UserId,
                     m.User.FullName,
@@ -54,6 +43,30 @@ namespace Blood_Donation_Support.Controllers
                     Latitude = m.Location.Y,
                     Longitude = m.Location.X,
                     Distance = m.Location.Distance(center),
+                    m.Weight,
+                    m.Height,
+                    m.LastDonationDate
+                })
+                .Where(x => x.Distance <= radius)
+                .ToListAsync();
+
+            // Lọc tiếp trên C# với điều kiện ngày phục hồi
+            var filteredDonors = donors
+                .Where(m => (m.LastDonationDate == null ||
+                            (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84)
+                        // Loại trừ member vừa truyền máu xong (trong vòng 365 ngày)
+                        && !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && tr.CompletionDate.Value > DateTime.Now.AddDays(-365))
+                )
+                .Select(m => new {
+                    m.UserId,
+                    m.FullName,
+                    m.Phone,
+                    m.Email,
+                    m.BloodType,
+                    m.Address,
+                    m.Latitude,
+                    m.Longitude,
+                    m.Distance,
                     m.Weight,
                     m.Height
                 })

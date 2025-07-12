@@ -32,10 +32,12 @@ const SidebarLayout = () => {
     { path: "/manage-urgent-request", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
     { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
     { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
-    { path: "/search-distance", label: "Tìm Quanh Bạn", icon: <LocationOnIcon /> },
     { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },
+
     // Thêm menu quản lý người dùng cho Admin/Staff
     { path: "/manage-users", label: "Quản Lý Người Dùng", icon: <GroupIcon /> },
+
+
     { path: "/manage-blood-periods", label: "Đợt Hiến Máu", icon: <BloodtypeIcon /> },
     { path: "/blood-inventory", label: "Kho Máu", icon: <BloodtypeIcon /> },
     { path: "/manage-article", label: "Tài Liệu", icon: <MenuBookIcon /> },

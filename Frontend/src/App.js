@@ -48,6 +48,7 @@ import BloodWorkflowDashboard from "./pages/BloodWorkflowDashboard";
 import DonorMobilization from "./pages/DonorMobilization";
 import UrgentRequestManage from "./pages/admin/UrgentRequestManage";
 import UserManage from './pages/admin/UserManage';
+import axios from "axios";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -55,8 +56,17 @@ dayjs.extend(isSameOrBefore);
 const App = () => {
   console.log("DEBUG App.js loaded");
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const role = useSelector((state) => state.auth.user?.role);
-  console.log("isAuthenticated in App.js:", isAuthenticated);
+  const user = useSelector((state) => state.auth.user); // Lấy user từ redux
+  const role = user?.role;
+  React.useEffect(() => {
+    if (user && user.userId) {
+      axios.post(`/api/Notification/CreateRecoveryReminder/${user.userId}`)
+        .catch((err) => {
+          // Có thể log lỗi hoặc bỏ qua
+          console.error("Không thể tạo notification nhắc nhở phục hồi:", err);
+        });
+    }
+  }, [user]);
 
   return (
     <Routes>

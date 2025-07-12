@@ -214,25 +214,19 @@ const NotificationBell = ({ userId }) => {
   };
 
   const handleNotificationClick = (notification) => {
-    if (!notification.isRead) {
-      markAsRead(notification.notificationId);
-    }
-    
-    // TODO: Xử lý navigation dựa trên notification type
+    // Không tự động đánh dấu đã đọc nữa
+    // Chỉ điều hướng nếu cần
     switch (notification.notificationType) {
       case 'ReadyToDonate':
       case 'FirstTime':
-        // Navigate to donation registration
         window.location.href = '/booking';
         break;
       case 'AlmostReady':
-        // Navigate to dashboard
         window.location.href = '/dashboard';
         break;
       default:
         break;
     }
-    
     handleClose();
   };
 
@@ -295,7 +289,7 @@ const NotificationBell = ({ userId }) => {
                 key={notification.notificationId}
                 unread={!notification.isRead}
                 onClick={() => handleNotificationClick(notification)}
-                sx={{ cursor: 'pointer' }}
+                sx={{ cursor: 'pointer', position: 'relative' }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
                   <Avatar
@@ -339,6 +333,10 @@ const NotificationBell = ({ userId }) => {
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'anywhere',
+                        maxWidth: '100%',
+                        whiteSpace: 'pre-line',
                       }}
                     >
                       {notification.message}
@@ -351,6 +349,20 @@ const NotificationBell = ({ userId }) => {
                       {formatTime(notification.createdAt)}
                     </Typography>
                   </Box>
+                  {/* Nút Đã đọc */}
+                  {!notification.isRead && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ ml: 2, minWidth: 60, fontSize: '0.75rem', height: 28 }}
+                      onClick={e => {
+                        e.stopPropagation(); // Không trigger onClick của NotificationItem
+                        markAsRead(notification.notificationId);
+                      }}
+                    >
+                      Đã đọc
+                    </Button>
+                  )}
                 </Box>
               </NotificationItem>
             ))

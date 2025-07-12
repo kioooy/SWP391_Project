@@ -538,7 +538,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   };
 
   return (
-    <Box {...layoutProps} sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", ...layoutProps?.sx }}>
+    <Box {...layoutProps} sx={{ backgroundColor: "#fff", minHeight: "100vh", ...layoutProps?.sx }}>
       {/* Bộ lọc trạng thái dạng Paper giống DonationRequestManagement */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <Paper
@@ -588,7 +588,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
         </Paper>
       </Box>
       {/* Bộ lọc ngày và nút tạo mới giữ nguyên */}
-      <Card sx={{ mb: 2, p: 2 }}>
+      <Card sx={{ mb: 2, p: 2, boxShadow: 'none', background: 'none' }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
           {/* Date Range Filter */}
           <TextField
@@ -680,7 +680,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       </Card>
 
       {/* Bảng truyền máu */}
-      <Card>
+      <Card sx={{ boxShadow: 'none', background: 'none' }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">

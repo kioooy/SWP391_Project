@@ -36,7 +36,7 @@ namespace Blood_Donation_Support.Controllers
                 .FirstOrDefaultAsync(u => u.CitizenNumber == request.CitizenNumber);
             if (user == null)
             {
-                return Unauthorized(new { message = "Số Cắn Cước Công Dân Này Không Tồn Tại" });
+                return Unauthorized(new { message = "Số CCCD Này Không Tồn Tại" });
             }
 
             var inputHash = ComputeSha256Hash(request.Password);
@@ -118,7 +118,7 @@ namespace Blood_Donation_Support.Controllers
 
             if (await _context.Users.AnyAsync(u => u.CitizenNumber == model.CitizenNumber))
             {
-                return BadRequest(new { message = "Số CCCD/CMND đã được đăng ký" });
+                return BadRequest(new { message = "Số CCCD đã được đăng ký" });
             }
 
             if (await _context.Users.AnyAsync(u => u.Email == model.Email))
@@ -509,7 +509,7 @@ namespace Blood_Donation_Support.Controllers
 
             if (await _context.Users.AnyAsync(u => u.CitizenNumber == request.CitizenNumber))
             {
-                return BadRequest(new { message = "Số CCCD/CMND đã được đăng ký." });
+                return BadRequest(new { message = "Số CCCD đã được đăng ký." });
             }
 
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))

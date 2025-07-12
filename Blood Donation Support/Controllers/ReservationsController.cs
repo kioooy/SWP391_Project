@@ -1,4 +1,4 @@
-using Blood_Donation_Support.Data;
+﻿using Blood_Donation_Support.Data;
 using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +24,7 @@ public class ReservationsController : ControllerBase
     {
         // Check blood unit availability
         var unit = await _context.BloodUnits.FirstOrDefaultAsync(u => u.BloodUnitId == dto.BloodUnitId && u.BloodStatus == "Available");
-        if (unit == null) return BadRequest("Blood unit not available");
+        if (unit == null) return BadRequest("Đơn vị máu này không khả dụng hoặc đã được sử dụng.");
 
         var reservation = new BloodReservation
         {
@@ -57,7 +57,7 @@ public class ReservationsController : ControllerBase
     {
         var reservation = await _context.BloodReservations.Include(r => r.BloodUnit).FirstOrDefaultAsync(r => r.ReservationId == id);
         if (reservation == null) return NotFound();
-        if (reservation.Status != "Active") return BadRequest("Reservation already closed");
+        if (reservation.Status != "Active") return BadRequest("Đã hết thời gian đặt giữ");
 
         switch (action?.ToLower())
         {

@@ -101,7 +101,7 @@ namespace Blood_Donation_Support.Controllers
         {
             var validStatuses = new[] { "Active", "Completed", "Cancelled" };
             if (!validStatuses.Contains(status))
-                return BadRequest("Invalid status value.");
+                return BadRequest("Trạng Thái Không Hợp Lệ.");
 
             var period = await _context.BloodDonationPeriods.FindAsync(id);
             if (period == null)
@@ -184,6 +184,31 @@ namespace Blood_Donation_Support.Controllers
             period.ImageUrl = dto.ImageUrl;
 
             _context.SaveChanges();
+            return NoContent();
+        }
+
+        // Tín Coding
+
+        // Check Completed Period
+        [HttpGet("check-completed")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CheckCompletedPeriods()
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var completedPeriods = await _context.BloodDonationPeriods
+                .Where(p => p.PeriodDateTo < DateTime.Now && p.Status == "Active" )
+                .ToListAsync();
+
+            foreach (var period in completedPeriods)
+            {
+                period.Status = "Completed";
+            }
+
+            if (completedPeriods.Any())
+                _context.SaveChanges();
+
             return NoContent();
         }
     }

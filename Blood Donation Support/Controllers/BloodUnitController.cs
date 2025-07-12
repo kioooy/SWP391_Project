@@ -89,17 +89,17 @@ public class BloodUnitController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
         if (model == null)
-            return BadRequest("Blood unit data is required."); // Status 400 Bad Request if blood unit data is null
+            return BadRequest("Cần nhập dữ liệu đơn vị máu."); // Status 400 Bad Request if blood unit data is null
 
         if (model.Volume <= 0)
-            return BadRequest("Volume must be positive"); // 
+            return BadRequest("Thể tích phải là số dương."); // 
 
         var shelfLifeDays = await _context.BloodComponents // Fetch shelf life days for the component
             .Where(c => c.ComponentId == model.ComponentId)
             .Select(c => c.ShelfLifeDays)
             .FirstOrDefaultAsync();
         if (shelfLifeDays <= 0)
-            return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
+            return BadRequest("Hạn sử dụng chế phẩm không hợp lệ."); // Status 400 Bad Request if shelf life is invalid
 
         var bloodUnit = new BloodUnit // Create a new instance of BloodUnit
         {
@@ -110,14 +110,14 @@ public class BloodUnitController : ControllerBase
             Volume = model.Volume,                          // Volume (mL)
             BloodStatus = "Available", // Blood Status (default to "Available" if null)
             RemainingVolume = model.Volume,                 // Remaining Volume (mL) equals initial volume for new units
-            MemberId = model.MemberId 
+            MemberId = null,
         };
 
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try
         {
-            await _context.BloodUnits.AddAsync(bloodUnit); // Add the new blood unit
-            await _context.SaveChangesAsync(); // Save changes to the database
+            await _context.AddAsync(bloodUnit); // Add the new blood unit
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync(); // Commit the transaction
            
             return CreatedAtAction(nameof(GetBloodUnitById), new { id = bloodUnit.BloodUnitId }, bloodUnit); // Return 201 Created with the new blood unit
@@ -138,28 +138,28 @@ public class BloodUnitController : ControllerBase
             return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
        
         if (model == null)
-            return BadRequest("Blood unit data is required."); // Status 400 Bad Request if blood unit data is null
+            return BadRequest("Cần nhập dữ liệu đơn vị máu."); // Status 400 Bad Request if blood unit data is null
 
         var bloodUnit = await _context.BloodUnits.FindAsync(id); // Find the existing blood unit by ID
         if (bloodUnit == null)
             return NotFound(); // Status 404 Not Found if blood unit does not exist
         
-        var shelfLifeDays = await _context.BloodComponents // Fetch shelf life days for the component
-                .Where(c => c.ComponentId == model.ComponentId)
-                .Select(c => c.ShelfLifeDays)
-                .FirstOrDefaultAsync();
-        if (shelfLifeDays <= 0)
-            return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
+        //var shelfLifeDays = await _context.BloodComponents // Fetch shelf life days for the component
+        //        .Where(c => c.ComponentId == model.ComponentId)
+        //        .Select(c => c.ShelfLifeDays)
+        //        .FirstOrDefaultAsync();
+        //if (shelfLifeDays <= 0)
+        //    return BadRequest("Invalid shelf life for the component."); // Status 400 Bad Request if shelf life is invalid
 
         // Update the properties of the existing blood unit
-        bloodUnit.BloodTypeId = model.BloodTypeId;          // Blood Type ID
-        bloodUnit.ComponentId = model.ComponentId;          // Component ID
-        bloodUnit.AddDate = model.AddDate ?? DateOnly.FromDateTime(DateTime.Now); // Date Added (default to today if null)
-        bloodUnit.ExpiryDate = DateOnly.FromDateTime(model.AddDate?.ToDateTime(TimeOnly.MinValue).AddDays(shelfLifeDays) ?? DateTime.Now.AddDays(shelfLifeDays)); // Expiry Date
-        bloodUnit.Volume = model.Volume;                    // Volume (mL)
+        //bloodUnit.BloodTypeId = model.BloodTypeId;          // Blood Type ID
+        //bloodUnit.ComponentId = model.ComponentId;          // Component ID
+        //bloodUnit.AddDate = model.AddDate ?? DateOnly.FromDateTime(DateTime.Now); // Date Added (default to today if null)
+        //bloodUnit.ExpiryDate = DateOnly.FromDateTime(model.AddDate?.ToDateTime(TimeOnly.MinValue).AddDays(shelfLifeDays) ?? DateTime.Now.AddDays(shelfLifeDays)); // Expiry Date
+        //bloodUnit.Volume = model.Volume;                    // Volume (mL)
         bloodUnit.RemainingVolume = model.remainingVolume;  // Remaining Volume (mL)
         bloodUnit.BloodStatus = model.BloodStatus;          // Blood Status
-        bloodUnit.MemberId = model.MemberId;                // Member ID
+        //bloodUnit.MemberId = model.MemberId;                // Member ID
 
         var transaction = await _context.Database.BeginTransactionAsync(); // Start a transaction
         try
@@ -221,14 +221,13 @@ public class BloodUnitController : ControllerBase
         }
         await _context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            Message = $"Updated {bloodUnit.Count} Expired Blood Units",
-            ExpiredUnits = bloodUnit
-        });
+        return NoContent(); // Return 204 No Content if successful
     }
-    // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
-    [HttpGet("compatible")]
+
+        // --- Quý Coding: Start ---
+
+        // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
+        [HttpGet("compatible")]
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IActionResult> GetCompatibleBloodUnits(int bloodTypeId, int componentId, int minVolume)
     {
@@ -249,6 +248,7 @@ public class BloodUnitController : ControllerBase
 
         return Ok(units);
     }
+
     // GET: api/BloodUnit/suitable?bloodTypeId=1&componentId=1&requiredVolume=1000
     [HttpGet("suitable")]
     [Authorize(Roles = "Staff,Admin")]
@@ -278,4 +278,6 @@ public class BloodUnitController : ControllerBase
         // FE/BE sẽ tự chọn/gợi ý nhiều túi để đủ requiredVolume
         return Ok(units);
     }
+    // --- Quý Coding: End ---
+
 }

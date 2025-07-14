@@ -11,9 +11,6 @@ import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import WorkflowIcon from '@mui/icons-material/AccountTree';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import SearchIcon from '@mui/icons-material/Search';
-import WarningIcon from '@mui/icons-material/Warning';
 import { useSelector } from "react-redux";
 
 const drawerWidth = 300;
@@ -26,27 +23,29 @@ const SidebarLayout = () => {
   // Các mục sidebar cho Staff/Admin
   const menuItems = [
     { path: user?.role === 'Admin' ? "/profile-admin" : user?.role === 'Staff' ? "/profile-staff" : "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
-    { path: "/dashboard", label: "Bảng Thông Tin", icon: <DashboardIcon /> },
-    { path: "/blood-workflow", label: "Yêu Cầu Truyền Máu", icon: <WorkflowIcon /> },
-    { path: "/manage-requests", label: "Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
-    { path: "/manage-urgent-request", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
-    { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
-    { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
-    { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },
+    { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+    { path: "/blood-workflow", label: "Truyền Máu", icon: <WorkflowIcon /> },
+    { path: "/manage-requests", label: "Yêu cầu hiến máu", icon: <AssignmentIcon /> },
+    { path: "/manage-urgent-request", label: "Cần Máu Khẩn Cấp", icon: <AssignmentIcon /> },
+    // { path: "/transfusion-management", label: "Truyền máu", icon: <LocalHospitalIcon /> },
+    { path: "/blood-search", label: "Tìm kiếm máu", icon: <BloodtypeIcon /> },
+    { path: "/donor-mobilization", label: "Huy động người hiến", icon: <GroupIcon /> },
+    { path: "/manage-blood-periods", label: "Đợt hiến máu", icon: <BloodtypeIcon /> },
+    { path: "/blood-inventory", label: "Kho máu tổng hợp", icon: <BloodtypeIcon /> },
+    // Chỉ admin mới thấy tài liệu và blog
+    ...(user?.role === 'Admin' ? [
+      { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },
+      { path: "/manage-blog", label: "Bản Tin", icon: <EditNoteIcon /> },
+    ] : []),
 
-    // Thêm menu quản lý người dùng cho Admin/Staff
-    { path: "/manage-users", label: "Quản Lý Người Dùng", icon: <GroupIcon /> },
-
-
-    { path: "/manage-blood-periods", label: "Đợt Hiến Máu", icon: <BloodtypeIcon /> },
-    { path: "/blood-inventory", label: "Kho Máu", icon: <BloodtypeIcon /> },
-    { path: "/manage-article", label: "Tài Liệu", icon: <MenuBookIcon /> },
-    { path: "/manage-blog", label: "Bài Viết", icon: <EditNoteIcon /> },
+    // { path: "/hospital-location", label: "Vị trí bệnh viện", icon: <LocalHospitalIcon /> },
+    // { path: "/manage-roles", label: "Vai trò", icon: <PersonIcon /> },
+    // { path: "/manage-users", label: "Người dùng", icon: <GroupIcon /> },
   ];
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods"].includes(item.path))
     : menuItems;
 
   return (
@@ -87,7 +86,7 @@ const SidebarLayout = () => {
                 }
               }}
             >
-              <ListItemIcon sx={{ color: '#E53935' }}>{item.icon}</ListItemIcon>
+              <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} primaryTypographyProps={{ noWrap: true }} />
             </ListItem>
           ))}

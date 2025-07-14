@@ -25,8 +25,6 @@ import {
   Alert,
 } from "@mui/material";
 import axios from "axios";
-import DeleteIcon from '@mui/icons-material/Delete';
-import RestoreIcon from '@mui/icons-material/Restore';
 
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
@@ -49,15 +47,14 @@ const ArticleManage = () => {
     Title: "",
     Content: "",
     Status: "",
-    ImageUrl: "",
   });
-  const [newArticleImagePreview, setNewArticleImagePreview] = useState("");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editArticle, setEditArticle] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [newArticleImagePreview, setNewArticleImagePreview] = useState("");
   const [editArticleImagePreview, setEditArticleImagePreview] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -120,13 +117,7 @@ const ArticleManage = () => {
   };
 
   const handleDelete = async () => {
-    const id = articleToDelete?.ArticleId || articleToDelete?.articleId;
-    if (!id) {
-      setSnackbar({ open: true, message: 'Không xác định được ID bài viết!', severity: 'error' });
-      setConfirmDeleteOpen(false);
-      setArticleToDelete(null);
-      return;
-    }
+    const id = articleToDelete.ArticleId;
     try {
       await axios.patch(`${API_URL}/Article/${id}/deactivate`, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -135,14 +126,8 @@ const ArticleManage = () => {
       const res = await axios.get(`${API_URL}/Article/admin`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Sắp xếp lại: active trước, inactive sau
-      const sorted = [...res.data].sort((a, b) => {
-        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
-        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
-        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
-      });
-      setArticles(sorted);
-      setFilteredArticles(sorted);
+      setArticles(res.data);
+      setFilteredArticles(res.data);
       if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
       setConfirmDeleteOpen(false);
       setArticleToDelete(null);
@@ -168,7 +153,6 @@ const ArticleManage = () => {
         UserId: found.UserId || found.userId,
         ImageUrl: found.ImageUrl || found.imageUrl,
       });
-      setEditArticleImagePreview(found.ImageUrl || found.imageUrl || "");
       setIsEditOpen(true);
     }
   };
@@ -179,16 +163,16 @@ const ArticleManage = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('Title', editArticle.Title);
-    formData.append('Content', editArticle.Content);
-    formData.append('Status', editArticle.Status);
-    formData.append('ImageUrl', editArticle.ImageUrl || 'no-image');
+    const payload = {
+      Title: editArticle.Title,
+      Content: editArticle.Content,
+      Status: editArticle.Status,
+    };
 
     try {
-      await axios.patch(
+      await axios.put(
         `${API_URL}/Article/${editArticle.ArticleId}`,
-        formData,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -211,20 +195,20 @@ const ArticleManage = () => {
 
   const handleCreate = async () => {
     const { Title, Content, Status } = newArticle;
-    if (!Title || !Content || !Status || !user?.UserId) {
-      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin và đảm bảo bạn là admin!', severity: 'warning' });
+    if (!Title || !Content || !Status) {
+      setSnackbar({ open: true, message: '⚠️ Vui lòng nhập đầy đủ thông tin!', severity: 'warning' });
       return;
     }
 
-    const formData = new FormData();
-    formData.append('UserId', String(user.UserId)); // Đảm bảo là chuỗi số
-    formData.append('Title', Title);
-    formData.append('Content', Content);
-    formData.append('Status', Status);
-    formData.append('ImageUrl', newArticle.ImageUrl || 'no-image');
+    const item = {
+      UserId: user?.UserId,
+      Title,
+      Content,
+      Status,
+    };
 
     try {
-      await axios.post(`${API_URL}/Article`, formData, {
+      await axios.post(`${API_URL}/Article`, item, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -237,8 +221,7 @@ const ArticleManage = () => {
       setFilteredArticles(res.data);
       setIsCreateOpen(false);
       setSnackbar({ open: true, message: '✅ Tạo bài viết thành công!', severity: 'success' });
-      setNewArticle({ Title: "", Content: "", Status: "", ImageUrl: "" });
-      setNewArticleImagePreview("");
+      setNewArticle({ Title: "", Content: "", Status: "" });
     } catch (error) {
       setSnackbar({ open: true, message: '❌ Lỗi khi tạo bài viết! ' + (error.response?.data || ''), severity: 'error' });
     }
@@ -277,6 +260,44 @@ const ArticleManage = () => {
     }
   };
 
+  const handleChangeActive = async (id, value) => {
+    try {
+      if (value === "inactive") {
+        await axios.patch(
+          `${API_URL}/Article/${id}/deactivate`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        await axios.patch(
+          `${API_URL}/Article/${id}/activate`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      // Reload lại danh sách
+      const res = await axios.get(`${API_URL}/Article/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Sắp xếp lại: active trước, inactive sau
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setArticles(sorted);
+      setFilteredArticles(sorted);
+      setPage(0);
+      setSnackbar({
+        open: true,
+        message: value === 'inactive' ? '🛑 Đã vô hiệu hóa bài viết!' : '✅ Đã kích hoạt bài viết!',
+        severity: value === 'inactive' ? 'warning' : 'success'
+      });
+    } catch (error) {
+      setSnackbar({ open: true, message: '❌ Lỗi khi cập nhật trạng thái kích hoạt!', severity: 'error' });
+    }
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#E53935', mb: 4 }}>
@@ -299,7 +320,7 @@ const ArticleManage = () => {
           style={{ width: "70%" }}
         />
         <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
-          ➕ Tạo bài viết
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" /></svg> Tạo bài viết
         </Button>
       </div>
 
@@ -328,100 +349,57 @@ const ArticleManage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedArticles.map((article) => {
-              const isActive = article.IsActive !== undefined ? article.IsActive : article.isActive;
-              return (
-                <TableRow
-                  key={article.ArticleId || article.articleId}
-                  style={
-                    isActive === false
-                      ? { backgroundColor: '#f5f5f5', color: '#aaa' }
-                      : {}
-                  }
-                >
-                  <TableCell>{article.Title || article.title}</TableCell>
-                  <TableCell>
-                    {(article.Status || article.status)
-                      ? ((article.Status || article.status) === 'Published' ? 'Đã xuất bản'
-                        : (article.Status || article.status) === 'Draft' ? 'Bản nháp'
+            {paginatedArticles.map((article) => (
+              <TableRow
+                key={article.ArticleId || article.articleId}
+                style={
+                  article.isActive === false || article.IsActive === false
+                    ? { backgroundColor: '#f5f5f5', color: '#aaa' }
+                    : {}
+                }
+              >
+                <TableCell>{article.Title || article.title}</TableCell>
+                <TableCell>
+                  {(article.Status || article.status)
+                    ? ((article.Status || article.status) === 'Published' ? 'Đã xuất bản'
+                      : (article.Status || article.status) === 'Draft' ? 'Bản nháp'
                         : (article.Status || article.status))
-                      : 'Không xác định'}
-                  </TableCell>
-                  <TableCell>
-                    {isActive === true ? (
-                      <span style={{ color: '#388e3c', fontWeight: 600 }}>Kích hoạt</span>
-                    ) : (
-                      <span style={{ color: '#888', fontWeight: 600 }}>Vô hiệu hóa</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDateTime(article.PublishedDate || article.publishedDate)}</TableCell>
-                  <TableCell>{formatDateTime(article.UpdatedDate || article.updatedDate)}</TableCell>
-                  <TableCell>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleEdit(article.ArticleId || article.articleId)}
-                        sx={{ mr: 1 }}
-                      >
-                        Sửa
-                      </Button>
-                      <Button
-                        size="small"
-                        color="info"
-                        variant="contained"
-                        onClick={() => handleViewDetail(article.ArticleId || article.articleId)}
-                        sx={{ mr: 1 }}
-                      >
-                        Xem
-                      </Button>
-                      {isActive === true ? (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          sx={{ backgroundColor: 'error.main', color: '#fff', '&:hover': { backgroundColor: 'error.dark' } }}
-                          onClick={() => {
-                            setArticleToDelete(article);
-                            setConfirmDeleteOpen(true);
-                          }}
-                        >
-                          Xóa
-                        </Button>
-                      ) : (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="success"
-                          onClick={async () => {
-                            try {
-                              await axios.patch(`${API_URL}/Article/${article.ArticleId || article.articleId}/activate`, {}, {
-                                headers: { Authorization: `Bearer ${token}` }
-                              });
-                              const res = await axios.get(`${API_URL}/Article/admin`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                              });
-                              // Sắp xếp lại: active trước, inactive sau
-                              const sorted = [...res.data].sort((a, b) => {
-                                const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
-                                const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
-                                return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
-                              });
-                              setArticles(sorted);
-                              setFilteredArticles(sorted);
-                              setSnackbar({ open: true, message: '✅ Đã hoàn tác, kích hoạt lại bài viết!', severity: 'success' });
-                            } catch (error) {
-                              setSnackbar({ open: true, message: '❌ Lỗi khi hoàn tác bài viết!', severity: 'error' });
-                            }
-                          }}
-                        >
-                          Hoàn tác
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                    : 'Không xác định'}
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={(article.IsActive !== undefined ? article.IsActive : article.isActive) ? 'active' : 'inactive'}
+                    onChange={e => handleChangeActive(article.ArticleId || article.articleId, e.target.value)}
+                    size="small"
+                    sx={{ minWidth: 120 }}
+                  >
+                    <MenuItem value="active">Kích hoạt</MenuItem>
+                    <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
+                  </Select>
+                </TableCell>
+                <TableCell>{formatDateTime(article.PublishedDate || article.publishedDate)}</TableCell>
+                <TableCell>{formatDateTime(article.UpdatedDate || article.updatedDate)}</TableCell>
+                <TableCell>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleViewDetail(article.ArticleId || article.articleId)}
+                    >
+                      Xem
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleEdit(article.ArticleId || article.articleId)}
+                    >
+                      Sửa
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
             {filteredArticles.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} align="center">
@@ -442,45 +420,45 @@ const ArticleManage = () => {
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
       {selectedArticle && (
-        <Dialog open={openDetailDialog} onClose={() => { setOpenDetailDialog(false); setSelectedArticle(null); }} maxWidth="sm" fullWidth>
+        <Dialog open={openDetailDialog} onClose={() => { setOpenDetailDialog(false); setSelectedArticle(null); }} maxWidth="md" fullWidth>
           <DialogTitle>📝 Chi tiết bài viết</DialogTitle>
-          <DialogContent style={{ paddingTop: 12 }}>
-            {selectedArticle && (
-              <div style={{ display: "grid", rowGap: 12 }}>
-                <div>
-                  <strong>🆔 ID:</strong> {selectedArticle.ArticleId || selectedArticle.articleId}
-                </div>
-                <div>
-                  <strong>👤 User ID:</strong> {selectedArticle.UserId || selectedArticle.userId}
-                </div>
-                <div>
-                  <strong>📌 Tiêu đề:</strong> {selectedArticle.Title || selectedArticle.title}
-                </div>
-                <div>
-                  <strong>📝 Nội dung:</strong> {selectedArticle.Content || selectedArticle.content}
-                </div>
-                <div>
-                  <strong>🖼️ Ảnh:</strong> <br/>
-                  { (selectedArticle.ImageUrl || selectedArticle.imageUrl) ? (
-                    <img src={selectedArticle.ImageUrl || selectedArticle.imageUrl} alt="Ảnh bài viết" style={{ width: "100%", borderRadius: 4, marginTop: 4 }} />
-                  ) : (
-                    <span style={{ color: '#888', fontStyle: 'italic' }}>Chưa có ảnh</span>
-                  )}
-                </div>
-                <div>
-                  <strong>📊 Trạng thái:</strong> {selectedArticle.Status || selectedArticle.status}
-                </div>
-                <div>
-                  <strong>🔒 Kích hoạt:</strong> {(selectedArticle.IsActive === true || selectedArticle.isActive === true) ? 'Có' : (selectedArticle.IsActive === false || selectedArticle.isActive === false) ? 'Không' : 'Không xác định'}
-                </div>
-                <div>
-                  <strong>📅 Ngày đăng:</strong> {formatDateTime(selectedArticle.PublishedDate || selectedArticle.publishedDate)}
-                </div>
-                <div>
-                  <strong>🔄 Cập nhật:</strong> {formatDateTime(selectedArticle.UpdatedDate || selectedArticle.updatedDate)}
-                </div>
+          <DialogContent>
+            <div style={{ display: "grid", rowGap: 12 }}>
+              <div>
+                <strong>🆔 ID:</strong> {selectedArticle.ArticleId || selectedArticle.articleId}
               </div>
-            )}
+              <div>
+                <strong>👤 User ID:</strong> {selectedArticle.UserId || selectedArticle.userId}
+              </div>
+              <div>
+                <strong>📌 Tiêu đề:</strong> {selectedArticle.Title || selectedArticle.title}
+              </div>
+              <div>
+                <strong>📝 Nội dung:</strong> {selectedArticle.Content || selectedArticle.content}
+              </div>
+              <div>
+                <strong>📊 Trạng thái:</strong>
+                {(selectedArticle.Status || selectedArticle.status) === 'Published'
+                  ? 'Đã xuất bản'
+                  : (selectedArticle.Status || selectedArticle.status) === 'Draft'
+                    ? 'Bản nháp'
+                    : (selectedArticle.Status || selectedArticle.status) || 'Không xác định'}
+              </div>
+              <div>
+                <strong>🔒 Kích hoạt:</strong>
+                {(selectedArticle.IsActive === true || selectedArticle.isActive === true)
+                  ? 'Có'
+                  : (selectedArticle.IsActive === false || selectedArticle.isActive === false)
+                    ? 'Không'
+                    : 'Không xác định'}
+              </div>
+              <div>
+                <strong>📅 Ngày đăng:</strong> {formatDateTime(selectedArticle.PublishedDate || selectedArticle.publishedDate)}
+              </div>
+              <div>
+                <strong>🔄 Cập nhật:</strong> {formatDateTime(selectedArticle.UpdatedDate || selectedArticle.updatedDate)}
+              </div>
+            </div>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDetailDialog(false)}>Đóng</Button>
@@ -497,7 +475,7 @@ const ArticleManage = () => {
         <DialogContent>
           <Typography>
             Bạn có chắc muốn xóa bài viết{" "}
-            <strong>{articleToDelete?.Title || articleToDelete?.title}</strong> không?
+            <strong>{articleToDelete?.Title}</strong> không?
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -541,36 +519,56 @@ const ArticleManage = () => {
               }
               label="Trạng thái"
             >
-              <MenuItem value="Draft">Bản nháp</MenuItem>
-              <MenuItem value="Published">Đã xuất bản</MenuItem>
+              <MenuItem value="Draft">Draft</MenuItem>
+              <MenuItem value="Published">Published</MenuItem>
             </Select>
           </FormControl>
-          {/* Thêm input chọn ảnh */}
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setNewArticleImagePreview(ev.target.result);
-                setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
+          <Typography variant="body2" sx={{ mt: 2 }}>Ảnh đại diện (JPG hoặc PNG &lt; 1MB):</Typography>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.9l3.09 6.26L22 13.27l-5 4.87L18.18 23 12 19.77 5.82 23 7 18.14l-5-4.87 6.91-1.01z" /></svg>}
+            sx={{ mt: 1, mb: 2 }}
+          >
+            Chọn ảnh
+            <input
+              hidden
+              accept="image/jpeg,image/png"
+              type="file"
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                  alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                  return;
+                }
+                if (file.size > 1024 * 1024) {
+                  alert('Ảnh phải nhỏ hơn 1MB!');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setNewArticleImagePreview(ev.target.result);
+                  setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </Button>
+
           {newArticleImagePreview && (
-            <img src={newArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+            <img
+              src={newArticleImagePreview}
+              alt="Preview"
+              style={{
+                maxWidth: "100%",
+                height: "auto",
+                borderRadius: 8,
+                marginTop: 8,
+                border: '1px solid #ccc',
+                padding: 4
+              }}
+            />
           )}
         </DialogContent>
         <DialogActions>
@@ -616,32 +614,52 @@ const ArticleManage = () => {
               <MenuItem value="Published">Đã xuất bản</MenuItem>
             </Select>
           </FormControl>
-          {/* Thêm input chọn ảnh */}
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setEditArticleImagePreview(ev.target.result);
-                setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
-          {(editArticleImagePreview || editArticle?.ImageUrl) && (
-            <img src={editArticleImagePreview || editArticle?.ImageUrl} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
+          <Typography variant="body2" sx={{ mt: 2 }}>Ảnh đại diện (JPG hoặc PNG &lt; 1MB):</Typography>
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.9l3.09 6.26L22 13.27l-5 4.87L18.18 23 12 19.77 5.82 23 7 18.14l-5-4.87 6.91-1.01z" /></svg>}
+            sx={{ mt: 1, mb: 2 }}
+          >
+            Chọn ảnh
+            <input
+              hidden
+              accept="image/jpeg,image/png"
+              type="file"
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                  alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                  return;
+                }
+                if (file.size > 1024 * 1024) {
+                  alert('Ảnh phải nhỏ hơn 1MB!');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setEditArticleImagePreview(ev.target.result);
+                  setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </Button>
+
+          {editArticleImagePreview && (
+            <img
+              src={editArticleImagePreview}
+              alt="Preview"
+              style={{
+                maxWidth: "100%",
+                height: "auto",
+                borderRadius: 8,
+                marginTop: 8,
+                border: '1px solid #ccc',
+                padding: 4
+              }}
+            />
           )}
         </DialogContent>
         <DialogActions>
@@ -653,15 +671,15 @@ const ArticleManage = () => {
       </Dialog>
 
       {/* Snackbar thông báo */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={3000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
-          severity={snackbar.severity} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
           {snackbar.message}

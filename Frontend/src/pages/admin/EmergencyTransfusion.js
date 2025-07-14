@@ -1,38 +1,23 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
 import {
-  Container,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Select,
-  MenuItem,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+  Container, Typography, Paper, Table, TableContainer, TableHead, TableBody, TableCell, TableRow, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, RadioGroup, FormControlLabel, Radio, CircularProgress
+} from '@mui/material';
+import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5250/api";
-const token = localStorage.getItem("token");
-
-const statusOptions = ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"];
-
-const statusLabelMap = {
-  PENDING: "Đang chờ",
-  PROCESSING: "Đang xử lý",
-  COMPLETED: "Hoàn thành",
-  CANCELLED: "Đã hủy",
-};
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+const token = localStorage.getItem('token');
 
 const EmergencyTransfusionPage = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const isAdmin = true;
+  const [fulfillOpen, setFulfillOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [transfusionRequests, setTransfusionRequests] = useState([]);
+  const [bloodUnits, setBloodUnits] = useState([]);
+  const [fulfillType, setFulfillType] = useState('');
+  const [preemptedTransfusionId, setPreemptedTransfusionId] = useState('');
+  const [usedBloodUnitId, setUsedBloodUnitId] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchUrgentRequests = async () => {
     setLoading(true);
@@ -42,51 +27,102 @@ const EmergencyTransfusionPage = () => {
       });
       setData(res.data);
     } catch (err) {
-      console.error("Lỗi khi lấy danh sách yêu cầu máu:", err);
+      setSnackbar({ open: true, message: 'Lỗi khi lấy danh sách yêu cầu máu!', severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUrgentRequests();
-  }, []);
-
-  const handleUpdateStatus = async (id, newStatus) => {
+  const fetchTransfusionRequests = async () => {
     try {
-      await axios.patch(
-        `${API_URL}/UrgentBloodRequest/${id}/status`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setData((prev) =>
-        prev.map((item) =>
-          item.urgentRequestId === id ? { ...item, status: newStatus } : item
-        )
-      );
+      const res = await axios.get(`${API_URL}/TransfusionRequest`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTransfusionRequests(res.data.filter(tr => tr.status === 'Approved'));
     } catch (err) {
-      console.error("Lỗi cập nhật trạng thái:", err);
+      setSnackbar({ open: true, message: 'Lỗi khi tải yêu cầu truyền máu!', severity: 'error' });
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa yêu cầu này?")) return;
+  const fetchBloodUnits = async (requestId) => {
     try {
-      await axios.delete(`${API_URL}/UrgentBloodRequest/${id}`, {
+      const request = data.find(r => r.urgentRequestId === requestId);
+      if (request) {
+        const res = await axios.get(`${API_URL}/UrgentBloodRequest/search-blood-units`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            RequestedBloodTypeId: request.requestedBloodTypeId,
+            RequestedComponentId: request.requestedComponentId,
+            IncludeReserved: true,
+          },
+        });
+        setBloodUnits(res.data);
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Lỗi khi tải đơn vị máu!', severity: 'error' });
+    }
+  };
+
+  useEffect(() => {
+    fetchUrgentRequests();
+    fetchTransfusionRequests();
+  }, []);
+
+  const handleFulfill = (request) => {
+    setSelectedRequest(request);
+    fetchBloodUnits(request.urgentRequestId);
+    setFulfillOpen(true);
+  };
+
+  const handleFulfillSubmit = async () => {
+    if (!fulfillType) {
+      setSnackbar({ open: true, message: 'Vui lòng chọn cách hoàn thành!', severity: 'error' });
+      return;
+    }
+    if (fulfillType === 'transfusion' && !preemptedTransfusionId) {
+      setSnackbar({ open: true, message: 'Vui lòng chọn yêu cầu truyền máu!', severity: 'error' });
+      return;
+    }
+    if (fulfillType === 'bloodUnit' && !usedBloodUnitId) {
+      setSnackbar({ open: true, message: 'Vui lòng chọn đơn vị máu!', severity: 'error' });
+      return;
+    }
+
+    try {
+      const payload = {
+        preemptedTransfusionRequestId: fulfillType === 'transfusion' ? parseInt(preemptedTransfusionId) : null,
+        usedBloodUnitId: fulfillType === 'bloodUnit' ? parseInt(usedBloodUnitId) : null,
+      };
+      await axios.patch(`${API_URL}/UrgentBloodRequest/${selectedRequest.urgentRequestId}/fulfill`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setData((prev) => prev.filter((item) => item.urgentRequestId !== id));
+      setSnackbar({ open: true, message: 'Đã hoàn thành yêu cầu!', severity: 'success' });
+      setFulfillOpen(false);
+      setFulfillType('');
+      setPreemptedTransfusionId('');
+      setUsedBloodUnitId('');
+      fetchUrgentRequests();
     } catch (err) {
-      console.error("Lỗi xóa yêu cầu:", err);
+      setSnackbar({ open: true, message: err.response?.data?.error || 'Thao tác thất bại!', severity: 'error' });
+    }
+  };
+
+  const handleCancel = async (id) => {
+    try {
+      await axios.patch(`${API_URL}/UrgentBloodRequest/${id}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackbar({ open: true, message: 'Đã hủy yêu cầu!', severity: 'success' });
+      fetchUrgentRequests();
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Hủy thất bại!', severity: 'error' });
     }
   };
 
   return (
-    <Container maxWidth="lg" style={{ padding: "32px 0" }}>
-      <Typography variant="h4" gutterBottom>
-        Quản Lý Yêu Cầu Máu Khẩn Cấp
-      </Typography>
-      <Paper elevation={3} style={{ padding: "16px" }}>
+    <Container maxWidth="lg" style={{ padding: '32px 0' }}>
+      <Typography variant="h4" gutterBottom>Quản Lý Yêu Cầu Máu Khẩn Cấp</Typography>
+      <Paper elevation={3} style={{ padding: '16px' }}>
         {loading ? (
           <CircularProgress />
         ) : (
@@ -94,23 +130,11 @@ const EmergencyTransfusionPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>
-                    <strong>Bệnh nhân</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Nhóm máu</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Ngày yêu cầu</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Trạng thái</strong>
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell>
-                      <strong>Hành động</strong>
-                    </TableCell>
-                  )}
+                  <TableCell><strong>Bệnh nhân</strong></TableCell>
+                  <TableCell><strong>Nhóm máu</strong></TableCell>
+                  <TableCell><strong>Ngày yêu cầu</strong></TableCell>
+                  <TableCell><strong>Trạng thái</strong></TableCell>
+                  <TableCell><strong>Thao tác</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -118,37 +142,20 @@ const EmergencyTransfusionPage = () => {
                   <TableRow key={item.urgentRequestId}>
                     <TableCell>{item.patientName}</TableCell>
                     <TableCell>{item.bloodType?.bloodTypeName}</TableCell>
+                    <TableCell>{new Date(item.requestDate).toLocaleString('vi-VN')}</TableCell>
+                    <TableCell>{item.status}</TableCell>
                     <TableCell>
-                      {new Date(item.requestDate).toLocaleString("vi-VN")}
+                      {item.status === 'InProgress' && (
+                        <Button variant="contained" color="success" onClick={() => handleFulfill(item)}>
+                          Hoàn thành
+                        </Button>
+                      )}
+                      {['Pending', 'InProgress'].includes(item.status) && (
+                        <Button variant="contained" color="error" onClick={() => handleCancel(item.urgentRequestId)} sx={{ ml: 1 }}>
+                          Hủy
+                        </Button>
+                      )}
                     </TableCell>
-                    <TableCell>
-                      <Select
-                        value={item.status}
-                        size="small"
-                        onChange={(e) =>
-                          handleUpdateStatus(
-                            item.urgentRequestId,
-                            e.target.value
-                          )
-                        }
-                      >
-                        {statusOptions.map((status) => (
-                          <MenuItem key={status} value={status}>
-                            {statusLabelMap[status]}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        <IconButton
-                          onClick={() => handleDelete(item.urgentRequestId)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -156,6 +163,62 @@ const EmergencyTransfusionPage = () => {
           </TableContainer>
         )}
       </Paper>
+
+      <Dialog open={fulfillOpen} onClose={() => setFulfillOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Hoàn thành yêu cầu máu khẩn</DialogTitle>
+        <DialogContent>
+          <FormControl component="fieldset" fullWidth sx={{ mt: 2 }}>
+            <Typography variant="subtitle1">Chọn cách hoàn thành</Typography>
+            <RadioGroup value={fulfillType} onChange={(e) => setFulfillType(e.target.value)}>
+              <FormControlLabel value="transfusion" control={<Radio />} label="Ưu tiên từ yêu cầu truyền máu" />
+              <FormControlLabel value="bloodUnit" control={<Radio />} label="Sử dụng đơn vị máu trực tiếp" />
+            </RadioGroup>
+          </FormControl>
+          {fulfillType === 'transfusion' && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel>Chọn yêu cầu truyền máu</InputLabel>
+              <Select
+                value={preemptedTransfusionId}
+                onChange={(e) => setPreemptedTransfusionId(e.target.value)}
+              >
+                {transfusionRequests.map((tr) => (
+                  <MenuItem key={tr.transfusionId} value={tr.transfusionId}>
+                    {tr.patientCondition} - {tr.bloodType?.bloodTypeName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          {fulfillType === 'bloodUnit' && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel>Chọn đơn vị máu</InputLabel>
+              <Select
+                value={usedBloodUnitId}
+                onChange={(e) => setUsedBloodUnitId(e.target.value)}
+              >
+                {bloodUnits.map((unit) => (
+                  <MenuItem key={unit.bloodUnitId} value={unit.bloodUnitId}>
+                    {unit.bloodTypeName} - {unit.componentName} - {unit.remainingVolume}ml
+                    {unit.isReserved && ` (Đã đặt bởi ${unit.reservedForPatientName})`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFulfillOpen(false)}>Hủy</Button>
+          <Button variant="contained" color="primary" onClick={handleFulfillSubmit}>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

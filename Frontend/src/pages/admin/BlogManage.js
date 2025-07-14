@@ -280,7 +280,7 @@ const BlogManage = () => {
           style={{ width: "70%" }}
         />
         <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
-          ➕ Thêm blog
+        Thêm blog
         </Button>
       </div>
 
@@ -668,7 +668,7 @@ const BlogManage = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
           onClose={handleCloseSnackbar}

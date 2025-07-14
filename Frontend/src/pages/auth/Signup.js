@@ -429,9 +429,7 @@ const Signup = () => {
             )}
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              <Button onClick={handleBack} disabled>
-                Quay lại
-              </Button>
+              <Box />
               <Button
                 type="submit"
                 variant="contained"

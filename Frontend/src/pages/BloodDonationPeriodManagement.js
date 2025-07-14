@@ -34,6 +34,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import axios from 'axios';
 import CreateBloodDonationPeriod from '../components/CreateBloodDonationPeriod';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const BloodDonationPeriodManagement = () => {
   const currentUser = useSelector(state => state.auth.user);
@@ -53,8 +55,10 @@ const BloodDonationPeriodManagement = () => {
     periodDateFrom: null,
     periodDateTo: null,
     targetQuantity: 0,
-    location: ''
+    location: '',
+    imageUrl: ''
   });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchPeriods = async () => {
     try {
@@ -95,10 +99,10 @@ const BloodDonationPeriodManagement = () => {
       setPeriods(periods.map(p =>
         p.periodId === periodId ? { ...p, status: newStatus } : p
       ));
-      alert('Cập nhật trạng thái thành công!');
+      setSnackbar({ open: true, message: 'Cập nhật trạng thái thành công!', severity: 'success' });
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Cập nhật trạng thái thất bại!');
+      setSnackbar({ open: true, message: 'Cập nhật trạng thái thất bại!', severity: 'error' });
     }
   };
 
@@ -109,7 +113,8 @@ const BloodDonationPeriodManagement = () => {
       periodDateFrom: dayjs(period.periodDateFrom),
       periodDateTo: dayjs(period.periodDateTo),
       targetQuantity: period.targetQuantity,
-      location: period.location
+      location: period.location,
+      imageUrl: period.imageUrl || ''
     });
     setEditDialogOpen(true);
   };
@@ -124,7 +129,7 @@ const BloodDonationPeriodManagement = () => {
         periodDateFrom: editedData.periodDateFrom.toISOString(),
         periodDateTo: editedData.periodDateTo.toISOString(),
         targetQuantity: parseInt(editedData.targetQuantity, 10),
-        imageUrl: editingPeriod.imageUrl,
+        imageUrl: editedData.imageUrl,
         location: editedData.location
       };
 
@@ -285,17 +290,26 @@ const BloodDonationPeriodManagement = () => {
                   <TableCell>{formatDate(period.periodDateFrom)}</TableCell>
                   <TableCell>{formatDate(period.periodDateTo)}</TableCell>
                   <TableCell>
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
-                      <Select
-                        value={period.status}
-                        onChange={(e) => handleStatusChange(period.periodId, e.target.value)}
-                        displayEmpty
-                      >
-                        <MenuItem value="Active">Hoạt động</MenuItem>
-                        <MenuItem value="Completed">Hoàn thành</MenuItem>
-                        <MenuItem value="Cancelled">Đã hủy</MenuItem>
-                      </Select>
-                    </FormControl>
+                    {(isAdmin || isStaff) ? (
+                      <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <Select
+                          value={period.status}
+                          onChange={(e) => handleStatusChange(period.periodId, e.target.value)}
+                          displayEmpty
+                        >
+                          <MenuItem value="Active">Hoạt động</MenuItem>
+                          <MenuItem value="Completed">Hoàn thành</MenuItem>
+                          <MenuItem value="Cancelled">Đã hủy</MenuItem>
+                        </Select>
+                      </FormControl>
+                    ) : (
+                      <Chip
+                        label={getStatusText(period.status)}
+                        color={getStatusColor(period.status)}
+                        variant="filled"
+                        sx={{ fontWeight: 'bold', fontSize: 14 }}
+                      />
+                    )}
                   </TableCell>
                   <TableCell>{period.targetQuantity}</TableCell>
                   <TableCell>
@@ -333,12 +347,30 @@ const BloodDonationPeriodManagement = () => {
           </Table>
         </TableContainer>
       </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MuiAlert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
 
       {/* Create Dialog */}
       <CreateBloodDonationPeriod
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSuccess={fetchPeriods}
+        onSuccess={({ message, severity }) => {
+          setCreateDialogOpen(false);
+          fetchPeriods();
+          if (message) setSnackbar({ open: true, message, severity: severity || 'success' });
+        }}
       />
 
       {/* Edit Dialog */}
@@ -393,8 +425,33 @@ const BloodDonationPeriodManagement = () => {
                     label="Số lượng mục tiêu"
                     type="number"
                     value={editedData.targetQuantity}
-                    onChange={(e) => setEditedData({ ...editedData, targetQuantity: e.target.value })}
+                    onChange={(e) => setEditedData({ ...editedData, targetQuantity: e.targetValue })}
                   />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    sx={{ mr: 2 }}
+                  >
+                    Upload hình ảnh
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          // Giả lập upload: tạo URL tạm
+                          const url = URL.createObjectURL(file);
+                          setEditedData({ ...editedData, imageUrl: url });
+                        }
+                      }}
+                    />
+                  </Button>
+                  {editedData.imageUrl && (
+                    <img src={editedData.imageUrl} alt="Hình đợt hiến máu" style={{ maxHeight: 80, borderRadius: 8, border: '1px solid #eee' }} />
+                  )}
                 </Grid>
               </Grid>
             </LocalizationProvider>

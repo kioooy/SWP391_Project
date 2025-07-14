@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
@@ -50,23 +50,6 @@ const EmergencyRequest = () => {
     notes: '',
     cccd: '',
   });
-  const [components, setComponents] = useState([]);
-
-  useEffect(() => {
-    const fetchComponents = async () => {
-      try {
-        const response = await axios.get('/api/BloodComponent');
-        setComponents(response.data.map(c => ({
-          id: c.componentId,
-          name: c.componentName
-        })));
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách thành phần máu:', error);
-      }
-    };
-    fetchComponents();
-  }, []);
-
 
   const [errors, setErrors] = useState({});
 
@@ -84,7 +67,9 @@ const EmergencyRequest = () => {
     { id: 99, name: 'Không rõ' },
   ];
 
-
+  const components = [
+    { id: 1, name: 'Máu toàn phần' },
+  ];
 
   const [selectedComponentId, setSelectedComponentId] = useState(1);
 
@@ -150,7 +135,7 @@ const EmergencyRequest = () => {
   };
 
   const handleLocationChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ/]/g, '');
+    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, '');
     setFormData({
       ...formData,
       location: value,
@@ -162,11 +147,7 @@ const EmergencyRequest = () => {
 
   // Chỉ cho nhập số và tối đa 12 ký tự cho CCCD
   const handleCCCDChange = (event) => {
-    let value = event.target.value.replace(/[^0-9]/g, ''); // Lọc chỉ cho phép số
-    if (value.length === 1 && value !== '0') {
-      value = '0' + value; // Nếu số đầu tiên không phải 0, thêm 0 vào đầu
-    }
-    value = value.slice(0, 12); // Giới hạn độ dài tối đa là 12
+    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 12);
     setFormData({
       ...formData,
       cccd: value,
@@ -176,14 +157,11 @@ const EmergencyRequest = () => {
     }
   };
 
-
   const validateStep = () => {
     const newErrors = {};
     if (activeStep === 0) {
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
-      if (!formData.quantity) newErrors.quantity = 'Vui lòng nhập thể tích máu cần';
-      else if (parseInt(formData.quantity) <= 0) newErrors.quantity = 'Thể tích máu phải lớn hơn 0';
     } else if (activeStep === 1) {
       if (!formData.contactName) newErrors.contactName = 'Vui lòng nhập tên người liên hệ';
       // Kiểm tra số điện thoại Việt Nam
@@ -193,12 +171,11 @@ const EmergencyRequest = () => {
         newErrors.contactPhone = 'Số điện thoại không hợp lệ (phải là số Việt Nam, 10 số, bắt đầu 03,05,07,08,09)';
       }
       // Kiểm tra email phải là gmail
-     if (formData.contactEmail) {
-  if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.contactEmail)) {
-    newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
-  }
-}
-
+      if (!formData.contactEmail) {
+        newErrors.contactEmail = 'Vui lòng nhập email';
+      } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.contactEmail)) {
+        newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
+      }
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
       else if (/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
         newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm.';
@@ -236,8 +213,6 @@ const EmergencyRequest = () => {
         const payload = {
           PatientName: formData.patientName,
           RequestedBloodTypeId: selectedBloodType.id,
-          RequestedComponentId: selectedComponentId, // Thêm ComponentId
-          TransfusionVolume: parseInt(formData.quantity),
           Reason: formData.reason,
           ContactName: formData.contactName,
           ContactPhone: formData.contactPhone,
@@ -245,8 +220,6 @@ const EmergencyRequest = () => {
           EmergencyLocation: formData.location,
           Notes: formData.notes,
         };
-
-
         await axios.post('/api/UrgentBloodRequest', payload);
         setSnackbar({ open: true, message: 'Gửi yêu cầu thành công!', severity: 'success' });
         setActiveStep(0);
@@ -266,10 +239,8 @@ const EmergencyRequest = () => {
         let msg = 'Có lỗi khi gửi yêu cầu!';
         if (error.response && error.response.data && error.response.data.message) {
           msg = error.response.data.message;
-          console.log(msg);
         }
         setSnackbar({ open: true, message: msg, severity: 'error' });
-
       }
     }
   };
@@ -347,17 +318,7 @@ const EmergencyRequest = () => {
                 helperText={errors.patientName}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số CCCD"
-                value={formData.cccd}
-                onChange={handleCCCDChange}
-                error={!!errors.cccd}
-                helperText={errors.cccd}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
-              />
-            </Grid>
+
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.bloodType}>
                 <InputLabel>Nhóm máu cần</InputLabel>
@@ -377,41 +338,8 @@ const EmergencyRequest = () => {
                 )}
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Thể tích máu cần (ml)"
-                value={formData.quantity}
-                onChange={(event) => {
-                  const value = event.target.value.replace(/[^0-9]/g, '').slice(0, 4); // Giới hạn 4 chữ số
-                  setFormData({ ...formData, quantity: value });
-                  if (errors.quantity) {
-                    setErrors({ ...errors, quantity: '' });
-                  }
-                }}
-                error={!!errors.quantity}
-                helperText={errors.quantity}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-              />
-            </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Thành phần máu</InputLabel>
-                <Select
-                  value={selectedComponentId}
-                  label="Thành phần máu"
-                  onChange={(event) => setSelectedComponentId(event.target.value)}
-                >
-                  {components.map((component) => (
-                    <MenuItem key={component.id} value={component.id}>
-                      {component.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Lý do cần máu</InputLabel>
                 <Select
@@ -442,22 +370,8 @@ const EmergencyRequest = () => {
                   onChange={handleChange('notes')}
                 />
               </Grid>
-
             )}
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Tiền sử bệnh nhân ( nếu biết )"
-                value={formData.notes}
-                onChange={handleChange('notes')}
-                error={!!errors.notes}
-                helperText={errors.notes}
-
-              />
-            </Grid>
           </Grid>
-
         );
 
       case 1:
@@ -466,7 +380,7 @@ const EmergencyRequest = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Tên người nhà bệnh nhân"
+                label="Tên người liên hệ"
                 value={formData.contactName}
                 onChange={handleContactNameChange}
                 error={!!errors.contactName}
@@ -477,7 +391,7 @@ const EmergencyRequest = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Số điện thoại người nhà bệnh nhân"
+                label="Số điện thoại"
                 value={formData.contactPhone}
                 onChange={handleContactPhoneChange}
                 error={!!errors.contactPhone}
@@ -489,20 +403,19 @@ const EmergencyRequest = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Email người nhà bệnh nhân ( nếu có )"
+                label="Email"
                 type="email"
                 value={formData.contactEmail}
                 onChange={handleChange('contactEmail')}
                 error={!!errors.contactEmail}
                 helperText={errors.contactEmail}
               />
-
             </Grid>
 
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Địa chỉ hiện tại"
+                label="Địa chỉ"
                 value={formData.location}
                 onChange={handleLocationChange}
                 error={!!errors.location}
@@ -510,7 +423,17 @@ const EmergencyRequest = () => {
               />
             </Grid>
 
-
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Số CCCD"
+                value={formData.cccd}
+                onChange={handleCCCDChange}
+                error={!!errors.cccd}
+                helperText={errors.cccd}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
+              />
+            </Grid>
           </Grid>
         );
 
@@ -546,34 +469,6 @@ const EmergencyRequest = () => {
                         size="small"
                       />
                     </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Thể tích máu cần
-                    </Typography>
-                    <Typography>{formData.quantity} ml</Typography>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Thành phần máu
-                    </Typography>
-                    <Typography>{components.find(c => c.id === selectedComponentId)?.name}</Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Lý do cần máu
-                    </Typography>
-                    <Typography>{formData.reason}</Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Ghi chú
-                    </Typography>
-                    <Typography>{formData.notes || 'Không có'}</Typography>
                   </Grid>
                 </Grid>
               </CardContent>

@@ -223,7 +223,7 @@ const BloodDonationPeriodManagement = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", color: '#E53935' }}>
           Quản Lý Đợt Hiến Máu
         </Typography>
         <Button
@@ -265,7 +265,6 @@ const BloodDonationPeriodManagement = () => {
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Tên đợt</TableCell>
-                {/* <TableCell>Địa điểm</TableCell> */}
                 <TableCell>Thời gian bắt đầu</TableCell>
                 <TableCell>Thời gian kết thúc</TableCell>
                 <TableCell>Trạng thái</TableCell>
@@ -283,7 +282,6 @@ const BloodDonationPeriodManagement = () => {
                       {period.periodName}
                     </Typography>
                   </TableCell>
-                  <TableCell>{period.location}</TableCell>
                   <TableCell>{formatDate(period.periodDateFrom)}</TableCell>
                   <TableCell>{formatDate(period.periodDateTo)}</TableCell>
                   <TableCell>

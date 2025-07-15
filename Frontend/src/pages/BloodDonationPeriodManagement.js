@@ -55,8 +55,7 @@ const BloodDonationPeriodManagement = () => {
     periodDateFrom: null,
     periodDateTo: null,
     targetQuantity: 0,
-    location: '',
-    imageUrl: ''
+    location: ''
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
@@ -113,8 +112,7 @@ const BloodDonationPeriodManagement = () => {
       periodDateFrom: dayjs(period.periodDateFrom),
       periodDateTo: dayjs(period.periodDateTo),
       targetQuantity: period.targetQuantity,
-      location: period.location,
-      imageUrl: period.imageUrl || ''
+      location: period.location
     });
     setEditDialogOpen(true);
   };
@@ -129,7 +127,6 @@ const BloodDonationPeriodManagement = () => {
         periodDateFrom: editedData.periodDateFrom.toISOString(),
         periodDateTo: editedData.periodDateTo.toISOString(),
         targetQuantity: parseInt(editedData.targetQuantity, 10),
-        imageUrl: editedData.imageUrl,
         location: editedData.location
       };
 
@@ -427,31 +424,6 @@ const BloodDonationPeriodManagement = () => {
                     value={editedData.targetQuantity}
                     onChange={(e) => setEditedData({ ...editedData, targetQuantity: e.targetValue })}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    sx={{ mr: 2 }}
-                  >
-                    Upload hình ảnh
-                    <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          // Giả lập upload: tạo URL tạm
-                          const url = URL.createObjectURL(file);
-                          setEditedData({ ...editedData, imageUrl: url });
-                        }
-                      }}
-                    />
-                  </Button>
-                  {editedData.imageUrl && (
-                    <img src={editedData.imageUrl} alt="Hình đợt hiến máu" style={{ maxHeight: 80, borderRadius: 8, border: '1px solid #eee' }} />
-                  )}
                 </Grid>
               </Grid>
             </LocalizationProvider>

@@ -52,7 +52,7 @@ const Login = () => {
 
   useEffect(() => {
     if (authError) {
-      setError(authError);
+      setError(authError); // Luôn hiển thị lỗi từ backend
     }
   }, [authError]);
 

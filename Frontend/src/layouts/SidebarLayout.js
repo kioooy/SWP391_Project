@@ -31,7 +31,7 @@ const SidebarLayout = () => {
     { path: "/manage-requests", label: "Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
     { path: "/manage-urgent-request", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
     { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
-    { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
+    // { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> }, // Ẩn mục Huy Động
     { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },
 
     // Thêm menu quản lý người dùng cho Admin/Staff

@@ -4,10 +4,23 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { Phone, Email, Cake, Wc, LocationOn, Bloodtype, MonitorWeight, Height, Badge, CalendarToday, VolunteerActivism, Favorite, HelpOutline } from '@mui/icons-material';
+import sha256 from 'crypto-js/sha256';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user'));
+
+// Hàm chuyển ngày sinh sang object {year, month, day, dayOfWeek}
+function parseDateToObj(dateStr) {
+  if (!dateStr) return { year: 0, month: 0, day: 0, dayOfWeek: 0 };
+  const date = new Date(dateStr);
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    dayOfWeek: date.getDay()
+  };
+}
 
 const UserManage = () => {
   const [users, setUsers] = useState([]);
@@ -40,6 +53,9 @@ const UserManage = () => {
   const [detailUser, setDetailUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editUser, setEditUser] = useState(null);
+  // Thêm state cho dialog xác nhận xóa
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [userIdToDelete, setUserIdToDelete] = useState(null);
 
   // Lấy danh sách người dùng
   const fetchUsers = async () => {
@@ -77,26 +93,29 @@ const UserManage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       let detail = res.data;
+      console.log('Chi tiết user khi sửa:', detail); // Thêm log để kiểm tra dữ liệu thực tế
+      // Map bloodTypeName sang bloodTypeId
+      const bloodTypeId = bloodTypes.find(bt => bt.name === detail.bloodTypeName)?.id || 0;
+      // Map roleName sang roleId
+      const roleId = roles.find(r => r.name === detail.name)?.id || 0;
       setEditUser({
-        userId: detail.userId,
+        userId: detail.userId || '',
         fullName: detail.fullName || '',
         citizenNumber: detail.citizenNumber || '',
         email: detail.email || '',
         phoneNumber: detail.phoneNumber || '',
-        dateOfBirth: detail.dateOfBirth ? detail.dateOfBirth.slice(0, 10) : '',
-        // Chuyển sex từ boolean sang string
-        sex: detail.sex === true ? 'male' : detail.sex === false ? 'female' : '',
+        dateOfBirth: detail.dateOfBirth ? detail.dateOfBirth.split('T')[0] : '',
+        sex: typeof detail.sex === 'boolean' ? detail.sex : true,
         address: detail.address || '',
-        bloodTypeName: detail.bloodTypeName || '',
-        weight: detail.weight || '',
-        height: detail.height || '',
-        isDonor: detail.isDonor,
-        isRecipient: detail.isRecipient,
-        createdAt: detail.createdAt || '',
-        updatedAt: detail.updatedAt || '',
-        // Mapping roleId từ name
-        roleId: roles.find(r => r.name === detail.name)?.id || '',
-        accountType: detail.isDonor ? 'donor' : (detail.isRecipient ? 'recipient' : '')
+        roleId,
+        passwordHash: detail.passwordHash || '',
+        bloodTypeId,
+        weight: detail.weight || 0,
+        height: detail.height || 0,
+        isDonor: detail.isDonor ?? true,
+        isRecipient: detail.isRecipient ?? false,
+        accountType: (detail.isDonor) && (detail.isRecipient) ? 'both' : (detail.isDonor) ? 'donor' : 'recipient',
+        newPassword: ''
       });
       setOpenDialog(true);
     } catch (err) {
@@ -143,26 +162,52 @@ const UserManage = () => {
   // Sửa thông tin người dùng (Admin)
   const handleEditUser = async () => {
     if (!editUser) return;
+    // Kiểm tra các trường bắt buộc
+    if (!editUser.fullName || !editUser.citizenNumber || !editUser.email || !editUser.phoneNumber) {
+      setSnackbar({ open: true, message: 'Vui lòng nhập đầy đủ Họ tên, Số CCCD, Email, SĐT!', severity: 'error' });
+      return;
+    }
     setLoading(true);
     try {
+      // Chuyển dateOfBirth về string yyyy-MM-dd
+      let dateStr = editUser.dateOfBirth;
+      if (typeof dateStr === 'object' && dateStr.year) {
+        dateStr = `${dateStr.year}-${String(dateStr.month).padStart(2, '0')}-${String(dateStr.day).padStart(2, '0')}`;
+      }
+      // Nếu là sửa user, chỉ gửi passwordHash nếu có newPassword, còn lại không gửi trường này
       const body = {
-        FullName: editUser.fullName,
-        PhoneNumber: editUser.phoneNumber,
-        DateOfBirth: editUser.dateOfBirth,
-        Sex: editUser.sex === 'male' ? true : false,
-        Address: editUser.address,
-        BloodTypeId: editUser.bloodTypeId || null,
-        IsDonor: editUser.isDonor,
-        IsRecipient: editUser.isRecipient
+        fullName: editUser.fullName,
+        citizenNumber: editUser.citizenNumber,
+        email: editUser.email,
+        phoneNumber: editUser.phoneNumber,
+        dateOfBirth: dateStr,
+        sex: editUser.sex,
+        address: editUser.address,
+        roleId: editUser.roleId,
+        bloodTypeId: editUser.bloodTypeId,
+        weight: editUser.weight,
+        height: editUser.height,
+        isDonor: editUser.accountType === 'donor' || editUser.accountType === 'both',
+        isRecipient: editUser.accountType === 'recipient' || editUser.accountType === 'both'
       };
-      await axios.patch(`${API_URL}/User/${editUser.userId}/profile`, body, {
+      if (editUser.newPassword) {
+        body.passwordHash = sha256(editUser.newPassword).toString();
+      }
+      console.log('PATCH body:', body);
+      const res = await axios.patch(`${API_URL}/User/${editUser.userId}`, body, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      let updatedUser = res.data;
+      if (Array.isArray(res.data)) {
+        updatedUser = res.data.find(u => u.userId === editUser.userId) || res.data[0];
+      }
+      setUsers(users.map(u => u.userId === updatedUser.userId ? updatedUser : u));
+      setFilteredUsers(filteredUsers.map(u => u.userId === updatedUser.userId ? updatedUser : u));
       setSnackbar({ open: true, message: 'Cập nhật thành công!', severity: 'success' });
+      fetchUsers(); // Thêm dòng này để refresh lại danh sách
       setOpenDialog(false);
-      fetchUsers(); // cập nhật lại danh sách
     } catch (err) {
-      setSnackbar({ open: true, message: 'Cập nhật thất bại!', severity: 'error' });
+      setSnackbar({ open: true, message: err.response?.data?.message || 'Cập nhật thất bại!', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -170,7 +215,6 @@ const UserManage = () => {
 
   // Xóa mềm người dùng (Admin)
   const handleSoftDeleteUser = async (userId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
     setLoading(true);
     try {
       await axios.patch(`${API_URL}/User/soft-delete`, { UserId: userId }, {
@@ -182,6 +226,8 @@ const UserManage = () => {
       setSnackbar({ open: true, message: err.response?.data?.message || 'Xóa thất bại!', severity: 'error' });
     } finally {
       setLoading(false);
+      setConfirmDeleteOpen(false);
+      setUserIdToDelete(null);
     }
   };
 
@@ -210,6 +256,22 @@ const UserManage = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  // Map tên nhóm máu sang id (giả sử bạn có danh sách bloodTypes)
+  const bloodTypes = [
+    { id: 1, name: 'A+' },
+    { id: 2, name: 'A-' },
+    { id: 3, name: 'B+' },
+    { id: 4, name: 'B-' },
+    { id: 5, name: 'AB+' },
+    { id: 6, name: 'AB-' },
+    { id: 7, name: 'O+' },
+    { id: 8, name: 'O-' },
+  ];
+  const getBloodTypeIdByName = (name) => {
+    const found = bloodTypes.find(bt => bt.name === name);
+    return found ? found.id : null;
   };
 
   return (
@@ -245,7 +307,10 @@ const UserManage = () => {
               .filter(u => u.role === "Member" || u.roleId === 3)
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((u, idx) => (
-                <TableRow key={u.userId || idx}>
+                <TableRow
+                  key={u.userId}
+                  style={u.isActive === false ? { opacity: 0.5, background: '#f5f5f5' } : {}}
+                >
                   <TableCell>{u.fullName}</TableCell>
                   <TableCell>{u.citizenNumber}</TableCell>
                   <TableCell>{u.email}</TableCell>
@@ -261,7 +326,10 @@ const UserManage = () => {
                     <Button size="small" color="info" variant="contained" onClick={() => handleViewDetail(u)} sx={{ mr: 1 }}>Xem</Button>
                     <Button size="small" 
                        sx={{ backgroundColor: 'error.main', color: '#fff', '&:hover': { backgroundColor: 'error.dark' } }}
-                       onClick={() => handleSoftDeleteUser(u.userId)}>
+                       onClick={() => {
+                         setUserIdToDelete(u.userId);
+                         setConfirmDeleteOpen(true);
+                       }}>
                        Xóa
                      </Button>
                   </TableCell>
@@ -285,26 +353,8 @@ const UserManage = () => {
         <DialogTitle>{editMode ? 'Sửa người dùng' : 'Thêm người dùng'}</DialogTitle>
         <DialogContent style={{ display: 'grid', gap: 12 }}>
           <TextField label="Họ tên" fullWidth value={editUser?.fullName} onChange={e => setEditUser({ ...editUser, fullName: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" sx={{ mt: 4 }} />
-          {!editMode && (
-            <TextField 
-              label="Số CCCD" 
-              fullWidth 
-              value={editUser?.citizenNumber} 
-              onChange={e => setEditUser({ ...editUser, citizenNumber: e.target.value })}
-              helperText=""
-              sx={{ mb: 1 }}
-            />
-          )}
-          {!editMode && (
-            <TextField 
-              label="Email" 
-              fullWidth 
-              value={editUser?.email} 
-              onChange={e => setEditUser({ ...editUser, email: e.target.value })}
-              helperText=""
-              sx={{ mb: 1 }}
-            />
-          )}
+          <TextField label="Số CCCD" fullWidth value={editUser?.citizenNumber} onChange={e => setEditUser({ ...editUser, citizenNumber: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" />
+          {/* Ẩn trường nhập email */}
           <TextField
             label="SĐT"
             fullWidth
@@ -325,49 +375,64 @@ const UserManage = () => {
           <TextField label="Ngày sinh" type="date" fullWidth InputLabelProps={{ shrink: true }} value={editUser?.dateOfBirth} onChange={e => setEditUser({ ...editUser, dateOfBirth: e.target.value })} />
           <FormControl fullWidth>
             <InputLabel>Giới tính</InputLabel>
-            <Select value={editUser?.sex} label="Giới tính" onChange={e => setEditUser({ ...editUser, sex: e.target.value })}>
+            <Select
+              value={typeof editUser?.sex === 'boolean' ? (editUser.sex ? 'male' : 'female') : ''}
+              onChange={e => setEditUser({ ...editUser, sex: e.target.value === 'male' })}
+              label="Giới tính"
+            >
               <MenuItem value="male">Nam</MenuItem>
               <MenuItem value="female">Nữ</MenuItem>
             </Select>
           </FormControl>
-          <TextField label="Địa chỉ" fullWidth value={editUser?.address} onChange={e => setEditUser({ ...editUser, address: e.target.value })} />
+          <TextField
+            label="Địa chỉ"
+            fullWidth
+            value={editUser?.address}
+            onChange={e => setEditUser({ ...editUser, address: e.target.value })}
+            InputLabelProps={{ shrink: true }}
+            margin="normal"
+          />
           <FormControl fullWidth>
             <InputLabel>Nhóm máu</InputLabel>
             <Select
-              value={editUser?.bloodTypeName || ''}
+              value={editUser?.bloodTypeId || ''}
+              onChange={e => setEditUser({ ...editUser, bloodTypeId: Number(e.target.value) })}
               label="Nhóm máu"
-              onChange={e => setEditUser({ ...editUser, bloodTypeName: e.target.value })}
             >
-              <MenuItem value="A+">A+</MenuItem>
-              <MenuItem value="A-">A-</MenuItem>
-              <MenuItem value="B+">B+</MenuItem>
-              <MenuItem value="B-">B-</MenuItem>
-              <MenuItem value="AB+">AB+</MenuItem>
-              <MenuItem value="AB-">AB-</MenuItem>
-              <MenuItem value="O+">O+</MenuItem>
-              <MenuItem value="O-">O-</MenuItem>
+              {bloodTypes.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
             </Select>
           </FormControl>
           <FormControl fullWidth>
             <InputLabel>Loại tài khoản</InputLabel>
             <Select
               value={editUser?.accountType || ''}
-              label="Loại tài khoản"
               onChange={e => {
-                const value = e.target.value;
-                setEditUser({
-                  ...editUser,
-                  isDonor: value === 'donor',
-                  isRecipient: value === 'recipient',
-                  accountType: value
-                });
+                const type = e.target.value;
+                setEditUser({ ...editUser, accountType: type });
               }}
+              label="Loại tài khoản"
             >
               <MenuItem value="donor">Hiến máu</MenuItem>
               <MenuItem value="recipient">Truyền máu</MenuItem>
+              {/* <MenuItem value="both">Cả hai</MenuItem> */}
             </Select>
           </FormControl>
-          {!editMode && <TextField label="Mật khẩu" type="password" fullWidth value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />}
+          <TextField label="Cân nặng (kg)" fullWidth value={editUser?.weight} onChange={e => setEditUser({ ...editUser, weight: e.target.value })} InputLabelProps={{ shrink: true }} type="number" />
+          <TextField label="Chiều cao (cm)" fullWidth value={editUser?.height} onChange={e => setEditUser({ ...editUser, height: e.target.value })} InputLabelProps={{ shrink: true }} type="number" />
+          <FormControl fullWidth>
+            <InputLabel>Vai trò</InputLabel>
+            <Select
+              value={editUser?.roleId || ''}
+              onChange={e => setEditUser({ ...editUser, roleId: Number(e.target.value) })}
+              label="Vai trò"
+            >
+              {roles.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+          {/* Chỉ hiện trường nhập mật khẩu khi thêm mới user */}
+          {!editMode && (
+            <TextField label="Mật khẩu mới" type="password" fullWidth value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Huỷ</Button>
@@ -405,6 +470,15 @@ const UserManage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailDialogOpen(false)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog xác nhận xóa */}
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+        <DialogTitle>Xác nhận xóa người dùng</DialogTitle>
+        <DialogContent>Bạn có chắc chắn muốn xóa người dùng này?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)}>Hủy</Button>
+          <Button color="error" onClick={() => handleSoftDeleteUser(userIdToDelete)} autoFocus>Xóa</Button>
         </DialogActions>
       </Dialog>
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>

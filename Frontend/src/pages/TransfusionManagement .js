@@ -1190,6 +1190,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                 value={createForm.BloodTypeId === "" ? "" : String(createForm.BloodTypeId)}
                 onChange={e => setCreateForm({ ...createForm, BloodTypeId: e.target.value })}
                 required
+                label="Nhóm máu"
               >
                 {bloodTypes
                   .filter(bt => bt.bloodTypeName !== "Không Biết")
@@ -1211,6 +1212,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                   setCreateForm({ ...createForm, BloodComponentId: e.target.value });
                 }}
                 required
+                label="Thành phần máu"
               >
                 {bloodComponents.map(bc => (
                   <MenuItem key={bc.componentId} value={String(bc.componentId)}>

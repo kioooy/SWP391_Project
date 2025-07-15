@@ -45,7 +45,7 @@ const UrgentRequestManage = () => {
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
         Quản Lý Yêu Cầu Máu Khẩn Cấp
       </Typography>
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 4, mt: 3 }}>
         <Table>
           <TableHead style={{ background: '#f5f5f5' }}>
             <TableRow>
@@ -54,11 +54,10 @@ const UrgentRequestManage = () => {
               <TableCell><b>Lý do</b></TableCell>
               <TableCell><b>Người liên hệ</b></TableCell>
               <TableCell><b>SĐT</b></TableCell>
-              <TableCell><b>Email</b></TableCell>
-              <TableCell><b>Địa chỉ</b></TableCell>
+              <TableCell><b>CCCD</b></TableCell>
               <TableCell><b>Ngày yêu cầu</b></TableCell>
               <TableCell><b>Trạng thái</b></TableCell>
-              <TableCell><b>Hành động</b></TableCell>
+              <TableCell align="center"><b>Hành động</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -69,18 +68,30 @@ const UrgentRequestManage = () => {
                 <TableCell>{r.reason}</TableCell>
                 <TableCell>{r.contactName}</TableCell>
                 <TableCell>{r.contactPhone}</TableCell>
-                <TableCell>{r.contactEmail}</TableCell>
-                <TableCell>{r.emergencyLocation}</TableCell>
+                <TableCell>{r.citizenNumber || '-'}</TableCell>
                 <TableCell>{new Date(r.requestDate).toLocaleString()}</TableCell>
-                <TableCell>{r.status}</TableCell>
                 <TableCell>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  {r.status === 'Pending' && (
+                    <span style={{ color: '#e6a700', fontWeight: 600 }}>Chờ duyệt</span>
+                  )}
+                  {r.status === 'InProgress' && (
+                    <span style={{ color: '#1976d2', fontWeight: 600 }}>Đang xử lý</span>
+                  )}
+                  {r.status === 'Fulfilled' && (
+                    <span style={{ color: '#388e3c', fontWeight: 600 }}>Đã hoàn thành</span>
+                  )}
+                  {r.status === 'Cancelled' && (
+                    <span style={{ color: '#d32f2f', fontWeight: 600 }}>Đã hủy</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                     <Button size="small" variant="outlined" onClick={() => { setSelected(r); setDetailOpen(true); }} sx={{ minWidth: 48, px: 1.5 }}>Xem</Button>
                     {r.status === 'Pending' && (
                       <Button size="small" color="primary" variant="contained" onClick={() => handleAction(r.urgentRequestId, 'accept')} sx={{ minWidth: 90 }}>Tiếp nhận</Button>
                     )}
                     {r.status === 'InProgress' && (
-                      <Button size="small" color="success" variant="contained" onClick={() => handleAction(r.urgentRequestId, 'fulfill')} sx={{ minWidth: 90 }}>Hoàn thành</Button>
+                      <Button size="small" color="success" variant="contained" onClick={() => handleAction(r.urgentRequestId, 'fulfill')} sx={{ minWidth: 90 }}>Hoàn tất</Button>
                     )}
                     {['Pending', 'InProgress'].includes(r.status) && (
                       <Button size="small" color="error" variant="contained" onClick={() => handleAction(r.urgentRequestId, 'cancel')} sx={{ minWidth: 60 }}>Hủy</Button>
@@ -96,18 +107,22 @@ const UrgentRequestManage = () => {
         <DialogTitle>Chi tiết yêu cầu máu khẩn</DialogTitle>
         <DialogContent>
           {selected && (
-            <div style={{ display: 'grid', rowGap: 12 }}>
-              <div><b>ID:</b> {selected.urgentRequestId}</div>
+            <div style={{ display: 'grid', rowGap: 14, fontSize: 17, color: '#222' }}>
+              <div style={{ fontWeight: 600, fontSize: 18, color: '#e53935', marginBottom: 6 }}>Thông tin bệnh nhân</div>
+              <div><b>Mã yêu cầu:</b> {selected.urgentRequestId}</div>
               <div><b>Tên bệnh nhân:</b> {selected.patientName}</div>
               <div><b>Nhóm máu:</b> {selected.bloodType?.bloodTypeName || '-'}</div>
-              <div><b>Lý do:</b> {selected.reason}</div>
-              <div><b>Người liên hệ:</b> {selected.contactName}</div>
-              <div><b>SĐT:</b> {selected.contactPhone}</div>
+              <div><b>Lý do cần máu:</b> {selected.reason}</div>
+              <div style={{ fontWeight: 600, fontSize: 18, color: '#e53935', margin: '10px 0 6px' }}>Người liên hệ</div>
+              <div><b>Họ tên:</b> {selected.contactName}</div>
+              <div><b>Số CCCD:</b> {selected.citizenNumber || '-'}</div>
+              <div><b>Số điện thoại:</b> {selected.contactPhone}</div>
               <div><b>Email:</b> {selected.contactEmail}</div>
               <div><b>Địa chỉ:</b> {selected.emergencyLocation}</div>
-              <div><b>Ghi chú:</b> {selected.notes}</div>
+              <div style={{ fontWeight: 600, fontSize: 18, color: '#e53935', margin: '10px 0 6px' }}>Khác</div>
+              <div><b>Ghi chú:</b> {selected.notes || '-'}</div>
               <div><b>Ngày yêu cầu:</b> {new Date(selected.requestDate).toLocaleString()}</div>
-              <div><b>Trạng thái:</b> {selected.status}</div>
+              <div><b>Trạng thái:</b> {selected.status === 'Pending' ? 'Chờ duyệt' : selected.status === 'InProgress' ? 'Đang xử lý' : selected.status === 'Fulfilled' ? 'Đã hoàn thành' : selected.status === 'Cancelled' ? 'Đã hủy' : selected.status}</div>
             </div>
           )}
         </DialogContent>

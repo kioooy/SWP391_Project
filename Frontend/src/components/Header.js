@@ -140,7 +140,7 @@ const Header = () => {
                 bgcolor: 'rgba(229,57,53,0.04)'
               }
             }}
-            onClick={() => navigate('/login')}
+            onClick={() => { window.location.href = '/login'; }}
           >
             Đăng nhập
           </Button>

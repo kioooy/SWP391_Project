@@ -36,6 +36,13 @@ const Article = () => {
             articles.map((article) => (
               <Grid item xs={12} md={6} key={article.articleId}>
                 <Card sx={{ borderRadius: 2, boxShadow: 2, height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 } }}>
+                  {article.imageUrl && (
+                    <img
+                      src={article.imageUrl}
+                      alt={article.title}
+                      style={{ width: '100%', height: 220, objectFit: 'cover', borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
+                    />
+                  )}
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography
                       variant="h6"

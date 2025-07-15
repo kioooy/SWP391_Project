@@ -172,16 +172,28 @@ namespace Blood_Donation_Support.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
 
+            // Lấy hoạt động hiến máu gần đây, kèm tên người dùng
             var recentDonations = await _context.DonationRequests
                 .OrderByDescending(dr => dr.RequestDate)
                 .Take(count)
-                .Select(dr => new { Type = "Donation", dr.RequestDate, dr.Status })
+                .Select(dr => new {
+                    Type = "Donation",
+                    dr.RequestDate,
+                    dr.Status,
+                    UserName = dr.Member.User.FullName
+                })
                 .ToListAsync();
 
+            // Lấy hoạt động truyền máu gần đây, kèm tên người dùng
             var recentTransfusions = await _context.TransfusionRequests
                 .OrderByDescending(tr => tr.RequestDate)
                 .Take(count)
-                .Select(tr => new { Type = "Transfusion", tr.RequestDate, tr.Status })
+                .Select(tr => new {
+                    Type = "Transfusion",
+                    tr.RequestDate,
+                    tr.Status,
+                    UserName = tr.Member.User.FullName
+                })
                 .ToListAsync();
 
             var recentActivity = recentDonations.Concat(recentTransfusions)

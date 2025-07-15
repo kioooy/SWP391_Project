@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -36,6 +36,9 @@ import axios from 'axios';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
 
+
+
+
 const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -51,9 +54,22 @@ const EmergencyRequest = () => {
     cccd: '',
   });
 
+
+
+
+
+
+
+
   const [errors, setErrors] = useState({});
 
+
+
+
   const steps = ['Thông tin cơ bản', 'Thông tin liên hệ', 'Xác nhận'];
+
+
+
 
   const bloodTypes = [
     { id: 1, name: 'A+' },
@@ -67,14 +83,18 @@ const EmergencyRequest = () => {
     { id: 99, name: 'Không rõ' },
   ];
 
-  const components = [
-    { id: 1, name: 'Máu toàn phần' },
-  ];
 
-  const [selectedComponentId, setSelectedComponentId] = useState(1);
+
+
+
+
+
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
+
+
 
   const handleChange = (field) => (event) => {
     setFormData({
@@ -90,6 +110,9 @@ const EmergencyRequest = () => {
     }
   };
 
+
+
+
   const handlePatientNameChange = (event) => {
     // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
     const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
@@ -102,6 +125,9 @@ const EmergencyRequest = () => {
     }
   };
 
+
+
+
   const handleReasonChange = (event) => {
     // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
     const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
@@ -110,6 +136,9 @@ const EmergencyRequest = () => {
       reason: value,
     });
   };
+
+
+
 
   const handleContactNameChange = (event) => {
     // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
@@ -123,6 +152,9 @@ const EmergencyRequest = () => {
     }
   };
 
+
+
+
   const handleContactPhoneChange = (event) => {
     let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 10); // chỉ cho nhập tối đa 10 số
     setFormData({
@@ -134,8 +166,11 @@ const EmergencyRequest = () => {
     }
   };
 
+
+
+
   const handleLocationChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, '');
+    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ/]/g, '');
     setFormData({
       ...formData,
       location: value,
@@ -145,9 +180,16 @@ const EmergencyRequest = () => {
     }
   };
 
+
+
+
   // Chỉ cho nhập số và tối đa 12 ký tự cho CCCD
   const handleCCCDChange = (event) => {
-    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+    let value = event.target.value.replace(/[^0-9]/g, ''); // Lọc chỉ cho phép số
+    if (value.length === 1 && value !== '0') {
+      value = '0' + value; // Nếu số đầu tiên không phải 0, thêm 0 vào đầu
+    }
+    value = value.slice(0, 12); // Giới hạn độ dài tối đa là 12
     setFormData({
       ...formData,
       cccd: value,
@@ -156,12 +198,55 @@ const EmergencyRequest = () => {
       setErrors({ ...errors, cccd: '' });
     }
   };
+  //lấy vị trí
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setSnackbar({ open: true, message: 'Trình duyệt không hỗ trợ định vị!', severity: 'error' });
+      return;
+    }
+
+
+
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await response.json();
+          const address = data.display_name || '';
+          setFormData((prev) => ({
+            ...prev,
+            location: address,
+          }));
+          setSnackbar({ open: true, message: 'Đã lấy vị trí thành công!', severity: 'success' });
+        } catch (err) {
+          setSnackbar({ open: true, message: 'Không thể lấy địa chỉ từ tọa độ!', severity: 'error' });
+        }
+      },
+      (error) => {
+        setSnackbar({ open: true, message: 'Lỗi lấy vị trí: ' + error.message, severity: 'error' });
+      }
+    );
+  };
+
+
+
+
+
+
+
 
   const validateStep = () => {
     const newErrors = {};
     if (activeStep === 0) {
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
       if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
+      if (!formData.cccd) {
+        newErrors.cccd = 'Vui lòng nhập số CCCD';
+      } else if (!/^\d{12}$/.test(formData.cccd)) {
+        newErrors.cccd = 'Số CCCD phải là 12 chữ số';
+      }
     } else if (activeStep === 1) {
       if (!formData.contactName) newErrors.contactName = 'Vui lòng nhập tên người liên hệ';
       // Kiểm tra số điện thoại Việt Nam
@@ -171,24 +256,30 @@ const EmergencyRequest = () => {
         newErrors.contactPhone = 'Số điện thoại không hợp lệ (phải là số Việt Nam, 10 số, bắt đầu 03,05,07,08,09)';
       }
       // Kiểm tra email phải là gmail
-      if (!formData.contactEmail) {
-        newErrors.contactEmail = 'Vui lòng nhập email';
-      } else if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.contactEmail)) {
-        newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
+      if (formData.contactEmail) {
+        if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.contactEmail)) {
+          newErrors.contactEmail = 'Email phải đúng định dạng và kết thúc bằng @gmail.com';
+        }
       }
+
+
+
+
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
       else if (/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
         newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm.';
       }
-      if (!formData.cccd) {
-        newErrors.cccd = 'Vui lòng nhập số CCCD';
-      } else if (!/^\d{12}$/.test(formData.cccd)) {
-        newErrors.cccd = 'Số CCCD phải là 12 chữ số';
-      }
+
+
+
+
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+
+
 
   const handleNext = () => {
     if (validateStep()) {
@@ -196,9 +287,15 @@ const EmergencyRequest = () => {
     }
   };
 
+
+
+
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
   };
+
+
+
 
   const handleSubmit = async () => {
     if (validateStep()) {
@@ -213,6 +310,9 @@ const EmergencyRequest = () => {
         const payload = {
           PatientName: formData.patientName,
           RequestedBloodTypeId: selectedBloodType.id,
+
+
+          CitizenNumber: formData.cccd,
           Reason: formData.reason,
           ContactName: formData.contactName,
           ContactPhone: formData.contactPhone,
@@ -220,6 +320,14 @@ const EmergencyRequest = () => {
           EmergencyLocation: formData.location,
           Notes: formData.notes,
         };
+
+
+
+
+
+
+
+
         await axios.post('/api/UrgentBloodRequest', payload);
         setSnackbar({ open: true, message: 'Gửi yêu cầu thành công!', severity: 'success' });
         setActiveStep(0);
@@ -239,11 +347,19 @@ const EmergencyRequest = () => {
         let msg = 'Có lỗi khi gửi yêu cầu!';
         if (error.response && error.response.data && error.response.data.message) {
           msg = error.response.data.message;
+          console.log(msg);
         }
         setSnackbar({ open: true, message: msg, severity: 'error' });
+
+
+
+
       }
     }
   };
+
+
+
 
   const reasonOptions = [
     {
@@ -303,6 +419,9 @@ const EmergencyRequest = () => {
     },
   ];
 
+
+
+
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
@@ -318,7 +437,17 @@ const EmergencyRequest = () => {
                 helperText={errors.patientName}
               />
             </Grid>
-
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Số CCCD"
+                value={formData.cccd}
+                onChange={handleCCCDChange}
+                error={!!errors.cccd}
+                helperText={errors.cccd}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
+              />
+            </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.bloodType}>
                 <InputLabel>Nhóm máu cần</InputLabel>
@@ -339,7 +468,10 @@ const EmergencyRequest = () => {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12}>
+
+
+
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Lý do cần máu</InputLabel>
                 <Select
@@ -359,6 +491,9 @@ const EmergencyRequest = () => {
               </FormControl>
             </Grid>
 
+
+
+
             {formData.reason === 'Khác' && (
               <Grid item xs={12}>
                 <TextField
@@ -370,9 +505,38 @@ const EmergencyRequest = () => {
                   onChange={handleChange('notes')}
                 />
               </Grid>
+
+
+
+
             )}
+
+
+
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Tiền sử bệnh nhân ( nếu biết )"
+                value={formData.notes}
+                onChange={handleChange('notes')}
+                error={!!errors.notes}
+                helperText={errors.notes}
+
+
+
+
+              />
+            </Grid>
           </Grid>
+
+
+
+
         );
+
+
+
 
       case 1:
         return (
@@ -380,7 +544,7 @@ const EmergencyRequest = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Tên người liên hệ"
+                label="Tên người nhà bệnh nhân"
                 value={formData.contactName}
                 onChange={handleContactNameChange}
                 error={!!errors.contactName}
@@ -388,10 +552,13 @@ const EmergencyRequest = () => {
               />
             </Grid>
 
+
+
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Số điện thoại"
+                label="Số điện thoại người nhà bệnh nhân"
                 value={formData.contactPhone}
                 onChange={handleContactPhoneChange}
                 error={!!errors.contactPhone}
@@ -400,42 +567,60 @@ const EmergencyRequest = () => {
               />
             </Grid>
 
+
+
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Email"
+                label="Email người nhà bệnh nhân ( nếu có )"
                 type="email"
                 value={formData.contactEmail}
                 onChange={handleChange('contactEmail')}
                 error={!!errors.contactEmail}
                 helperText={errors.contactEmail}
               />
+
+
+
+
             </Grid>
+
+
+
 
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Địa chỉ"
-                value={formData.location}
-                onChange={handleLocationChange}
-                error={!!errors.location}
-                helperText={errors.location}
-              />
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <TextField
+                  fullWidth
+                  label="Địa chỉ hiện tại"
+                  value={formData.location}
+                  onChange={handleLocationChange}
+                  error={!!errors.location}
+                  helperText={errors.location}
+                />
+                <Button variant="outlined" onClick={handleGetLocation}>
+                  Lấy vị trí
+                </Button>
+              </Box>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số CCCD"
-                value={formData.cccd}
-                onChange={handleCCCDChange}
-                error={!!errors.cccd}
-                helperText={errors.cccd}
-                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
-              />
-            </Grid>
+
+
+
+
+
+
+
+
+
+
+
           </Grid>
         );
+
+
+
 
       case 2:
         return (
@@ -443,6 +628,9 @@ const EmergencyRequest = () => {
             <Alert severity="info" sx={{ mb: 3 }}>
               Vui lòng kiểm tra lại thông tin trước khi gửi yêu cầu
             </Alert>
+
+
+
 
             <Card variant="outlined" sx={{ mb: 3 }}>
               <CardContent>
@@ -457,6 +645,9 @@ const EmergencyRequest = () => {
                     <Typography>{formData.patientName}</Typography>
                   </Grid>
 
+
+
+
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Nhóm máu cần
@@ -470,9 +661,40 @@ const EmergencyRequest = () => {
                       />
                     </Typography>
                   </Grid>
+
+
+
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Số CCCD
+                    </Typography>
+                    <Typography>{formData.cccd}</Typography>
+                  </Grid>
+
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Lý do cần máu
+                    </Typography>
+                    <Typography>{formData.reason}</Typography>
+                  </Grid>
+
+
+
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Ghi chú
+                    </Typography>
+                    <Typography>{formData.notes || 'Không có'}</Typography>
+                  </Grid>
                 </Grid>
               </CardContent>
             </Card>
+
+
+
 
             <Card variant="outlined">
               <CardContent>
@@ -487,6 +709,9 @@ const EmergencyRequest = () => {
                     <Typography>{formData.contactName}</Typography>
                   </Grid>
 
+
+
+
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Số điện thoại
@@ -494,12 +719,18 @@ const EmergencyRequest = () => {
                     <Typography>{formData.contactPhone}</Typography>
                   </Grid>
 
+
+
+
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Email
                     </Typography>
                     <Typography>{formData.contactEmail}</Typography>
                   </Grid>
+
+
+
 
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
@@ -513,16 +744,25 @@ const EmergencyRequest = () => {
           </Box>
         );
 
+
+
+
       default:
         return null;
     }
   };
+
+
+
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
         Đăng ký cần máu khẩn cấp
       </Typography>
+
+
+
 
       <Card sx={{ mb: 4 }}>
         <CardContent>
@@ -536,9 +776,15 @@ const EmergencyRequest = () => {
         </CardContent>
       </Card>
 
+
+
+
       <Card>
         <CardContent>
           {renderStepContent(activeStep)}
+
+
+
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
             {activeStep > 0 && (
@@ -567,6 +813,9 @@ const EmergencyRequest = () => {
         </CardContent>
       </Card>
 
+
+
+
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
           {snackbar.message}
@@ -576,4 +825,7 @@ const EmergencyRequest = () => {
   );
 };
 
-export default EmergencyRequest; 
+
+
+
+export default EmergencyRequest;

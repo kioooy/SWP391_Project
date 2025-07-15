@@ -77,6 +77,18 @@ const BloodInventory = () => {
     { id: 3, name: 'Tran Van C' }
   ];
 
+  // Đối tượng ánh xạ dịch thuật cho thành phần máu
+  const bloodComponentTranslations = {
+    "Whole Blood": "Máu toàn phần",
+    "Red Blood Cells": "Hồng cầu",
+    "Plasma": "Huyết tương",
+    "Platelets": "Tiểu cầu",
+    "Máu toàn phần": "Máu toàn phần",
+    "Hồng cầu": "Hồng cầu",
+    "Huyết tương": "Huyết tương",
+    "Tiểu cầu": "Tiểu cầu"
+  };
+
   // Fetch inventory
   const fetchInventory = async () => {
     setLoading(true);
@@ -223,7 +235,7 @@ const BloodInventory = () => {
                    {totalByType[type.name] || 0}
                  </Typography>
                  <Typography variant="body2" color="text.secondary">
-                   đơn vị máu có sẵn
+                   Thể tích (ml)
                  </Typography>
                  <LinearProgress
                    variant="determinate"
@@ -246,7 +258,7 @@ const BloodInventory = () => {
                 startIcon={<AddIcon />}
                 onClick={() => handleOpenDialog()}
               >
-                Thêm đơn vị máu
+                Tiếp nhận đơn vị máu
               </Button>
             )}
            </Box>
@@ -271,7 +283,7 @@ const BloodInventory = () => {
                    <TableRow key={row.bloodUnitId}>
                      <TableCell>{row.bloodUnitId}</TableCell>
                      <TableCell>{row.bloodTypeName}</TableCell>
-                     <TableCell>{row.componentName}</TableCell>
+                     <TableCell>{bloodComponentTranslations[row.componentName] || row.componentName}</TableCell>
                      <TableCell>{row.fullName || ''}</TableCell>
                      <TableCell>{row.addDate ? new Date(row.addDate).toLocaleDateString() : ''}</TableCell>
                      <TableCell>{row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : ''}</TableCell>
@@ -311,14 +323,26 @@ const BloodInventory = () => {
             {!selectedBlood && (
               <>
                 <FormControl fullWidth margin="normal">
-                  <InputLabel>Nhóm máu</InputLabel>
-                  <Select name="bloodTypeId" value={formData.bloodTypeId} onChange={(e) => setFormData({...formData, bloodTypeId: e.target.value})}>
+                  <InputLabel id="blood-type-label">Nhóm máu</InputLabel>
+                  <Select
+                    labelId="blood-type-label"
+                    name="bloodTypeId"
+                    value={formData.bloodTypeId}
+                    onChange={(e) => setFormData({...formData, bloodTypeId: e.target.value})}
+                    label="Nhóm máu"
+                  >
                     {bloodTypes.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
                   </Select>
                 </FormControl>
                 <FormControl fullWidth margin="normal">
-                  <InputLabel>Thành phần máu</InputLabel>
-                  <Select name="componentId" value={formData.componentId} onChange={(e) => setFormData({...formData, componentId: e.target.value})}>
+                  <InputLabel id="blood-component-label">Thành phần máu</InputLabel>
+                  <Select
+                    labelId="blood-component-label"
+                    name="componentId"
+                    value={formData.componentId}
+                    onChange={(e) => setFormData({...formData, componentId: e.target.value})}
+                    label="Thành phần máu"
+                  >
                     {components.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
                   </Select>
                 </FormControl>

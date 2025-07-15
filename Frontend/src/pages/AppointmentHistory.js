@@ -424,7 +424,7 @@ const AppointmentHistory = () => {
                       {selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
-                    <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography>
+                    {/* <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography> */}
                     <Typography variant="body2" color="text.secondary">Thời gian</Typography>
                     <Typography variant="body1" fontWeight="bold">
                       {selectedAppointment.periodDateFrom && selectedAppointment.periodDateTo

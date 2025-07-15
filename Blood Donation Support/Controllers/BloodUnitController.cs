@@ -254,15 +254,15 @@ public class BloodUnitController : ControllerBase
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IActionResult> GetSuitableBloodUnits(int bloodTypeId, int componentId, int requiredVolume)
     {
-        // Lấy tất cả các túi máu phù hợp (đúng nhóm máu, thành phần, còn hạn, còn đủ thể tích > 0)
         var now = DateOnly.FromDateTime(DateTime.Now);
+        // 1. Lấy các túi máu đúng nhóm
         var units = await _context.BloodUnits
             .Where(bu => bu.BloodTypeId == bloodTypeId
                       && bu.ComponentId == componentId
                       && bu.BloodStatus == "Available"
                       && bu.RemainingVolume > 0
                       && bu.ExpiryDate >= now)
-            .OrderBy(bu => bu.ExpiryDate) // Ưu tiên túi gần hết hạn
+            .OrderBy(bu => bu.ExpiryDate)
             .Select(bu => new {
                 bu.BloodUnitId,
                 bu.BloodTypeId,
@@ -274,9 +274,54 @@ public class BloodUnitController : ControllerBase
                 bu.ExpiryDate
             })
             .ToListAsync();
-
-        // FE/BE sẽ tự chọn/gợi ý nhiều túi để đủ requiredVolume
-        return Ok(units);
+        var totalAvailable = units.Sum(u => u.RemainingVolume);
+        // Nếu đủ máu đúng nhóm, trả về như cũ
+        if (totalAvailable >= requiredVolume)
+            return Ok(new { units, totalAvailable, enough = true });
+        // 2. Nếu không đủ, lấy các nhóm máu tương thích khác (trừ nhóm gốc)
+        var compatibleTypeIds = await _context.BloodCompatibilityRules
+            .Where(rule => rule.BloodRecieveId == bloodTypeId && rule.ComponentId == componentId && rule.IsCompatible && rule.BloodGiveId != bloodTypeId)
+            .Select(rule => rule.BloodGiveId)
+            .ToListAsync();
+        // Lấy các nhóm máu còn máu trong kho
+        var suitableAlternatives = new List<object>();
+        foreach (var altTypeId in compatibleTypeIds)
+        {
+            var altUnits = await _context.BloodUnits
+                .Where(bu => bu.BloodTypeId == altTypeId
+                          && bu.ComponentId == componentId
+                          && bu.BloodStatus == "Available"
+                          && bu.RemainingVolume > 0
+                          && bu.ExpiryDate >= now)
+                .OrderBy(bu => bu.ExpiryDate)
+                .Select(bu => new {
+                    bu.BloodUnitId,
+                    bu.BloodTypeId,
+                    BloodTypeName = bu.BloodType.BloodTypeName,
+                    bu.ComponentId,
+                    ComponentName = bu.Component.ComponentName,
+                    bu.RemainingVolume,
+                    bu.BloodStatus,
+                    bu.ExpiryDate
+                })
+                .ToListAsync();
+            if (altUnits.Any())
+            {
+                suitableAlternatives.Add(new {
+                    BloodTypeId = altTypeId,
+                    BloodTypeName = altUnits.First().BloodTypeName,
+                    units = altUnits,
+                    totalAvailable = altUnits.Sum(u => u.RemainingVolume)
+                });
+            }
+        }
+        return Ok(new {
+            units,
+            totalAvailable,
+            enough = false,
+            requiredVolume,
+            suitableAlternatives
+        });
     }
     // --- Quý Coding: End ---
 

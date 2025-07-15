@@ -114,7 +114,6 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalBloodUnits ?? '-'}</Typography>
                 </Box>
               </Box>
-              {/* <LinearProgress variant="determinate" value={70} /> */}
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -126,8 +125,7 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalMembers ?? '-'}</Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center' }}>
-              </Typography>
+            
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -139,9 +137,7 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalDonationRequests ?? '-'}</Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="error.main" sx={{ display: 'flex', alignItems: 'center' }}>
-           
-              </Typography>
+  
           </CardContent></Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -153,7 +149,6 @@ const Dashboard = () => {
                 <Typography variant="h4">{summary?.totalTransfusionRequests ?? '-'}</Typography>
               </Box>
             </Box>
-         
           </CardContent></Card>
         </Grid>
       </Grid>

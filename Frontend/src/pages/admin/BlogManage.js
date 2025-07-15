@@ -19,6 +19,8 @@ import {
   Alert,
   MenuItem,
   Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import axios from "axios";
 
@@ -54,6 +56,8 @@ const BlogManage = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [newBlogImagePreview, setNewBlogImagePreview] = useState("");
   const [editBlogImagePreview, setEditBlogImagePreview] = useState("");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState(null);
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -102,46 +106,38 @@ const BlogManage = () => {
   };
 
   const handleCreate = async () => {
-    const { Title, Content, ImageUrl, Status, IsActive } = newBlog;
-
-    if (!Title || !Content || !ImageUrl) {
+    const { Title, Content, ImageUrl, Status } = newBlog;
+    if (!Title || !Content) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-
     try {
-      const res = await axios.post(
+      const formData = new FormData();
+      formData.append('userId', user?.UserId || user?.userId);
+      formData.append('title', Title);
+      formData.append('content', Content);
+      formData.append('status', Status);
+      formData.append('imageUrl', ImageUrl || ''); // Ảnh không bắt buộc
+      await axios.post(
         `${API_URL}/Blog`,
-        {
-          userId: user?.UserId || user?.userId,
-          title: Title,
-          content: Content,
-          imageUrl: ImageUrl,
-          status: Status,
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
-      const created = res.data;
-
-      const newPost = {
-        PostId: created.postId,
-        Title: created.title,
-        Content: created.content,
-        ImageUrl: created.imageUrl,
-        Status: created.status,
-        IsActive: true,
-        PublishedDate: created.publishedDate,
-        UpdatedDate: created.updatedDate ?? created.publishedDate,
-      };
-
-      const updated = [newPost, ...blogs];
-      setBlogs(updated);
-      setFilteredBlogs(updated);
+      // Lấy lại danh sách mới
+      const res = await axios.get(`${API_URL}/Blog/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const sorted = [...res.data].sort((a, b) => {
+        const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+        const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+        return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+      });
+      setBlogs(sorted);
+      setFilteredBlogs(sorted);
       setNewBlog({
         Title: "",
         Content: "",
@@ -171,19 +167,19 @@ const BlogManage = () => {
 
   const handleUpdate = async () => {
     const { postId, title, content, imageUrl, status } = editBlog;
-    if (!title || !content || !imageUrl) {
+    if (!title || !content) {
       alert("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
     try {
-      await axios.put(
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('status', status);
+      formData.append('imageUrl', imageUrl || ''); // Ảnh không bắt buộc
+      await axios.patch(
         `${API_URL}/Blog/${postId}`,
-        {
-          title,
-          content,
-          imageUrl,
-          status,
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -301,60 +297,108 @@ const BlogManage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredBlogs
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((b, idx) => (
-                <TableRow
-                  key={b.PostId || b.postId || idx}
-                  style={
-                    b.isActive === false || b.IsActive === false
-                      ? { backgroundColor: '#f5f5f5', color: '#aaa' }
-                      : {}
-                  }
-                >
-                  <TableCell>{b.Title || b.title}</TableCell>
-                  <TableCell>
-                    {b.status === 'Published'
-                      ? 'Đã xuất bản'
-                      : b.status === 'Draft'
-                        ? 'Bản nháp'
-                        : 'Không xác định'}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={b.isActive ? 'active' : 'inactive'}
-                      onChange={e => handleChangeActive(b.postId, e.target.value)}
-                      size="small"
-                      sx={{ minWidth: 120 }}
-                    >
-                      <MenuItem value="active">Kích hoạt</MenuItem>
-                      <MenuItem value="inactive">Vô hiệu hóa</MenuItem>
-                    </Select>
-                  </TableCell>
-                  <TableCell>{formatDateTime(b.PublishedDate || b.publishedDate)}</TableCell>
-                  <TableCell>{formatDateTime(b.UpdatedDate || b.updatedDate)}</TableCell>
-                  <TableCell>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                        color="primary"
-                        onClick={() => handleViewDetail(b)}
-                    >
-                        Xem
-                    </Button>
-                    <Button
-                      size="small"
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleEdit(b)}
-                      >
-                        Sửa
-                    </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+            {filteredBlogs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" style={{ color: '#888', fontStyle: 'italic' }}>
+                  Hiện chưa có bài viết nào.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredBlogs
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((b, idx) => (
+                  <TableRow
+                    key={b.PostId || b.postId || idx}
+                    style={
+                      b.isActive === false || b.IsActive === false
+                        ? { backgroundColor: '#f5f5f5', color: '#aaa' }
+                        : {}
+                    }
+                  >
+                    <TableCell>{b.Title || b.title}</TableCell>
+                    <TableCell>
+                      {b.status === 'Published'
+                        ? 'Đã xuất bản'
+                        : b.status === 'Draft'
+                          ? 'Bản nháp'
+                          : 'Không xác định'}
+                    </TableCell>
+                    <TableCell>
+                      {b.isActive === true || b.IsActive === true ? (
+                        <span style={{ color: '#388e3c', fontWeight: 600 }}>Kích hoạt</span>
+                      ) : (
+                        <span style={{ color: '#888', fontWeight: 600 }}>Vô hiệu hóa</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{formatDateTime(b.PublishedDate || b.publishedDate)}</TableCell>
+                    <TableCell>{formatDateTime(b.UpdatedDate || b.updatedDate)}</TableCell>
+                    <TableCell>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", alignItems: "center" }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleEdit(b)}
+                          sx={{ mr: 1 }}
+                        >
+                          Sửa
+                        </Button>
+                        <Button
+                          size="small"
+                          color="info"
+                          variant="contained"
+                          onClick={() => handleViewDetail(b)}
+                          sx={{ mr: 1 }}
+                        >
+                          Xem
+                        </Button>
+                        {(b.isActive === true || b.IsActive === true) ? (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            sx={{ backgroundColor: 'error.main', color: '#fff', '&:hover': { backgroundColor: 'error.dark' } }}
+                            onClick={() => {
+                              setBlogToDelete(b);
+                              setConfirmDeleteOpen(true);
+                            }}
+                          >
+                            Xóa
+                          </Button>
+                        ) : (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            onClick={async () => {
+                              try {
+                                await axios.patch(`${API_URL}/Blog/${b.PostId || b.postId}/activate`, {}, {
+                                  headers: { Authorization: `Bearer ${token}` }
+                                });
+                                const res = await axios.get(`${API_URL}/Blog/admin`, {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                });
+                                const sorted = [...res.data].sort((a, b) => {
+                                  const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+                                  const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+                                  return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+                                });
+                                setBlogs(sorted);
+                                setFilteredBlogs(sorted);
+                                setSnackbarMessage('✅ Đã hoàn tác, kích hoạt lại blog!');
+                                setSnackbarOpen(true);
+                              } catch (error) {
+                                setSnackbarMessage('❌ Lỗi khi hoàn tác blog!');
+                                setSnackbarOpen(true);
+                              }
+                            }}
+                          >
+                            Hoàn tác
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -403,6 +447,18 @@ const BlogManage = () => {
               setNewBlogImagePreview("");
             }}
           /> */}
+          <FormControl fullWidth margin="normal">
+            <InputLabel shrink>Trạng thái</InputLabel>
+            <Select
+              label="Trạng thái"
+              value={newBlog.Status}
+              onChange={(e) => setNewBlog({ ...newBlog, Status: e.target.value })}
+              sx={{ minWidth: 120 }}
+            >
+              <MenuItem value="Published">Đã xuất bản</MenuItem>
+              <MenuItem value="Draft">Bản nháp</MenuItem>
+            </Select>
+          </FormControl>
           <input
             accept="image/jpeg,image/png"
             type="file"
@@ -429,20 +485,12 @@ const BlogManage = () => {
           {newBlogImagePreview && (
             <img src={newBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}
-          <Select
-            label="Trạng thái"
-            value={newBlog.Status}
-            onChange={(e) => setNewBlog({ ...newBlog, Status: e.target.value })}
-            sx={{ minWidth: 120 }}
-          >
-            <MenuItem value="Published">Đã xuất bản</MenuItem>
-            <MenuItem value="Draft">Bản nháp</MenuItem>
-          </Select>
+          
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleCreate}>
-            Lưu
+            Tạo
           </Button>
         </DialogActions>
       </Dialog>
@@ -470,15 +518,18 @@ const BlogManage = () => {
             value={editBlog?.content || ''}
             onChange={(e) => setEditBlog({ ...editBlog, content: e.target.value })}
           />
-          <Select
-            label="Trạng thái"
-            value={editBlog?.status || 'Draft'}
-            onChange={(e) => setEditBlog({ ...editBlog, status: e.target.value })}
-            sx={{ minWidth: 120 }}
-          >
-            <MenuItem value="Published">Đã xuất bản</MenuItem>
-            <MenuItem value="Draft">Bản nháp</MenuItem>
-          </Select>
+          <FormControl fullWidth margin="normal">
+            <InputLabel shrink>Trạng thái</InputLabel>
+            <Select
+              label="Trạng thái"
+              value={editBlog?.status || 'Draft'}
+              onChange={(e) => setEditBlog({ ...editBlog, status: e.target.value })}
+              sx={{ minWidth: 120 }}
+            >
+              <MenuItem value="Published">Đã xuất bản</MenuItem>
+              <MenuItem value="Draft">Bản nháp</MenuItem>
+            </Select>
+          </FormControl>
           {/* <TextField
             label="URL ảnh"
             fullWidth
@@ -567,6 +618,49 @@ const BlogManage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsDetailOpen(false)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog xác nhận xóa */}
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+      >
+        <DialogTitle>Xác nhận xóa blog</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc muốn xóa blog <strong>{blogToDelete?.Title || blogToDelete?.title}</strong> không?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)}>Hủy</Button>
+          <Button variant="contained" color="error" onClick={async () => {
+            if (!blogToDelete) return;
+            try {
+              await axios.patch(`${API_URL}/Blog/${blogToDelete.PostId || blogToDelete.postId}/deactivate`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              const res = await axios.get(`${API_URL}/Blog/admin`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const sorted = [...res.data].sort((a, b) => {
+                const aActive = a.IsActive !== undefined ? a.IsActive : a.isActive;
+                const bActive = b.IsActive !== undefined ? b.IsActive : b.isActive;
+                return (bActive === true ? 1 : 0) - (aActive === true ? 1 : 0);
+              });
+              setBlogs(sorted);
+              setFilteredBlogs(sorted);
+              setSnackbarMessage('🛑 Đã vô hiệu hóa blog!');
+              setSnackbarOpen(true);
+            } catch (error) {
+              setSnackbarMessage('❌ Lỗi khi vô hiệu hóa blog!');
+              setSnackbarOpen(true);
+            }
+            setConfirmDeleteOpen(false);
+            setBlogToDelete(null);
+          }}>
+            Xóa
+          </Button>
         </DialogActions>
       </Dialog>
 

@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container, Typography, Box, Card, CardContent, Avatar, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, Grid, CircularProgress, Alert, TextField
+  Container, Typography, Box, Card, CardContent, Avatar, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, Grid, CircularProgress, Alert
 } from '@mui/material';
 import { Bloodtype, CalendarToday, LocalHospital } from '@mui/icons-material';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 
-const getStatusColor = (status) => {
-  switch (status) {
+  const getStatusColor = (status) => {
+    switch (status) {
     case 'Completed':
-    case 'Hoàn thành':
-      return 'success';
+      case 'Hoàn thành':
+        return 'success';
     case 'Approved':
-    case 'Đang xử lý':
-      return 'warning';
+      case 'Đang xử lý':
+        return 'warning';
     case 'Cancelled':
-    case 'Đã hủy':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
+      case 'Đã hủy':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
 
-const formatDate = (dateString) => {
+  const formatDate = (dateString) => {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('vi-VN');
-};
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
 
 const TransfusionHistory = () => {
   const [history, setHistory] = useState([]);
@@ -33,10 +33,6 @@ const TransfusionHistory = () => {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
-
-  // Bổ sung state cho tìm kiếm
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredHistory, setFilteredHistory] = useState([]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -50,8 +46,7 @@ const TransfusionHistory = () => {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         setHistory(data);
-        setFilteredHistory(data); // Mặc định hiển thị tất cả
-      } catch (err) {
+    } catch (err) {
         setError(err.message || 'Lỗi khi tải lịch sử truyền máu');
       } finally {
         setLoading(false);
@@ -59,20 +54,6 @@ const TransfusionHistory = () => {
     };
     fetchHistory();
   }, []);
-
-  // Lọc dữ liệu khi searchTerm thay đổi
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredHistory(history);
-    } else {
-      const lowerTerm = searchTerm.toLowerCase();
-      const filtered = history.filter(item =>
-        (item.bloodType_BloodTypeName || item.bloodTypeName || '').toLowerCase().includes(lowerTerm) ||
-        (item.component_ComponentName || item.componentName || '').toLowerCase().includes(lowerTerm)
-      );
-      setFilteredHistory(filtered);
-    }
-  }, [searchTerm, history]);
 
   const handleDetail = (item) => {
     setSelected(item);
@@ -88,26 +69,15 @@ const TransfusionHistory = () => {
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
         Lịch sử truyền máu
       </Typography>
-
-      {/* Input tìm kiếm */}
-      <TextField
-        label="Tìm theo nhóm máu hoặc thành phần"
-        variant="outlined"
-        fullWidth
-        margin="normal"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}><CircularProgress /></Box>
       ) : error ? (
         <Alert severity="error" sx={{ my: 4 }}>{error}</Alert>
-      ) : filteredHistory.length === 0 ? (
-        <Alert severity="info" sx={{ my: 4 }}>Không tìm thấy kết quả phù hợp.</Alert>
+      ) : history.length === 0 ? (
+        <Alert severity="info" sx={{ my: 4 }}>Bạn chưa có lịch sử truyền máu nào.</Alert>
       ) : (
         <Grid container spacing={2}>
-          {filteredHistory.map((item) => (
+          {history.map((item) => (
             <Grid item xs={12} key={item.transfusionId}>
               <Card sx={{ mb: 2, boxShadow: 2, borderRadius: 2, background: '#f8f9fa' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
@@ -119,25 +89,24 @@ const TransfusionHistory = () => {
                     <Typography color="text.secondary" sx={{ mb: 0.5 }}>
                       <CalendarToday sx={{ fontSize: 18, mr: 1 }} />
                       {formatDate(item.requestDate)}
-                    </Typography>
+              </Typography>
                     <Typography color="text.secondary" sx={{ mb: 0.5 }}>
                       <Bloodtype sx={{ fontSize: 18, mr: 1 }} />
                       {item.bloodType_BloodTypeName || item.bloodTypeName} - {item.component_ComponentName || item.componentName}
-                    </Typography>
+              </Typography>
                     <Typography color="text.secondary" sx={{ mb: 0.5 }}>
                       <LocalHospital sx={{ fontSize: 18, mr: 1 }} />
                       {item.transfusionVolume} ml
-                    </Typography>
+              </Typography>
                     <Chip label={item.status} color={getStatusColor(item.status)} sx={{ fontWeight: 'bold', borderRadius: 2 }} />
                   </Box>
                   <Button onClick={() => handleDetail(item)} sx={{ ml: 2 }}>Chi tiết</Button>
-                </CardContent>
-              </Card>
-            </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
           ))}
         </Grid>
       )}
-
       <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
         <DialogTitle>Chi tiết truyền máu</DialogTitle>
         <DialogContent>
@@ -161,4 +130,4 @@ const TransfusionHistory = () => {
   );
 };
 
-export default TransfusionHistory;
+export default TransfusionHistory; 

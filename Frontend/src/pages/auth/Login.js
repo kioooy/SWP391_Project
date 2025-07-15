@@ -35,11 +35,30 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { error, loading } = useSelector((state) => state.auth);
+  const { error: authError, loading } = useSelector((state) => state.auth);
+  const [error, setError] = useState("");
   const [showLocationAlert, setShowLocationAlert] = React.useState(false); // State để quản lý Alert
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+
+  useEffect(() => {
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+    // Nếu có dùng redux: dispatch(logout());
+  }, []);
+
+  useEffect(() => {
+    if (authError) {
+      setError(authError); // Luôn hiển thị lỗi từ backend
+    }
+  }, [authError]);
+
+  useEffect(() => {
+    setError(""); // Reset lỗi khi vào trang login
+  }, []);
 
   // Hiển thị popup nếu có state từ trang Events
   React.useEffect(() => {
@@ -182,10 +201,31 @@ const Login = () => {
         <Typography component="h1" variant="h5" align="center" gutterBottom>
           Đăng Nhập 
         </Typography>
+        {/* Hiển thị lỗi ngay dưới ô mật khẩu */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, mb: 2 }}>
+            <Alert 
+              severity="error" 
+              variant="outlined"
+              icon={false}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 2,
+                fontSize: 13,
+                borderColor: '#f44336',
+                bgcolor: '#fdf3f3', // nền đỏ nhạt
+                minWidth: 'unset',
+                boxShadow: 'none',
+                m: 0
+              }}
+            >
+              {error}
+            </Alert>
+          </Box>
         )}
         <TextField
           fullWidth
@@ -193,7 +233,10 @@ const Login = () => {
           name="citizenId"
           label="Số CCCD"
           value={formik.values.citizenId}
-          onChange={formik.handleChange}
+          onChange={e => {
+            formik.setFieldValue('citizenId', e.target.value);
+            setError(""); // Reset lỗi khi nhập lại
+          }}
           error={formik.touched.citizenId && Boolean(formik.errors.citizenId)}
           helperText={formik.touched.citizenId && formik.errors.citizenId}
           margin="normal"
@@ -205,7 +248,10 @@ const Login = () => {
           label="Mật khẩu"
           type={showPassword ? 'text' : 'password'}
           value={formik.values.password}
-          onChange={formik.handleChange}
+          onChange={e => {
+            formik.setFieldValue('password', e.target.value);
+            setError(""); // Reset lỗi khi nhập lại
+          }}
           error={formik.touched.password && Boolean(formik.errors.password)}
           helperText={formik.touched.password && formik.errors.password}
           margin="normal"
@@ -237,9 +283,14 @@ const Login = () => {
         </Button>
 
         <Box sx={{ textAlign: 'center' }}>
-          <Link component={RouterLink} to="/signup" variant="body2">
-            {"Chưa có tài khoản? Đăng Ký"}
-          </Link>
+          <Typography
+            component="span"
+            variant="body2"
+            sx={{ cursor: 'pointer', color: '#e53935', textDecoration: 'underline' }}
+            onClick={() => window.location.href = '/signup'}
+          >
+            Chưa có tài khoản? Đăng Ký
+          </Typography>
         </Box>
       </Box>
 

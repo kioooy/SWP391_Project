@@ -17,34 +17,27 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DateTimePicker, TimePicker, DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import dayjs from 'dayjs';
 import axios from 'axios';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const validationSchema = Yup.object({
   periodName: Yup.string()
     .required('Tên đợt hiến máu là bắt buộc')
     .max(100, 'Tên đợt không được quá 100 ký tự'),
-  status: Yup.string()
-    .required('Trạng thái là bắt buộc')
-    .oneOf(['Active', 'Completed', 'Cancelled'], 'Trạng thái không hợp lệ'),
-  periodDateFrom: Yup.date()
-    .required('Thời gian bắt đầu là bắt buộc')
-    .min(new Date(), 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại'),
-  periodDateTo: Yup.date()
-    .required('Thời gian kết thúc là bắt buộc')
-    .min(Yup.ref('periodDateFrom'), 'Thời gian kết thúc phải sau thời gian bắt đầu'),
+  date: Yup.date().required('Ngày là bắt buộc'),
+  periodDateFrom: Yup.date().required('Giờ bắt đầu là bắt buộc'),
+  periodDateTo: Yup.date().required('Giờ kết thúc là bắt buộc'),
   targetQuantity: Yup.number()
     .required('Số lượng mục tiêu là bắt buộc')
     .positive('Số lượng mục tiêu phải là số dương')
     .integer('Số lượng mục tiêu phải là số nguyên'),
-  imageUrl: Yup.string()
-    .url('URL hình ảnh không hợp lệ')
-    .nullable()
 });
 
 const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
@@ -52,14 +45,14 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const [hospital, setHospital] = useState(null);
   const [hospitalLoading, setHospitalLoading] = useState(true);
+  const [isNameEdited, setIsNameEdited] = useState(false); // Theo dõi user có sửa tên không
 
   const initialValues = {
     periodName: '',
-    status: 'Active',
-    periodDateFrom: dayjs(),
-    periodDateTo: dayjs().add(1, 'day'),
-    targetQuantity: 100,
-    imageUrl: ''
+    date: dayjs(), // Thêm trường ngày
+    periodDateFrom: dayjs().hour(8).minute(0), // Mặc định 8:00 sáng
+    periodDateTo: dayjs().hour(17).minute(0), // Mặc định 17:00
+    targetQuantity: 100
   };
 
   // Lấy thông tin bệnh viện khi component mount
@@ -96,11 +89,10 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
       const requestData = {
         periodName: values.periodName,
         location: `${hospital.name} - ${hospital.address}`,
-        status: values.status,
+        status: 'Active', // luôn gửi status là Active
         periodDateFrom: values.periodDateFrom.toDate(),
         periodDateTo: values.periodDateTo.toDate(),
-        targetQuantity: values.targetQuantity,
-        imageUrl: values.imageUrl || null
+        targetQuantity: values.targetQuantity
       };
 
       await axios.post('/api/BloodDonationPeriod', requestData, {
@@ -110,9 +102,7 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
         }
       });
 
-      alert('Tạo đợt hiến máu thành công!');
-      resetForm();
-      onSuccess();
+      onSuccess({ message: 'Tạo đợt hiến máu thành công!', severity: 'success' });
       onClose();
     } catch (error) {
       console.error('Error creating blood donation period:', error);
@@ -127,19 +117,24 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
             const errorDetails = Object.entries(error.response.data.errors)
                 .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
                 .join('; ');
-            setError(`Lỗi dữ liệu: ${errorDetails}. Vui lòng kiểm tra lại thông tin.`);
+            onSuccess({ message: `Lỗi dữ liệu: ${errorDetails}. Vui lòng kiểm tra lại thông tin.`, severity: 'error' });
+            onClose();
             return; // Dừng lại sau khi hiển thị lỗi validation
         }
       }
 
       if (error.response?.status === 403) {
-        setError('Bạn không có quyền thực hiện hành động này. Vui lòng đăng nhập với tài khoản Staff hoặc Admin.');
+        onSuccess({ message: 'Bạn không có quyền thực hiện hành động này. Vui lòng đăng nhập với tài khoản Staff hoặc Admin.', severity: 'error' });
+        onClose();
       } else if (error.response?.data?.message) {
-        setError(error.response.data.message);
+        onSuccess({ message: error.response.data.message, severity: 'error' });
+        onClose();
       } else if (error.message) {
-        setError(error.message);
+        onSuccess({ message: error.message, severity: 'error' });
+        onClose();
       } else {
-        setError('Có lỗi xảy ra khi tạo đợt hiến máu. Vui lòng thử lại.');
+        onSuccess({ message: 'Có lỗi xảy ra khi tạo đợt hiến máu. Vui lòng thử lại.', severity: 'error' });
+        onClose();
       }
     } finally {
       setLoading(false);
@@ -171,30 +166,7 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                   )}
 
                   {/* Hiển thị thông tin bệnh viện */}
-                  {hospitalLoading ? (
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      <CircularProgress size={16} sx={{ mr: 1 }} />
-                      Đang tải thông tin bệnh viện...
-                    </Alert>
-                  ) : hospital ? (
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Địa điểm hiến máu: {hospital.name}
-                      </Typography>
-                      <Typography variant="body2">
-                        {hospital.address}
-                      </Typography>
-                      {hospital.phone && (
-                        <Typography variant="body2">
-                          Điện thoại: {hospital.phone}
-                        </Typography>
-                      )}
-                    </Alert>
-                  ) : (
-                    <Alert severity="warning" sx={{ mb: 2 }}>
-                      Không có thông tin bệnh viện trong hệ thống
-                    </Alert>
-                  )}
+                  {/* ĐÃ XÓA: Alert hiển thị địa điểm hiến máu và các thông tin bệnh viện */}
 
                   <Grid container spacing={3}>
                     <Grid item xs={12}>
@@ -203,30 +175,82 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         name="periodName"
                         label="Tên đợt hiến máu"
                         value={values.periodName}
-                        onChange={handleChange}
+                        onChange={e => {
+                          handleChange(e);
+                          setIsNameEdited(true);
+                        }}
                         error={touched.periodName && Boolean(errors.periodName)}
                         helperText={touched.periodName && errors.periodName}
                         required
                       />
                     </Grid>
-
+                    {/* Thêm trường chọn ngày */}
                     <Grid item xs={12} sm={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Trạng thái</InputLabel>
-                        <Select
-                          name="status"
-                          value={values.status}
-                          onChange={handleChange}
-                          error={touched.status && Boolean(errors.status)}
-                        >
-                          <MenuItem value="Active">Hoạt động</MenuItem>
-                          <MenuItem value="Completed">Hoàn thành</MenuItem>
-                          <MenuItem value="Cancelled">Đã hủy</MenuItem>
-                        </Select>
-                      </FormControl>
+                      <DatePicker
+                        label="Ngày tổ chức"
+                        value={values.date}
+                        onChange={newDate => {
+                          setFieldValue('date', newDate);
+                          // Khi đổi ngày, cập nhật lại ngày cho periodDateFrom và periodDateTo, giữ nguyên giờ/phút
+                          setFieldValue('periodDateFrom', dayjs(newDate).hour(values.periodDateFrom.hour()).minute(values.periodDateFrom.minute()));
+                          setFieldValue('periodDateTo', dayjs(newDate).hour(values.periodDateTo.hour()).minute(values.periodDateTo.minute()));
+                          // Nếu user chưa sửa tên thì tự động cập nhật tên đợt
+                          if (!isNameEdited && newDate) {
+                            const dateStr = dayjs(newDate).format('DD/MM/YYYY');
+                            setFieldValue('periodName', `Hiến Máu Nhân Đạo Ngày (${dateStr})`);
+                          }
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={touched.date && Boolean(errors.date)}
+                            helperText={touched.date && errors.date}
+                            required
+                          />
+                        )}
+                      />
                     </Grid>
-
-                    <Grid item xs={12} sm={6}>
+                    {/* Chọn giờ bắt đầu */}
+                    <Grid item xs={12} sm={3}>
+                      <TimePicker
+                        label="Giờ bắt đầu"
+                        value={values.periodDateFrom}
+                        onChange={newTime => {
+                          // Kết hợp ngày đã chọn với giờ mới
+                          setFieldValue('periodDateFrom', dayjs(values.date).hour(dayjs(newTime).hour()).minute(dayjs(newTime).minute()));
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={touched.periodDateFrom && Boolean(errors.periodDateFrom)}
+                            helperText={touched.periodDateFrom && errors.periodDateFrom}
+                            required
+                          />
+                        )}
+                      />
+                    </Grid>
+                    {/* Chọn giờ kết thúc */}
+                    <Grid item xs={12} sm={3}>
+                      <TimePicker
+                        label="Giờ kết thúc"
+                        value={values.periodDateTo}
+                        onChange={newTime => {
+                          setFieldValue('periodDateTo', dayjs(values.date).hour(dayjs(newTime).hour()).minute(dayjs(newTime).minute()));
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={touched.periodDateTo && Boolean(errors.periodDateTo)}
+                            helperText={touched.periodDateTo && errors.periodDateTo}
+                            required
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
                       <TextField
                         fullWidth
                         name="targetQuantity"
@@ -240,51 +264,6 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} sm={6}>
-                      <DateTimePicker
-                        label="Thời gian bắt đầu"
-                        value={values.periodDateFrom}
-                        onChange={(newValue) => setFieldValue('periodDateFrom', newValue)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            error={touched.periodDateFrom && Boolean(errors.periodDateFrom)}
-                            helperText={touched.periodDateFrom && errors.periodDateFrom}
-                            required
-                          />
-                        )}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <DateTimePicker
-                        label="Thời gian kết thúc"
-                        value={values.periodDateTo}
-                        onChange={(newValue) => setFieldValue('periodDateTo', newValue)}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            fullWidth
-                            error={touched.periodDateTo && Boolean(errors.periodDateTo)}
-                            helperText={touched.periodDateTo && errors.periodDateTo}
-                            required
-                          />
-                        )}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        name="imageUrl"
-                        label="URL hình ảnh (tùy chọn)"
-                        value={values.imageUrl}
-                        onChange={handleChange}
-                        error={touched.imageUrl && Boolean(errors.imageUrl)}
-                        helperText={touched.imageUrl && errors.imageUrl}
-                      />
-                    </Grid>
                   </Grid>
                 </Box>
               </Form>

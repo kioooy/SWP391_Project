@@ -146,7 +146,7 @@ const ArticleManage = () => {
       if (selectedArticle?.ArticleId === id) setSelectedArticle(null);
       setConfirmDeleteOpen(false);
       setArticleToDelete(null);
-      setSnackbar({ open: true, message: '🗑️ Đã xóa bài viết thành công!', severity: 'success' });
+      setSnackbar({ open: true, message: '🛑 Đã vô hiệu hóa blog!', severity: 'warning' });
     } catch (error) {
       setSnackbar({ open: true, message: '❌ Lỗi khi xóa bài viết!', severity: 'error' });
     }
@@ -299,7 +299,7 @@ const ArticleManage = () => {
           style={{ width: "70%" }}
         />
         <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
-          ➕ Tạo bài viết
+          Tạo bài viết
         </Button>
       </div>
 
@@ -657,11 +657,11 @@ const ArticleManage = () => {
         open={snackbar.open} 
         autoHideDuration={3000} 
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert 
           onClose={() => setSnackbar({ ...snackbar, open: false })} 
-          severity={snackbar.severity} 
+          severity={snackbar.message.includes('vô hiệu hóa') ? 'warning' : snackbar.severity} 
           sx={{ width: '100%' }}
         >
           {snackbar.message}

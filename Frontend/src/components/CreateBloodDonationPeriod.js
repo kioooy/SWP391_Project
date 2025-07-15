@@ -17,7 +17,7 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { DateTimePicker, TimePicker, DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Formik, Form, Field } from 'formik';
@@ -31,15 +31,9 @@ const validationSchema = Yup.object({
   periodName: Yup.string()
     .required('Tên đợt hiến máu là bắt buộc')
     .max(100, 'Tên đợt không được quá 100 ký tự'),
-  status: Yup.string()
-    .required('Trạng thái là bắt buộc')
-    .oneOf(['Active', 'Completed', 'Cancelled'], 'Trạng thái không hợp lệ'),
-  periodDateFrom: Yup.date()
-    .required('Thời gian bắt đầu là bắt buộc')
-    .min(new Date(), 'Thời gian bắt đầu phải lớn hơn thời gian hiện tại'),
-  periodDateTo: Yup.date()
-    .required('Thời gian kết thúc là bắt buộc')
-    .min(Yup.ref('periodDateFrom'), 'Thời gian kết thúc phải sau thời gian bắt đầu'),
+  date: Yup.date().required('Ngày là bắt buộc'),
+  periodDateFrom: Yup.date().required('Giờ bắt đầu là bắt buộc'),
+  periodDateTo: Yup.date().required('Giờ kết thúc là bắt buộc'),
   targetQuantity: Yup.number()
     .required('Số lượng mục tiêu là bắt buộc')
     .positive('Số lượng mục tiêu phải là số dương')
@@ -55,9 +49,9 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
 
   const initialValues = {
     periodName: '',
-    status: 'Active',
-    periodDateFrom: dayjs(),
-    periodDateTo: dayjs().add(1, 'day'),
+    date: dayjs(), // Thêm trường ngày
+    periodDateFrom: dayjs().hour(8).minute(0), // Mặc định 8:00 sáng
+    periodDateTo: dayjs().hour(17).minute(0), // Mặc định 17:00
     targetQuantity: 100
   };
 
@@ -95,7 +89,7 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
       const requestData = {
         periodName: values.periodName,
         location: `${hospital.name} - ${hospital.address}`,
-        status: values.status,
+        status: 'Active', // luôn gửi status là Active
         periodDateFrom: values.periodDateFrom.toDate(),
         periodDateTo: values.periodDateTo.toDate(),
         targetQuantity: values.targetQuantity
@@ -190,52 +184,41 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         required
                       />
                     </Grid>
-
+                    {/* Thêm trường chọn ngày */}
                     <Grid item xs={12} sm={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Trạng thái</InputLabel>
-                        <Select
-                          name="status"
-                          value={values.status}
-                          onChange={handleChange}
-                          error={touched.status && Boolean(errors.status)}
-                        >
-                          <MenuItem value="Active">Hoạt động</MenuItem>
-                          <MenuItem value="Completed">Hoàn thành</MenuItem>
-                          <MenuItem value="Cancelled">Đã hủy</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        name="targetQuantity"
-                        label="Số lượng mục tiêu"
-                        type="number"
-                        value={values.targetQuantity}
-                        onChange={handleChange}
-                        error={touched.targetQuantity && Boolean(errors.targetQuantity)}
-                        helperText={touched.targetQuantity && errors.targetQuantity}
-                        required
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <DateTimePicker
-                        label="Thời gian bắt đầu"
-                        value={values.periodDateFrom}
-                        onChange={(newValue) => {
-                          setFieldValue('periodDateFrom', newValue);
-                          // Nếu user chưa sửa tên thì tự động set tên theo ngày
-                          if (!isNameEdited && newValue) {
-                            const dateStr = dayjs(newValue).format('DD/MM/YYYY');
+                      <DatePicker
+                        label="Ngày tổ chức"
+                        value={values.date}
+                        onChange={newDate => {
+                          setFieldValue('date', newDate);
+                          // Khi đổi ngày, cập nhật lại ngày cho periodDateFrom và periodDateTo, giữ nguyên giờ/phút
+                          setFieldValue('periodDateFrom', dayjs(newDate).hour(values.periodDateFrom.hour()).minute(values.periodDateFrom.minute()));
+                          setFieldValue('periodDateTo', dayjs(newDate).hour(values.periodDateTo.hour()).minute(values.periodDateTo.minute()));
+                          // Nếu user chưa sửa tên thì tự động cập nhật tên đợt
+                          if (!isNameEdited && newDate) {
+                            const dateStr = dayjs(newDate).format('DD/MM/YYYY');
                             setFieldValue('periodName', `Hiến Máu Nhân Đạo Ngày (${dateStr})`);
                           }
-                          // Nếu ngày kết thúc khác ngày bắt đầu thì set lại về cuối ngày bắt đầu
-                          if (values.periodDateTo && !dayjs(newValue).isSame(values.periodDateTo, 'day')) {
-                            setFieldValue('periodDateTo', dayjs(newValue).endOf('day'));
-                          }
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={touched.date && Boolean(errors.date)}
+                            helperText={touched.date && errors.date}
+                            required
+                          />
+                        )}
+                      />
+                    </Grid>
+                    {/* Chọn giờ bắt đầu */}
+                    <Grid item xs={12} sm={3}>
+                      <TimePicker
+                        label="Giờ bắt đầu"
+                        value={values.periodDateFrom}
+                        onChange={newTime => {
+                          // Kết hợp ngày đã chọn với giờ mới
+                          setFieldValue('periodDateFrom', dayjs(values.date).hour(dayjs(newTime).hour()).minute(dayjs(newTime).minute()));
                         }}
                         renderInput={(params) => (
                           <TextField
@@ -248,21 +231,14 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         )}
                       />
                     </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <DateTimePicker
-                        label="Thời gian kết thúc"
+                    {/* Chọn giờ kết thúc */}
+                    <Grid item xs={12} sm={3}>
+                      <TimePicker
+                        label="Giờ kết thúc"
                         value={values.periodDateTo}
-                        onChange={(newValue) => {
-                          // Chỉ cho phép chọn trong cùng ngày với ngày bắt đầu
-                          if (newValue && dayjs(newValue).isSame(values.periodDateFrom, 'day')) {
-                            setFieldValue('periodDateTo', newValue);
-                          } else if (values.periodDateFrom) {
-                            setFieldValue('periodDateTo', dayjs(values.periodDateFrom).endOf('day'));
-                          }
+                        onChange={newTime => {
+                          setFieldValue('periodDateTo', dayjs(values.date).hour(dayjs(newTime).hour()).minute(dayjs(newTime).minute()));
                         }}
-                        minDateTime={dayjs(values.periodDateFrom).startOf('day')}
-                        maxDateTime={dayjs(values.periodDateFrom).endOf('day')}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -272,6 +248,19 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                             required
                           />
                         )}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="targetQuantity"
+                        label="Số lượng mục tiêu"
+                        type="number"
+                        value={values.targetQuantity}
+                        onChange={handleChange}
+                        error={touched.targetQuantity && Boolean(errors.targetQuantity)}
+                        helperText={touched.targetQuantity && errors.targetQuantity}
+                        required
                       />
                     </Grid>
 

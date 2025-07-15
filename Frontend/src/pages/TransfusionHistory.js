@@ -136,16 +136,25 @@ const TransfusionHistory = () => {
                     {formatDate(item.transfusionDate)}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={3}>
-                  <Typography variant="body2" color="text.secondary">Bệnh viện</Typography>
-                  <Typography variant="body1" fontWeight="bold">{item.hospital || '---'}</Typography>
+                <Grid item xs={12} sm={2}>
+                  <Typography variant="body2" color="text.secondary">Thành phần</Typography>
+                  <Typography variant="body1" fontWeight="bold">
+                    {bloodComponentTranslations[item.componentName] || item.componentName || '---'}
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid item xs={12} sm={2}>
+                  <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                  <Typography variant="body1" fontWeight="bold">
+                    {item.bloodTypeName || item.bloodType_BloodTypeName || '---'}
+                  </Typography>
+                </Grid>
+             
+              </Grid>
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 2, ml: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}>
                   <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
                   {getStatusChip(item.status)}
-                </Grid>
-              </Grid>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
+                </Box>
                 <Button
                   variant="outlined"
                   sx={{ minWidth: 120 }}
@@ -217,6 +226,12 @@ const TransfusionHistory = () => {
                       <Typography variant="body1" fontWeight="bold">{formatDate(selected.requestDate)}</Typography>
                       <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
                       <Typography variant="body1" fontWeight="bold">{formatDate(selected.transfusionDate)}</Typography>
+                      <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {selected.periodDateFrom && selected.periodDateTo
+                          ? `${dayjs(selected.periodDateFrom).format('HH:mm DD/MM/YYYY')} - ${dayjs(selected.periodDateTo).format('HH:mm DD/MM/YYYY')}`
+                          : 'Không xác định'}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">Thể tích</Typography>
                       <Typography variant="body1" fontWeight="bold">{selected.transfusionVolume} ml</Typography>
                       <Typography variant="body2" color="text.secondary">Tình trạng bệnh nhân</Typography>

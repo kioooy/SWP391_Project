@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, TextField, Select, MenuItem, TablePagination, FormControl, InputLabel
-} from '@mui/material';
+  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, TextField, Select, MenuItem, TablePagination, FormControl, InputLabel, Tabs, Tab, Box as MuiBox, Chip, Card, CardContent, Grid, Box, Typography as MuiTypography, Dialog as MuiDialog, DialogTitle as MuiDialogTitle, DialogContent as MuiDialogContent, DialogActions as MuiDialogActions, Button as MuiButton, IconButton, Avatar } from '@mui/material';
 import axios from 'axios';
-import { Phone, Email, Cake, Wc, LocationOn, Bloodtype, MonitorWeight, Height, Badge, CalendarToday, VolunteerActivism, Favorite, HelpOutline } from '@mui/icons-material';
+import { Phone, Email, Cake, Wc, LocationOn, Bloodtype, MonitorWeight, Height, Badge, CalendarToday, VolunteerActivism, Favorite, HelpOutline, Close, BadgeOutlined, Person } from '@mui/icons-material';
 import sha256 from 'crypto-js/sha256';
+import dayjs from 'dayjs';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 const token = localStorage.getItem('token');
@@ -56,6 +56,17 @@ const UserManage = () => {
   // Thêm state cho dialog xác nhận xóa
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState(null);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyTab, setHistoryTab] = useState(0);
+  const [donationHistory, setDonationHistory] = useState([]);
+  const [transfusionHistory, setTransfusionHistory] = useState([]);
+  const [historyUser, setHistoryUser] = useState(null);
+  const [openDonationDetail, setOpenDonationDetail] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [donationDetailUser, setDonationDetailUser] = useState(null);
+  const [openTransfusionDetail, setOpenTransfusionDetail] = useState(false);
+  const [selectedTransfusion, setSelectedTransfusion] = useState(null);
+  const [transfusionDetailUser, setTransfusionDetailUser] = useState(null);
 
   // Lấy danh sách người dùng
   const fetchUsers = async () => {
@@ -251,6 +262,23 @@ const UserManage = () => {
     }
   };
 
+  const handleOpenHistory = async (user) => {
+    setHistoryUser(user);
+    setHistoryDialogOpen(true);
+    setSnackbar({ open: true, message: 'Đang tải lịch sử...', severity: 'info' });
+    try {
+      // Lấy lịch sử hiến máu
+      const donationRes = await axios.get(`${API_URL}/DonationRequest/${user.userId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setDonationHistory(donationRes.data || []);
+      // Lấy lịch sử truyền máu
+      const transfusionRes = await axios.get(`${API_URL}/TransfusionRequest`, { headers: { Authorization: `Bearer ${token}` } });
+      setTransfusionHistory((transfusionRes.data || []).filter(tr => tr.MemberId === user.userId));
+      setSnackbar({ open: false, message: '', severity: 'info' });
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Lỗi khi tải lịch sử!', severity: 'error' });
+    }
+  };
+
   // Phân trang
   const handleChangePage = (event, newPage) => setPage(newPage);
   const handleChangeRowsPerPage = (event) => {
@@ -272,6 +300,58 @@ const UserManage = () => {
   const getBloodTypeIdByName = (name) => {
     const found = bloodTypes.find(bt => bt.name === name);
     return found ? found.id : null;
+  };
+
+  // Thêm hàm getStatusChip giống AppointmentHistory.js
+  const getStatusChip = (status) => {
+    switch (status) {
+      case 'completed':
+      case 'Completed':
+        return (
+          <Chip
+            label="Hoàn thành"
+            size="small"
+            sx={{ backgroundColor: '#757575', color: 'white', fontWeight: 600 }}
+          />
+        );
+      case 'scheduled':
+      case 'Approved':
+        return (
+          <Chip
+            label="Đã lên lịch"
+            color="success"
+            size="small"
+          />
+        );
+      case 'cancelled':
+      case 'Cancelled':
+      case 'Rejected':
+        return (
+          <Chip
+            label="Đã hủy"
+            color="error"
+            size="small"
+          />
+        );
+      case 'Pending':
+        return (
+          <Chip
+            label="Chờ duyệt"
+            color="warning"
+            size="small"
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Thêm biến dịch thành phần máu nếu chưa có
+  const bloodComponentTranslations = {
+    "Whole Blood": "Máu toàn phần",
+    "Red Blood Cells": "Hồng cầu",
+    "Plasma": "Huyết tương",
+    "Platelets": "Tiểu cầu",
   };
 
   return (
@@ -324,6 +404,7 @@ const UserManage = () => {
                   <TableCell>
                     <Button size="small" variant="outlined" onClick={() => handleOpenDialog(u)} sx={{ mr: 1 }}>Sửa</Button>
                     <Button size="small" color="info" variant="contained" onClick={() => handleViewDetail(u)} sx={{ mr: 1 }}>Xem</Button>
+                    <Button size="small" color="secondary" variant="contained" onClick={() => handleOpenHistory(u)} sx={{ mr: 1 }}>Lịch sử</Button>
                     <Button size="small" 
                        sx={{ backgroundColor: 'error.main', color: '#fff', '&:hover': { backgroundColor: 'error.dark' } }}
                        onClick={() => {
@@ -479,6 +560,263 @@ const UserManage = () => {
         <DialogActions>
           <Button onClick={() => setConfirmDeleteOpen(false)}>Hủy</Button>
           <Button color="error" onClick={() => handleSoftDeleteUser(userIdToDelete)} autoFocus>Xóa</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog lịch sử hiến/truyền máu */}
+      <Dialog open={historyDialogOpen} onClose={() => setHistoryDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Lịch sử hiến/truyền máu: {historyUser?.fullName}</DialogTitle>
+        <DialogContent>
+          <Tabs value={historyTab} onChange={(_, v) => setHistoryTab(v)} sx={{ mb: 2 }}>
+            <Tab label="Lịch sử hiến máu" />
+            <Tab label="Lịch sử truyền máu" />
+          </Tabs>
+          <MuiBox hidden={historyTab !== 0}>
+            {donationHistory.length === 0 ? (
+              <Typography align="center" sx={{ my: 2 }}>Không có dữ liệu</Typography>
+            ) : donationHistory.map((row, idx) => (
+              <Card key={idx} sx={{ mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                <CardContent>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={3}>
+                      <Typography variant="body2" color="text.secondary">Ngày đặt lịch</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {row.requestDate ? dayjs(row.requestDate).format('DD/MM/YYYY') : row.RequestDate ? dayjs(row.RequestDate).format('DD/MM/YYYY') : ''}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến máu</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {row.preferredDonationDate ? dayjs(row.preferredDonationDate).format('DD/MM/YYYY') : row.PreferredDonationDate ? dayjs(row.PreferredDonationDate).format('DD/MM/YYYY') : ''}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
+                      <Typography variant="body1" fontWeight="bold">{row.periodName || row.PeriodName}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                      {getStatusChip(row.status || row.Status)}
+                    </Grid>
+                    <Grid item xs={12} sm={1} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MuiButton size="small" variant="outlined" onClick={async () => {
+                        setSelectedDonation(row);
+                        // Lấy thông tin user chi tiết khi mở dialog chi tiết hiến máu
+                        try {
+                          const res = await axios.get(`${API_URL}/User/${historyUser?.userId || historyUser?.UserId || row.memberId || row.MemberId}`, { headers: { Authorization: `Bearer ${token}` } });
+                          setDonationDetailUser(res.data);
+                        } catch {
+                          setDonationDetailUser(historyUser);
+                        }
+                        // Nếu chưa có periodDateFrom/periodDateTo nhưng có periodId, gọi API lấy thông tin đợt hiến máu
+                        if ((row.periodId || row.PeriodId) && (!row.periodDateFrom || !row.periodDateTo)) {
+                          try {
+                            const periodId = row.periodId || row.PeriodId;
+                            const periodRes = await axios.get(`${API_URL}/BloodDonationPeriod/${periodId}`, { headers: { Authorization: `Bearer ${token}` } });
+                            setSelectedDonation(prev => ({
+                              ...prev,
+                              periodDateFrom: periodRes.data.periodDateFrom,
+                              periodDateTo: periodRes.data.periodDateTo
+                            }));
+                          } catch {}
+                        }
+                        setOpenDonationDetail(true);
+                      }}>Chi tiết</MuiButton>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            ))}
+            {/* Dialog chi tiết hiến máu */}
+            <MuiDialog open={openDonationDetail} onClose={() => setOpenDonationDetail(false)} maxWidth="md" fullWidth>
+              <MuiDialogTitle sx={{ bgcolor: '#4285f4', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6" fontWeight="bold">Chi tiết hiến máu</Typography>
+                <IconButton onClick={() => setOpenDonationDetail(false)} sx={{ color: 'white' }}><Close /></IconButton>
+              </MuiDialogTitle>
+              <MuiDialogContent sx={{ p: 3 }}>
+                {selectedDonation && (
+                  <Box>
+                    <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
+                      <Grid container spacing={3}>
+                        {/* Thông tin người dùng bên trái */}
+                        <Grid item xs={12} md={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <Avatar sx={{ bgcolor: '#4285f4', mr: 2 }}>
+                              <Person />
+                            </Avatar>
+                            <Typography variant="body1" fontWeight="bold">{donationDetailUser?.fullName || historyUser?.fullName || 'Chưa cập nhật'}</Typography>
+                          </Box>
+                          <Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <BadgeOutlined sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{donationDetailUser?.citizenNumber || historyUser?.citizenNumber || 'Chưa cập nhật'}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Bloodtype sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{donationDetailUser?.bloodTypeName || historyUser?.bloodTypeName || 'Chưa cập nhật'}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Phone sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{donationDetailUser?.phoneNumber || historyUser?.phoneNumber || 'Chưa cập nhật'}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CalendarToday sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{donationDetailUser?.dateOfBirth ? dayjs(donationDetailUser.dateOfBirth).format('DD/MM/YYYY') : historyUser?.dateOfBirth ? dayjs(historyUser.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật'}</Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+                        {/* Thông tin lịch hẹn bên phải */}
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
+                          <Typography variant="body1" fontWeight="bold">#{selectedDonation.donationId || selectedDonation.DonationId || selectedDonation.DonationID}</Typography>
+                          <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                          {getStatusChip(selectedDonation.status || selectedDonation.Status)}
+                          <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
+                          <Typography variant="body1" fontWeight="bold">{selectedDonation.preferredDonationDate ? dayjs(selectedDonation.preferredDonationDate).format('DD/MM/YYYY') : selectedDonation.PreferredDonationDate ? dayjs(selectedDonation.PreferredDonationDate).format('DD/MM/YYYY') : ''}</Typography>
+                          <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
+                          <Typography variant="body1" fontWeight="bold">{selectedDonation.periodName || selectedDonation.PeriodName}</Typography>
+                          <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                          <Typography variant="body1" fontWeight="bold">
+                            {selectedDonation.periodDateFrom && selectedDonation.periodDateTo
+                              ? `${dayjs(selectedDonation.periodDateFrom).format('HH:mm')} - ${dayjs(selectedDonation.periodDateTo).format('HH:mm')}`
+                              : 'Không xác định'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">Lượng máu hiến</Typography>
+                          <Typography variant="body1" fontWeight="bold">
+                            {selectedDonation.donationVolume ? `${selectedDonation.donationVolume} ml` : selectedDonation.DonationVolume ? `${selectedDonation.DonationVolume} ml` : selectedDonation.Volume ? `${selectedDonation.Volume} ml` : 'Không xác định'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Box>
+                )}
+              </MuiDialogContent>
+              <MuiDialogActions sx={{ p: 3, pt: 0 }}>
+                <MuiButton onClick={() => setOpenDonationDetail(false)} variant="outlined" color="primary">Đóng</MuiButton>
+              </MuiDialogActions>
+            </MuiDialog>
+          </MuiBox>
+          <MuiBox hidden={historyTab !== 1}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Ngày yêu cầu</TableCell>
+                  <TableCell>Ngày truyền máu</TableCell>
+                  <TableCell>Thành phần</TableCell>
+                  <TableCell>Nhóm máu</TableCell>
+                  <TableCell>Trạng thái</TableCell>
+                  <TableCell>Chi tiết</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {transfusionHistory.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} align="center">Không có dữ liệu</TableCell></TableRow>
+                ) : transfusionHistory.map((row, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>{row.requestDate ? dayjs(row.requestDate).format('DD/MM/YYYY') : row.RequestDate ? dayjs(row.RequestDate).format('DD/MM/YYYY') : ''}</TableCell>
+                    <TableCell>{row.transfusionDate ? dayjs(row.transfusionDate).format('DD/MM/YYYY') : row.TransfusionDate ? dayjs(row.TransfusionDate).format('DD/MM/YYYY') : ''}</TableCell>
+                    <TableCell>{bloodComponentTranslations[row.componentName] || row.componentName || row.ComponentName || row.Component?.ComponentName || '---'}</TableCell>
+                    <TableCell>{row.bloodTypeName || row.bloodType_BloodTypeName || '---'}</TableCell>
+                    <TableCell>{getStatusChip(row.status || row.Status)}</TableCell>
+                    <TableCell>
+                      <MuiButton size="small" variant="outlined" onClick={() => {
+                        setSelectedTransfusion(row);
+                        setOpenTransfusionDetail(true);
+                      }}>Chi tiết</MuiButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {/* Dialog chi tiết truyền máu nếu cần */}
+            <MuiDialog open={openTransfusionDetail} onClose={() => setOpenTransfusionDetail(false)} maxWidth="md" fullWidth>
+              <MuiDialogTitle sx={{ bgcolor: '#4285f4', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6" fontWeight="bold">Chi tiết truyền máu</Typography>
+                <IconButton onClick={() => setOpenTransfusionDetail(false)} sx={{ color: 'white' }}><Close /></IconButton>
+              </MuiDialogTitle>
+              <MuiDialogContent sx={{ p: 3 }}>
+                {selectedTransfusion && (
+                  <Box>
+                    <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
+                      <Grid container spacing={3}>
+                        {/* Thông tin người dùng bên trái */}
+                        <Grid item xs={12} md={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <Avatar sx={{ bgcolor: '#4285f4', mr: 2 }}>
+                              <Person />
+                            </Avatar>
+                            <Typography variant="body1" fontWeight="bold">{transfusionDetailUser?.fullName || historyUser?.fullName || 'Chưa cập nhật'}</Typography>
+                          </Box>
+                          <Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <BadgeOutlined sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.citizenNumber || historyUser?.citizenNumber || 'Chưa cập nhật'}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Bloodtype sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.bloodTypeName || historyUser?.bloodTypeName || 'Chưa cập nhật'}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Phone sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.phoneNumber || historyUser?.phoneNumber || 'Chưa cập nhật'}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <CalendarToday sx={{ color: '#757575', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.dateOfBirth ? dayjs(transfusionDetailUser.dateOfBirth).format('DD/MM/YYYY') : historyUser?.dateOfBirth ? dayjs(historyUser.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật'}</Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+                        {/* Thông tin lịch hẹn bên phải */}
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
+                          <Typography variant="body1" fontWeight="bold">#{selectedTransfusion.transfusionId || selectedTransfusion.TransfusionId || selectedTransfusion.TransfusionID}</Typography>
+                          <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                          {getStatusChip(selectedTransfusion.status || selectedTransfusion.Status)}
+                          <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
+                          <Typography variant="body1" fontWeight="bold">{selectedTransfusion.transfusionDate ? dayjs(selectedTransfusion.transfusionDate).format('DD/MM/YYYY') : selectedTransfusion.TransfusionDate ? dayjs(selectedTransfusion.TransfusionDate).format('DD/MM/YYYY') : ''}</Typography>
+                          <Typography variant="body2" color="text.secondary">Thành phần</Typography>
+                          <Typography variant="body1" fontWeight="bold">{bloodComponentTranslations[selectedTransfusion.componentName] || selectedTransfusion.componentName || selectedTransfusion.ComponentName || '---'}</Typography>
+                          <Typography variant="body2" color="text.secondary">Thể tích</Typography>
+                          <Typography variant="body1" fontWeight="bold">
+                            {selectedTransfusion.transfusionVolume ? `${selectedTransfusion.transfusionVolume} ml` : selectedTransfusion.TransfusionVolume ? `${selectedTransfusion.TransfusionVolume} ml` : selectedTransfusion.Volume ? `${selectedTransfusion.Volume} ml` : 'Không xác định'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Box>
+                )}
+              </MuiDialogContent>
+              <MuiDialogActions sx={{ p: 3, pt: 0 }}>
+                <MuiButton onClick={() => setOpenTransfusionDetail(false)} variant="outlined" color="primary">Đóng</MuiButton>
+              </MuiDialogActions>
+            </MuiDialog>
+          </MuiBox>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistoryDialogOpen(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>

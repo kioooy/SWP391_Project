@@ -37,6 +37,8 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
 
 
+
+
 const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -55,10 +57,18 @@ const EmergencyRequest = () => {
 
 
 
+
+
+
+
   const [errors, setErrors] = useState({});
 
 
+
+
   const steps = ['Thông tin cơ bản', 'Thông tin liên hệ', 'Xác nhận'];
+
+
 
 
   const bloodTypes = [
@@ -76,8 +86,14 @@ const EmergencyRequest = () => {
 
 
 
+
+
+
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
+
 
 
   const handleChange = (field) => (event) => {
@@ -95,6 +111,8 @@ const EmergencyRequest = () => {
   };
 
 
+
+
   const handlePatientNameChange = (event) => {
     // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
     const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
@@ -108,6 +126,8 @@ const EmergencyRequest = () => {
   };
 
 
+
+
   const handleReasonChange = (event) => {
     // Chỉ loại bỏ số và các ký tự đặc biệt, giữ lại mọi chữ cái và dấu
     const value = event.target.value.replace(/[0-9!@#$%^&*()_+={}\[\]:;"'<>,.?/\\|~`]/g, '');
@@ -116,6 +136,8 @@ const EmergencyRequest = () => {
       reason: value,
     });
   };
+
+
 
 
   const handleContactNameChange = (event) => {
@@ -131,6 +153,8 @@ const EmergencyRequest = () => {
   };
 
 
+
+
   const handleContactPhoneChange = (event) => {
     let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 10); // chỉ cho nhập tối đa 10 số
     setFormData({
@@ -143,16 +167,20 @@ const EmergencyRequest = () => {
   };
 
 
-  const handleLocationChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ/]/g, '');
-    setFormData({
-      ...formData,
-      location: value,
-    });
-    if (errors.location) {
-      setErrors({ ...errors, location: '' });
-    }
-  };
+
+
+const handleLocationChange = (event) => {
+  const value = event.target.value.replace(/[^a-zA-Z0-9,./\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, '');
+  setFormData({
+    ...formData,
+    location: value,
+  });
+  if (errors.location) {
+    setErrors({ ...errors, location: '' });
+  }
+};
+
+
 
 
   // Chỉ cho nhập số và tối đa 12 ký tự cho CCCD
@@ -178,6 +206,8 @@ const EmergencyRequest = () => {
     }
 
 
+
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -199,6 +229,10 @@ const EmergencyRequest = () => {
       }
     );
   };
+
+
+
+
 
 
 
@@ -229,16 +263,22 @@ const EmergencyRequest = () => {
       }
 
 
+
+
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
-      else if (/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
+      else if (/[^a-zA-Z0-9,./\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
         newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm.';
       }
+
+
 
 
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+
 
 
   const handleNext = () => {
@@ -248,9 +288,13 @@ const EmergencyRequest = () => {
   };
 
 
+
+
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
   };
+
+
 
 
   const handleSubmit = async () => {
@@ -268,6 +312,8 @@ const EmergencyRequest = () => {
           RequestedBloodTypeId: selectedBloodType.id,
 
 
+
+
           Reason: formData.reason,
           ContactName: formData.contactName,
           ContactPhone: formData.contactPhone,
@@ -275,6 +321,10 @@ const EmergencyRequest = () => {
           EmergencyLocation: formData.location,
           Notes: formData.notes,
         };
+
+
+
+
 
 
 
@@ -303,9 +353,13 @@ const EmergencyRequest = () => {
         setSnackbar({ open: true, message: msg, severity: 'error' });
 
 
+
+
       }
     }
   };
+
+
 
 
   const reasonOptions = [
@@ -367,6 +421,8 @@ const EmergencyRequest = () => {
   ];
 
 
+
+
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
@@ -414,6 +470,8 @@ const EmergencyRequest = () => {
             </Grid>
 
 
+
+
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Lý do cần máu</InputLabel>
@@ -435,6 +493,8 @@ const EmergencyRequest = () => {
             </Grid>
 
 
+
+
             {formData.reason === 'Khác' && (
               <Grid item xs={12}>
                 <TextField
@@ -448,7 +508,11 @@ const EmergencyRequest = () => {
               </Grid>
 
 
+
+
             )}
+
+
 
 
             <Grid item xs={12}>
@@ -461,12 +525,18 @@ const EmergencyRequest = () => {
                 helperText={errors.notes}
 
 
+
+
               />
             </Grid>
           </Grid>
 
 
+
+
         );
+
+
 
 
       case 1:
@@ -484,6 +554,8 @@ const EmergencyRequest = () => {
             </Grid>
 
 
+
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -495,6 +567,8 @@ const EmergencyRequest = () => {
                 inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
               />
             </Grid>
+
+
 
 
             <Grid item xs={12}>
@@ -509,7 +583,11 @@ const EmergencyRequest = () => {
               />
 
 
+
+
             </Grid>
+
+
 
 
             <Grid item xs={12}>
@@ -533,8 +611,16 @@ const EmergencyRequest = () => {
 
 
 
+
+
+
+
+
+
           </Grid>
         );
+
+
 
 
       case 2:
@@ -543,6 +629,8 @@ const EmergencyRequest = () => {
             <Alert severity="info" sx={{ mb: 3 }}>
               Vui lòng kiểm tra lại thông tin trước khi gửi yêu cầu
             </Alert>
+
+
 
 
             <Card variant="outlined" sx={{ mb: 3 }}>
@@ -557,6 +645,8 @@ const EmergencyRequest = () => {
                     </Typography>
                     <Typography>{formData.patientName}</Typography>
                   </Grid>
+
+
 
 
                   <Grid item xs={12} md={6}>
@@ -576,12 +666,18 @@ const EmergencyRequest = () => {
 
 
 
+
+
+
+
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Lý do cần máu
                     </Typography>
                     <Typography>{formData.reason}</Typography>
                   </Grid>
+
+
 
 
                   <Grid item xs={12}>
@@ -593,6 +689,8 @@ const EmergencyRequest = () => {
                 </Grid>
               </CardContent>
             </Card>
+
+
 
 
             <Card variant="outlined">
@@ -609,6 +707,8 @@ const EmergencyRequest = () => {
                   </Grid>
 
 
+
+
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Số điện thoại
@@ -617,12 +717,16 @@ const EmergencyRequest = () => {
                   </Grid>
 
 
+
+
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Email
                     </Typography>
                     <Typography>{formData.contactEmail}</Typography>
                   </Grid>
+
+
 
 
                   <Grid item xs={12} md={6}>
@@ -638,10 +742,14 @@ const EmergencyRequest = () => {
         );
 
 
+
+
       default:
         return null;
     }
   };
+
+
 
 
   return (
@@ -649,6 +757,8 @@ const EmergencyRequest = () => {
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
         Đăng ký cần máu khẩn cấp
       </Typography>
+
+
 
 
       <Card sx={{ mb: 4 }}>
@@ -664,9 +774,13 @@ const EmergencyRequest = () => {
       </Card>
 
 
+
+
       <Card>
         <CardContent>
           {renderStepContent(activeStep)}
+
+
 
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
@@ -697,6 +811,8 @@ const EmergencyRequest = () => {
       </Card>
 
 
+
+
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
           {snackbar.message}
@@ -705,6 +821,8 @@ const EmergencyRequest = () => {
     </Container>
   );
 };
+
+
 
 
 export default EmergencyRequest;

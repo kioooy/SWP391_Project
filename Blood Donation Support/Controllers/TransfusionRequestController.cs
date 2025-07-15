@@ -195,6 +195,7 @@ namespace Blood_Donation_Support.Controllers
                 .Include(tr => tr.Member).ThenInclude(m => m.User)
                 .Include(tr => tr.BloodType)
                 .Include(tr => tr.Component)
+                .Where(tr => tr.TransfusionId == id)
                 .Select(tr => new
                 {
                     tr.TransfusionId,
@@ -218,9 +219,25 @@ namespace Blood_Donation_Support.Controllers
                     tr.RejectedDate,
                     tr.Status,
                     tr.Notes,
-                    tr.PatientCondition
+                    tr.PatientCondition,
+                    // Thêm danh sách các đơn vị máu đã truyền/gán cho yêu cầu này
+                    BloodUnits = tr.TransfusionRequestBloodUnits.Select(trbu => new {
+                        trbu.BloodUnitId,
+                        trbu.AssignedVolume,
+                        trbu.Status,
+                        trbu.AssignedDate,
+                        BloodUnit = new {
+                            trbu.BloodUnit.BloodTypeId,
+                            BloodTypeName = trbu.BloodUnit.BloodType.BloodTypeName,
+                            trbu.BloodUnit.ComponentId,
+                            ComponentName = trbu.BloodUnit.Component.ComponentName,
+                            trbu.BloodUnit.ExpiryDate,
+                            trbu.BloodUnit.BloodStatus,
+                            trbu.BloodUnit.RemainingVolume
+                        }
+                    }).ToList()
                 })
-                .FirstOrDefaultAsync(tr => tr.TransfusionId == id);
+                .FirstOrDefaultAsync();
 
             if (transfusionRequest == null)
             {
@@ -318,14 +335,14 @@ namespace Blood_Donation_Support.Controllers
                     var bloodUnit = bloodUnits.First(bu => bu.BloodUnitId == buUsage.BloodUnitId);
                     bloodUnit.BloodStatus = "Reserved";
                     _context.BloodUnits.Update(bloodUnit);
-                    // Tạo bản ghi liên kết trong bảng TransfusionRequestBloodUnits với trạng thái Reserved
+                    // Tạo bản ghi liên kết trong bảng TransfusionRequestBloodUnits với trạng thái Assigned
                     _context.Add(new TransfusionRequestBloodUnit
                     {
                         TransfusionRequestId = id,
                         BloodUnitId = buUsage.BloodUnitId,
                         AssignedVolume = buUsage.VolumeUsed,
                         AssignedDate = DateTime.Now,
-                        Status = "Reserved"
+                        Status = "Assigned"
                     });
                 }
                 transfusionRequest.Status = "Approved";
@@ -357,27 +374,30 @@ namespace Blood_Donation_Support.Controllers
                     return NotFound($"Transfusion request with ID {id} not found.");
                 }
 
-                if (transfusionRequest.Status != "Approved")
+                if (transfusionRequest.Status != "Approved" && transfusionRequest.Status != "Completed")
                 {
                     await transaction.RollbackAsync();
-                    return BadRequest($"Yêu cầu {id} không ở trạng thái 'Approved' và không thể hoàn thành.");
+                    return BadRequest($"Yêu cầu {id} không ở trạng thái 'Approved' hoặc 'Completed' và không thể hoàn thành.");
                 }
 
                 // Lấy các bản ghi liên kết máu đã đặt chỗ cho yêu cầu này
-                var reservedUnits = await _context.TransfusionRequestBloodUnits
-                    .Where(trbu => trbu.TransfusionRequestId == id && trbu.Status == "Reserved")
+                var assignedUnits = await _context.TransfusionRequestBloodUnits
+                    .Where(trbu => trbu.TransfusionRequestId == id && trbu.Status == "Assigned")
                     .ToListAsync();
 
-                foreach (var reserved in reservedUnits)
+                // Chỉ thực hiện cập nhật nếu còn bản ghi liên kết ở trạng thái Assigned
+                if (assignedUnits.Count > 0)
                 {
-                    var bloodUnit = await _context.BloodUnits.FindAsync(reserved.BloodUnitId);
+                foreach (var assigned in assignedUnits)
+                {
+                    var bloodUnit = await _context.BloodUnits.FindAsync(assigned.BloodUnitId);
                     if (bloodUnit == null)
                     {
                         await transaction.RollbackAsync();
-                        return StatusCode(500, $"Lỗi không nhất quán dữ liệu: Không tìm thấy đơn vị máu đã được đặt trước với ID {reserved.BloodUnitId}.");
+                        return StatusCode(500, $"Lỗi không nhất quán dữ liệu: Không tìm thấy đơn vị máu đã được đặt trước với ID {assigned.BloodUnitId}.");
                     }
                     // Trừ thể tích truyền khỏi thể tích còn lại
-                    bloodUnit.RemainingVolume -= reserved.AssignedVolume;
+                    bloodUnit.RemainingVolume -= assigned.AssignedVolume;
                     if (bloodUnit.RemainingVolume > 0)
                     {
                         bloodUnit.BloodStatus = "PartialUsed";
@@ -388,9 +408,10 @@ namespace Blood_Donation_Support.Controllers
                         bloodUnit.RemainingVolume = 0;
                     }
                     _context.BloodUnits.Update(bloodUnit);
-                    // Cập nhật trạng thái bản ghi liên kết thành Assigned
-                    reserved.Status = "Assigned";
-                    _context.TransfusionRequestBloodUnits.Update(reserved);
+                    // Cập nhật trạng thái bản ghi liên kết thành Used
+                    assigned.Status = "Used";
+                    _context.TransfusionRequestBloodUnits.Update(assigned);
+                }
                 }
 
                 // Cập nhật trạng thái Yêu cầu Truyền máu

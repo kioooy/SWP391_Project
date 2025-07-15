@@ -218,7 +218,7 @@ const BloodSearch = ({ onSearchComplete }) => {
   };
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ backgroundColor: "white", minHeight: "100vh" }}>
       <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", color: '#E53935' }}>
         Tìm kiếm máu và người hiến phù hợp
       </Typography>
@@ -226,7 +226,7 @@ const BloodSearch = ({ onSearchComplete }) => {
       <Grid container spacing={3}>
         {/* Tìm kiếm máu phù hợp */}
         <Grid item xs={12}>
-          <Card>
+          <Card sx={{ boxShadow: 'none', background: 'none', backgroundColor: 'transparent' }}>
             <CardContent>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
                 <SearchIcon color="primary" />
@@ -297,37 +297,39 @@ const BloodSearch = ({ onSearchComplete }) => {
                   </Typography>
                   {/* Danh sách máu trong kho */}
                   {searchResults.availableBloodUnits && searchResults.availableBloodUnits.length > 0 ? (
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell>Nhóm máu</TableCell>
-                            <TableCell>Thành phần</TableCell>
-                            <TableCell>Lượng còn</TableCell>
-                            <TableCell>HSD</TableCell>
-                            <TableCell>Trạng thái</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {searchResults.availableBloodUnits.map((unit) => (
-                            <TableRow key={unit.bloodUnitId}>
-                              <TableCell>{unit.bloodUnitId}</TableCell>
-                              <TableCell>{unit.bloodTypeName}</TableCell>
-                              <TableCell>{bloodComponentTranslations[unit.componentName] || unit.componentName}</TableCell>
-                              <TableCell>{unit.remainingVolume}ml</TableCell>
-                              <TableCell>{formatDateTime(unit.expiryDate)}</TableCell>
-                              <TableCell>
-                                <Chip 
-                                  label={bloodStatusTranslations[unit.bloodStatus] || unit.bloodStatus} 
-                                  color={unit.bloodStatus === "Available" ? "success" : "warning"} 
-                                  size="small" 
-                                />
-                              </TableCell>
+                    <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'none', backgroundColor: 'transparent' }}>
+                      <Paper sx={{ boxShadow: 'none', background: 'none', backgroundColor: 'transparent' }}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>ID</TableCell>
+                              <TableCell>Nhóm máu</TableCell>
+                              <TableCell>Thành phần</TableCell>
+                              <TableCell>Lượng còn</TableCell>
+                              <TableCell>HSD</TableCell>
+                              <TableCell>Trạng thái</TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHead>
+                          <TableBody>
+                            {searchResults.availableBloodUnits.map((unit) => (
+                              <TableRow key={unit.bloodUnitId}>
+                                <TableCell>{unit.bloodUnitId}</TableCell>
+                                <TableCell>{unit.bloodTypeName}</TableCell>
+                                <TableCell>{bloodComponentTranslations[unit.componentName] || unit.componentName}</TableCell>
+                                <TableCell>{unit.remainingVolume}ml</TableCell>
+                                <TableCell>{formatDateTime(unit.expiryDate)}</TableCell>
+                                <TableCell>
+                                  <Chip 
+                                    label={bloodStatusTranslations[unit.bloodStatus] || unit.bloodStatus} 
+                                    color={unit.bloodStatus === "Available" ? "success" : "warning"} 
+                                    size="small" 
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </Paper>
                     </TableContainer>
                   ) : (
                     <>
@@ -381,7 +383,7 @@ const BloodSearch = ({ onSearchComplete }) => {
 
       {/* Hướng dẫn sử dụng */}
       <Card sx={{ mt: 3 }}>
-        <CardContent>
+        <CardContent sx={{ background: 'none', backgroundColor: 'transparent' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Hướng dẫn sử dụng
           </Typography>

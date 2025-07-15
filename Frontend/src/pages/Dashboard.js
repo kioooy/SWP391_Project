@@ -62,7 +62,7 @@ const Dashboard = () => {
       case 'completed':
         return <Chip icon={<CheckCircle />} label="Hoàn thành" color="success" size="small" />;
       case 'approved':
-        return <Chip icon={<CheckCircle />} label="Đã duyệt" color="success" size="small" />;
+        return <Chip icon={<CheckCircle />} label="Đã duyệt" color="primary" size="small" />;
       case 'cancelled':
         return <Chip icon={<Warning />} label="Đã hủy" color="error" size="small" />;
       case 'rejected':
@@ -95,6 +95,26 @@ const Dashboard = () => {
     "Red Blood Cells": "Hồng cầu",
     "Plasma": "Huyết tương",
     "Platelets": "Tiểu cầu",
+  };
+
+  // Thêm hàm dịch loại hoạt động sang tiếng Việt
+  const mapActivityTypeToVN = (type) => {
+    switch (type) {
+      case 'Donation':
+        return 'Hiến máu';
+      case 'Transfusion':
+        return 'Truyền máu';
+      case 'UrgentRequest':
+        return 'Yêu cầu khẩn cấp';
+      case 'DonationRequest':
+        return 'Yêu cầu hiến máu';
+      case 'TransfusionRequest':
+        return 'Yêu cầu truyền máu';
+      case 'BloodComponent':
+        return 'Thành phần máu';
+      default:
+        return type;
+    }
   };
 
   return (
@@ -388,6 +408,8 @@ const Dashboard = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  {/* Thêm cột Người dùng */}
+                  <TableCell>Người dùng</TableCell>
                   <TableCell>Loại</TableCell>
                   <TableCell>Ngày</TableCell>
                   <TableCell>Trạng thái</TableCell>
@@ -396,7 +418,9 @@ const Dashboard = () => {
               <TableBody>
                 {recentActivity.map((row, idx) => (
                   <TableRow key={idx}>
-                    <TableCell>{row.type}</TableCell>
+                    {/* Hiển thị tên người dùng */}
+                    <TableCell>{row.userName || row.fullName || 'Không rõ'}</TableCell>
+                    <TableCell>{mapActivityTypeToVN(row.type)}</TableCell>
                     <TableCell>{row.requestDate?.slice(0, 10)}</TableCell>
                     <TableCell>{getStatusChip(row.status)}</TableCell>
                       </TableRow>

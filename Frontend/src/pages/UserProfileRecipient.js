@@ -211,6 +211,75 @@ const UserProfileRecipient = () => {
     }
   };
 
+  // Thêm hàm handleOpenDialog giống UserProfile.js
+  const handleOpenDialog = async () => {
+    await fetchUserProfile(); // Lấy dữ liệu mới nhất từ backend
+    setEditFormData(formData); // Đảm bảo form luôn có dữ liệu mới nhất
+    setOpenDialog(true);
+  };
+
+  // Validate form dùng editFormData
+  const validateForm = () => {
+    const errors = {};
+    // Số điện thoại: 10 số
+    if (!editFormData.phone || !/^0[0-9]{9}$/.test(editFormData.phone)) {
+      errors.phone = 'Số điện thoại không hợp lệ.';
+    }
+    // Email: định dạng cơ bản
+    if (!editFormData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editFormData.email)) {
+      errors.email = 'Email không hợp lệ.';
+    }
+    // Địa chỉ: tối thiểu 5 ký tự
+    if (!editFormData.address || editFormData.address.length < 5) {
+      errors.address = 'Vui lòng nhập địa chỉ.';
+    }
+    // Cân nặng: số, 30-300
+    const weightNum = Number(editFormData.weight);
+    if (isNaN(weightNum) || weightNum < 30 || weightNum > 300) {
+      errors.weight = 'Cân nặng phải từ 30 đến 300 kg.';
+    }
+    // Chiều cao: số, 100-300
+    const heightNum = Number(editFormData.height);
+    if (isNaN(heightNum) || heightNum < 100 || heightNum > 300) {
+      errors.height = 'Chiều cao phải từ 100 đến 300 cm.';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Hàm handleSubmit cập nhật thông tin cá nhân
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSnackbar({ open: true, message: 'Không tìm thấy token xác thực.', severity: 'error' });
+        return;
+      }
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+      const payload = {
+        PhoneNumber: editFormData.phone,
+        Email: editFormData.email,
+        Address: editFormData.address,
+        Weight: Number(editFormData.weight),
+        Height: Number(editFormData.height),
+      };
+      await axios.patch(`${apiUrl}/User/${formData.id}/profile`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackbar({ open: true, message: 'Cập nhật thông tin thành công!', severity: 'success' });
+      setOpenDialog(false);
+      fetchUserProfile();
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Lỗi khi cập nhật thông tin.', severity: 'error' });
+    }
+  };
+
+  // Hàm đóng Snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -248,7 +317,7 @@ const UserProfileRecipient = () => {
                 <Button
                   variant="outlined"
                   startIcon={<EditIcon />}
-                  onClick={() => setOpenDialog(true)}
+                  onClick={handleOpenDialog}
                 >
                   Chỉnh sửa thông tin
                 </Button>
@@ -353,7 +422,7 @@ const UserProfileRecipient = () => {
         {/* Lịch hẹn sắp tới */}
         <Grid item xs={12} md={8}>
           <Card>
-            <CardContent>
+            <CardContent sx={{ minHeight: 200 }}>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={0} aria-label="upcoming appointments tab" sx={{ mb: 2 }}>
                   <Tab label="Lịch hẹn sắp tới" />
@@ -361,18 +430,101 @@ const UserProfileRecipient = () => {
               </Box>
               {/* Nội dung tab lịch hẹn sắp tới */}
               {upcomingAppointments.length === 0 ? (
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                  Hiện chưa có lịch hẹn.
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', mt: 6 }}>
+                  <Typography variant="body1" color="text.secondary" align="center">
+                    Hiện chưa có lịch hẹn.
+                  </Typography>
+                </Box>
               ) : (
-                // ... render danh sách lịch hẹn nếu có ...
                 <></>
               )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+      {/* Dialog chỉnh sửa thông tin */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Chỉnh sửa thông tin cá nhân</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            name="phone"
+            label="Số điện thoại"
+            type="tel"
+            fullWidth
+            variant="outlined"
+            value={editFormData.phone || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/[^0-9]/g, '').slice(0,10) })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
+          />
+          <TextField
+            margin="dense"
+            name="email"
+            label="Email"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={editFormData.email || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value.replace(/[^a-zA-Z0-9@._-]/g, '') })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
+          />
+          <TextField
+            margin="dense"
+            name="address"
+            label="Địa chỉ"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.address || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^ -\p{L}0-9\s,./-]/gu, '') })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
+          />
+          <TextField
+            margin="dense"
+            name="weight"
+            label="Cân nặng (kg)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.weight || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, weight: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.weight}
+            helperText={formErrors.weight}
+          />
+          <TextField
+            margin="dense"
+            name="height"
+            label="Chiều cao (cm)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.height || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, height: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.height}
+            helperText={formErrors.height}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
+          <Button onClick={handleSubmit} variant="contained">
+            Lưu thay đổi
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* ... giữ nguyên các dialog, snackbar ... */}
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

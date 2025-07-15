@@ -441,7 +441,10 @@ namespace Blood_Donation_Support.Controllers
                 return BadRequest(new { message = "Bạn phải đủ 18 tuổi trở lên để đăng ký" });
 
             // Update only the fields you want to allow to be changed
-            user.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Password Hash
+            if (!string.IsNullOrEmpty(model.PasswordHash))
+            {
+                user.PasswordHash = ComputeSha256Hash(model.PasswordHash); // Chỉ cập nhật nếu có mật khẩu mới
+            }
             user.FullName = model.FullName;        // Full Name
             user.PhoneNumber = model.PhoneNumber;  // Phone Number
             user.DateOfBirth = model.DateOfBirth;  // Date of Birth

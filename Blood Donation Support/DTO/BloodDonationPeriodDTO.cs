@@ -21,7 +21,7 @@ namespace Blood_Donation_Support.DTO
         [Required]
         public int TargetQuantity { get; set; }
 
-        public string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
     }
     public class UpdateBloodDonationPeriodDTO
     {
@@ -77,7 +77,7 @@ namespace Blood_Donation_Support.DTO
         [Required]
         public int TargetQuantity { get; set; }
 
-        public string ImageUrl { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
 }

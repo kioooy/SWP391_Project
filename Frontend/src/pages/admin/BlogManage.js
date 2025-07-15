@@ -261,7 +261,7 @@ const BlogManage = () => {
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#E53935', mb: 4 }}>
-        Quản Lý Blog
+        Quản Lý ViếtViết
       </Typography>
 
       <div
@@ -282,7 +282,7 @@ const BlogManage = () => {
         <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
           <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
           <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-          </svg> Thêm Blog
+          </svg> Thêm Bài Viết
         </Button>
       </div>
 
@@ -687,7 +687,7 @@ const BlogManage = () => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Alert
           onClose={handleCloseSnackbar}

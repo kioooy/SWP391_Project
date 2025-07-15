@@ -407,7 +407,7 @@ const Signup = () => {
                       Tài khoản truyền máu
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Dành cho bệnh nhân, người cần truyền máu hoặc tìm kiếm người hiến máu
+                      Dành cho bệnh nhân, những người cần truyền máu 
                     </Typography>
                     <Box sx={{ mt: 2 }}>
                       <Radio
@@ -429,9 +429,7 @@ const Signup = () => {
             )}
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              <Button onClick={handleBack} disabled>
-                Quay lại
-              </Button>
+              <Box />
               <Button
                 type="submit"
                 variant="contained"
@@ -629,8 +627,8 @@ const Signup = () => {
                       placeholder="Nhập số nhà, tên đường"
                       value={formik.values.street}
                       onChange={e => {
-                        // Chỉ cho nhập số, chữ, khoảng trắng
-                        const onlyValid = e.target.value.replace(/[^\p{L}0-9\s]/gu, '');
+                        // Cho phép nhập số, chữ, khoảng trắng và các dấu , . /
+                        const onlyValid = e.target.value.replace(/[^\p{L}0-9\s,./]/gu, '');
                         formik.setFieldValue('street', onlyValid);
                       }}
                       error={formik.touched.street && Boolean(formik.errors.street)}
@@ -773,7 +771,7 @@ const Signup = () => {
               {/* Nhóm máu */}
               <Grid item xs={12}>
                 <FormControl fullWidth variant="outlined">
-                  <InputLabel shrink={true}>Nhóm máu (*)</InputLabel>
+                  <InputLabel>Nhóm máu (*)</InputLabel>
                   <Select
                     name="bloodTypeId"
                     value={formik.values.bloodTypeId}

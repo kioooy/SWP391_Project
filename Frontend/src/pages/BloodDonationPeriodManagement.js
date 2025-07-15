@@ -28,12 +28,14 @@ import {
   Grid,
   Tooltip
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import axios from 'axios';
 import CreateBloodDonationPeriod from '../components/CreateBloodDonationPeriod';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const BloodDonationPeriodManagement = () => {
   const currentUser = useSelector(state => state.auth.user);
@@ -55,6 +57,7 @@ const BloodDonationPeriodManagement = () => {
     targetQuantity: 0,
     location: ''
   });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchPeriods = async () => {
     try {
@@ -95,10 +98,10 @@ const BloodDonationPeriodManagement = () => {
       setPeriods(periods.map(p =>
         p.periodId === periodId ? { ...p, status: newStatus } : p
       ));
-      alert('Cập nhật trạng thái thành công!');
+      setSnackbar({ open: true, message: 'Cập nhật trạng thái thành công!', severity: 'success' });
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Cập nhật trạng thái thất bại!');
+      setSnackbar({ open: true, message: 'Cập nhật trạng thái thất bại!', severity: 'error' });
     }
   };
 
@@ -124,8 +127,7 @@ const BloodDonationPeriodManagement = () => {
         periodDateFrom: editedData.periodDateFrom.toISOString(),
         periodDateTo: editedData.periodDateTo.toISOString(),
         targetQuantity: parseInt(editedData.targetQuantity, 10),
-        imageUrl: editingPeriod.imageUrl,
-        location: editedData.location
+        location: editingPeriod.location // luôn gửi location cũ
       };
 
       await axios.patch(`/api/BloodDonationPeriod/${editingPeriod.periodId}/details/admin,staff`, requestData, {
@@ -134,23 +136,21 @@ const BloodDonationPeriodManagement = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      
       const updatedPeriod = {
         ...editingPeriod,
         periodName: editedData.periodName,
-        location: editedData.location,
         periodDateFrom: editedData.periodDateFrom.toISOString(),
         periodDateTo: editedData.periodDateTo.toISOString(),
         targetQuantity: parseInt(editedData.targetQuantity, 10),
+        // giữ nguyên location
       };
-
       setPeriods(periods.map(p => (p.periodId === editingPeriod.periodId ? updatedPeriod : p)));
       setEditDialogOpen(false);
       setEditingPeriod(null);
-      alert('Cập nhật đợt hiến máu thành công!');
+      setSnackbar({ open: true, message: 'Cập nhật đợt hiến máu thành công!', severity: 'success' });
     } catch (error) {
       console.error('Error updating period:', error.response?.data || error.message);
-      alert(`Cập nhật đợt hiến máu thất bại! Lỗi: ${error.response?.data?.title || error.message}`);
+      setSnackbar({ open: true, message: `Cập nhật đợt hiến máu thất bại! Lỗi: ${error.response?.data?.title || error.message}`, severity: 'error' });
     }
   };
 
@@ -159,19 +159,42 @@ const BloodDonationPeriodManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`/api/BloodDonationPeriod/${selectedPeriod.periodId}`, {
+      // Gọi API PATCH để đổi IsActive thành false
+      await axios.patch(`/api/BloodDonationPeriod/${selectedPeriod.periodId}/isActive/admin`, false, {
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         }
       });
 
-      setPeriods(periods.filter(p => p.periodId !== selectedPeriod.periodId));
+      // Cập nhật lại danh sách periods trên frontend
+      setPeriods(periods.map(p =>
+        p.periodId === selectedPeriod.periodId ? { ...p, isActive: false } : p
+      ));
       setDeleteDialogOpen(false);
       setSelectedPeriod(null);
-      alert('Xóa đợt hiến máu thành công!');
+      setSnackbar({ open: true, message: 'Đã ẩn đợt hiến máu thành công!', severity: 'success' });
     } catch (error) {
-      console.error('Error deleting period:', error);
-      alert('Xóa đợt hiến máu thất bại!');
+      console.error('Error hiding period:', error);
+      setSnackbar({ open: true, message: 'Ẩn đợt hiến máu thất bại!', severity: 'error' });
+    }
+  };
+
+  const handleUndo = async (period) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`/api/BloodDonationPeriod/${period.periodId}/isActive/admin`, true, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setPeriods(periods.map(p =>
+        p.periodId === period.periodId ? { ...p, isActive: true } : p
+      ));
+      setSnackbar({ open: true, message: 'Khôi phục đợt hiến máu thành công!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Khôi phục thất bại!', severity: 'error' });
     }
   };
 
@@ -275,7 +298,11 @@ const BloodDonationPeriodManagement = () => {
             </TableHead>
             <TableBody>
               {filteredPeriods.map((period) => (
-                <TableRow key={period.periodId} hover>
+                <TableRow
+                  key={period.periodId}
+                  hover
+                  style={period.isActive === false ? { opacity: 0.5, background: '#f5f5f5' } : {}}
+                >
                   <TableCell>{period.periodId}</TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight="bold">
@@ -285,17 +312,26 @@ const BloodDonationPeriodManagement = () => {
                   <TableCell>{formatDate(period.periodDateFrom)}</TableCell>
                   <TableCell>{formatDate(period.periodDateTo)}</TableCell>
                   <TableCell>
-                    <FormControl size="small" sx={{ minWidth: 120 }}>
-                      <Select
-                        value={period.status}
-                        onChange={(e) => handleStatusChange(period.periodId, e.target.value)}
-                        displayEmpty
-                      >
-                        <MenuItem value="Active">Hoạt động</MenuItem>
-                        <MenuItem value="Completed">Hoàn thành</MenuItem>
-                        <MenuItem value="Cancelled">Đã hủy</MenuItem>
-                      </Select>
-                    </FormControl>
+                    {(isAdmin || isStaff) ? (
+                      <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <Select
+                          value={period.status}
+                          onChange={(e) => handleStatusChange(period.periodId, e.target.value)}
+                          displayEmpty
+                        >
+                          <MenuItem value="Active">Hoạt động</MenuItem>
+                          <MenuItem value="Completed">Hoàn thành</MenuItem>
+                          <MenuItem value="Cancelled">Đã hủy</MenuItem>
+                        </Select>
+                      </FormControl>
+                    ) : (
+                      <Chip
+                        label={getStatusText(period.status)}
+                        color={getStatusColor(period.status)}
+                        variant="filled"
+                        sx={{ fontWeight: 'bold', fontSize: 14 }}
+                      />
+                    )}
                   </TableCell>
                   <TableCell>{period.targetQuantity}</TableCell>
                   <TableCell>
@@ -308,20 +344,20 @@ const BloodDonationPeriodManagement = () => {
                   <TableCell>
                     {(isAdmin || isStaff) && (
                       <Box>
-                        <Tooltip title="Chỉnh sửa đợt hiến máu">
-                          <IconButton onClick={() => handleEdit(period)}>
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa đợt hiến máu">
+                        {/* Bỏ nút chỉnh sửa, chỉ giữ nút xóa/hoàn tác */}
+                        <Tooltip title={period.isActive === false ? "Hoàn tác ẩn" : "Xóa đợt hiến máu"}>
                           <IconButton
                             onClick={() => {
-                              setSelectedPeriod(period);
-                              setDeleteDialogOpen(true);
+                              if (period.isActive === false) {
+                                handleUndo(period);
+                              } else {
+                                setSelectedPeriod(period);
+                                setDeleteDialogOpen(true);
+                              }
                             }}
-                            color="error"
+                            color={period.isActive === false ? "success" : "error"}
                           >
-                            <DeleteIcon />
+                            {period.isActive === false ? <UndoIcon /> : <DeleteIcon />}
                           </IconButton>
                         </Tooltip>
                       </Box>
@@ -333,12 +369,30 @@ const BloodDonationPeriodManagement = () => {
           </Table>
         </TableContainer>
       </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MuiAlert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
 
       {/* Create Dialog */}
       <CreateBloodDonationPeriod
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSuccess={fetchPeriods}
+        onSuccess={({ message, severity }) => {
+          setCreateDialogOpen(false);
+          fetchPeriods();
+          if (message) setSnackbar({ open: true, message, severity: severity || 'success' });
+        }}
       />
 
       {/* Edit Dialog */}
@@ -356,6 +410,8 @@ const BloodDonationPeriodManagement = () => {
                     onChange={(e) => setEditedData({ ...editedData, periodName: e.target.value })}
                   />
                 </Grid>
+                {/* Ẩn trường Địa Điểm */}
+                {/*
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -364,6 +420,7 @@ const BloodDonationPeriodManagement = () => {
                     onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
                   />
                 </Grid>
+                */}
                 <Grid item xs={12} sm={6}>
                   <DateTimePicker
                     label="Thời gian bắt đầu"
@@ -393,7 +450,7 @@ const BloodDonationPeriodManagement = () => {
                     label="Số lượng mục tiêu"
                     type="number"
                     value={editedData.targetQuantity}
-                    onChange={(e) => setEditedData({ ...editedData, targetQuantity: e.target.value })}
+                    onChange={(e) => setEditedData({ ...editedData, targetQuantity: e.targetValue })}
                   />
                 </Grid>
               </Grid>

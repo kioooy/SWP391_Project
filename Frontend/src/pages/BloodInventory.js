@@ -46,6 +46,10 @@ import { Visibility as VisibilityIcon } from '@mui/icons-material';
 
 
 
+
+
+
+
 const BloodInventory = () => {
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
@@ -67,17 +71,21 @@ const BloodInventory = () => {
   });
 
 
+
+
   // Hardcode tạm danh sách nhóm máu, thành phần máu, member
   const bloodTypes = [
     { id: 1, name: 'A+' }, { id: 2, name: 'A-' }, { id: 3, name: 'B+' }, { id: 4, name: 'B-' },
     { id: 5, name: 'AB+' }, { id: 6, name: 'AB-' }, { id: 7, name: 'O+' }, { id: 8, name: 'O-' }
   ];
- const components = [
-  { id: 1, name: 'Whole Blood', description: 'Máu toàn phần' },
-  { id: 2, name: 'Red Blood Cells', description: 'Hồng cầu' },
-  { id: 3, name: 'Plasma', description: 'Huyết tương' },
-  { id: 4, name: 'Platelets', description: 'Tiểu cầu' }
-];
+  const components = [
+    { id: 1, name: 'Whole Blood', description: 'Máu toàn phần' },
+    { id: 2, name: 'Red Blood Cells', description: 'Hồng cầu' },
+    { id: 3, name: 'Plasma', description: 'Huyết tương' },
+    { id: 4, name: 'Platelets', description: 'Tiểu cầu' }
+  ];
+
+
 
 
   const members = [
@@ -85,6 +93,8 @@ const BloodInventory = () => {
     { id: 2, name: 'Le Thi B' },
     { id: 3, name: 'Tran Van C' }
   ];
+
+
 
 
   // Fetch inventory
@@ -105,9 +115,13 @@ const BloodInventory = () => {
   };
 
 
+
+
   useEffect(() => {
     fetchInventory();
   }, []);
+
+
 
 
   const handleOpenDialog = (blood = null) => {
@@ -138,10 +152,14 @@ const BloodInventory = () => {
   };
 
 
+
+
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedBlood(null);
   };
+
+
 
 
   // Thêm hoặc cập nhật đơn vị máu
@@ -182,6 +200,8 @@ const BloodInventory = () => {
   };
 
 
+
+
   // Xóa (soft delete)
   const handleDelete = async (blood) => {
     console.log("handleDelete triggered for blood unit:", blood);
@@ -202,6 +222,8 @@ const BloodInventory = () => {
   };
 
 
+
+
   // Thống kê tổng số lượng máu theo nhóm
   const totalByType = bloodTypes.reduce((acc, type) => {
     const total = inventory.filter((item) => item.bloodTypeName === type.name && item.bloodStatus === 'Available')
@@ -209,6 +231,8 @@ const BloodInventory = () => {
     acc[type.name] = total;
     return acc;
   }, {});
+
+
 
 
   const getStatusChip = (status) => {
@@ -225,6 +249,22 @@ const BloodInventory = () => {
   };
 
 
+  const getStatusText = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'available':
+        return 'Có sẵn';
+      case 'reserved':
+        return 'Đã đặt';
+      case 'expired':
+        return 'Hết hạn';
+      case 'used': // Thêm trạng thái này nếu có thể xuất hiện trong dữ liệu
+        return 'Đã sử dụng';
+      case 'discarded': // Thêm trạng thái này nếu có thể xuất hiện trong dữ liệu
+        return 'Đã loại bỏ';
+      default:
+        return 'Không rõ';
+    }
+  };
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -288,28 +328,34 @@ const BloodInventory = () => {
                 </TableHead>
 
 
+
+
                 <TableBody>
                   {inventory.map((row) => (
 
 
-                   
+
+
+
+
                     <TableRow key={row.bloodUnitId}>
                       <TableCell>{row.bloodUnitId}</TableCell>
                       <TableCell>{row.bloodTypeName}</TableCell>
-                      <TableCell>{components.find(c => c.name===row.componentName)?.description}</TableCell>
+                      <TableCell>{components.find(c => c.name === row.componentName)?.description}</TableCell>
                       <TableCell>{row.addDate ? new Date(row.addDate).toLocaleDateString() : ''}</TableCell>
                       <TableCell>{row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : ''}</TableCell>
                       <TableCell>{row.volume}</TableCell>
                       <TableCell>{row.remainingVolume}</TableCell>
                       <TableCell>{getStatusChip(row.bloodStatus)}</TableCell>
-                   
+
+
                       {isAdmin && (
                         <TableCell>
-                           <Tooltip title="Xem chi tiết">
-                          <IconButton size="small" onClick={() => setViewDetail(row)}>
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
+                          <Tooltip title="Xem chi tiết">
+                            <IconButton size="small" onClick={() => setViewDetail(row)}>
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Chỉnh sửa đơn vị máu">
                             <IconButton size="small" color="primary" onClick={() => handleOpenDialog(row)}>
                               <EditIcon />
@@ -325,6 +371,8 @@ const BloodInventory = () => {
                     </TableRow>
                   ))}
                 </TableBody>
+
+
 
 
               </Table>
@@ -399,19 +447,21 @@ const BloodInventory = () => {
                 >
 
 
+
+
                   <MenuItem value="Available">Có sẵn</MenuItem>
                   <MenuItem value="Reserved">Đã đặt</MenuItem>
                   <MenuItem value="Expired">Hết hạn</MenuItem>
                 </TextField>
-                  <TextField
-                    label="Ghi chú"
-                    fullWidth
-                    multiline
-                    minRows={2}
-                    margin="normal"
-                    value={formData.note}
-                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  />
+                <TextField
+                  label="Ghi chú"
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  margin="normal"
+                  value={formData.note}
+                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                />
               </>
             )}
           </LocalizationProvider>
@@ -423,54 +473,58 @@ const BloodInventory = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    <Dialog open={!!viewDetail} onClose={() => setViewDetail(null)} maxWidth="sm" fullWidth>
-  <DialogTitle>Chi tiết đơn vị máu</DialogTitle>
-  <DialogContent dividers>
-    <Grid container spacing={2}>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Nhóm máu:</strong> {viewDetail?.bloodTypeName || 'Không có'}</Typography>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Thành phần: </strong>
-         {viewDetail
-            ? components.find(c => c.name === viewDetail.componentName)?.description || 'Không có'
-            : 'Không có'}
-    </Typography>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Dung tích:</strong> {viewDetail?.volume} ml</Typography>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Dung tích còn lại:</strong> {viewDetail?.remainingVolume} ml</Typography>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Ngày nhập:</strong> {viewDetail?.addDate || 'Không có'}</Typography>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Hạn sử dụng:</strong> {viewDetail?.expiryDate || 'Không có'}</Typography>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography><strong>Trạng thái:</strong> {viewDetail?.bloodStatus || 'Không rõ'}</Typography>
-      </Grid>
-      <Grid item xs={12}>
-        <Typography><strong>Người hiến:</strong> {viewDetail?.fullName || 'Không có'}</Typography>
-      </Grid>
-      <Grid item xs={12}>
-        <Typography sx={{ whiteSpace: 'pre-line' }}>
-          <strong>Ghi chú:</strong> {viewDetail?.notes || 'Không có'}
-        </Typography>
-      </Grid>
-    </Grid>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setViewDetail(null)}>Đóng</Button>
-  </DialogActions>
-</Dialog>
+      <Dialog open={!!viewDetail} onClose={() => setViewDetail(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Chi tiết đơn vị máu</DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Nhóm máu:</strong> {viewDetail?.bloodTypeName || 'Không có'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Thành phần: </strong>
+                {viewDetail
+                  ? components.find(c => c.name === viewDetail.componentName)?.description || 'Không có'
+                  : 'Không có'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Dung tích:</strong> {viewDetail?.volume} ml</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Dung tích còn lại:</strong> {viewDetail?.remainingVolume} ml</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Ngày nhập:</strong> {viewDetail?.addDate || 'Không có'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Hạn sử dụng:</strong> {viewDetail?.expiryDate || 'Không có'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography><strong>Trạng thái:</strong>  {getStatusText(viewDetail?.bloodStatus)}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography><strong>Người hiến:</strong> {viewDetail?.fullName || 'Không có'}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography sx={{ whiteSpace: 'pre-line' }}>
+                <strong>Ghi chú:</strong> {viewDetail?.notes || 'Không có'}
+              </Typography>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewDetail(null)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
+
+
 
 
     </Container>
   );
 };
+
+
 
 
 export default BloodInventory;

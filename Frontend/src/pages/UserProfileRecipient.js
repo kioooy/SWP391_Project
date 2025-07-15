@@ -372,6 +372,81 @@ const UserProfileRecipient = () => {
           </Card>
         </Grid>
       </Grid>
+      {/* Dialog chỉnh sửa thông tin */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Chỉnh sửa thông tin cá nhân</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            name="phone"
+            label="Số điện thoại"
+            type="tel"
+            fullWidth
+            variant="outlined"
+            value={editFormData.phone || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/[^0-9]/g, '').slice(0,10) })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
+          />
+          <TextField
+            margin="dense"
+            name="email"
+            label="Email"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={editFormData.email || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value.replace(/[^a-zA-Z0-9@._-]/g, '') })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
+          />
+          <TextField
+            margin="dense"
+            name="address"
+            label="Địa chỉ"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.address || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^ -\p{L}0-9\s,./-]/gu, '') })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
+          />
+          <TextField
+            margin="dense"
+            name="weight"
+            label="Cân nặng (kg)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.weight || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, weight: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.weight}
+            helperText={formErrors.weight}
+          />
+          <TextField
+            margin="dense"
+            name="height"
+            label="Chiều cao (cm)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.height || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, height: e.target.value.replace(/[^0-9]/g, '').slice(0,3) })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.height}
+            helperText={formErrors.height}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
+          {/* TODO: Thêm hàm handleSubmit giống UserProfile.js nếu muốn lưu thay đổi */}
+        </DialogActions>
+      </Dialog>
       {/* ... giữ nguyên các dialog, snackbar ... */}
     </Container>
   );

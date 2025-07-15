@@ -280,7 +280,9 @@ const BlogManage = () => {
           style={{ width: "70%" }}
         />
         <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
-          ➕ Thêm blog
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+          <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+          </svg> Thêm Blog
         </Button>
       </div>
 
@@ -459,33 +461,41 @@ const BlogManage = () => {
               <MenuItem value="Draft">Bản nháp</MenuItem>
             </Select>
           </FormControl>
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setNewBlogImagePreview(ev.target.result);
-                setNewBlog({ ...newBlog, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
+          <div style={{ marginTop: 8 }}>
+            <input
+              accept="image/jpeg,image/png"
+              type="file"
+              id="new-blog-image-upload"
+              style={{ display: 'none' }} // Ẩn input mặc định
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                  alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                  return;
+                }
+                if (file.size > 1024 * 1024) {
+                  alert('Ảnh phải nhỏ hơn 1MB!');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setNewBlogImagePreview(ev.target.result);
+                  setNewBlog({ ...newBlog, ImageUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            <label htmlFor="new-blog-image-upload">
+              <Button variant="contained" component="span">
+                Chọn tệp
+              </Button>
+            </label>
+          </div>
           {newBlogImagePreview && (
             <img src={newBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}
-          
+
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -539,29 +549,38 @@ const BlogManage = () => {
               setEditBlogImagePreview("");
             }}
           /> */}
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setEditBlogImagePreview(ev.target.result);
-                setEditBlog({ ...editBlog, imageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
+          <div style={{ marginTop: 8 }}>
+            <input
+              accept="image/jpeg,image/png"
+              type="file"
+              id="edit-blog-image-upload"
+              style={{ display: 'none' }} // Ẩn input mặc định
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                  alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                  return;
+                }
+                if (file.size > 1024 * 1024) {
+                  alert('Ảnh phải nhỏ hơn 1MB!');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setEditBlogImagePreview(ev.target.result);
+                  setEditBlog({ ...newBlog, ImageUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            <label htmlFor="edit-blog-image-upload">
+              <Button variant="contained" component="span">
+                Chọn tệp
+              </Button>
+            </label>
+          </div>
+
           {editBlogImagePreview && (
             <img src={editBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}
@@ -598,7 +617,7 @@ const BlogManage = () => {
                 <strong>📝 Nội dung:</strong> {selectedBlog.Content || selectedBlog.content}
               </div>
               <div>
-                <strong>🖼️ Ảnh:</strong> <br/>
+                <strong>🖼️ Ảnh:</strong> <br />
                 <img src={selectedBlog.ImageUrl || selectedBlog.imageUrl} alt="Ảnh blog" style={{ width: "100%", borderRadius: 4, marginTop: 4 }} />
               </div>
               <div>

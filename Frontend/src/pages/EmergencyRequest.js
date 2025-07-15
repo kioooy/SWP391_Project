@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -144,7 +144,7 @@ const EmergencyRequest = () => {
 
 
   const handleLocationChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, '');
+    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ/]/g, '');
     setFormData({
       ...formData,
       location: value,
@@ -157,7 +157,11 @@ const EmergencyRequest = () => {
 
   // Chỉ cho nhập số và tối đa 12 ký tự cho CCCD
   const handleCCCDChange = (event) => {
-    let value = event.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+    let value = event.target.value.replace(/[^0-9]/g, ''); // Lọc chỉ cho phép số
+    if (value.length === 1 && value !== '0') {
+      value = '0' + value; // Nếu số đầu tiên không phải 0, thêm 0 vào đầu
+    }
+    value = value.slice(0, 12); // Giới hạn độ dài tối đa là 12
     setFormData({
       ...formData,
       cccd: value,
@@ -294,6 +298,7 @@ const EmergencyRequest = () => {
         let msg = 'Có lỗi khi gửi yêu cầu!';
         if (error.response && error.response.data && error.response.data.message) {
           msg = error.response.data.message;
+          console.log(msg);
         }
         setSnackbar({ open: true, message: msg, severity: 'error' });
 
@@ -377,7 +382,17 @@ const EmergencyRequest = () => {
                 helperText={errors.patientName}
               />
             </Grid>
-
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Số CCCD"
+                value={formData.cccd}
+                onChange={handleCCCDChange}
+                error={!!errors.cccd}
+                helperText={errors.cccd}
+                inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
+              />
+            </Grid>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.bloodType}>
                 <InputLabel>Nhóm máu cần</InputLabel>
@@ -460,7 +475,7 @@ const EmergencyRequest = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Tên người liên hệ"
+                label="Tên người nhà bệnh nhân"
                 value={formData.contactName}
                 onChange={handleContactNameChange}
                 error={!!errors.contactName}
@@ -472,7 +487,7 @@ const EmergencyRequest = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Số điện thoại"
+                label="Số điện thoại người nhà bệnh nhân"
                 value={formData.contactPhone}
                 onChange={handleContactPhoneChange}
                 error={!!errors.contactPhone}
@@ -485,7 +500,7 @@ const EmergencyRequest = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Email"
+                label="Email người nhà bệnh nhân ( nếu có )"
                 type="email"
                 value={formData.contactEmail}
                 onChange={handleChange('contactEmail')}
@@ -680,6 +695,8 @@ const EmergencyRequest = () => {
           </Box>
         </CardContent>
       </Card>
+
+
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <MuiAlert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
           {snackbar.message}
@@ -688,5 +705,6 @@ const EmergencyRequest = () => {
     </Container>
   );
 };
-export default EmergencyRequest;
 
+
+export default EmergencyRequest;

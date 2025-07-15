@@ -169,16 +169,16 @@ const EmergencyRequest = () => {
 
 
 
-const handleLocationChange = (event) => {
-  const value = event.target.value.replace(/[^a-zA-Z0-9,./\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, '');
-  setFormData({
-    ...formData,
-    location: value,
-  });
-  if (errors.location) {
-    setErrors({ ...errors, location: '' });
-  }
-};
+  const handleLocationChange = (event) => {
+    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ/]/g, '');
+    setFormData({
+      ...formData,
+      location: value,
+    });
+    if (errors.location) {
+      setErrors({ ...errors, location: '' });
+    }
+  };
 
 
 
@@ -266,7 +266,7 @@ const handleLocationChange = (event) => {
 
 
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
-      else if (/[^a-zA-Z0-9,./\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
+      else if (/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
         newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm.';
       }
 
@@ -312,8 +312,7 @@ const handleLocationChange = (event) => {
           RequestedBloodTypeId: selectedBloodType.id,
 
 
-
-
+          CitizenNumber: formData.cccd,
           Reason: formData.reason,
           ContactName: formData.contactName,
           ContactPhone: formData.contactPhone,
@@ -666,8 +665,12 @@ const handleLocationChange = (event) => {
 
 
 
-
-
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Số CCCD
+                    </Typography>
+                    <Typography>{formData.cccd}</Typography>
+                  </Grid>
 
 
                   <Grid item xs={12}>

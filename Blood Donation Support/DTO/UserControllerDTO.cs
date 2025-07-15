@@ -51,7 +51,7 @@ namespace Blood_Donation_Support.DTO
     public class UpdateUser 
     {
         [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
-        public required string PasswordHash { get; set; } 
+        public string? PasswordHash { get; set; } // Cho phép null hoặc bỏ qua khi không đổi mật khẩu
 
         [Required]
         [StringLength(40)]

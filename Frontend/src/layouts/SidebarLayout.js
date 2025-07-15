@@ -46,7 +46,7 @@ const SidebarLayout = () => {
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-users","/manage-roles", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
     : menuItems;
 
   return (

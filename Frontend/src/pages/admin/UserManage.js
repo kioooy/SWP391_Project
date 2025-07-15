@@ -174,10 +174,8 @@ const UserManage = () => {
       if (typeof dateStr === 'object' && dateStr.year) {
         dateStr = `${dateStr.year}-${String(dateStr.month).padStart(2, '0')}-${String(dateStr.day).padStart(2, '0')}`;
       }
-      // Nếu là sửa user, tự động sinh passwordHash hợp lệ
-      const passwordToHash = 'default123';
+      // Nếu là sửa user, chỉ gửi passwordHash nếu có newPassword, còn lại không gửi trường này
       const body = {
-        passwordHash: sha256(passwordToHash).toString(),
         fullName: editUser.fullName,
         citizenNumber: editUser.citizenNumber,
         email: editUser.email,
@@ -192,6 +190,9 @@ const UserManage = () => {
         isDonor: editUser.accountType === 'donor' || editUser.accountType === 'both',
         isRecipient: editUser.accountType === 'recipient' || editUser.accountType === 'both'
       };
+      if (editUser.newPassword) {
+        body.passwordHash = sha256(editUser.newPassword).toString();
+      }
       console.log('PATCH body:', body);
       const res = await axios.patch(`${API_URL}/User/${editUser.userId}`, body, {
         headers: { Authorization: `Bearer ${token}` }
@@ -203,6 +204,7 @@ const UserManage = () => {
       setUsers(users.map(u => u.userId === updatedUser.userId ? updatedUser : u));
       setFilteredUsers(filteredUsers.map(u => u.userId === updatedUser.userId ? updatedUser : u));
       setSnackbar({ open: true, message: 'Cập nhật thành công!', severity: 'success' });
+      fetchUsers(); // Thêm dòng này để refresh lại danh sách
       setOpenDialog(false);
     } catch (err) {
       setSnackbar({ open: true, message: err.response?.data?.message || 'Cập nhật thất bại!', severity: 'error' });
@@ -410,9 +412,9 @@ const UserManage = () => {
               }}
               label="Loại tài khoản"
             >
-              <MenuItem value="donor">Người hiến máu</MenuItem>
-              <MenuItem value="recipient">Người nhận máu</MenuItem>
-              <MenuItem value="both">Cả hai</MenuItem>
+              <MenuItem value="donor">Hiến máu</MenuItem>
+              <MenuItem value="recipient">Truyền máu</MenuItem>
+              {/* <MenuItem value="both">Cả hai</MenuItem> */}
             </Select>
           </FormControl>
           <TextField label="Cân nặng (kg)" fullWidth value={editUser?.weight} onChange={e => setEditUser({ ...editUser, weight: e.target.value })} InputLabelProps={{ shrink: true }} type="number" />

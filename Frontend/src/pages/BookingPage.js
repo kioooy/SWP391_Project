@@ -684,7 +684,7 @@ const BookingPage = () => {
             >
               <StyledTab
                 icon={timeLocationCompleted ? <CheckCircleIcon /> : <CalendarTodayIcon />}
-                label="Thời gian & địa điểm"
+                label="Thời gian hiến máu"
                 iconPosition="start"
                 className={timeLocationCompleted ? 'completed' : ''}
                 disabled={timeLocationCompleted}

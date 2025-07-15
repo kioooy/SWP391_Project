@@ -86,8 +86,14 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
         throw new Error('Không có thông tin bệnh viện');
       }
 
+      let periodName = values.periodName;
+      if (!periodName) {
+        const dateStr = dayjs(values.date).format('DD/MM/YYYY');
+        periodName = `Hiến Máu Nhân Đạo Ngày (${dateStr})`;
+      }
+
       const requestData = {
-        periodName: values.periodName,
+        periodName,
         location: `${hospital.name} - ${hospital.address}`,
         status: 'Active', // luôn gửi status là Active
         periodDateFrom: values.periodDateFrom.toDate(),
@@ -169,7 +175,8 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                   {/* ĐÃ XÓA: Alert hiển thị địa điểm hiến máu và các thông tin bệnh viện */}
 
                   <Grid container spacing={3}>
-                    <Grid item xs={12}>
+                    {/* Ẩn trường nhập tên đợt hiến máu */}
+                    {/* <Grid item xs={12}>
                       <TextField
                         fullWidth
                         name="periodName"
@@ -183,7 +190,7 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         helperText={touched.periodName && errors.periodName}
                         required
                       />
-                    </Grid>
+                    </Grid> */}
                     {/* Thêm trường chọn ngày */}
                     <Grid item xs={12} sm={6}>
                       <DatePicker

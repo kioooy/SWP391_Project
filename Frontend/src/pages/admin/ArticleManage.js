@@ -298,8 +298,8 @@ const ArticleManage = () => {
           onChange={handleSearch}
           style={{ width: "70%" }}
         />
-        <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
-          Tạo bài viết
+         <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" /></svg> Tạo bài viết
         </Button>
       </div>
 
@@ -546,29 +546,37 @@ const ArticleManage = () => {
             </Select>
           </FormControl>
           {/* Thêm input chọn ảnh */}
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setNewArticleImagePreview(ev.target.result);
-                setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
+         <Button
+            component="label"
+            variant="outlined"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.9l3.09 6.26L22 13.27l-5 4.87L18.18 23 12 19.77 5.82 23 7 18.14l-5-4.87 6.91-1.01z" /></svg>}
+            sx={{ mt: 1, mb: 2 }}
+          >
+            Chọn ảnh
+            <input
+              hidden
+              accept="image/jpeg,image/png"
+              type="file"
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                  alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                  return;
+                }
+                if (file.size > 1024 * 1024) {
+                  alert('Ảnh phải nhỏ hơn 1MB!');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setNewArticleImagePreview(ev.target.result);
+                  setNewArticle({ ...newArticle, ImageUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </Button>
           {newArticleImagePreview && (
             <img src={newArticleImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}
@@ -617,29 +625,37 @@ const ArticleManage = () => {
             </Select>
           </FormControl>
           {/* Thêm input chọn ảnh */}
-          <input
-            accept="image/jpeg,image/png"
-            type="file"
-            style={{ marginTop: 8 }}
-            onChange={e => {
-              const file = e.target.files[0];
-              if (!file) return;
-              if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
-                return;
-              }
-              if (file.size > 1024 * 1024) {
-                alert('Ảnh phải nhỏ hơn 1MB!');
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = ev => {
-                setEditArticleImagePreview(ev.target.result);
-                setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
-              };
-              reader.readAsDataURL(file);
-            }}
-          />
+         <Button
+            component="label"
+            variant="outlined"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.9l3.09 6.26L22 13.27l-5 4.87L18.18 23 12 19.77 5.82 23 7 18.14l-5-4.87 6.91-1.01z" /></svg>}
+            sx={{ mt: 1, mb: 2 }}
+          >
+            Chọn ảnh
+            <input
+              hidden
+              accept="image/jpeg,image/png"
+              type="file"
+              onChange={e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                  alert('Chỉ chấp nhận ảnh JPG hoặc PNG!');
+                  return;
+                }
+                if (file.size > 1024 * 1024) {
+                  alert('Ảnh phải nhỏ hơn 1MB!');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setEditArticleImagePreview(ev.target.result);
+                  setEditArticle({ ...editArticle, ImageUrl: ev.target.result });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </Button>
           {(editArticleImagePreview || editArticle?.ImageUrl) && (
             <img src={editArticleImagePreview || editArticle?.ImageUrl} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}

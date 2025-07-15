@@ -13,11 +13,11 @@ namespace Blood_Donation_Support.DTO
         public string FullName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
-        [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Số CCCD/CMND là bắt buộc")]
-        [RegularExpression(@"^\d{9,12}$", ErrorMessage = "Số CCCD/CMND không hợp lệ")]
+        [Required(ErrorMessage = "Số CCCD là bắt buộc")]
+        [RegularExpression(@"^\d{12}$", ErrorMessage = "Số CCCD không hợp lệ")]
         public string CitizenNumber { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email là bắt buộc")]
@@ -51,7 +51,7 @@ namespace Blood_Donation_Support.DTO
     public class UpdateUser 
     {
         [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
-        public required string PasswordHash { get; set; } 
+        public string? PasswordHash { get; set; } // Cho phép null hoặc bỏ qua khi không đổi mật khẩu
 
         [Required]
         [StringLength(40)]

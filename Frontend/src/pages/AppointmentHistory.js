@@ -17,6 +17,7 @@ import {
   Divider,
   Paper,
   IconButton,
+  Badge,
 } from "@mui/material";
 import { 
   //note
@@ -32,7 +33,8 @@ import {
   CheckCircle,
   Cancel,
   Warning,
-  Close
+  Close,
+  BadgeOutlined
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
@@ -133,6 +135,7 @@ const AppointmentHistory = () => {
   const [hospitalLocation, setHospitalLocation] = React.useState({ name: '', address: '' });
   const [openCancelDialog, setOpenCancelDialog] = React.useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = React.useState(null);
+  const [userDetail, setUserDetail] = React.useState(null);
 
   // Lấy nhóm máu từ profile (Redux)
   const user = useSelector(state => state.auth.user);
@@ -168,7 +171,19 @@ const AppointmentHistory = () => {
         ...appointment,
         detail: appointment.detail || {}
       });
-      // Gọi API lấy địa điểm bệnh viện theo periodId
+      // Lấy thông tin user đăng ký từ API /User/profile (giống UserProfile)
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
+        const res = await axios.get(`${apiUrl}/User/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const userData = Array.isArray(res.data) ? res.data[0] : res.data;
+        setUserDetail(userData);
+      } catch (err) {
+        setUserDetail(null);
+      }
+      // Gọi API lấy địa điểm bệnh viện như cũ
       try {
         const token = localStorage.getItem('token');
         const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
@@ -353,6 +368,52 @@ const AppointmentHistory = () => {
             <Box>
               <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
                 <Grid container spacing={3}>
+                  {/* Thông tin người dùng bên trái */}
+                  <Grid item xs={12} md={6}>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Avatar sx={{ bgcolor: '#4285f4', mr: 2 }}>
+                        <Person />
+                      </Avatar>
+                      <Typography variant="body1" fontWeight="bold">{userDetail?.fullName || 'Chưa cập nhật'}</Typography>
+                    </Box>
+                    {/* Các thông tin bên dưới tên, xếp dọc */}
+                    <Box>
+                      {/* Số CCCD */}
+                      <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <BadgeOutlined sx={{ color: '#757575', mr: 1 }} />
+                          <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
+                        </Box>
+                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.citizenNumber || 'Chưa cập nhật'}</Typography>
+                      </Box>
+                      {/* Nhóm máu */}
+                      <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Bloodtype sx={{ color: '#757575', mr: 1 }} />
+                          <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                        </Box>
+                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.bloodTypeName || 'Chưa cập nhật'}</Typography>
+                      </Box>
+                      {/* Số điện thoại */}
+                      <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Phone sx={{ color: '#757575', mr: 1 }} />
+                          <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
+                        </Box>
+                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.phoneNumber || 'Chưa cập nhật'}</Typography>
+                      </Box>
+                      {/* Ngày sinh */}
+                      <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <CalendarToday sx={{ color: '#757575', mr: 1 }} />
+                          <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
+                        </Box>
+                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.dateOfBirth ? dayjs(userDetail.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật'}</Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  {/* Thông tin lịch hẹn bên phải */}
                   <Grid item xs={12} md={6}>
                     <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
                     <Typography variant="body1" fontWeight="bold">#{selectedAppointment.donationId}</Typography>

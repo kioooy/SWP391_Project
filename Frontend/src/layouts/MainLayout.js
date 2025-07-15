@@ -410,6 +410,7 @@ const MainLayout = () => {
         <ContentContainer maxWidth="lg">
           <Outlet />
         </ContentContainer>
+        <Footer />
       </MainContainer>
     );
   }

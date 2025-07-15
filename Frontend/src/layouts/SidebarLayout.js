@@ -31,7 +31,7 @@ const SidebarLayout = () => {
     { path: "/manage-requests", label: "Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
     { path: "/manage-urgent-request", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
     { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
-    { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
+    // { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> }, // Ẩn mục Huy Động
     { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },
 
     // Thêm menu quản lý người dùng cho Admin/Staff
@@ -46,7 +46,7 @@ const SidebarLayout = () => {
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-users","/manage-roles", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog"].includes(item.path))
     : menuItems;
 
   return (
@@ -66,7 +66,10 @@ const SidebarLayout = () => {
         }}
       >
         <Toolbar>
-          <Typography variant="h6" fontWeight="bold" color="primary">Quản lý hệ thống</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <img src={process.env.PUBLIC_URL + '/assets/logo.png'} alt="logo" style={{ height: 36, marginRight: 8 }} />
+            <Typography variant="h6" fontWeight="bold" color="primary">Quản lý hệ thống</Typography>
+          </Box>
         </Toolbar>
         <Divider />
         <List>

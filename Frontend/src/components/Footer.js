@@ -25,6 +25,8 @@ const FooterContainer = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: 'white',
   marginTop: 'auto',
+  width: '100%',
+  padding: 0,
 }));
 
 const FooterSection = styled(Box)(({ theme }) => ({
@@ -76,6 +78,8 @@ const Footer = () => {
   const footerLinks = [
     { label: 'Trang Chủ', path: '/' },
     { label: 'Lịch Sử Đặt Hẹn', path: '/appointment-history' },
+    { label: 'Lịch sử truyền máu', path: '/transfusion-history' },
+    { label: 'Hồ sơ truyền máu', path: '/user-profile-recipient' },
     { label: 'Hỏi & Đáp', path: '/faq' },
     { label: 'Tin Tức', path: '/news' },
     { label: 'Liên Hệ', path: '/contact' },
@@ -91,9 +95,8 @@ const Footer = () => {
 
   return (
     <FooterContainer>
-      <Container maxWidth="lg">
-        <FooterSection>
-          <Grid container spacing={4}>
+      <FooterSection sx={{ px: { xs: 2, md: 10 } }}>
+        <Grid container spacing={4}>
             {/* Brand Section */}
             <Grid item xs={12} md={6}>
               <Box sx={{ mb: 3 }}>
@@ -148,16 +151,14 @@ const Footer = () => {
             </Grid>
           </Grid>
         </FooterSection>
-
-        <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
-      </Container>
+      <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
 
         <FooterBottom>
           <Box>
             <Grid container alignItems="center" justifyContent="space-between">
               <Grid item xs={12}>
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', textAlign: 'center', fontWeight: 'bold' }}>
-                  © 2024 Hệ Thống Hiến Máu Việt Nam. Tất cả quyền được bảo lưu.
+                  © 2025 Hệ Thống Hiến Máu Việt Nam. Tất cả quyền được bảo lưu.
                 </Typography>
               </Grid>
             </Grid>

@@ -31,6 +31,13 @@ const ArticleDetail = () => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {article.publishedDate ? new Date(article.publishedDate).toLocaleDateString() : ''}
       </Typography>
+      {article.imageUrl && (
+        <img
+          src={article.imageUrl}
+          alt={article.title}
+          style={{ width: '100%', maxHeight: 350, objectFit: 'cover', borderRadius: 8, marginBottom: 24 }}
+        />
+      )}
       <Box sx={{ mt: 2 }}>
         <Typography variant="body1">{article.content}</Typography>
       </Box>

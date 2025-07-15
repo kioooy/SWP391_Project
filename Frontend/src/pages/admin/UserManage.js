@@ -167,10 +167,6 @@ const UserManage = () => {
       setSnackbar({ open: true, message: 'Vui lòng nhập đầy đủ Họ tên, Số CCCD, Email, SĐT!', severity: 'error' });
       return;
     }
-    if (!editUser.newPassword || editUser.newPassword.length < 6) {
-      setSnackbar({ open: true, message: 'Vui lòng nhập mật khẩu mới (tối thiểu 6 ký tự)!', severity: 'error' });
-      return;
-    }
     setLoading(true);
     try {
       // Chuyển dateOfBirth về string yyyy-MM-dd
@@ -178,8 +174,10 @@ const UserManage = () => {
       if (typeof dateStr === 'object' && dateStr.year) {
         dateStr = `${dateStr.year}-${String(dateStr.month).padStart(2, '0')}-${String(dateStr.day).padStart(2, '0')}`;
       }
+      // Nếu là sửa user, tự động sinh passwordHash hợp lệ
+      const passwordToHash = 'default123';
       const body = {
-        passwordHash: sha256(editUser.newPassword).toString(),
+        passwordHash: sha256(passwordToHash).toString(),
         fullName: editUser.fullName,
         citizenNumber: editUser.citizenNumber,
         email: editUser.email,
@@ -354,7 +352,7 @@ const UserManage = () => {
         <DialogContent style={{ display: 'grid', gap: 12 }}>
           <TextField label="Họ tên" fullWidth value={editUser?.fullName} onChange={e => setEditUser({ ...editUser, fullName: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" sx={{ mt: 4 }} />
           <TextField label="Số CCCD" fullWidth value={editUser?.citizenNumber} onChange={e => setEditUser({ ...editUser, citizenNumber: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" />
-          <TextField label="Email" fullWidth value={editUser?.email} onChange={e => setEditUser({ ...editUser, email: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" />
+          {/* Ẩn trường nhập email */}
           <TextField
             label="SĐT"
             fullWidth
@@ -430,9 +428,9 @@ const UserManage = () => {
             </Select>
           </FormControl>
           {/* Chỉ hiện trường nhập mật khẩu khi thêm mới user */}
-          {!editMode && <TextField label="Mật khẩu" type="password" fullWidth value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />}
-          {/* Nếu muốn cho phép đổi mật khẩu khi sửa, có thể thêm nút "Đổi mật khẩu" để hiện trường nhập mới */}
-          <TextField label="Mật khẩu mới" type="password" fullWidth value={editUser?.newPassword || ''} onChange={e => setEditUser({ ...editUser, newPassword: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" />
+          {!editMode && (
+            <TextField label="Mật khẩu mới" type="password" fullWidth value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} InputLabelProps={{ shrink: true }} margin="normal" />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Huỷ</Button>

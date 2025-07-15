@@ -407,7 +407,7 @@ const Signup = () => {
                       Tài khoản truyền máu
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Dành cho bệnh nhân, người cần truyền máu hoặc tìm kiếm người hiến máu
+                      Dành cho bệnh nhân, những người cần truyền máu 
                     </Typography>
                     <Box sx={{ mt: 2 }}>
                       <Radio

@@ -331,7 +331,7 @@ const MainLayout = () => {
                   <>
                     {/* Notification Bell - chỉ hiển thị cho Member */}
                     {currentUser && currentUser.role === 'Member' && (
-                      <NotificationBell userId={currentUser.userId} />
+                      <NotificationBell userId={currentUser.userId} isDonor={currentUser.isDonor} />
                     )}
                     <Button
                       color="primary"
@@ -457,7 +457,7 @@ const MainLayout = () => {
                 <>
                   {/* Notification Bell - chỉ hiển thị cho Member */}
                   {currentUser && currentUser.role === 'Member' && (
-                    <NotificationBell userId={currentUser.userId} />
+                    <NotificationBell userId={currentUser.userId} isDonor={currentUser.isDonor} />
                   )}
                   <Button
                     color="primary"

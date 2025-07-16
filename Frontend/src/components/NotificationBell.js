@@ -37,7 +37,7 @@ const NotificationItem = styled(MenuItem)(({ theme, unread }) => ({
   },
 }));
 
-const NotificationBell = ({ userId }) => {
+const NotificationBell = ({ userId, isDonor }) => {
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -45,12 +45,7 @@ const NotificationBell = ({ userId }) => {
 
   const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    if (userId) {
-      fetchNotifications();
-    }
-  }, [userId]);
-
+  // Đặt fetchNotifications lên trước useEffect để tránh lỗi ReferenceError
   const fetchNotifications = async () => {
     try {
       // Sử dụng API thực tế
@@ -60,21 +55,19 @@ const NotificationBell = ({ userId }) => {
           'Content-Type': 'application/json',
         },
       });
-      
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
         setUnreadCount(data.filter(n => !n.isRead).length);
       } else {
-        console.error('Error fetching notifications:', response.status);
-        // Fallback to mock data for demo
+        // ... fallback mock data ...
         const mockNotifications = [
           {
             notificationId: 1,
             title: '🩸 Nhắc nhở hiến máu',
             message: 'Bạn đã có thể hiến máu lại! Hãy đăng ký ngay để cứu người.',
             notificationType: 'ReadyToDonate',
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 giờ trước
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
             isRead: false,
           },
           {
@@ -82,7 +75,7 @@ const NotificationBell = ({ userId }) => {
             title: '⏰ Sắp đến ngày hiến máu',
             message: 'Còn 3 ngày nữa bạn có thể hiến máu lại. Ngày: 15/12/2024',
             notificationType: 'AlmostReady',
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 ngày trước
+            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
             isRead: false,
           },
           {
@@ -90,17 +83,15 @@ const NotificationBell = ({ userId }) => {
             title: '🎉 Chào mừng bạn!',
             message: 'Bạn chưa hiến máu lần nào. Hãy đăng ký hiến máu để cứu người!',
             notificationType: 'FirstTime',
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 ngày trước
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
             isRead: true,
           },
         ];
-        
         setNotifications(mockNotifications);
         setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
-      // Fallback to mock data for demo
+      // ... fallback mock data ...
       const mockNotifications = [
         {
           notificationId: 1,
@@ -127,11 +118,19 @@ const NotificationBell = ({ userId }) => {
           isRead: true,
         },
       ];
-      
       setNotifications(mockNotifications);
       setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
     }
   };
+
+  useEffect(() => {
+    if (userId) {
+      fetchNotifications();
+    }
+  }, [userId]);
+
+  // Nếu không phải tài khoản hiến máu thì không render gì
+  if (!isDonor) return null;
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -329,14 +328,10 @@ const NotificationBell = ({ userId }) => {
                       color="text.secondary"
                       sx={{
                         mb: 1,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
                         wordBreak: 'break-word',
                         overflowWrap: 'anywhere',
-                        maxWidth: '100%',
                         whiteSpace: 'pre-line',
+                        width: '100%',
                       }}
                     >
                       {notification.message}

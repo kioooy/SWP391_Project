@@ -90,6 +90,7 @@ const BloodCompatibilityPage = () => {
           const bloodTypeRes = await axios.get(`/api/BloodType/${res.data.bloodTypeId}`);
           console.log("[DEBUG] Kết quả API /api/BloodType/{bloodTypeId}:", bloodTypeRes.data);
           setWholeBloodType(bloodTypeRes.data.bloodTypeName || "");
+          setComponentBloodTypeId(res.data.bloodTypeId); // Lưu bloodTypeId cho tra cứu
         } else {
           console.log("[DEBUG] Không có bloodTypeId trong kết quả trả về");
         }
@@ -101,15 +102,18 @@ const BloodCompatibilityPage = () => {
     fetchUserBloodType();
   }, [userId]);
 
+  // State lưu bloodTypeId để truyền cho API
+  const [componentBloodTypeId, setComponentBloodTypeId] = useState(null);
+
   // Lấy kết quả truyền máu toàn phần khi vào trang
   useEffect(() => {
     const fetchWholeBloodInfo = async () => {
-      if (!userId) return;
+      if (!componentBloodTypeId) return;
       setWholeBloodLoading(true);
       setWholeBloodResult(null);
       try {
         const res = await axios.get(`/api/BloodCompatibility/whole-blood`, {
-          params: { userId }
+          params: { bloodTypeId: componentBloodTypeId }
         });
         setWholeBloodResult(res.data.compatibleBloodTypes);
       } catch (err) {
@@ -124,7 +128,54 @@ const BloodCompatibilityPage = () => {
       }
     };
     fetchWholeBloodInfo();
-  }, [userId]);
+  }, [componentBloodTypeId]);
+
+  // Lấy danh sách nhóm máu từ backend (nếu muốn động, còn không thì dùng BLOOD_TYPES như cũ)
+  const [bloodTypes, setBloodTypes] = useState([]);
+
+  useEffect(() => {
+    const fetchBloodTypes = async () => {
+      try {
+        const res = await axios.get('/api/BloodType');
+        setBloodTypes(res.data);
+      } catch (err) {
+        setBloodTypes([]);
+      }
+    };
+    fetchBloodTypes();
+  }, []);
+
+  // State cho select nhóm máu toàn phần
+  const [selectedBloodTypeId, setSelectedBloodTypeId] = useState("");
+  const [showWholeBloodResult, setShowWholeBloodResult] = useState(false);
+
+  // Lấy kết quả truyền máu toàn phần khi chọn nhóm máu và bấm tra cứu
+  const handleWholeBloodSearch = async () => {
+    if (!selectedBloodTypeId) {
+      setSnackbar({ open: true, message: "Vui lòng chọn nhóm máu!", severity: "warning" });
+      return;
+    }
+    setWholeBloodLoading(true);
+    setWholeBloodResult(null);
+    setShowWholeBloodResult(false);
+    try {
+      const res = await axios.get(`/api/BloodCompatibility/whole-blood`, {
+        params: { bloodTypeId: selectedBloodTypeId }
+      });
+      setWholeBloodResult(res.data.compatibleBloodTypes);
+      setShowWholeBloodResult(true);
+    } catch (err) {
+      setWholeBloodResult(null);
+      setShowWholeBloodResult(false);
+      setSnackbar({
+        open: true,
+        message: err.response?.data || "Không tìm thấy dữ liệu phù hợp!",
+        severity: "error"
+      });
+    } finally {
+      setWholeBloodLoading(false);
+    }
+  };
 
   // Tra cứu theo thành phần máu
   const handleComponentSearch = async () => {
@@ -137,7 +188,7 @@ const BloodCompatibilityPage = () => {
     try {
       const res = await axios.get(`/api/BloodCompatibility/component-by-user`, {
         params: {
-          userId,
+          bloodTypeId: componentBloodTypeId,
           componentId: selectedComponent
         }
       });
@@ -171,23 +222,35 @@ const BloodCompatibilityPage = () => {
                 Tra cứu nhóm máu phù hợp cho truyền máu toàn phần
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Nhóm máu của bạn là: <b>{wholeBloodType || "(Không xác định)"}</b>
-              </Typography>
-              {wholeBloodLoading ? (
-                <Typography color="text.secondary">Đang tra cứu...</Typography>
-              ) : wholeBloodResult && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="whole-blood-type-label">Chọn nhóm máu</InputLabel>
+                <Select
+                  labelId="whole-blood-type-label"
+                  value={selectedBloodTypeId}
+                  label="Chọn nhóm máu"
+                  onChange={e => setSelectedBloodTypeId(e.target.value)}
+                >
+                  {bloodTypes.map(bt => (
+                    <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>{bt.bloodTypeName}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={handleWholeBloodSearch}
+                disabled={wholeBloodLoading || !selectedBloodTypeId}
+                sx={{ mb: 2 }}
+              >
+                {wholeBloodLoading ? "Đang tìm kiếm..." : "Tìm kiếm"}
+              </Button>
+              {showWholeBloodResult && wholeBloodResult && (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="subtitle1" color="secondary" sx={{ mb: 1 }}>
-                    Nhóm máu có thể truyền (toàn phần):
+                    Nhóm máu có thể truyền cho bạn là:
                   </Typography>
                   <TableContainer component={Paper}>
                     <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Nhóm máu có thể truyền cho bạn là:</TableCell>
-                        </TableRow>
-                      </TableHead>
                       <TableBody>
                         {wholeBloodResult.length > 0 ? (
                           wholeBloodResult.map((type, idx) => (
@@ -216,10 +279,21 @@ const BloodCompatibilityPage = () => {
                 Tra cứu nhóm máu phù hợp theo thành phần máu
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                Nhóm máu của bạn là: <b>{wholeBloodType || "(Không xác định)"}</b>
-              </Typography>
-             
+              {/* Dropdown chọn nhóm máu */}
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="component-blood-type-label">Chọn nhóm máu</InputLabel>
+                <Select
+                  labelId="component-blood-type-label"
+                  value={componentBloodTypeId || ""}
+                  label="Chọn nhóm máu"
+                  onChange={e => setComponentBloodTypeId(e.target.value)}
+                >
+                  {bloodTypes.map(bt => (
+                    <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>{bt.bloodTypeName}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {/* Dropdown chọn thành phần máu */}
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel id={selectLabelId} shrink>Thành phần máu</InputLabel>
                 <Select
@@ -228,16 +302,18 @@ const BloodCompatibilityPage = () => {
                   label="Thành phần máu"
                   onChange={e => setSelectedComponent(e.target.value)}
                 >
-                  {bloodComponents.map(c => (
-                    <MenuItem key={c.componentId} value={c.componentId}>{bloodComponentNameVi(c.componentName)}</MenuItem>
-                  ))}
+                  {bloodComponents
+                    .filter(c => c.componentName !== 'Whole Blood')
+                    .map(c => (
+                      <MenuItem key={c.componentId} value={c.componentId}>{bloodComponentNameVi(c.componentName)}</MenuItem>
+                    ))}
                 </Select>
               </FormControl>
               <Button
                 variant="outlined"
                 color="secondary"
                 onClick={handleComponentSearch}
-                disabled={componentLoading || !selectedComponent}
+                disabled={componentLoading || !selectedComponent || !componentBloodTypeId}
               >
                 {componentLoading ? "Đang tra cứu..." : "Tra cứu thành phần máu"}
               </Button>

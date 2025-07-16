@@ -111,9 +111,7 @@ const TransfusionHistory = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
-          Lịch sử truyền máu
-        </Typography>
+        
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}><CircularProgress /></Box>
         ) : error ? (
@@ -130,12 +128,7 @@ const TransfusionHistory = () => {
                     {formatDate(item.requestDate)}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={2}>
-                  <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    {formatDate(item.transfusionDate)}
-                  </Typography>
-                </Grid>
+                
                 <Grid item xs={12} sm={2}>
                   <Typography variant="body2" color="text.secondary">Thành phần</Typography>
                   <Typography variant="body1" fontWeight="bold">
@@ -191,10 +184,6 @@ const TransfusionHistory = () => {
                     {/* Thông tin truyền máu bên trái */}
                     <Grid item xs={12} md={6}>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ bgcolor: 'error.main', mr: 2 }}>
-                          <Bloodtype />
-                        </Avatar>
-                        <Typography variant="body1" fontWeight="bold">{selected.hospital || '---'}</Typography>
                       </Box>
                       <Box>
                         <Box sx={{ mb: 1 }}>
@@ -218,27 +207,28 @@ const TransfusionHistory = () => {
                           </Box>
                           <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{bloodComponentTranslations[selected.component_ComponentName || selected.componentName] || selected.component_ComponentName || selected.componentName}</Typography>
                         </Box>
+                        {/* Thể tích */}
+                        <Box sx={{ mb: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Bloodtype sx={{ color: '#757575', mr: 1 }} />
+                            <Typography variant="body2" color="text.secondary" sx={{ ml: 0 }}>Thể tích</Typography>
+                          </Box>
+                          <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{selected.transfusionVolume} ml</Typography>
+                        </Box>
                       </Box>
                     </Grid>
                     {/* Thông tin truyền máu bên phải */}
                     <Grid item xs={12} md={6}>
                       <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
                       <Typography variant="body1" fontWeight="bold">{formatDate(selected.requestDate)}</Typography>
-                      <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
-                      <Typography variant="body1" fontWeight="bold">{formatDate(selected.transfusionDate)}</Typography>
-                      <Typography variant="body2" color="text.secondary">Thời gian</Typography>
-                      <Typography variant="body1" fontWeight="bold">
-                        {selected.periodDateFrom && selected.periodDateTo
-                          ? `${dayjs(selected.periodDateFrom).format('HH:mm DD/MM/YYYY')} - ${dayjs(selected.periodDateTo).format('HH:mm DD/MM/YYYY')}`
-                          : 'Không xác định'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">Thể tích</Typography>
-                      <Typography variant="body1" fontWeight="bold">{selected.transfusionVolume} ml</Typography>
-                      <Typography variant="body2" color="text.secondary">Tình trạng bệnh nhân</Typography>
-                      <Typography variant="body1" fontWeight="bold">{selected.patientCondition || '---'}</Typography>
-                      <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
-                      <Typography variant="body1" fontWeight="bold">{selected.notes || '---'}</Typography>
-                      <Box sx={{ mt: 2 }}>{getStatusChip(selected.status)}</Box>
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                        {getStatusChip(selected.status)}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>Ghi chú</Typography>
+                        <Typography variant="body1" fontWeight="bold">{selected.notes || '---'}</Typography>
+                        <Typography variant="body2" color="text.secondary">Tình trạng bệnh nhân</Typography>
+                        <Typography variant="body1" fontWeight="bold">{selected.patientCondition || '---'}</Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </Paper>

@@ -270,9 +270,11 @@ const UserManage = () => {
       // Lấy lịch sử hiến máu
       const donationRes = await axios.get(`${API_URL}/DonationRequest/${user.userId}`, { headers: { Authorization: `Bearer ${token}` } });
       setDonationHistory(donationRes.data || []);
-      // Lấy lịch sử truyền máu
+      // Lấy lịch sử truyền máu của user được chọn
       const transfusionRes = await axios.get(`${API_URL}/TransfusionRequest`, { headers: { Authorization: `Bearer ${token}` } });
-      setTransfusionHistory((transfusionRes.data || []).filter(tr => tr.MemberId === user.userId));
+      setTransfusionHistory((transfusionRes.data || []).filter(tr =>
+        String(tr.memberId ?? tr.MemberId) === String(user.userId ?? user.MemberId)
+      ));
       setSnackbar({ open: false, message: '', severity: 'info' });
     } catch (err) {
       setSnackbar({ open: true, message: 'Lỗi khi tải lịch sử!', severity: 'error' });
@@ -712,7 +714,6 @@ const UserManage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Ngày yêu cầu</TableCell>
-                  <TableCell>Ngày truyền máu</TableCell>
                   <TableCell>Thành phần</TableCell>
                   <TableCell>Nhóm máu</TableCell>
                   <TableCell>Trạng thái</TableCell>
@@ -721,11 +722,10 @@ const UserManage = () => {
               </TableHead>
               <TableBody>
                 {transfusionHistory.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center">Không có dữ liệu</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} align="center">Không có dữ liệu</TableCell></TableRow>
                 ) : transfusionHistory.map((row, idx) => (
                   <TableRow key={idx}>
                     <TableCell>{row.requestDate ? dayjs(row.requestDate).format('DD/MM/YYYY') : row.RequestDate ? dayjs(row.RequestDate).format('DD/MM/YYYY') : ''}</TableCell>
-                    <TableCell>{row.transfusionDate ? dayjs(row.transfusionDate).format('DD/MM/YYYY') : row.TransfusionDate ? dayjs(row.TransfusionDate).format('DD/MM/YYYY') : ''}</TableCell>
                     <TableCell>{bloodComponentTranslations[row.componentName] || row.componentName || row.ComponentName || row.Component?.ComponentName || '---'}</TableCell>
                     <TableCell>{row.bloodTypeName || row.bloodType_BloodTypeName || '---'}</TableCell>
                     <TableCell>{getStatusChip(row.status || row.Status)}</TableCell>

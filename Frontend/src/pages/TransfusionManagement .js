@@ -158,6 +158,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   const [approveNotes, setApproveNotes] = useState("");
   const [approveLoading, setApproveLoading] = useState(false);
   const [suitableBloodUnits, setSuitableBloodUnits] = useState([]); // Danh sách máu phù hợp từ API
+  // State cho suitable alternatives
+  const [suitableAlternatives, setSuitableAlternatives] = useState([]);
 
   // States và hàm cho dialog Complete
   const [openCompleteDialog, setOpenCompleteDialog] = useState(false);
@@ -279,9 +281,20 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSuitableBloodUnits(res.data || []);
+      // Nếu response là object (có .units), set vào state phù hợp
+      if (res.data && res.data.units) {
+        setSuitableBloodUnits(res.data.units);
+        setSuitableAlternatives(res.data.suitableAlternatives || []);
+      } else if (Array.isArray(res.data)) {
+        setSuitableBloodUnits(res.data);
+        setSuitableAlternatives([]);
+      } else {
+        setSuitableBloodUnits([]);
+        setSuitableAlternatives([]);
+      }
     } catch (err) {
       setSuitableBloodUnits([]);
+      setSuitableAlternatives([]);
     }
   };
 
@@ -291,6 +304,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     setApproveSelectedUnits([]);
     setApproveNotes("");
     setSuitableBloodUnits([]);
+    setSuitableAlternatives([]);
   };
 
   // Hàm chọn máu (multi-select, cộng dồn thể tích)
@@ -509,9 +523,24 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     fetchDataForDropdowns();
   }, []);
 
-  const handleRowClick = (transfusion) => {
-    setSelectedTransfusionForDetails(transfusion);
-    setOpenDetailDialog(true);
+  const handleRowClick = async (transfusion) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`/api/TransfusionRequest/${transfusion.transfusionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const detail = res.data;
+      console.log('[DEBUG] Chi tiết yêu cầu truyền máu từ API:', detail);
+      if (detail.BloodUnits || detail.bloodUnits) {
+        console.log('[DEBUG] BloodUnits:', detail.BloodUnits || detail.bloodUnits);
+      } else {
+        console.log('[DEBUG] Không có trường BloodUnits trong dữ liệu chi tiết!');
+      }
+      setSelectedTransfusionForDetails(detail);
+      setOpenDetailDialog(true);
+    } catch (err) {
+      console.error("Lỗi khi lấy chi tiết yêu cầu truyền máu:", err);
+    }
   };
 
   const handleCloseDetailDialog = () => {
@@ -939,7 +968,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       </Dialog>
 
       {/* Dialog Duyệt yêu cầu truyền máu */}
-      <Dialog open={openApproveDialog} onClose={handleCloseApproveDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openApproveDialog} onClose={handleCloseApproveDialog} maxWidth="md" fullWidth>
         <DialogTitle>Duyệt yêu cầu truyền máu #{transfusionToApprove?.transfusionId}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
@@ -951,7 +980,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
             </Typography>
             {/* Danh sách máu phù hợp từ API suitable */}
             <Typography variant="subtitle2" sx={{ mt: 2 }}>Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):</Typography>
-            {suitableBloodUnits.length === 0 ? (
+            {(suitableBloodUnits.length === 0 && suitableAlternatives.length === 0) ? (
               <>
                 <Typography color="error" sx={{ mb: 2 }}>
                   Không có túi máu phù hợp trong kho!
@@ -968,38 +997,87 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                 </Button>
               </>
             ) : (
-              <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1 }}>
-                {suitableBloodUnits.map(unit => {
-                  const selected = approveSelectedUnits.find(u => u.bloodUnitId === unit.bloodUnitId);
-                  return (
-                    <Box key={unit.bloodUnitId} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <input
-                        type="checkbox"
-                        checked={!!selected}
-                        onChange={() => handleSelectBloodUnit(unit.bloodUnitId, unit.remainingVolume)}
-                      />
-                      <Typography variant="body2">
-                        {unit.BloodTypeName || unit.bloodTypeName || 'N/A'}
-                        {" | "}
-                        {bloodComponentTranslations[unit.ComponentName || unit.componentName] || unit.ComponentName || unit.componentName || 'N/A'}
-                        {" | ID: "}{unit.bloodUnitId}
-                        {" | Lượng còn lại: "}{unit.remainingVolume}ml
-                        {" | HSD: "}{formatDateTime(unit.expiryDate)}
-                      </Typography>
-                      {selected && (
-                        <TextField
-                          type="number"
-                          size="small"
-                          value={selected.volume}
-                          onChange={e => handleChangeUnitVolume(unit.bloodUnitId, e.target.value, unit.remainingVolume)}
-                          inputProps={{ min: 1, max: unit.remainingVolume, style: { width: 70 } }}
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </Box>
-                  );
-                })}
-              </Box>
+              <>
+                {/* Đúng nhóm máu */}
+                {suitableBloodUnits.length > 0 && (
+                  <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1, mb: 2 }}>
+                    <Typography variant="subtitle2" color="primary">Túi máu đúng nhóm:</Typography>
+                    {suitableBloodUnits.map(unit => {
+                      const selected = approveSelectedUnits.find(u => u.bloodUnitId === unit.bloodUnitId);
+                      return (
+                        <Box key={unit.bloodUnitId} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <input
+                            type="checkbox"
+                            checked={!!selected}
+                            onChange={() => handleSelectBloodUnit(unit.bloodUnitId, unit.remainingVolume)}
+                          />
+                          <Typography variant="body2">
+                            {unit.BloodTypeName || unit.bloodTypeName || 'N/A'}
+                            {" | "}
+                            {bloodComponentTranslations[unit.ComponentName || unit.componentName] || unit.ComponentName || unit.componentName || 'N/A'}
+                            {" | ID: "}{unit.bloodUnitId}
+                            {" | Lượng còn lại: "}{unit.remainingVolume}ml
+                            {" | HSD: "}{formatDateTime(unit.expiryDate)}
+                          </Typography>
+                          {selected && (
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={selected.volume}
+                              onChange={e => handleChangeUnitVolume(unit.bloodUnitId, e.target.value, unit.remainingVolume)}
+                              inputProps={{ min: 1, max: unit.remainingVolume, style: { width: 70 } }}
+                              sx={{ ml: 1 }}
+                            />
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                )}
+                {/* Các nhóm máu tương thích khác */}
+                {suitableAlternatives.length > 0 && (
+                  <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1 }}>
+                    <Typography variant="subtitle2" color="secondary">Các nhóm máu tương thích khác:</Typography>
+                    {suitableAlternatives.map(alt => (
+                      <Box key={alt.BloodTypeId} sx={{ mb: 2 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
+                          {alt.BloodTypeName} (Tổng: {alt.totalAvailable}ml)
+                        </Typography>
+                        {alt.units.map(unit => {
+                          const selected = approveSelectedUnits.find(u => u.bloodUnitId === unit.bloodUnitId);
+                          return (
+                            <Box key={unit.bloodUnitId} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, ml: 2 }}>
+                              <input
+                                type="checkbox"
+                                checked={!!selected}
+                                onChange={() => handleSelectBloodUnit(unit.bloodUnitId, unit.remainingVolume)}
+                              />
+                              <Typography variant="body2">
+                                {unit.BloodTypeName || unit.bloodTypeName || 'N/A'}
+                                {" | "}
+                                {bloodComponentTranslations[unit.ComponentName || unit.componentName] || unit.ComponentName || unit.componentName || 'N/A'}
+                                {" | ID: "}{unit.bloodUnitId}
+                                {" | Lượng còn lại: "}{unit.remainingVolume}ml
+                                {" | HSD: "}{formatDateTime(unit.expiryDate)}
+                              </Typography>
+                              {selected && (
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={selected.volume}
+                                  onChange={e => handleChangeUnitVolume(unit.bloodUnitId, e.target.value, unit.remainingVolume)}
+                                  inputProps={{ min: 1, max: unit.remainingVolume, style: { width: 70 } }}
+                                  sx={{ ml: 1 }}
+                                />
+                              )}
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </>
             )}
             <Typography variant="body2" sx={{ mt: 1 }}>
               Tổng dung tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
@@ -1019,7 +1097,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
           <Button
             variant="contained"
             onClick={handleConfirmApprove}
-            disabled={suitableBloodUnits.length === 0 || approveSelectedUnits.length === 0 || totalSelectedVolume < requiredVolume || approveLoading}
+            disabled={approveSelectedUnits.length === 0 || totalSelectedVolume < requiredVolume || approveLoading}
           >
             {approveLoading ? "Đang duyệt..." : "Duyệt"}
           </Button>
@@ -1075,80 +1153,115 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
         </DialogTitle>
         <DialogContent dividers>
           {selectedTransfusionForDetails && (
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Mã yêu cầu:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.transfusionId}</Typography>
+            <>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Mã yêu cầu:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.transfusionId}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Người nhận:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.fullName || 'N/A'}</Typography>
+                  <Typography variant="body2" color="text.secondary">Cân nặng: {selectedTransfusionForDetails.weight ? `${selectedTransfusionForDetails.weight} kg` : 'N/A'}</Typography>
+                  <Typography variant="body2" color="text.secondary">Chiều cao: {selectedTransfusionForDetails.height ? `${selectedTransfusionForDetails.height} cm` : 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Nhóm máu:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.bloodTypeName || 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Thành phần máu:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{bloodComponentTranslations[selectedTransfusionForDetails?.componentName] || selectedTransfusionForDetails?.componentName || 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Lượng máu:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.transfusionVolume} ml</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Khẩn cấp:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.isEmergency ? 'Có' : 'Không'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày yêu cầu:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.requestDate)}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày mong muốn nhận:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.preferredReceiveDate) || 'Chưa có'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Trạng thái:</Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    <Chip label={transfusionStatusTranslations[selectedTransfusionForDetails.status] || selectedTransfusionForDetails.status} color={getStatusColor(selectedTransfusionForDetails.status)} size="small" />
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Người phụ trách:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleById ? `Mã NV: ${selectedTransfusionForDetails.responsibleById}` : 'Chưa phân công'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Tên người phụ trách:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleByName || 'Chưa rõ'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Tình trạng bệnh nhân:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.patientCondition || 'Không có'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ghi chú:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.notes || 'Không có'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày duyệt:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.approvalDate) || 'Chưa duyệt'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày hoàn thành:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.completionDate) || 'Chưa hoàn thành'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày hủy:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.cancelledDate) || 'Chưa hủy'}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày từ chối:</Typography>
+                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.rejectedDate) || 'Chưa từ chối'}</Typography>
+                </Grid>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Người nhận:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.fullName || 'N/A'}</Typography>
-                <Typography variant="body2" color="text.secondary">Cân nặng: {selectedTransfusionForDetails.weight ? `${selectedTransfusionForDetails.weight} kg` : 'N/A'}</Typography>
-                <Typography variant="body2" color="text.secondary">Chiều cao: {selectedTransfusionForDetails.height ? `${selectedTransfusionForDetails.height} cm` : 'N/A'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Nhóm máu:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.bloodTypeName || 'N/A'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Thành phần máu:</Typography>
-                <Typography variant="body1" fontWeight="medium">{bloodComponentTranslations[selectedTransfusionForDetails?.componentName] || selectedTransfusionForDetails?.componentName || 'N/A'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Lượng máu:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.transfusionVolume} ml</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Khẩn cấp:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.isEmergency ? 'Có' : 'Không'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ngày yêu cầu:</Typography>
-                <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.requestDate)}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ngày mong muốn nhận:</Typography>
-                <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.preferredReceiveDate) || 'Chưa có'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Trạng thái:</Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  <Chip label={transfusionStatusTranslations[selectedTransfusionForDetails.status] || selectedTransfusionForDetails.status} color={getStatusColor(selectedTransfusionForDetails.status)} size="small" />
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Người phụ trách:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleById ? `Mã NV: ${selectedTransfusionForDetails.responsibleById}` : 'Chưa phân công'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Tên người phụ trách:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleByName || 'Chưa rõ'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Tình trạng bệnh nhân:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.patientCondition || 'Không có'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ghi chú:</Typography>
-                <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.notes || 'Không có'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ngày duyệt:</Typography>
-                <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.approvalDate) || 'Chưa duyệt'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ngày hoàn thành:</Typography>
-                <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.completionDate) || 'Chưa hoàn thành'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ngày hủy:</Typography>
-                <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.cancelledDate) || 'Chưa hủy'}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Ngày từ chối:</Typography>
-                <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.rejectedDate) || 'Chưa từ chối'}</Typography>
-              </Grid>
-            </Grid>
+              {/* Hiển thị danh sách các đơn vị máu đã truyền/gán nếu có */}
+              {(() => {
+                const bloodUnits = selectedTransfusionForDetails.BloodUnits || selectedTransfusionForDetails.bloodUnits || [];
+                return bloodUnits.length > 0 && (
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" color="primary" gutterBottom>Danh sách đơn vị máu đã truyền</Typography>
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>ID</TableCell>
+                            <TableCell>Thể tích truyền (ml)</TableCell>
+                            <TableCell>Ngày truyền</TableCell>
+                            <TableCell>Nhóm máu</TableCell>
+                            <TableCell>Thành phần</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {bloodUnits.map((unit, idx) => (
+                            <TableRow key={unit.BloodUnitId || unit.bloodUnitId || idx}>
+                              <TableCell>{unit.BloodUnitId || unit.bloodUnitId}</TableCell>
+                              <TableCell>{unit.AssignedVolume || unit.assignedVolume}</TableCell>
+                              <TableCell>{unit.AssignedDate ? formatDateTime(unit.AssignedDate) : (unit.assignedDate ? formatDateTime(unit.assignedDate) : '')}</TableCell>
+                              <TableCell>{unit.BloodUnit?.BloodTypeName || unit.bloodUnit?.bloodTypeName || unit.BloodUnit?.bloodTypeName || ''}</TableCell>
+                              <TableCell>{bloodComponentTranslations[unit.BloodUnit?.ComponentName || unit.bloodUnit?.componentName || unit.BloodUnit?.componentName] || unit.BloodUnit?.ComponentName || unit.bloodUnit?.componentName || unit.BloodUnit?.componentName || ''}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                );
+              })()}
+            </>
           )}
         </DialogContent>
         <DialogActions>
@@ -1178,6 +1291,9 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                   BloodTypeId: newValue && newValue.bloodTypeId ? newValue.bloodTypeId : "",
                   BloodComponentId: "",
                 }));
+              }}
+              onOpen={() => {
+                console.log('[DEBUG] Danh sách members hiển thị gợi ý:', members);
               }}
               isOptionEqualToValue={(option, value) => option.userId === value.userId}
               renderInput={(params) => <TextField {...params} label="Người nhận" required />}
@@ -1274,9 +1390,14 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                 setSnackbar({ open: true, message: "Vui lòng nhập đầy đủ thông tin!", severity: "error" });
                 return;
               }
-              if (Number(createForm.TransfusionVolume) > 300) {
-                setSnackbar({ open: true, message: "Số lượng máu tối đa là 300ml!", severity: "error" });
-                return;
+              // Lấy thành phần máu đã chọn
+              const selectedComponent = bloodComponents.find(bc => String(bc.componentId) === String(createForm.BloodComponentId));
+              const limitedComponents = ["Red Blood Cells", "Plasma", "Platelets"];
+              if (selectedComponent && limitedComponents.includes(selectedComponent.componentName)) {
+                if (Number(createForm.TransfusionVolume) > 300) {
+                  setSnackbar({ open: true, message: "Số lượng máu tối đa cho thành phần này là 300ml!", severity: "error" });
+                  return;
+                }
               }
               setCreateLoading(true);
               try {

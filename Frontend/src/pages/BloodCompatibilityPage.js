@@ -249,23 +249,15 @@ const BloodCompatibilityPage = () => {
                   <Typography variant="subtitle1" color="secondary" sx={{ mb: 1 }}>
                     Nhóm máu có thể truyền cho bạn là:
                   </Typography>
-                  <TableContainer component={Paper}>
-                    <Table size="small">
-                      <TableBody>
-                        {wholeBloodResult.length > 0 ? (
-                          wholeBloodResult.map((type, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell>{type}</TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell>Không có nhóm máu phù hợp.</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {wholeBloodResult.length > 0 ? (
+                      wholeBloodResult.map((type, idx) => (
+                        <li key={idx}>{type}</li>
+                      ))
+                    ) : (
+                      <li>Không có nhóm máu phù hợp.</li>
+                    )}
+                  </ul>
                 </Box>
               )}
             </CardContent>

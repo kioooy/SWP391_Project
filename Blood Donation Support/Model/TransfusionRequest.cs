@@ -10,8 +10,6 @@ public partial class TransfusionRequest
 
     public int ComponentId { get; set; }
 
-    // public int? BloodUnitId { get; set; }  // Đã xóa khỏi database
-
     public int? ResponsibleById { get; set; }
 
     public bool? IsEmergency { get; set; }
@@ -35,6 +33,8 @@ public partial class TransfusionRequest
     public string? Notes { get; set; }
 
     public string? PatientCondition { get; set; }
+
+    public bool IsActive { get; set; } 
 
     public virtual BloodType BloodType { get; set; } = null!;
 

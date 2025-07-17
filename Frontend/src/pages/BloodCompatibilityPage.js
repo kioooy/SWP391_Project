@@ -230,7 +230,7 @@ const BloodCompatibilityPage = () => {
                   label="Chọn nhóm máu"
                   onChange={e => setSelectedBloodTypeId(e.target.value)}
                 >
-                  {bloodTypes.map(bt => (
+                  {bloodTypes.filter(bt => bt.bloodTypeName !== "Không Biết").map(bt => (
                     <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>{bt.bloodTypeName}</MenuItem>
                   ))}
                 </Select>
@@ -288,7 +288,7 @@ const BloodCompatibilityPage = () => {
                   label="Chọn nhóm máu"
                   onChange={e => setComponentBloodTypeId(e.target.value)}
                 >
-                  {bloodTypes.map(bt => (
+                  {bloodTypes.filter(bt => bt.bloodTypeName !== "Không Biết").map(bt => (
                     <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>{bt.bloodTypeName}</MenuItem>
                   ))}
                 </Select>
@@ -321,7 +321,7 @@ const BloodCompatibilityPage = () => {
               {componentResult && componentResult.compatibleBloodTypes && (
                 <Box sx={{ mt: 3, maxHeight: 200, overflowY: 'auto' }}>
                   <Typography variant="subtitle1" color="secondary" sx={{ mb: 1 }}>
-                    Nhóm máu hiện tại với "{bloodComponentNameVi(selectedComponentName)}" có sẵn có thể truyền cho bạn:
+                    Nhóm máu hiện tại với thành phần "{bloodComponentNameVi(selectedComponentName)}" có sẵn trong hệ thống có thể truyền cho bạn:
                   </Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {componentResult.compatibleBloodTypes.length > 0 ? (

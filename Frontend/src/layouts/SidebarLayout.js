@@ -25,22 +25,22 @@ const SidebarLayout = () => {
   // Các mục sidebar cho Staff/Admin
   const menuItems = [
     { path: user?.role === 'Admin' ? "/profile-admin" : user?.role === 'Staff' ? "/profile-staff" : "/profile", label: "Hồ sơ", icon: <PersonIcon /> },
-    { path: "/dashboard", label: "Dashboard", icon: <DashboardIcon /> },
-    { path: "/blood-workflow", label: "Truyền máu", icon: <WorkflowIcon /> },
-    { path: "/manage-requests", label: "Yêu cầu", icon: <AssignmentIcon /> },
-    { path: "/blood-search", label: "Tìm máu", icon: <BloodtypeIcon /> },
-    { path: "/donor-mobilization", label: "Huy động", icon: <GroupIcon /> },
-    { path: "/search-distance", label: "Tìm quanh bạn", icon: <LocationOnIcon /> },
-    { path: "/search-by-distance", label: "Tìm nâng cao", icon: <SearchIcon /> },
-    { path: "/manage-blood-periods", label: "Đợt hiến", icon: <BloodtypeIcon /> },
-    { path: "/blood-inventory", label: "Kho máu", icon: <BloodtypeIcon /> },
-    { path: "/manage-article", label: "Tài liệu", icon: <MenuBookIcon /> },
-    { path: "/manage-blog", label: "Blog", icon: <EditNoteIcon /> },
+    { path: "/dashboard", label: "Bảng Thông Tin", icon: <DashboardIcon /> },
+    { path: "/blood-workflow", label: "Yêu Cầu Truyền Máu", icon: <WorkflowIcon /> },
+    { path: "/manage-requests", label: "Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
+    { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
+    { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> },
+    { path: "/search-distance", label: "Tìm Quanh Bạn", icon: <LocationOnIcon /> },
+    { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },
+    { path: "/manage-blood-periods", label: "Đợt Hiến Máu", icon: <BloodtypeIcon /> },
+    { path: "/blood-inventory", label: "Kho Máu", icon: <BloodtypeIcon /> },
+    { path: "/manage-article", label: "Tài Liệu", icon: <MenuBookIcon /> },
+    { path: "/manage-blog", label: "Bài Viết", icon: <EditNoteIcon /> },
   ];
 
   // Nếu là Staff, ẩn một số mục chỉ dành cho Admin và ẩn cả blood-inventory, manage-blood-periods
   const filteredMenu = user?.role === 'Staff'
-    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods"].includes(item.path))
+    ? menuItems.filter(item => !["/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods", "/manage-article", "/manage-blog", "/manage-roles", "/manage-users", "/dashboard", "/hospital-location", "/blood-inventory", "/manage-blood-periods"].includes(item.path))
     : menuItems;
 
   return (

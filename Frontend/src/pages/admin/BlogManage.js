@@ -297,7 +297,7 @@ const BlogManage = () => {
               <TableCell><strong>Kích hoạt</strong></TableCell>
               <TableCell><strong>Ngày đăng</strong></TableCell>
               <TableCell><strong>Ngày cập nhật</strong></TableCell>
-              <TableCell><strong>Hành động</strong></TableCell>
+              <TableCell><strong>Thao tác</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -394,7 +394,7 @@ const BlogManage = () => {
               setNewBlog({ ...newBlog, Content: e.target.value })
             }
           />
-          <TextField
+          {/* <TextField
             label="URL ảnh"
             fullWidth
             value={newBlog.ImageUrl}
@@ -402,7 +402,16 @@ const BlogManage = () => {
               setNewBlog({ ...newBlog, ImageUrl: e.target.value });
               setNewBlogImagePreview("");
             }}
-          />
+          /> */}
+          <Select
+            label="Trạng thái"
+            value={newBlog.Status}
+            onChange={(e) => setNewBlog({ ...newBlog, Status: e.target.value })}
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value="Published">Đã xuất bản</MenuItem>
+            <MenuItem value="Draft">Bản nháp</MenuItem>
+          </Select>
           <input
             accept="image/jpeg,image/png"
             type="file"
@@ -429,15 +438,7 @@ const BlogManage = () => {
           {newBlogImagePreview && (
             <img src={newBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}
-          <Select
-            label="Trạng thái"
-            value={newBlog.Status}
-            onChange={(e) => setNewBlog({ ...newBlog, Status: e.target.value })}
-            sx={{ minWidth: 120 }}
-          >
-            <MenuItem value="Published">Đã xuất bản</MenuItem>
-            <MenuItem value="Draft">Bản nháp</MenuItem>
-          </Select>
+          
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
@@ -479,7 +480,7 @@ const BlogManage = () => {
             <MenuItem value="Published">Đã xuất bản</MenuItem>
             <MenuItem value="Draft">Bản nháp</MenuItem>
           </Select>
-          <TextField
+          {/* <TextField
             label="URL ảnh"
             fullWidth
             value={editBlog?.imageUrl || ''}
@@ -487,7 +488,7 @@ const BlogManage = () => {
               setEditBlog({ ...editBlog, imageUrl: e.target.value });
               setEditBlogImagePreview("");
             }}
-          />
+          /> */}
           <input
             accept="image/jpeg,image/png"
             type="file"

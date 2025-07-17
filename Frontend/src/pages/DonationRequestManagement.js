@@ -221,7 +221,7 @@ const DonationRequestManagement = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
         Quản Lý Yêu Cầu Hiến Máu
       </Typography>
 

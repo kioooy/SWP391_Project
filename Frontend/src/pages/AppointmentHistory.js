@@ -303,8 +303,8 @@ const AppointmentHistory = () => {
                       : ''}
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={2}>
-                <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến máu</Typography>
+              <Grid item xs={12} sm={3}>
+                <Typography variant="body2" color="text.secondary" noWrap>Ngày dự kiến hiến máu</Typography>
                 <Typography variant="body1" fontWeight="bold">
                   {appointment.preferredDonationDate ? dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
                 </Typography>
@@ -313,12 +313,12 @@ const AppointmentHistory = () => {
                 <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
                 <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
               </Grid>
-              <Grid item xs={12} sm={3}>
-                <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
-                {getStatusChip(appointment.status)}
-              </Grid>
             </Grid>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, ml: 2, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Trạng thái</Typography>
+                {getStatusChip(appointment.status)}
+              </Box>
               <Button
                 variant="outlined"
                 sx={{ minWidth: 120 }}

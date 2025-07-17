@@ -544,5 +544,77 @@ namespace Blood_Donation_Support.Controllers
 
             return Ok(pendingRequests);
         }
+
+        // --- Tín Coding: Start ---
+
+        // Get upcoming transfusion requests for the current user
+        // GET: api/TransfusionRequest/up-comming
+        [HttpGet("up-comming")]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> GetTransfusionRequestUpcomming()
+        {
+            // Get current user id
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+
+            // Check translation request id from current user
+            var transfusionRequest = await _context.TransfusionRequests.FirstOrDefaultAsync(tr => tr.Member.UserId == currentUserId);
+            if (transfusionRequest == null)
+                return NotFound($"Không tìm thấy lịch sử truyền máu.");
+
+            return Ok(await _context.TransfusionRequests
+                .Where(tr => tr.IsActive == true && tr.MemberId == currentUserId && tr.PreferredReceiveDate >= DateTime.Today)
+                .Select(tr => new
+                {
+                    tr.TransfusionId,              // Tranfusion Request ID
+                    tr.Status,                     // Status
+                    tr.PreferredReceiveDate,       // Receive Date
+                    tr.ResponsibleBy.FullName,     // Responsible User Name ( Staff )
+                    tr.TransfusionVolume,          // Transfusion Volume 
+                    tr.BloodType.BloodTypeName,    // Blood Type 
+                })
+                .ToListAsync());
+        }
+
+        // Check for expired transfusion requests
+        // PATCH: api/TransfusionRequest/expired_check
+        [HttpPatch("expired_check")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> ExpiredTransfusionRequestCheck()
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Find donation requests that have expired (preferred date in past) but haven't been completed, cancelled or rejected
+            var expiredRequests = await _context.TransfusionRequests
+                .Where(dr => dr.PreferredReceiveDate < DateTime.Now && ( dr.Status == "Approved" || dr.Status == "Pending"))
+                .ToListAsync();
+
+            if (expiredRequests.Count == 0)
+                return NoContent();
+
+            // Update all expired requests
+            foreach (var request in expiredRequests)
+            {
+                request.Status = "Cancelled";
+                request.Notes = $"Hệ thống tự động hủy đơn vào lúc {DateTime.Now} do quá hạn thời gian yêu cầu ({request.PreferredReceiveDate}).";
+                _context.Entry(request).State = EntityState.Modified;
+            }
+
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync(); // Rollback the transaction if an error occurs
+                throw;
+            }
+        }
+
+        // --- Tín Coding: End ---
+
     }
 } 

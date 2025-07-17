@@ -4,6 +4,7 @@ using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -520,5 +521,49 @@ namespace Blood_Donation_Support.Controllers
                 CreatedByUserName = ubr.CreatedByUser != null ? ubr.CreatedByUser.FullName : null
             }));
         }
+
+        // --- Tín Coding: Start ---
+
+        // Get History of Urgent Blood Requests ( Emergency ) for Current User
+        // GET api/urgentbloodrequest/history
+        [HttpGet("history")]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> GetUrgentRequestHistory()
+        { 
+            // Get current user id
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+            
+            // Check if currentUserId is valid
+            var citizenNumber = await _context.Users.Where(u => u.UserId == currentUserId).Select(u => u.CitizenNumber).FirstOrDefaultAsync();
+            if (citizenNumber == null)
+                return BadRequest("Không tìm thấy người dùng hiện tại.");
+
+            // Check UrgentBloodRequest exists for this citizen number
+            var urgentBloodRequest = await _context.UrgentBloodRequests.FirstOrDefaultAsync(ubr => ubr.CitizenNumber == citizenNumber);
+            if (urgentBloodRequest == null)
+                return NotFound($"Không tìm thấy lịch sử truyền máu khẩn cấp.");
+            
+            // Get list history where status isn't pending
+            return Ok(await _context.UrgentBloodRequests
+                .Where(ubr => ubr.IsActive == true && ubr.CitizenNumber == citizenNumber && ubr.Status != "Pending")
+                .Select(ubr => new
+                {
+                   ubr.UrgentRequestId,
+                   ubr.PatientName,
+                   ubr.RequestedBloodTypeId,
+                   ubr.Reason,
+                   ubr.CitizenNumber,
+                   ubr.ContactName,
+                   ubr.ContactPhone,
+                   ubr.ContactEmail,
+                   ubr.EmergencyLocation,
+                   ubr.Notes,
+                   ubr.RequestDate,
+                   ubr.Status,
+                   ubr.CompletionDate,
+                })
+                .ToListAsync());
+        }
+        // --- Tín Coding: End ---
     }
 } 

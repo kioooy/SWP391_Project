@@ -62,7 +62,7 @@ const Dashboard = () => {
       case 'completed':
         return <Chip icon={<CheckCircle />} label="Hoàn thành" color="success" size="small" />;
       case 'approved':
-        return <Chip icon={<CheckCircle />} label="Đã duyệt" color="primary" size="small" />;
+        return <Chip icon={<CheckCircle sx={{ color: 'white', background: 'transparent', borderRadius: 0, p: 0 }} />} label="Đã duyệt" sx={{ backgroundColor: '#8D6E63', color: 'white' }} size="small" />;
       case 'cancelled':
         return <Chip icon={<Warning />} label="Đã hủy" color="error" size="small" />;
       case 'rejected':

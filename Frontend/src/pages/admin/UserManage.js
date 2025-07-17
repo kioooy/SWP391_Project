@@ -270,9 +270,11 @@ const UserManage = () => {
       // Lấy lịch sử hiến máu
       const donationRes = await axios.get(`${API_URL}/DonationRequest/${user.userId}`, { headers: { Authorization: `Bearer ${token}` } });
       setDonationHistory(donationRes.data || []);
-      // Lấy lịch sử truyền máu
+      // Lấy lịch sử truyền máu của user được chọn
       const transfusionRes = await axios.get(`${API_URL}/TransfusionRequest`, { headers: { Authorization: `Bearer ${token}` } });
-      setTransfusionHistory((transfusionRes.data || []).filter(tr => tr.MemberId === user.userId));
+      setTransfusionHistory((transfusionRes.data || []).filter(tr =>
+        String(tr.memberId ?? tr.MemberId) === String(user.userId ?? user.MemberId)
+      ));
       setSnackbar({ open: false, message: '', severity: 'info' });
     } catch (err) {
       setSnackbar({ open: true, message: 'Lỗi khi tải lịch sử!', severity: 'error' });
@@ -708,37 +710,55 @@ const UserManage = () => {
             </MuiDialog>
           </MuiBox>
           <MuiBox hidden={historyTab !== 1}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Ngày yêu cầu</TableCell>
-                  <TableCell>Ngày truyền máu</TableCell>
-                  <TableCell>Thành phần</TableCell>
-                  <TableCell>Nhóm máu</TableCell>
-                  <TableCell>Trạng thái</TableCell>
-                  <TableCell>Chi tiết</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {transfusionHistory.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} align="center">Không có dữ liệu</TableCell></TableRow>
-                ) : transfusionHistory.map((row, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{row.requestDate ? dayjs(row.requestDate).format('DD/MM/YYYY') : row.RequestDate ? dayjs(row.RequestDate).format('DD/MM/YYYY') : ''}</TableCell>
-                    <TableCell>{row.transfusionDate ? dayjs(row.transfusionDate).format('DD/MM/YYYY') : row.TransfusionDate ? dayjs(row.TransfusionDate).format('DD/MM/YYYY') : ''}</TableCell>
-                    <TableCell>{bloodComponentTranslations[row.componentName] || row.componentName || row.ComponentName || row.Component?.ComponentName || '---'}</TableCell>
-                    <TableCell>{row.bloodTypeName || row.bloodType_BloodTypeName || '---'}</TableCell>
-                    <TableCell>{getStatusChip(row.status || row.Status)}</TableCell>
-                    <TableCell>
-                      <MuiButton size="small" variant="outlined" onClick={() => {
+            {transfusionHistory.length === 0 ? (
+              <Typography align="center" sx={{ my: 2 }}>Không có dữ liệu</Typography>
+            ) : transfusionHistory.map((row, idx) => (
+              <Card key={idx} sx={{ mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                <CardContent>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={3}>
+                      <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {row.requestDate ? dayjs(row.requestDate).format('DD/MM/YYYY') : row.RequestDate ? dayjs(row.RequestDate).format('DD/MM/YYYY') : ''}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <Typography variant="body2" color="text.secondary">Thành phần</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {bloodComponentTranslations[row.componentName] || row.componentName || row.ComponentName || row.Component?.ComponentName || '---'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {row.bloodTypeName || row.bloodType_BloodTypeName || '---'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                      {getStatusChip(row.status || row.Status)}
+                    </Grid>
+                    <Grid item xs={12} sm={2} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MuiButton size="small" variant="outlined" onClick={async () => {
                         setSelectedTransfusion(row);
+                        // Lấy thông tin user chi tiết khi mở dialog chi tiết truyền máu
+                        if (!row.phoneNumber || !row.dateOfBirth) {
+                          try {
+                            const res = await axios.get(`${API_URL}/User/${row.memberId || row.MemberId}`, { headers: { Authorization: `Bearer ${token}` } });
+                            setTransfusionDetailUser(res.data);
+                          } catch {
+                            setTransfusionDetailUser(row);
+                          }
+                        } else {
+                          setTransfusionDetailUser(row);
+                        }
                         setOpenTransfusionDetail(true);
                       }}>Chi tiết</MuiButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            ))}
             {/* Dialog chi tiết truyền máu nếu cần */}
             <MuiDialog open={openTransfusionDetail} onClose={() => setOpenTransfusionDetail(false)} maxWidth="md" fullWidth>
               <MuiDialogTitle sx={{ bgcolor: '#4285f4', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -752,57 +772,84 @@ const UserManage = () => {
                       <Grid container spacing={3}>
                         {/* Thông tin người dùng bên trái */}
                         <Grid item xs={12} md={6}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <Avatar sx={{ bgcolor: '#4285f4', mr: 2 }}>
-                              <Person />
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', mr: 2 }}>
+                              {(transfusionDetailUser?.fullName || historyUser?.fullName || selectedTransfusion?.fullName || 'U').charAt(0)}
                             </Avatar>
-                            <Typography variant="body1" fontWeight="bold">{transfusionDetailUser?.fullName || historyUser?.fullName || 'Chưa cập nhật'}</Typography>
+                            <Typography variant="body1" fontWeight="bold">
+                              {transfusionDetailUser?.fullName || historyUser?.fullName || selectedTransfusion?.fullName || 'Chưa cập nhật'}
+                            </Typography>
                           </Box>
-                          <Box>
-                            <Box sx={{ mb: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <BadgeOutlined sx={{ color: '#757575', mr: 1 }} />
-                                <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
-                              </Box>
-                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.citizenNumber || historyUser?.citizenNumber || 'Chưa cập nhật'}</Typography>
+                          <Box sx={{ mb: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <BadgeOutlined sx={{ color: 'text.secondary', mr: 1 }} />
+                              <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
                             </Box>
-                            <Box sx={{ mb: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Bloodtype sx={{ color: '#757575', mr: 1 }} />
-                                <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
-                              </Box>
-                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.bloodTypeName || historyUser?.bloodTypeName || 'Chưa cập nhật'}</Typography>
+                            <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>
+                              {transfusionDetailUser?.citizenNumber || historyUser?.citizenNumber || selectedTransfusion?.citizenNumber || 'Chưa cập nhật'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Bloodtype sx={{ color: 'text.secondary', mr: 1 }} />
+                              <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
                             </Box>
-                            <Box sx={{ mb: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Phone sx={{ color: '#757575', mr: 1 }} />
-                                <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
-                              </Box>
-                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.phoneNumber || historyUser?.phoneNumber || 'Chưa cập nhật'}</Typography>
+                            <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>
+                              {transfusionDetailUser?.bloodTypeName || historyUser?.bloodTypeName || selectedTransfusion?.bloodTypeName || 'Chưa cập nhật'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Phone sx={{ color: 'text.secondary', mr: 1 }} />
+                              <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
                             </Box>
-                            <Box sx={{ mb: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <CalendarToday sx={{ color: '#757575', mr: 1 }} />
-                                <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
-                              </Box>
-                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{transfusionDetailUser?.dateOfBirth ? dayjs(transfusionDetailUser.dateOfBirth).format('DD/MM/YYYY') : historyUser?.dateOfBirth ? dayjs(historyUser.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật'}</Typography>
+                            <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>
+                              {transfusionDetailUser?.phoneNumber || transfusionDetailUser?.phone || transfusionDetailUser?.member?.phoneNumber || transfusionDetailUser?.member?.phone ||
+                               historyUser?.phoneNumber || historyUser?.phone || historyUser?.member?.phoneNumber || historyUser?.member?.phone ||
+                               selectedTransfusion?.phoneNumber || selectedTransfusion?.phone || selectedTransfusion?.member?.phoneNumber || selectedTransfusion?.member?.phone ||
+                               'Chưa cập nhật'}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Cake sx={{ color: 'text.secondary', mr: 1 }} />
+                              <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
                             </Box>
+                            <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>
+                              {(() => {
+                                const dob = transfusionDetailUser?.dateOfBirth || transfusionDetailUser?.dob || transfusionDetailUser?.birthDate || transfusionDetailUser?.member?.dateOfBirth || transfusionDetailUser?.member?.dob || transfusionDetailUser?.member?.birthDate ||
+                                            historyUser?.dateOfBirth || historyUser?.dob || historyUser?.birthDate || historyUser?.member?.dateOfBirth || historyUser?.member?.dob || historyUser?.member?.birthDate || null;
+                                return dob ? dayjs(dob).format('DD/MM/YYYY') : 'Chưa cập nhật';
+                              })()}
+                            </Typography>
                           </Box>
                         </Grid>
-                        {/* Thông tin lịch hẹn bên phải */}
+                        {/* Thông tin truyền máu bên phải */}
                         <Grid item xs={12} md={6}>
-                          <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
-                          <Typography variant="body1" fontWeight="bold">#{selectedTransfusion.transfusionId || selectedTransfusion.TransfusionId || selectedTransfusion.TransfusionID}</Typography>
-                          <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
-                          {getStatusChip(selectedTransfusion.status || selectedTransfusion.Status)}
-                          <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
-                          <Typography variant="body1" fontWeight="bold">{selectedTransfusion.transfusionDate ? dayjs(selectedTransfusion.transfusionDate).format('DD/MM/YYYY') : selectedTransfusion.TransfusionDate ? dayjs(selectedTransfusion.TransfusionDate).format('DD/MM/YYYY') : ''}</Typography>
-                          <Typography variant="body2" color="text.secondary">Thành phần</Typography>
-                          <Typography variant="body1" fontWeight="bold">{bloodComponentTranslations[selectedTransfusion.componentName] || selectedTransfusion.componentName || selectedTransfusion.ComponentName || '---'}</Typography>
-                          <Typography variant="body2" color="text.secondary">Thể tích</Typography>
-                          <Typography variant="body1" fontWeight="bold">
-                            {selectedTransfusion.transfusionVolume ? `${selectedTransfusion.transfusionVolume} ml` : selectedTransfusion.TransfusionVolume ? `${selectedTransfusion.TransfusionVolume} ml` : selectedTransfusion.Volume ? `${selectedTransfusion.Volume} ml` : 'Không xác định'}
-                          </Typography>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Mã truyền máu</Typography>
+                            <Typography variant="body1" fontWeight="bold">{selectedTransfusion.transfusionId || '---'}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                            {getStatusChip(selectedTransfusion.status || selectedTransfusion.Status)}
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Nhóm máu truyền</Typography>
+                            <Typography variant="body1" fontWeight="bold">{selectedTransfusion.bloodTypeName || selectedTransfusion.bloodType_BloodTypeName || '---'}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Thành phần</Typography>
+                            <Typography variant="body1" fontWeight="bold">{bloodComponentTranslations[selectedTransfusion.componentName] || selectedTransfusion.componentName || selectedTransfusion.ComponentName || selectedTransfusion.Component?.ComponentName || '---'}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Thể tích</Typography>
+                            <Typography variant="body1" fontWeight="bold">{selectedTransfusion.transfusionVolume ? `${selectedTransfusion.transfusionVolume} ml` : selectedTransfusion.TransfusionVolume ? `${selectedTransfusion.TransfusionVolume} ml` : selectedTransfusion.Volume ? `${selectedTransfusion.Volume} ml` : '---'}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                            <Typography variant="body1" fontWeight="bold">{selectedTransfusion.requestDate ? dayjs(selectedTransfusion.requestDate).format('DD/MM/YYYY') : selectedTransfusion.RequestDate ? dayjs(selectedTransfusion.RequestDate).format('DD/MM/YYYY') : '---'}</Typography>
+                          </Box>
                         </Grid>
                       </Grid>
                     </Paper>

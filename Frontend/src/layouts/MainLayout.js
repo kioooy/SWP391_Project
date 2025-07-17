@@ -292,7 +292,8 @@ const MainLayout = () => {
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { label: "Tin Tức", isNews: true, icon: <ArticleIcon /> },
       { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
-      { path: "/blood-compatibility", label: "Tra cứu nhóm máu phù hợp", icon: <BloodtypeIcon /> },
+      { path: "/blood-compatibility", label: "Tra cứu nhóm máu", icon: <BloodtypeIcon /> },
+      { path: "/transfusion-appointment-history", label: "Lịch hẹn truyền máu", icon: <EventIcon /> },
       { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
     ];

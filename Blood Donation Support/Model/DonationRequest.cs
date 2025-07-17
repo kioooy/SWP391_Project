@@ -21,7 +21,9 @@ public partial class DonationRequest
     public DateTime? ApprovalDate { get; set; }
 
     public DateTime? CompletionDate { get; set; }
+
     public DateTime? CancelledDate { get; set; }
+
     public DateTime? RejectedDate { get; set; }
 
     public int? DonationVolume { get; set; }
@@ -31,6 +33,8 @@ public partial class DonationRequest
     public string? Notes { get; set; }
 
     public string? PatientCondition { get; set; }
+
+    public bool IsActive { get; set; }
 
     public virtual BloodComponent Component { get; set; } = null!;
 

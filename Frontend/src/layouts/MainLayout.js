@@ -286,7 +286,7 @@ const MainLayout = () => {
   const handleNewsMenu = (event) => setNewsAnchorEl(event.currentTarget);
   const handleCloseNewsMenu = () => setNewsAnchorEl(null);
 
-  // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị menu có 2 mục này
+  // Nếu là tài khoản truyền máu (isRecipient === true), chỉ hiển thị menu có những mục này
   if (currentUser && currentUser.isRecipient) {
     const recipientMenu = [
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
@@ -294,10 +294,9 @@ const MainLayout = () => {
       { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
 
       // { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
+
+      { path: "/blood-compatibility", label: "Tra cứu nhóm máu ", icon: <BloodtypeIcon /> },
       { path: "/transfusion-appointment-history", label: "Lịch hẹn truyền máu", icon: <EventIcon /> },
-
-      { path: "/blood-compatibility", label: "Tra cứu nhóm máu phù hợp", icon: <BloodtypeIcon /> },
-
       { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
     ];

@@ -15,6 +15,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SearchIcon from '@mui/icons-material/Search';
 import WarningIcon from '@mui/icons-material/Warning';
 import { useSelector } from "react-redux";
+import NotificationBell from '../components/NotificationBell';
 
 const drawerWidth = 300;
 
@@ -96,20 +97,29 @@ const SidebarLayout = () => {
           ))}
         </List>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%', overflowX: 'hidden' }}>
+        {/* Header với NotificationBell */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
+          {(user?.role === 'Admin' || user?.role === 'Staff') && (
+            <NotificationBell
+              userId={user?.userId}
+              isAdmin={user?.role === 'Admin'}
+              isStaff={user?.role === 'Staff'}
+            />
+          )}
+        </Box>
         <Box
           sx={{
-            backgroundColor: '#fff',
-            borderTopRightRadius: 16,
-            borderBottomRightRadius: 16,
-            borderTopLeftRadius: 0,
-            borderBottomLeftRadius: 0,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            p: 3,
-            minHeight: 'calc(100vh - 48px)',
-            border: '1px solid rgba(0,0,0,0.08)',
+            // backgroundColor: '#fff', // Bỏ nền trắng
+            // borderTopRightRadius: 16,
+            // borderBottomRightRadius: 16,
+            // borderTopLeftRadius: 0,
+            // borderBottomLeftRadius: 0,
+            // boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            // border: '1px solid rgba(0,0,0,0.08)',
+            p: 0, // Giảm padding cho sát mép
             width: '100%',
-            height: '100%',
+            maxWidth: '100%',
           }}
         >
           <Outlet />

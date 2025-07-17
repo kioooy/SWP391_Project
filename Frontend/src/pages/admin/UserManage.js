@@ -717,7 +717,7 @@ const UserManage = () => {
                 <CardContent>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={3}>
-                      <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                      <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
                       <Typography variant="body1" fontWeight="bold">
                         {row.requestDate ? dayjs(row.requestDate).format('DD/MM/YYYY') : row.RequestDate ? dayjs(row.RequestDate).format('DD/MM/YYYY') : ''}
                       </Typography>
@@ -847,7 +847,7 @@ const UserManage = () => {
                             <Typography variant="body1" fontWeight="bold">{selectedTransfusion.transfusionVolume ? `${selectedTransfusion.transfusionVolume} ml` : selectedTransfusion.TransfusionVolume ? `${selectedTransfusion.TransfusionVolume} ml` : selectedTransfusion.Volume ? `${selectedTransfusion.Volume} ml` : '---'}</Typography>
                           </Box>
                           <Box sx={{ mb: 1 }}>
-                            <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                            <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
                             <Typography variant="body1" fontWeight="bold">{selectedTransfusion.requestDate ? dayjs(selectedTransfusion.requestDate).format('DD/MM/YYYY') : selectedTransfusion.RequestDate ? dayjs(selectedTransfusion.RequestDate).format('DD/MM/YYYY') : '---'}</Typography>
                           </Box>
                         </Grid>

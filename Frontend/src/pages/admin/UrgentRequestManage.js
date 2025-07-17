@@ -288,17 +288,21 @@ const UrgentRequestManage = () => {
             </RadioGroup>
           </FormControl>
           {fulfillType === 'transfusion' && (
-            <FormControl fullWidth sx={{ mt: 2 }} disabled={submitting}>
-              <InputLabel>Chọn yêu cầu truyền máu</InputLabel>
+            <FormControl fullWidth sx={{ mt: 2, minWidth: 250, width: '100%' }} disabled={submitting}>
+              <InputLabel id="transfusion-request-label">Chọn yêu cầu truyền máu</InputLabel>
               <Select
+                labelId="transfusion-request-label"
+                label="Chọn yêu cầu truyền máu"
                 value={preemptedTransfusionId}
                 onChange={(e) => setPreemptedTransfusionId(e.target.value)}
+                fullWidth
+                sx={{ width: '100%' }}
               >
                 {transfusionRequests.length === 0 && (
-                  <MenuItem disabled>Không có yêu cầu truyền máu phù hợp</MenuItem>
+                  <MenuItem disabled sx={{ minWidth: 0 }}>Không có yêu cầu truyền máu phù hợp</MenuItem>
                 )}
                 {transfusionRequests.map((tr) => (
-                  <MenuItem key={tr.transfusionId} value={tr.transfusionId}>
+                  <MenuItem key={tr.transfusionId} value={tr.transfusionId} sx={{ minWidth: 0 }}>
                     {tr.patientCondition} - {tr.bloodType?.bloodTypeName} (ID: {tr.transfusionId})
                   </MenuItem>
                 ))}
@@ -306,17 +310,21 @@ const UrgentRequestManage = () => {
             </FormControl>
           )}
           {fulfillType === 'bloodUnit' && (
-            <FormControl fullWidth sx={{ mt: 2 }} disabled={submitting}>
-              <InputLabel>Chọn đơn vị máu</InputLabel>
+            <FormControl fullWidth sx={{ mt: 2, minWidth: 250, width: '100%' }} disabled={submitting}>
+              <InputLabel id="blood-unit-label">Chọn đơn vị máu</InputLabel>
               <Select
+                labelId="blood-unit-label"
+                label="Chọn đơn vị máu"
                 value={usedBloodUnitId}
                 onChange={(e) => setUsedBloodUnitId(e.target.value)}
+                fullWidth
+                sx={{ width: '100%' }}
               >
                 {bloodUnits.length === 0 && (
-                  <MenuItem disabled>Không có đơn vị máu phù hợp</MenuItem>
+                  <MenuItem disabled sx={{ minWidth: 0 }}>Không có đơn vị máu phù hợp</MenuItem>
                 )}
                 {bloodUnits.map((unit) => (
-                  <MenuItem key={unit.bloodUnitId} value={unit.bloodUnitId}>
+                  <MenuItem key={unit.bloodUnitId} value={unit.bloodUnitId} sx={{ minWidth: 0 }}>
                     {unit.bloodTypeName} - {unit.componentName} - {unit.remainingVolume}ml
                     {unit.isReserved && ` (Đã đặt bởi ${unit.reservedForPatientName})`}
                   </MenuItem>

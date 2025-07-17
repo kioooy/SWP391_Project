@@ -18,8 +18,9 @@ import {
   IconButton,
   Paper
 } from '@mui/material';
-import { Bloodtype, CalendarToday, LocalHospital, Close, BadgeOutlined } from '@mui/icons-material';
+import { Bloodtype, CalendarToday, LocalHospital, Close, BadgeOutlined, Badge, Phone, Cake } from '@mui/icons-material';
 import dayjs from 'dayjs';
+import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 
@@ -78,6 +79,7 @@ const TransfusionHistory = () => {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
+  const [userDetail, setUserDetail] = useState(null); // Thêm state userDetail
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -100,20 +102,31 @@ const TransfusionHistory = () => {
     fetchHistory();
   }, []);
 
-  const handleDetail = (item) => {
+  // Khi mở dialog chi tiết, gọi API lấy userDetail
+  const handleDetail = async (item) => {
     setSelected(item);
     setOpen(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_URL}/User/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userData = Array.isArray(res.data) ? res.data[0] : res.data;
+      console.log('User profile:', userData); // Thêm log kiểm tra dữ liệu trả về
+      setUserDetail(userData);
+    } catch {
+      setUserDetail(null);
+    }
   };
   const handleClose = () => {
     setOpen(false);
     setSelected(null);
+    setUserDetail(null);
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
-          Lịch sử truyền máu
-        </Typography>
+        
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}><CircularProgress /></Box>
         ) : error ? (
@@ -130,12 +143,7 @@ const TransfusionHistory = () => {
                     {formatDate(item.requestDate)}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={2}>
-                  <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    {formatDate(item.transfusionDate)}
-                  </Typography>
-                </Grid>
+                
                 <Grid item xs={12} sm={2}>
                   <Typography variant="body2" color="text.secondary">Thành phần</Typography>
                   <Typography variant="body1" fontWeight="bold">
@@ -188,57 +196,92 @@ const TransfusionHistory = () => {
               <Box>
                 <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
                   <Grid container spacing={3}>
-                    {/* Thông tin truyền máu bên trái */}
+                    {/* Đổi vị trí: Thông tin người dùng bên trái, Thông tin truyền máu bên phải */}
                     <Grid item xs={12} md={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ bgcolor: 'error.main', mr: 2 }}>
-                          <Bloodtype />
-                        </Avatar>
-                        <Typography variant="body1" fontWeight="bold">{selected.hospital || '---'}</Typography>
-                      </Box>
-                      <Box>
-                        <Box sx={{ mb: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <BadgeOutlined sx={{ color: '#757575', mr: 1 }} />
-                            <Typography variant="body2" color="text.secondary">Mã truyền máu</Typography>
-                          </Box>
-                          <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{selected.transfusionId}</Typography>
-                        </Box>
-                        <Box sx={{ mb: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Bloodtype sx={{ color: '#757575', mr: 1 }} />
-                            <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
-                          </Box>
-                          <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{selected.bloodType_BloodTypeName || selected.bloodTypeName}</Typography>
-                        </Box>
-                        <Box sx={{ mb: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <LocalHospital sx={{ color: '#757575', mr: 1 }} />
-                            <Typography variant="body2" color="text.secondary">Thành phần</Typography>
-                          </Box>
-                          <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{bloodComponentTranslations[selected.component_ComponentName || selected.componentName] || selected.component_ComponentName || selected.componentName}</Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-                    {/* Thông tin truyền máu bên phải */}
-                    <Grid item xs={12} md={6}>
-                      <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
-                      <Typography variant="body1" fontWeight="bold">{formatDate(selected.requestDate)}</Typography>
-                      <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
-                      <Typography variant="body1" fontWeight="bold">{formatDate(selected.transfusionDate)}</Typography>
-                      <Typography variant="body2" color="text.secondary">Thời gian</Typography>
-                      <Typography variant="body1" fontWeight="bold">
-                        {selected.periodDateFrom && selected.periodDateTo
-                          ? `${dayjs(selected.periodDateFrom).format('HH:mm DD/MM/YYYY')} - ${dayjs(selected.periodDateTo).format('HH:mm DD/MM/YYYY')}`
-                          : 'Không xác định'}
+                      <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+                        Thông tin người dùng
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">Thể tích</Typography>
-                      <Typography variant="body1" fontWeight="bold">{selected.transfusionVolume} ml</Typography>
-                      <Typography variant="body2" color="text.secondary">Tình trạng bệnh nhân</Typography>
-                      <Typography variant="body1" fontWeight="bold">{selected.patientCondition || '---'}</Typography>
-                      <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
-                      <Typography variant="body1" fontWeight="bold">{selected.notes || '---'}</Typography>
-                      <Box sx={{ mt: 2 }}>{getStatusChip(selected.status)}</Box>
+                      {(() => {
+                        // Ưu tiên lấy từ userDetail nếu có (giống AppointmentHistory.js)
+                        let user = null;
+                        try {
+                          user = JSON.parse(localStorage.getItem('user'));
+                        } catch {}
+                        const fullName = userDetail?.fullName || user?.fullName || user?.member?.fullName || selected.fullName || '---';
+                        const citizenNumber = userDetail?.citizenNumber || user?.citizenNumber || user?.member?.citizenNumber || selected.citizenNumber || '---';
+                        const phoneNumber = userDetail?.phoneNumber || user?.phone || user?.phoneNumber || user?.member?.phoneNumber || selected.phoneNumber || '---';
+                        const dateOfBirth = userDetail?.dateOfBirth || user?.dateOfBirth || user?.member?.dateOfBirth || selected.dateOfBirth || null;
+                        const bloodType = userDetail?.bloodTypeName || user?.bloodTypeName || user?.bloodType || user?.member?.bloodTypeName || selected.bloodTypeName || '---';
+                        return (
+                          <>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', mr: 2 }}>
+                                {(fullName || 'U').charAt(0)}
+                              </Avatar>
+                              <Typography variant="body1" fontWeight="bold">{fullName}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Badge sx={{ color: 'text.secondary', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{citizenNumber}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Bloodtype sx={{ color: 'text.secondary', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{bloodType}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Phone sx={{ color: 'text.secondary', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{phoneNumber}</Typography>
+                            </Box>
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Cake sx={{ color: 'text.secondary', mr: 1 }} />
+                                <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
+                              </Box>
+                              <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{dateOfBirth ? dayjs(dateOfBirth).format('DD/MM/YYYY') : '---'}</Typography>
+                            </Box>
+                          </>
+                        );
+                      })()}
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+                        Thông tin truyền máu
+                      </Typography>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Mã truyền máu</Typography>
+                        <Typography variant="body1" fontWeight="bold">{selected.transfusionId || '---'}</Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                        {getStatusChip(selected.status)}
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Nhóm máu truyền</Typography>
+                        <Typography variant="body1" fontWeight="bold">{selected.bloodType_BloodTypeName || selected.bloodTypeName || '---'}</Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Thành phần</Typography>
+                        <Typography variant="body1" fontWeight="bold">
+                          {bloodComponentTranslations[selected.component_ComponentName || selected.componentName] || selected.component_ComponentName || selected.componentName || '---'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Thể tích</Typography>
+                        <Typography variant="body1" fontWeight="bold">{selected.transfusionVolume ? `${selected.transfusionVolume} ml` : '---'}</Typography>
+                      </Box>
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                        <Typography variant="body1" fontWeight="bold">{formatDate(selected.requestDate)}</Typography>
+                      </Box>
                     </Grid>
                   </Grid>
                 </Paper>

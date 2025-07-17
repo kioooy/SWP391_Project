@@ -37,7 +37,8 @@ const NotificationItem = styled(MenuItem)(({ theme, unread }) => ({
   },
 }));
 
-const NotificationBell = ({ userId }) => {
+const NotificationBell = ({ userId, isDonor, isRecipient, isAdmin, isStaff }) => {
+  console.log('NotificationBell props:', { isDonor, isRecipient, isAdmin, isStaff, userId });
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -45,12 +46,7 @@ const NotificationBell = ({ userId }) => {
 
   const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    if (userId) {
-      fetchNotifications();
-    }
-  }, [userId]);
-
+  // Đặt fetchNotifications lên trước useEffect để tránh lỗi ReferenceError
   const fetchNotifications = async () => {
     try {
       // Sử dụng API thực tế
@@ -60,21 +56,56 @@ const NotificationBell = ({ userId }) => {
           'Content-Type': 'application/json',
         },
       });
-      
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
         setUnreadCount(data.filter(n => !n.isRead).length);
       } else {
-        console.error('Error fetching notifications:', response.status);
-        // Fallback to mock data for demo
+        // ... fallback mock data ...
+        if (isDonor === true) {
+          const mockNotifications = [
+            {
+              notificationId: 1,
+              title: '🩸 Nhắc nhở hiến máu',
+              message: 'Bạn đã có thể hiến máu lại! Hãy đăng ký ngay để cứu người.',
+              notificationType: 'ReadyToDonate',
+              createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+              isRead: false,
+            },
+            {
+              notificationId: 2,
+              title: '⏰ Sắp đến ngày hiến máu',
+              message: 'Còn 3 ngày nữa bạn có thể hiến máu lại. Ngày: 15/12/2024',
+              notificationType: 'AlmostReady',
+              createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+              isRead: false,
+            },
+            {
+              notificationId: 3,
+              title: '🎉 Chào mừng bạn!',
+              message: 'Bạn chưa hiến máu lần nào. Hãy đăng ký hiến máu để cứu người!',
+              notificationType: 'FirstTime',
+              createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+              isRead: true,
+            },
+          ];
+          setNotifications(mockNotifications);
+          setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
+        } else {
+          setNotifications([]);
+          setUnreadCount(0);
+        }
+      }
+    } catch (error) {
+      // ... fallback mock data ...
+      if (isDonor === true) {
         const mockNotifications = [
           {
             notificationId: 1,
             title: '🩸 Nhắc nhở hiến máu',
             message: 'Bạn đã có thể hiến máu lại! Hãy đăng ký ngay để cứu người.',
             notificationType: 'ReadyToDonate',
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 giờ trước
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
             isRead: false,
           },
           {
@@ -82,7 +113,7 @@ const NotificationBell = ({ userId }) => {
             title: '⏰ Sắp đến ngày hiến máu',
             message: 'Còn 3 ngày nữa bạn có thể hiến máu lại. Ngày: 15/12/2024',
             notificationType: 'AlmostReady',
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 ngày trước
+            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
             isRead: false,
           },
           {
@@ -90,48 +121,24 @@ const NotificationBell = ({ userId }) => {
             title: '🎉 Chào mừng bạn!',
             message: 'Bạn chưa hiến máu lần nào. Hãy đăng ký hiến máu để cứu người!',
             notificationType: 'FirstTime',
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 ngày trước
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
             isRead: true,
           },
         ];
-        
         setNotifications(mockNotifications);
         setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
+      } else {
+        setNotifications([]);
+        setUnreadCount(0);
       }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      // Fallback to mock data for demo
-      const mockNotifications = [
-        {
-          notificationId: 1,
-          title: '🩸 Nhắc nhở hiến máu',
-          message: 'Bạn đã có thể hiến máu lại! Hãy đăng ký ngay để cứu người.',
-          notificationType: 'ReadyToDonate',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          isRead: false,
-        },
-        {
-          notificationId: 2,
-          title: '⏰ Sắp đến ngày hiến máu',
-          message: 'Còn 3 ngày nữa bạn có thể hiến máu lại. Ngày: 15/12/2024',
-          notificationType: 'AlmostReady',
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          isRead: false,
-        },
-        {
-          notificationId: 3,
-          title: '🎉 Chào mừng bạn!',
-          message: 'Bạn chưa hiến máu lần nào. Hãy đăng ký hiến máu để cứu người!',
-          notificationType: 'FirstTime',
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-          isRead: true,
-        },
-      ];
-      
-      setNotifications(mockNotifications);
-      setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
     }
   };
+
+  useEffect(() => {
+    if (userId) {
+      fetchNotifications();
+    }
+  }, [userId]);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -205,7 +212,8 @@ const NotificationBell = ({ userId }) => {
 
   const formatTime = (date) => {
     const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    const d = (date instanceof Date) ? date : new Date(date);
+    const diffInHours = Math.floor((now - d) / (1000 * 60 * 60));
     
     if (diffInHours < 1) return 'Vừa xong';
     if (diffInHours < 24) return `${diffInHours} giờ trước`;
@@ -224,11 +232,18 @@ const NotificationBell = ({ userId }) => {
       case 'AlmostReady':
         window.location.href = '/dashboard';
         break;
+      case 'UrgentBloodRequest':
+      case 'DonorMobilization':
+        window.location.href = '/manage-urgent-request';
+        break;
       default:
         break;
     }
     handleClose();
   };
+
+  // Chỉ render nếu là donor, recipient, admin hoặc staff
+  if (!isDonor && !isRecipient && !isAdmin && !isStaff) return null;
 
   return (
     <>
@@ -276,7 +291,7 @@ const NotificationBell = ({ userId }) => {
           </Box>
         </Box>
 
-        <Box sx={{ maxHeight: showAll ? 700 : 400, overflow: 'auto', transition: 'max-height 0.3s' }}>
+        <Box>
           {notifications.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <Typography color="text.secondary">
@@ -304,12 +319,12 @@ const NotificationBell = ({ userId }) => {
                     {getNotificationIcon(notification.notificationType)}
                   </Avatar>
                   
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', mb: 0.5 }}>
                       <Typography
                         variant="subtitle2"
                         fontWeight={notification.isRead ? 'normal' : 'bold'}
-                        sx={{ flex: 1 }}
+                        sx={{ flex: 1, pr: 1, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-line' }}
                       >
                         {notification.title}
                       </Typography>
@@ -322,6 +337,20 @@ const NotificationBell = ({ userId }) => {
                           }}
                         />
                       )}
+                      {/* Nút Đã đọc */}
+                      {!notification.isRead && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          sx={{ ml: 2, minWidth: 60, fontSize: '0.75rem', height: 28, whiteSpace: 'nowrap' }}
+                          onClick={e => {
+                            e.stopPropagation(); // Không trigger onClick của NotificationItem
+                            markAsRead(notification.notificationId);
+                          }}
+                        >
+                          Đã đọc
+                        </Button>
+                      )}
                     </Box>
                     
                     <Typography
@@ -329,14 +358,10 @@ const NotificationBell = ({ userId }) => {
                       color="text.secondary"
                       sx={{
                         mb: 1,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
                         wordBreak: 'break-word',
                         overflowWrap: 'anywhere',
-                        maxWidth: '100%',
                         whiteSpace: 'pre-line',
+                        width: '100%',
                       }}
                     >
                       {notification.message}
@@ -349,20 +374,6 @@ const NotificationBell = ({ userId }) => {
                       {formatTime(notification.createdAt)}
                     </Typography>
                   </Box>
-                  {/* Nút Đã đọc */}
-                  {!notification.isRead && (
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      sx={{ ml: 2, minWidth: 60, fontSize: '0.75rem', height: 28 }}
-                      onClick={e => {
-                        e.stopPropagation(); // Không trigger onClick của NotificationItem
-                        markAsRead(notification.notificationId);
-                      }}
-                    >
-                      Đã đọc
-                    </Button>
-                  )}
                 </Box>
               </NotificationItem>
             ))

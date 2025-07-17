@@ -255,7 +255,7 @@ const SearchByDistance = () => {
   ].filter(Boolean).length;
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4 }}>
       <Card>
         <CardContent>
           <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: "bold", color: '#E53935' }}>

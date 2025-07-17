@@ -41,6 +41,8 @@ import { selectUser } from '../features/auth/authSlice';
 import axios from "axios";
 import { Autocomplete, createFilterOptions } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+// Thêm import cho DonorMobilizationComponent
+import DonorMobilizationComponent from "./DonorMobilizationComponent";
 
 // Thay thế useTransfusionStore bằng kết nối API thật và bổ sung các trường mới
 const useTransfusionStore = () => {
@@ -567,7 +569,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   };
 
   return (
-    <Box {...layoutProps} sx={{ backgroundColor: "#fff", minHeight: "100vh", ...layoutProps?.sx }}>
+    <React.Fragment>
       {/* Bộ lọc trạng thái dạng Paper giống DonationRequestManagement */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <Paper
@@ -709,9 +711,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       </Card>
 
       {/* Bảng truyền máu */}
-      <Card sx={{ boxShadow: 'none', background: 'none' }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">
               Danh sách yêu cầu truyền máu
             </Typography>
@@ -725,19 +726,25 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               )}
             </Typography>
           </Box>
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
+          <TableContainer component={Box} variant="outlined" sx={{
+            overflowX: 'auto', // Chỉ cuộn ngang nếu bảng rộng
+            width: '100%',
+            maxWidth: '100%',
+            px: 0,
+            border: '1px solid #e0e0e0',
+            borderRadius: 2,
+            background: '#fff'
+          }}>
+            <Table sx={{ width: '100%' }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Thông tin truyền máu</TableCell>
-                  <TableCell>Người nhận</TableCell>
-                  <TableCell>Chi tiết máu</TableCell>
-                  <TableCell>Ngày giờ</TableCell>
-                  <TableCell>Người phụ trách</TableCell>
-                  <TableCell>Trạng thái</TableCell>
-                  <TableCell>Ghi chú</TableCell>
-                  <TableCell>Tình trạng bệnh nhân</TableCell>
-                  <TableCell align="center">Hành động</TableCell>
+                  <TableCell sx={{ width: 110, minWidth: 60, maxWidth: 130, padding: '4px 8px' }}>Thông tin truyền máu</TableCell>
+                  <TableCell sx={{ width: 100, minWidth: 60, maxWidth: 120, padding: '4px 8px' }}>Người nhận</TableCell>
+                  <TableCell sx={{ width: 100, minWidth: 60, maxWidth: 120, padding: '4px 8px' }}>Chi tiết máu</TableCell>
+                  <TableCell sx={{ width: 90, minWidth: 60, maxWidth: 110, padding: '4px 8px' }}>Ngày giờ</TableCell>
+                  <TableCell sx={{ width: 80, minWidth: 60, maxWidth: 100, padding: '4px 8px' }}>Trạng thái</TableCell>
+                  <TableCell sx={{ width: 90, minWidth: 60, maxWidth: 110, padding: '4px 8px' }}>Tình trạng bệnh nhân</TableCell>
+                  <TableCell align="center" sx={{ width: 90, minWidth: 60, maxWidth: 110, padding: '4px 8px' }}>Hành động</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -764,7 +771,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                       }}
                     >
                     {/* Thông tin truyền máu */}
-                    <TableCell>
+                    <TableCell sx={{ width: 110, minWidth: 60, maxWidth: 130, padding: '4px 8px' }}>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
                           Mã: {transfusion.transfusionId}
@@ -780,7 +787,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                       </Box>
                     </TableCell>
                     {/* Người nhận */}
-                    <TableCell>
+                    <TableCell sx={{ width: 100, minWidth: 60, maxWidth: 120, padding: '4px 8px' }}>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
                           {transfusion?.fullName}
@@ -789,7 +796,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                       </Box>
                     </TableCell>
                     {/* Chi tiết máu */}
-                    <TableCell>
+                    <TableCell sx={{ width: 100, minWidth: 60, maxWidth: 120, padding: '4px 8px' }}>
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
                           {transfusion?.bloodTypeName}
@@ -800,32 +807,29 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                       </Box>
                     </TableCell>
                     {/* Ngày giờ */}
-                    <TableCell>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          Yêu cầu: {formatDateTime(transfusion?.requestDate)}
-                          {transfusion?.preferredReceiveDate && (
-                            <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                              (Mong muốn: {formatDateTime(transfusion?.preferredReceiveDate)})
-                            </Typography>
-                          )}
+                    <TableCell sx={{ width: 90, minWidth: 60, maxWidth: 110, padding: '4px 8px' }}>
+                  <Box>
+                    {transfusion?.requestDate ? (
+                      <>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Yêu cầu: {new Date(transfusion?.requestDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </Typography>
-                      </Box>
-                    </TableCell>
-                    {/* Người phụ trách */}
-                    <TableCell>
-                      {transfusion.responsibleById ? (
-                        <Typography variant="body2" fontWeight="medium">
-                          {transfusion.responsibleByName || 'Chưa rõ'}
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {new Date(transfusion?.requestDate).toLocaleDateString('vi-VN')}
                         </Typography>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                          Chưa phân công
-                        </Typography>
-                      )}
-                    </TableCell>
+                        {transfusion?.preferredReceiveDate && (
+                          <Typography component="span" variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                            (Mong muốn: {new Date(transfusion?.preferredReceiveDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} {new Date(transfusion?.preferredReceiveDate).toLocaleDateString('vi-VN')})
+                          </Typography>
+                        )}
+                      </>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">N/A</Typography>
+                    )}
+                  </Box>
+                </TableCell>
                     {/* Trạng thái */}
-                    <TableCell>
+                    <TableCell sx={{ width: 80, minWidth: 60, maxWidth: 100, padding: '4px 8px' }}>
                       <Chip 
                         label={transfusionStatusTranslations[transfusion?.status] || transfusion?.status} 
                         color={getStatusColor(transfusion?.status)} 
@@ -837,28 +841,12 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         }
                       />
                     </TableCell>
-                    {/* Ghi chú */}
-                    <TableCell>
-                      <Box sx={{ maxWidth: 200 }}>
-                        {transfusion.notes ? (
-                          <Tooltip title={transfusion?.notes} arrow>
-                            <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {transfusion?.notes}
-                            </Typography>
-                          </Tooltip>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                            Không có ghi chú
-                          </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
                     {/* Tình trạng bệnh nhân */}
-                    <TableCell>
+                    <TableCell sx={{ width: 90, minWidth: 60, maxWidth: 110, padding: '4px 8px' }}>
                       {transfusion.patientCondition || <span style={{ fontStyle: "italic", color: "gray" }}>Không có</span>}
                     </TableCell>
                     {/* Hành động */}
-                    <TableCell align="center">
+                    <TableCell align="center" sx={{ width: 90, minWidth: 60, maxWidth: 110, padding: '4px 8px' }}>
                       {user && (user.role === "Staff" || user.role === "Admin") && (
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                           {transfusion.status === "Pending" && (
@@ -908,8 +896,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               </TableBody>
             </Table>
           </TableContainer>
-        </CardContent>
-      </Card>
+        </Box>
 
       {/* Dialog chỉnh sửa (giữ lại nếu cần các chỉnh sửa khác ngoài status) */}
       <Dialog open={editDialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -985,16 +972,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                 <Typography color="error" sx={{ mb: 2 }}>
                   Không có túi máu phù hợp trong kho!
                 </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleConnectDonor}
-                  sx={{ mb: 2, alignSelf: 'flex-start' }}
-                >
-
-                  Tìm người hiến phù hợp
-
-                </Button>
+                <DonorMobilizationComponent embedded bloodType={transfusionToApprove?.bloodTypeName} />
               </>
             ) : (
               <>
@@ -1195,10 +1173,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     <Chip label={transfusionStatusTranslations[selectedTransfusionForDetails.status] || selectedTransfusionForDetails.status} color={getStatusColor(selectedTransfusionForDetails.status)} size="small" />
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">Người phụ trách:</Typography>
-                  <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleById ? `Mã NV: ${selectedTransfusionForDetails.responsibleById}` : 'Chưa phân công'}</Typography>
-                </Grid>
+                
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" color="text.secondary">Tên người phụ trách:</Typography>
                   <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.responsibleByName || 'Chưa rõ'}</Typography>
@@ -1454,7 +1429,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
           </Alert>
         </Snackbar>
       )}
-    </Box>
+    </React.Fragment>
   );
 };
 

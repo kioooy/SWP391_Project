@@ -75,16 +75,45 @@ namespace Blood_Donation_Support.Controllers
                 };
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
-                return Ok(notification);
+            }
+            // Gửi thông báo cho admin nếu có NotifyAdmin
+            if (request.NotifyAdmin)
+            {
+                // Lấy danh sách user có role Admin
+                var adminUsers = await _context.Users.Include(u => u.Role)
+                    .Where(u => u.Role.Name == "Admin" && u.IsActive)
+                    .ToListAsync();
+                foreach (var admin in adminUsers)
+                {
+                    var adminNotification = new Notification
+                    {
+                        UserId = admin.UserId,
+                        Title = "Hệ thống: Có yêu cầu huy động người hiến máu",
+                        Message = request.Message,
+                        NotificationType = "DonorMobilization",
+                        CreatedAt = DateTime.Now,
+                        IsActive = true,
+                        IsRead = false
+                    };
+                    _context.Notifications.Add(adminNotification);
+                }
+                await _context.SaveChangesAsync();
             }
             // Trả về Ok nếu đã có thông báo tương tự tồn tại để tránh lỗi không cần thiết
-            return Ok(new { message = "Một thông báo khẩn cấp chưa đọc đã tồn tại cho người dùng này." });
+            return Ok(new { message = "Đã gửi thông báo huy động và thông báo cho admin (nếu chọn)!" });
         }
 
         // POST: api/Notification/CreateRecoveryReminder/{userId}
         [HttpPost("CreateRecoveryReminder/{userId}")]
         public async Task<IActionResult> CreateRecoveryReminder(int userId)
         {
+            // Kiểm tra user có phải donor không (dựa vào bảng Members)
+            var member = await _context.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+            if (member == null || member.IsDonor != true)
+            {
+                // Không tạo thông báo donor cho user không phải donor
+                return Ok();
+            }
             var lastDonation = await _context.DonationRequests
                 .Where(d => d.MemberId == userId && d.Status == "Completed")
                 .OrderByDescending(d => d.CompletionDate)
@@ -147,5 +176,6 @@ namespace Blood_Donation_Support.Controllers
     {
         public int UserId { get; set; }
         public string Message { get; set; }
+        public bool NotifyAdmin { get; set; } // Thêm trường này
     }
 } 

@@ -238,16 +238,12 @@ const BloodWorkflowDashboard = () => {
       )}
 
       {/* Main Content Tabs */}
-      <Card>
-        <CardContent sx={{ p: 0 }}>
-          {/* Chỉ giữ 1 tab: Yêu cầu cần máu */}
-          <TransfusionManagement 
-            onApprovalComplete={handleApprovalComplete}
-            showCreateButton={true}
-            layoutProps={{ p: 3 }}
-          />
-        </CardContent>
-      </Card>
+      {/* Chỉ giữ 1 tab: Yêu cầu cần máu */}
+      <TransfusionManagement 
+        onApprovalComplete={handleApprovalComplete}
+        showCreateButton={true}
+        layoutProps={{ p: 3 }}
+      />
 
       {/* Snackbar */}
       <Snackbar

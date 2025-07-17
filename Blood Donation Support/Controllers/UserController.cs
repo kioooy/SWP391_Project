@@ -647,5 +647,16 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // --- Quý Coding: End ---
+
+        // API: GET /api/User/{userId}/blood-type-id
+        [HttpGet("{userId}/blood-type-id")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserBloodTypeId(int userId)
+        {
+            var member = await _context.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+            if (member == null)
+                return NotFound(new { message = $"Không tìm thấy thành viên với UserId: {userId}" });
+            return Ok(new { userId = member.UserId, bloodTypeId = member.BloodTypeId });
+        }
     }
 }

@@ -22,16 +22,11 @@ namespace Blood_Donation_Support.Controllers
         /// <param name="userId">UserId của người nhận.</param>
         /// <returns>Một BloodCompatibilityResponseDto chứa danh sách tên các nhóm máu tương thích.</returns>
         [HttpGet("whole-blood")]
-        public async Task<ActionResult<BloodCompatibilityResponseDto>> GetWholeBloodCompatibility([FromQuery] int userId)
+        public async Task<ActionResult<BloodCompatibilityResponseDto>> GetWholeBloodCompatibility([FromQuery] int bloodTypeId)
         {
-            // Tìm Member theo userId
-            var member = await _context.Members.FirstOrDefaultAsync(m => m.UserId == userId);
-            if (member == null)
-                return NotFound($"Không tìm thấy thông tin thành viên với UserId: {userId}.");
-            if (member.BloodTypeId == null)
-                return BadRequest($"Thành viên UserId {userId} chưa khai báo nhóm máu.");
-
-            int bloodTypeId = member.BloodTypeId.Value;
+            var bloodType = await _context.BloodTypes.FindAsync(bloodTypeId);
+            if (bloodType == null)
+                return NotFound($"Không tìm thấy nhóm máu với BloodTypeId: {bloodTypeId}.");
 
             // Truy vấn bảng BloodCompatibilityRules để tìm các nhóm máu tương thích cho MÁU TOÀN PHẦN.
             // Giả định: Các quy tắc tương thích cho máu toàn phần trong bảng BloodCompatibilityRules có ComponentId là NULL.
@@ -50,7 +45,7 @@ namespace Blood_Donation_Support.Controllers
 
             if (!danhSachTenNhomMauTuongThich.Any())
             {
-                return NotFound($"Không tìm thấy nhóm máu toàn phần tương thích cho userId {userId}.");
+                return NotFound($"Không tìm thấy nhóm máu toàn phần tương thích cho bloodTypeId {bloodTypeId}.");
             }
 
             return Ok(new BloodCompatibilityResponseDto
@@ -59,60 +54,7 @@ namespace Blood_Donation_Support.Controllers
             });
         }
 
-        /// <summary>
-        /// Lấy các nhóm máu tương thích cho một nhóm máu người nhận và một thành phần máu cụ thể.
-        /// API này tự động xác định ComponentId bằng cách tra cứu tên thành phần trong bảng BloodComponents.
-        /// </summary>
-        /// <param name="nhomMauNguoiNhan">Nhóm máu của người nhận (ví dụ: "A+", "O-").</param>
-        /// <param name="thanhPhan">Tên của thành phần máu (ví dụ: "Red Blood Cells", "Plasma", "Platelets", "Whole Blood").</param>
-        /// <returns>Một BloodCompatibilityResponseDto chứa danh sách tên các nhóm máu tương thích.</returns>
-        [HttpGet("component")]
-        public async Task<ActionResult<BloodCompatibilityResponseDto>> GetComponentCompatibility([FromQuery] string nhomMauNguoiNhan, [FromQuery] string thanhPhan)
-        {
-            if (string.IsNullOrWhiteSpace(nhomMauNguoiNhan) || string.IsNullOrWhiteSpace(thanhPhan))
-                return BadRequest("Nhóm máu người nhận và thành phần là bắt buộc.");
 
-            // Tìm BloodTypeId của nhóm máu người nhận.
-            var thongTinNhomMauNguoiNhan = await _context.BloodTypes
-                                                .FirstOrDefaultAsync(bt => bt.BloodTypeName.ToLower() == nhomMauNguoiNhan.ToLower());
-
-            if (thongTinNhomMauNguoiNhan == null)
-                return NotFound($"Không tìm thấy nhóm máu người nhận: {nhomMauNguoiNhan}.");
-
-            // Xác định ComponentId dựa trên tên thành phần yêu cầu.
-            var thongTinThanhPhanMau = await _context.BloodComponents
-                                        .FirstOrDefaultAsync(c => c.ComponentName.ToLower() == thanhPhan.ToLower());
-
-            if (thongTinThanhPhanMau == null)
-                return BadRequest($"Loại thành phần không hợp lệ: {thanhPhan}. Đảm bảo thành phần này tồn tại trong bảng BloodComponents.");
-            
-            int? idThanhPhanMucTieu = thongTinThanhPhanMau.ComponentId;
-
-            // Truy vấn BloodCompatibilityRules dựa trên nhóm máu người nhận, trạng thái tương thích (IsCompatible = true),
-            // VÀ ComponentId đã xác định.
-            var danhSachIdNhomMauChoTuongThich = await _context.BloodCompatibilityRules
-                                                    .Where(rule => rule.BloodRecieveId == thongTinNhomMauNguoiNhan.BloodTypeId
-                                                                 && rule.IsCompatible
-                                                                 && rule.ComponentId == idThanhPhanMucTieu)
-                                                    .Select(rule => rule.BloodGiveId)
-                                                    .ToListAsync();
-
-            // Lấy tên của các nhóm máu tương thích.
-            var danhSachTenNhomMauTuongThich = await _context.BloodTypes
-                                                        .Where(bt => danhSachIdNhomMauChoTuongThich.Contains(bt.BloodTypeId))
-                                                        .Select(bt => bt.BloodTypeName)
-                                                        .ToListAsync();
-
-            if (!danhSachTenNhomMauTuongThich.Any())
-            {
-                return NotFound($"Không tìm thấy loại {thanhPhan} tương thích cho người nhận {nhomMauNguoiNhan}. Vui lòng kiểm tra đầu vào hoặc các quy tắc tương thích.");
-            }
-
-            return Ok(new BloodCompatibilityResponseDto
-            {
-                CompatibleBloodTypes = danhSachTenNhomMauTuongThich
-            });
-        }
 
         /// <summary>
         /// Lấy các nhóm máu tương thích cho một user cụ thể và một thành phần máu (chỉ trả về các nhóm máu còn tồn kho thực tế).
@@ -121,16 +63,12 @@ namespace Blood_Donation_Support.Controllers
         /// <param name="componentId">Id của thành phần máu (BloodComponents.ComponentId).</param>
         /// <returns>BloodCompatibilityResponseDto chứa danh sách tên các nhóm máu còn tồn kho thực tế và tương thích.</returns>
         [HttpGet("component-by-user")]
-        public async Task<ActionResult<BloodCompatibilityResponseDto>> GetComponentCompatibilityByUser([FromQuery] int userId, [FromQuery] int componentId)
+        public async Task<ActionResult<BloodCompatibilityResponseDto>> GetComponentCompatibilityByUser([FromQuery] int bloodTypeId, [FromQuery] int componentId)
         {
-            // Tìm Member theo userId
-            var member = await _context.Members.FirstOrDefaultAsync(m => m.UserId == userId);
-            if (member == null)
-                return NotFound($"Không tìm thấy thông tin thành viên với UserId: {userId}.");
-            if (member.BloodTypeId == null)
-                return BadRequest($"Thành viên UserId {userId} chưa khai báo nhóm máu.");
-
-            int bloodTypeId = member.BloodTypeId.Value;
+            // Kiểm tra bloodTypeId có tồn tại không
+            var bloodType = await _context.BloodTypes.FindAsync(bloodTypeId);
+            if (bloodType == null)
+                return BadRequest($"BloodTypeId không hợp lệ: {bloodTypeId}.");
 
             // Kiểm tra componentId có tồn tại không
             var component = await _context.BloodComponents.FirstOrDefaultAsync(c => c.ComponentId == componentId);
@@ -146,7 +84,7 @@ namespace Blood_Donation_Support.Controllers
                 .ToListAsync();
 
             if (!danhSachIdNhomMauChoTuongThich.Any())
-                return NotFound($"Không có nhóm máu nào tương thích về mặt lý thuyết cho userId {userId} và componentId {componentId}.");
+                return NotFound($"Không có nhóm máu nào tương thích về mặt lý thuyết cho bloodTypeId {bloodTypeId} và componentId {componentId}.");
 
             // 2. Lọc các nhóm máu còn tồn kho thực tế
             var bloodTypesConTonKho = await _context.BloodUnits
@@ -159,7 +97,7 @@ namespace Blood_Donation_Support.Controllers
                 .ToListAsync();
 
             if (!bloodTypesConTonKho.Any())
-                return NotFound($"Không có nhóm máu nào còn tồn kho thực tế phù hợp với userId {userId} và componentId {componentId}.");
+                return NotFound($"Không có nhóm máu nào còn tồn kho thực tế phù hợp với bloodTypeId {bloodTypeId} và componentId {componentId}.");
 
             // 3. Lấy tên các nhóm máu còn tồn kho thực tế
             var danhSachTenNhomMauTonKho = await _context.BloodTypes

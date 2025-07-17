@@ -45,11 +45,10 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import StaffProfile from "./pages/StaffProfile";
 import EmergencyTransfusionPage from "./pages/admin/EmergencyTransfusion";
 import BloodWorkflowDashboard from "./pages/BloodWorkflowDashboard";
-import DonorMobilization from "./pages/DonorMobilization";
 import UrgentRequestManage from "./pages/admin/UrgentRequestManage";
 import UserManage from './pages/admin/UserManage';
 import axios from "axios";
-import TransfusionAppointmentHistory from "./pages/TransfusionAppointmentHistory";
+import BloodCompatibilityPage from "./pages/BloodCompatibilityPage";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -92,7 +91,6 @@ const App = () => {
         <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/transfusion-history" element={<TransfusionHistory />} />
-        <Route path="/transfusion-appointment-history" element={<TransfusionAppointmentHistory />} />
         <Route
           path="/profile"
           element={
@@ -114,6 +112,14 @@ const App = () => {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:postId" element={<BlogDetail />} />
         <Route path="/history" element={<AppointmentHistory />} />
+        <Route
+          path="/blood-compatibility"
+          element={
+            <RequireRecipient>
+              <BloodCompatibilityPage />
+            </RequireRecipient>
+          }
+        />
       </Route>
 
       {/* Sidebar Layout cho staff/admin - TẤT CẢ route quản trị chỉ ở đây */}
@@ -260,14 +266,6 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <BloodSearch />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/donor-mobilization"
-          element={
-            <RequireAuth roles={["Admin", "Staff"]}>
-              <DonorMobilization />
             </RequireAuth>
           }
         />

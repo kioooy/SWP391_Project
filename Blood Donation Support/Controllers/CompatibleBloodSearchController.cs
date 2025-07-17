@@ -36,48 +36,42 @@ public class CompatibleBloodSearchController : ControllerBase
         if (string.IsNullOrWhiteSpace(nhomMauNguoiNhan) || string.IsNullOrWhiteSpace(thanhPhan))
             return BadRequest("Các tham số nhóm máu người nhận và thành phần là bắt buộc.");
 
-        // Bước 1: Lấy danh sách nhóm máu người hiến tương thích.
-        var phanHoiTuongThich = await _bloodCompatibilityController.GetComponentCompatibility(nhomMauNguoiNhan, thanhPhan);
+        // Tìm BloodTypeId của nhóm máu người nhận.
+        var thongTinNhomMauNguoiNhan = await _context.BloodTypes
+            .FirstOrDefaultAsync(bt => bt.BloodTypeName.ToLower() == nhomMauNguoiNhan.ToLower());
+        if (thongTinNhomMauNguoiNhan == null)
+            return NotFound($"Không tìm thấy nhóm máu người nhận: {nhomMauNguoiNhan}.");
 
-        // Xử lý lỗi nếu việc lấy danh sách tương thích thất bại.
-        if (phanHoiTuongThich.Result is BadRequestObjectResult || phanHoiTuongThich.Result is NotFoundResult)
-        {
-            return phanHoiTuongThich.Result; 
-        }
-
-        // Trích xuất danh sách nhóm máu tương thích.
-        BloodCompatibilityResponseDto? compatibilityData = null;
-        if (phanHoiTuongThich.Result is OkObjectResult okResult && okResult.Value is BloodCompatibilityResponseDto dtoValue)
-        {
-            compatibilityData = dtoValue;
-        }
-
-        var danhSachNhomMauTuongThich = compatibilityData?.CompatibleBloodTypes;
-
-        // Trả về NotFound nếu không tìm thấy nhóm máu tương thích nào.
-        if (danhSachNhomMauTuongThich == null || !danhSachNhomMauTuongThich.Any())
-        {
-            return NotFound($"Không tìm thấy nhóm máu tương thích nào cho người nhận {nhomMauNguoiNhan} với thành phần {thanhPhan}. Vui lòng kiểm tra đầu vào hoặc các quy tắc tương thích.");
-        }
-
-        // Bước 2: Truy vấn kho máu BloodUnits.
-        // Lấy ComponentId từ bảng BloodComponents.
+        // Xác định ComponentId dựa trên tên thành phần yêu cầu.
         var thongTinThanhPhanMau = await _context.BloodComponents
-                                    .FirstOrDefaultAsync(c => c.ComponentName.ToLower() == thanhPhan.ToLower());
-
-        // Xử lý lỗi nếu loại thành phần không hợp lệ.
+            .FirstOrDefaultAsync(c => c.ComponentName.ToLower() == thanhPhan.ToLower());
         if (thongTinThanhPhanMau == null)
-        {
-            return BadRequest($"Loại thành phần không hợp lệ: '{thanhPhan}'. Đảm bảo thành phần này tồn tại trong bảng BloodComponents.");
-        }
-
+            return BadRequest($"Loại thành phần không hợp lệ: {thanhPhan}. Đảm bảo thành phần này tồn tại trong bảng BloodComponents.");
         int idThanhPhanMucTieu = thongTinThanhPhanMau.ComponentId;
 
-        // Xây dựng truy vấn để tìm đơn vị máu có sẵn theo trạng thái, ngày hết hạn, nhóm máu và thành phần.
+        // Lấy danh sách nhóm máu tương thích về mặt lý thuyết
+        var danhSachIdNhomMauChoTuongThich = await _context.BloodCompatibilityRules
+            .Where(rule => rule.BloodRecieveId == thongTinNhomMauNguoiNhan.BloodTypeId
+                        && rule.IsCompatible
+                        && rule.ComponentId == idThanhPhanMucTieu)
+            .Select(rule => rule.BloodGiveId)
+            .ToListAsync();
+        if (!danhSachIdNhomMauChoTuongThich.Any())
+            return NotFound($"Không có nhóm máu nào tương thích về mặt lý thuyết cho người nhận {nhomMauNguoiNhan} và thành phần {thanhPhan}.");
+
+        // Lấy tên các nhóm máu tương thích
+        var danhSachTenNhomMauTuongThich = await _context.BloodTypes
+            .Where(bt => danhSachIdNhomMauChoTuongThich.Contains(bt.BloodTypeId))
+            .Select(bt => bt.BloodTypeName)
+            .ToListAsync();
+        if (!danhSachTenNhomMauTuongThich.Any())
+            return NotFound($"Không có nhóm máu nào tương thích cho người nhận {nhomMauNguoiNhan} và thành phần {thanhPhan}.");
+
+        // Bước 2: Truy vấn kho máu BloodUnits.
         var truyVanDonViMauCoSan = _context.BloodUnits.Where(donVi =>
             donVi.BloodStatus == "Available" &&
             donVi.ExpiryDate >= DateOnly.FromDateTime(DateTime.Today) &&
-            danhSachNhomMauTuongThich.Contains(donVi.BloodType.BloodTypeName) &&
+            danhSachTenNhomMauTuongThich.Contains(donVi.BloodType.BloodTypeName) &&
             donVi.ComponentId == idThanhPhanMucTieu);
 
         // Nhóm và tổng hợp kết quả.

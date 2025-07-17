@@ -117,6 +117,13 @@ const MainLayout = () => {
     console.log('DEBUG currentUser.role:', currentUser.role);
   }
 
+  // Lưu userId vào localStorage mỗi khi currentUser thay đổi
+  useEffect(() => {
+    if (currentUser && currentUser.userId) {
+      localStorage.setItem("userId", currentUser.userId);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (currentUser && currentUser.role === 'Member') {
       const hasShownSnackbar = sessionStorage.getItem('hasShownLocationSnackbar');
@@ -285,8 +292,7 @@ const MainLayout = () => {
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { label: "Tin Tức", isNews: true, icon: <ArticleIcon /> },
       { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
-      // { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
-      { path: "/transfusion-appointment-history", label: "Lịch hẹn truyền máu", icon: <EventIcon /> },
+      { path: "/blood-compatibility", label: "Tra cứu nhóm máu phù hợp", icon: <BloodtypeIcon /> },
       { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
     ];
@@ -325,7 +331,7 @@ const MainLayout = () => {
                   <>
                     {/* Notification Bell - chỉ hiển thị cho Member */}
                     {currentUser && currentUser.role === 'Member' && (
-                      <NotificationBell userId={currentUser.userId} />
+                      <NotificationBell userId={currentUser.userId} isDonor={currentUser.isDonor} />
                     )}
                     <Button
                       color="primary"
@@ -451,7 +457,7 @@ const MainLayout = () => {
                 <>
                   {/* Notification Bell - chỉ hiển thị cho Member */}
                   {currentUser && currentUser.role === 'Member' && (
-                    <NotificationBell userId={currentUser.userId} />
+                    <NotificationBell userId={currentUser.userId} isDonor={currentUser.isDonor} />
                   )}
                   <Button
                     color="primary"

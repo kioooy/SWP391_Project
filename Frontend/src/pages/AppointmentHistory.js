@@ -370,72 +370,84 @@ const AppointmentHistory = () => {
                 <Grid container spacing={3}>
                   {/* Thông tin người dùng bên trái */}
                   <Grid item xs={12} md={6}>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar sx={{ bgcolor: '#4285f4', mr: 2 }}>
-                        <Person />
-                      </Avatar>
-                      <Typography variant="body1" fontWeight="bold">{userDetail?.fullName || 'Chưa cập nhật'}</Typography>
-                    </Box>
-                    {/* Các thông tin bên dưới tên, xếp dọc */}
-                    <Box>
-                      {/* Số CCCD */}
-                      <Box sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <BadgeOutlined sx={{ color: '#757575', mr: 1 }} />
-                          <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
-                        </Box>
-                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.citizenNumber || 'Chưa cập nhật'}</Typography>
-                      </Box>
-                      {/* Nhóm máu */}
-                      <Box sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Bloodtype sx={{ color: '#757575', mr: 1 }} />
-                          <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
-                        </Box>
-                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.bloodTypeName || 'Chưa cập nhật'}</Typography>
-                      </Box>
-                      {/* Số điện thoại */}
-                      <Box sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Phone sx={{ color: '#757575', mr: 1 }} />
-                          <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
-                        </Box>
-                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.phoneNumber || 'Chưa cập nhật'}</Typography>
-                      </Box>
-                      {/* Ngày sinh */}
-                      <Box sx={{ mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <CalendarToday sx={{ color: '#757575', mr: 1 }} />
-                          <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
-                        </Box>
-                        <Typography variant="body1" fontWeight="bold" sx={{ ml: 4 }}>{userDetail?.dateOfBirth ? dayjs(userDetail.dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật'}</Typography>
-                      </Box>
-                    </Box>
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+                      Thông tin người dùng
+                    </Typography>
+                    {(() => {
+                      let user = null;
+                      try {
+                        user = JSON.parse(localStorage.getItem('user'));
+                      } catch {}
+                      const fullName = userDetail?.fullName || user?.fullName || user?.member?.fullName || 'Chưa cập nhật';
+                      const citizenNumber = userDetail?.citizenNumber || user?.citizenNumber || user?.member?.citizenNumber || 'Chưa cập nhật';
+                      const bloodType = userDetail?.bloodTypeName || user?.bloodTypeName || user?.bloodType || user?.member?.bloodTypeName || 'Chưa cập nhật';
+                      const phoneNumber = userDetail?.phoneNumber || user?.phone || user?.phoneNumber || user?.member?.phoneNumber || 'Chưa cập nhật';
+                      const dateOfBirth = userDetail?.dateOfBirth || user?.dateOfBirth || user?.member?.dateOfBirth || null;
+                      return (
+                        <>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', mr: 2 }}>
+                              {(fullName || 'U').charAt(0)}
+                            </Avatar>
+                            <Typography variant="body1" fontWeight="bold">{fullName}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Số CCCD</Typography>
+                            <Typography variant="body1" fontWeight="bold">{citizenNumber}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Nhóm máu</Typography>
+                            <Typography variant="body1" fontWeight="bold">{bloodType}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Số điện thoại</Typography>
+                            <Typography variant="body1" fontWeight="bold">{phoneNumber}</Typography>
+                          </Box>
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">Ngày sinh</Typography>
+                            <Typography variant="body1" fontWeight="bold">{dateOfBirth ? dayjs(dateOfBirth).format('DD/MM/YYYY') : 'Chưa cập nhật'}</Typography>
+                          </Box>
+                        </>
+                      );
+                    })()}
                   </Grid>
-                  {/* Thông tin lịch hẹn bên phải */}
+                  {/* Thông tin hiến máu bên phải */}
                   <Grid item xs={12} md={6}>
-                    <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
-                    <Typography variant="body1" fontWeight="bold">#{selectedAppointment.donationId}</Typography>
-                    <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
-                    {getStatusChip(selectedAppointment.status)}
-                    <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
-                    <Typography variant="body1" fontWeight="bold">
-                      {selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+                      Thông tin hiến máu
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
-                    {/* <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography> */}
-                    <Typography variant="body2" color="text.secondary">Thời gian</Typography>
-                    <Typography variant="body1" fontWeight="bold">
-                      {selectedAppointment.periodDateFrom && selectedAppointment.periodDateTo
-                        ? `${dayjs(selectedAppointment.periodDateFrom).format('HH:mm')} - ${dayjs(selectedAppointment.periodDateTo).format('HH:mm')}`
-                        : 'Không xác định'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">Lượng máu hiến</Typography>
-                    <Typography variant="body1" fontWeight="bold">
-                      {/* Lấy từ thông tin đặt lịch */}
-                      {selectedAppointment.donationVolume ? `${selectedAppointment.donationVolume} ml` : 'Không xác định'}
-                    </Typography>
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Mã đăng ký</Typography>
+                      <Typography variant="body1" fontWeight="bold">#{selectedAppointment.donationId}</Typography>
+                    </Box>
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                      {getStatusChip(selectedAppointment.status)}
+                    </Box>
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {selectedAppointment.preferredDonationDate ? dayjs(selectedAppointment.preferredDonationDate).format('DD/MM/YYYY') : ''}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
+                      <Typography variant="body1" fontWeight="bold">{selectedAppointment.periodName}</Typography>
+                    </Box>
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Thời gian</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {selectedAppointment.periodDateFrom && selectedAppointment.periodDateTo
+                          ? `${dayjs(selectedAppointment.periodDateFrom).format('HH:mm')} - ${dayjs(selectedAppointment.periodDateTo).format('HH:mm')}`
+                          : 'Không xác định'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Lượng máu hiến</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {selectedAppointment.donationVolume ? `${selectedAppointment.donationVolume} ml` : 'Không xác định'}
+                      </Typography>
+                    </Box>
                   </Grid>
                 </Grid>
               </Paper>

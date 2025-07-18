@@ -67,6 +67,25 @@ const BloodWorkflowDashboard = () => {
     fetchWorkflowData();
   }, []);
 
+  // Gọi API expired_check khi vào trang để tự động chuyển trạng thái đơn quá hạn
+  useEffect(() => {
+    const checkExpiredTransfusionRequests = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.patch('/api/TransfusionRequest/expired_check', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (error) {
+        setSnackbar({
+          open: true,
+          message: 'Không thể tự động kiểm tra đơn truyền máu quá hạn!',
+          severity: 'warning',
+        });
+      }
+    };
+    checkExpiredTransfusionRequests();
+  }, []);
+
   // Lắng nghe event chuyển tab sang 'Tìm kiếm máu' khi bấm nút 'Kết nối người hiến máu'
   useEffect(() => {
     const handler = () => setCurrentTab(1);

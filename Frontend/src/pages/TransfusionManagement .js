@@ -199,7 +199,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       "Approved": "warning", // Đã duyệt - cam
       "Pending": "default", // Chờ duyệt - nâu
       "Completed": "success", // Hoàn thành - xanh lá
-      "Cancelled": "default", // Đã hủy - nâu
+      "Cancelled": "error", // Đã hủy - đỏ
       "Rejected": "error", // Đã từ chối - đỏ
     };
     return colors[status] || "default";
@@ -836,7 +836,6 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         size="small"
                         sx={
                           transfusion?.status === 'Pending' ? { backgroundColor: '#795548', color: 'white' } :
-                          transfusion?.status === 'Cancelled' ? { backgroundColor: '#795548', color: 'white' } :
                           undefined
                         }
                       />

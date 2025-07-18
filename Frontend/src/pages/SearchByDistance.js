@@ -344,7 +344,7 @@ const SearchByDistance = () => {
                     {console.log('Distance của item:', item.distance, 'item:', item)}
                     <Card variant="outlined">
                       <CardContent>
-                        <Typography variant="subtitle1"><b>UserId:</b> {item.userId}</Typography>
+                        <Typography variant="subtitle1"><b>ID người dùng:</b> {item.userId}</Typography>
                         <Typography variant="body2"><b>Họ tên:</b> {item.fullName}</Typography>
                         <Typography variant="body2"><b>SĐT:</b> {item.phone}</Typography>
                         <Typography variant="body2"><b>Email:</b> {item.email}</Typography>

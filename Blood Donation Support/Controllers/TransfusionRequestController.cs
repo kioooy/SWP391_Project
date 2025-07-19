@@ -553,26 +553,28 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> GetTransfusionRequestUpcomming()
         {
-            // Get current user id
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
-            // Check translation request id from current user
-            var transfusionRequest = await _context.TransfusionRequests.FirstOrDefaultAsync(tr => tr.Member.UserId == currentUserId);
-            if (transfusionRequest == null)
-                return NotFound($"Không tìm thấy lịch sử truyền máu.");
-
-            return Ok(await _context.TransfusionRequests
-                .Where(tr => tr.IsActive == true && tr.MemberId == currentUserId && tr.PreferredReceiveDate >= DateTime.Today)
-                .Select(tr => new
-                {
-                    tr.TransfusionId,              // Tranfusion Request ID
-                    tr.Status,                     // Status
-                    tr.PreferredReceiveDate,       // Receive Date
-                    tr.ResponsibleBy.FullName,     // Responsible User Name ( Staff )
-                    tr.TransfusionVolume,          // Transfusion Volume 
-                    tr.BloodType.BloodTypeName,    // Blood Type 
+            var history = await _context.TransfusionRequests
+                .Where(tr => tr.MemberId == currentUserId)
+                .Include(tr => tr.BloodType)
+                .Include(tr => tr.Component)
+                .OrderByDescending(tr => tr.RequestDate)
+                .Select(tr => new {
+                    tr.TransfusionId,
+                    tr.BloodType.BloodTypeName,
+                    tr.Component.ComponentName,
+                    tr.TransfusionVolume,
+                    tr.Status,
+                    tr.RequestDate,
+                    tr.ApprovalDate,
+                    tr.CompletionDate,
+                    tr.CancelledDate,
+                    tr.Notes,
+                    tr.PatientCondition
                 })
-                .ToListAsync());
+                .ToListAsync();
+            return Ok(history);
         }
 
         // Check for expired transfusion requests

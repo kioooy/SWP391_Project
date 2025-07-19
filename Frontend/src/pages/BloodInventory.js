@@ -59,6 +59,8 @@ const BloodInventory = () => {
     addDate: null,
     remainingVolume: '',
   });
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [bloodToDelete, setBloodToDelete] = useState(null);
 
   // Hardcode tạm danh sách nhóm máu, thành phần máu, member
   const bloodTypes = [
@@ -121,6 +123,7 @@ const BloodInventory = () => {
         addDate: blood.addDate ? dayjs(blood.addDate) : null,
         remainingVolume: blood.remainingVolume || '',
       });
+      setError('');
     } else {
       setSelectedBlood(null);
       setFormData({
@@ -131,6 +134,7 @@ const BloodInventory = () => {
         addDate: dayjs(),
         remainingVolume: '',
       });
+      setError('');
     }
     setOpenDialog(true);
   };
@@ -138,12 +142,21 @@ const BloodInventory = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedBlood(null);
+    setError('');
   };
 
   // Thêm hoặc cập nhật đơn vị máu
   const handleSubmit = async () => {
     const token = localStorage.getItem('token');
     const isUpdating = !!selectedBlood;
+    // Kiểm tra thể tích còn lại không vượt quá thể tích gốc khi cập nhật
+    if (isUpdating) {
+      const maxVolume = selectedBlood.volume;
+      if (parseInt(formData.remainingVolume, 10) > maxVolume) {
+        setError(`Thể tích còn lại không được vượt quá thể tích gốc (${maxVolume} ml)!`);
+        return;
+      }
+    }
     try {
       if (isUpdating) {
         const payload = {
@@ -178,19 +191,16 @@ const BloodInventory = () => {
 
   // Xóa (soft delete)
   const handleDelete = async (blood) => {
-    console.log("handleDelete triggered for blood unit:", blood);
     const token = localStorage.getItem('token');
     try {
-      // API endpoint to update the status of the blood unit
-      await axios.patch(`/api/BloodUnit/${blood.bloodUnitId}/update-status`, 
-        { "status": "Discarded" }, // Use camelCase "status"
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      // Gọi API chuyển trạng thái sang Discarded
+      await axios.patch(`/api/BloodUnit/${blood.bloodUnitId}/status-discard`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchInventory();
+      setError('');
+      // Có thể thêm thông báo thành công ở đây nếu muốn
     } catch (err) {
-      console.error("Lỗi khi xóa đơn vị máu:", err.response?.data || err.message);
       setError(`Xóa thất bại! Lỗi: ${err.response?.data?.title || err.message}`);
     }
   };
@@ -279,7 +289,7 @@ const BloodInventory = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-                 {inventory.map((row) => (
+                 {inventory.filter(row => (row.remainingVolume ?? row.remaining_volume ?? row.RemainingVolume) > 0).map((row) => (
                    <TableRow key={row.bloodUnitId}>
                      <TableCell>{row.bloodUnitId}</TableCell>
                      <TableCell>{row.bloodTypeName}</TableCell>
@@ -298,7 +308,11 @@ const BloodInventory = () => {
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Xóa đơn vị máu">
-                          <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => { setBloodToDelete(row); setOpenConfirmDialog(true); }}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         </Tooltip>
@@ -370,7 +384,17 @@ const BloodInventory = () => {
                   fullWidth
                   margin="normal"
                   value={formData.remainingVolume}
-                  onChange={(e) => setFormData({...formData, remainingVolume: e.target.value})}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    let errorMsg = '';
+                    if (selectedBlood && parseInt(value, 10) > selectedBlood.volume) {
+                      errorMsg = `Thể tích còn lại không được vượt quá thể tích gốc (${selectedBlood.volume} ml)!`;
+                    }
+                    setError(errorMsg);
+                    setFormData({...formData, remainingVolume: value});
+                  }}
+                  error={!!error && error.includes('Thể tích còn lại')}
+                  helperText={error && error.includes('Thể tích còn lại') ? error : ''}
                 />
                 <TextField
                   label="Trạng thái"
@@ -392,6 +416,26 @@ const BloodInventory = () => {
           <Button onClick={handleCloseDialog}>Hủy</Button>
           <Button onClick={handleSubmit} variant="contained">
             {selectedBlood ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog xác nhận xóa đơn vị máu */}
+      <Dialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)}>
+        <DialogTitle>Xác nhận xóa đơn vị máu</DialogTitle>
+        <DialogContent>Bạn có chắc chắn muốn xóa đơn vị máu này không?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenConfirmDialog(false)}>Hủy</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={async () => {
+              if (bloodToDelete) await handleDelete(bloodToDelete);
+              setOpenConfirmDialog(false);
+              setBloodToDelete(null);
+            }}
+            autoFocus
+          >
+            Xóa
           </Button>
         </DialogActions>
       </Dialog>

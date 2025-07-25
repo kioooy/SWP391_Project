@@ -125,7 +125,7 @@ const MainLayout = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    if (currentUser && currentUser.role === 'Member') {
+    if (currentUser && (currentUser.role === 'Member' || currentUser.isRecipient)) {
       const hasShownSnackbar = sessionStorage.getItem('hasShownLocationSnackbar');
 
       // Nếu người dùng chưa có vị trí hoặc Snackbar chưa được hiển thị trong phiên này
@@ -418,6 +418,32 @@ const MainLayout = () => {
         <ContentContainer maxWidth="lg">
           <Outlet />
         </ContentContainer>
+        {/* Thêm Snackbar vị trí cho tài khoản nhận máu */}
+        <Snackbar
+          open={openLocationSnackbar}
+          autoHideDuration={10000}
+          onClose={() => setOpenLocationSnackbar(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => setOpenLocationSnackbar(false)}
+            severity="warning"
+            sx={{ width: '100%' }}
+          >
+            {locationSnackbarMessage}
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                navigate('/user-profile-recipient?scrollToLocation=true');
+                setOpenLocationSnackbar(false);
+              }}
+              sx={{ ml: 2, fontWeight: 'bold' }}
+            >
+              CẬP NHẬT NGAY
+            </Button>
+          </Alert>
+        </Snackbar>
         <Footer />
       </MainContainer>
     );

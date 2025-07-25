@@ -60,7 +60,6 @@ namespace Blood_Donation_Support.Controllers
                 RequestDate = DateTime.UtcNow, // Ghi nhận thời gian tạo yêu cầu
                 Status = "Pending", // Trạng thái ban đầu là 'Pending'
                 IsActive = true, // Mặc định là Active
-                CreatedByUserId = createdByUserId // Ghi nhận ID người tạo (có thể NULL)
             };
 
             _context.UrgentBloodRequests.Add(urgentRequest);
@@ -105,7 +104,6 @@ namespace Blood_Donation_Support.Controllers
         {
             var urgentRequest = await _context.UrgentBloodRequests
                                         .Include(ubr => ubr.BloodType)
-                                        .Include(ubr => ubr.CreatedByUser)
                                         .FirstOrDefaultAsync(ubr => ubr.UrgentRequestId == id);
 
             if (urgentRequest == null)
@@ -165,10 +163,7 @@ namespace Blood_Donation_Support.Controllers
                 urgentRequest.Status,
                 urgentRequest.CompletionDate,
                 urgentRequest.IsActive,
-                urgentRequest.RelatedTransfusionRequestId,
-                CreatedByUserId = urgentRequest.CreatedByUserId,
-                CreatedByUserName = urgentRequest.CreatedByUser != null ? urgentRequest.CreatedByUser.FullName : null,
-                AssignedBloodUnits = assignedBloodUnits
+                
             });
         }
 
@@ -179,7 +174,6 @@ namespace Blood_Donation_Support.Controllers
         {
             var urgentRequests = await _context.UrgentBloodRequests
                                         .Include(ubr => ubr.BloodType)
-                                        .Include(ubr => ubr.CreatedByUser)
                                         .AsNoTracking()
                                         .ToListAsync();
             return Ok(urgentRequests.Select(ubr => new
@@ -203,9 +197,6 @@ namespace Blood_Donation_Support.Controllers
                 ubr.Status,
                 ubr.CompletionDate,
                 ubr.IsActive,
-                ubr.RelatedTransfusionRequestId,
-                CreatedByUserId = ubr.CreatedByUserId,
-                CreatedByUserName = ubr.CreatedByUser != null ? ubr.CreatedByUser.FullName : null
             }));
         }
 
@@ -383,7 +374,6 @@ namespace Blood_Donation_Support.Controllers
             var pendingUrgentRequests = await _context.UrgentBloodRequests
                                                 .Where(ubr => ubr.Status == "Pending")
                                                 .Include(ubr => ubr.BloodType)
-                                                .Include(ubr => ubr.CreatedByUser)
                                                 .AsNoTracking()
                                                 .ToListAsync();
 
@@ -408,9 +398,6 @@ namespace Blood_Donation_Support.Controllers
                 ubr.Status,
                 ubr.CompletionDate,
                 ubr.IsActive,
-                ubr.RelatedTransfusionRequestId,
-                CreatedByUserId = ubr.CreatedByUserId,
-                CreatedByUserName = ubr.CreatedByUser != null ? ubr.CreatedByUser.FullName : null
             }));
         }
 
@@ -440,19 +427,19 @@ namespace Blood_Donation_Support.Controllers
                 .Where(ubr => ubr.IsActive == true && ubr.CitizenNumber == citizenNumber && ubr.Status != "Pending")
                 .Select(ubr => new
                 {
-                   ubr.UrgentRequestId,
-                   ubr.PatientName,
-                   ubr.RequestedBloodTypeId,
-                   ubr.Reason,
-                   ubr.CitizenNumber,
-                   ubr.ContactName,
-                   ubr.ContactPhone,
-                   ubr.ContactEmail,
-                   ubr.EmergencyLocation,
-                   ubr.Notes,
-                   ubr.RequestDate,
-                   ubr.Status,
-                   ubr.CompletionDate,
+                    ubr.UrgentRequestId,           // Urgent Request ID
+                    ubr.PatientName,               // Patient Name
+                    ubr.BloodType.BloodTypeName,   // Blood Type Name
+                    ubr.Reason,                    // Reason requested
+                    ubr.CitizenNumber,             // Citizen Number
+                    ubr.ContactName,               // Contact Name ( Related of patient name )
+                    ubr.ContactPhone,              // contact Phone ( Related of patient name )
+                    ubr.ContactEmail,              // contact Email ( Related of patient name )
+                    ubr.EmergencyLocation,         // Emergency Location ( Where the patient is located when requestd )
+                    ubr.Notes,                     // Notes
+                    ubr.RequestDate,               // Request Date ( When the request was created )
+                    ubr.Status,                    // Status 
+                    ubr.CompletionDate,            // Completion Date 
                 })
                 .ToListAsync());
         }

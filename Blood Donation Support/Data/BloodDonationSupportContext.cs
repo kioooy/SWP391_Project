@@ -400,16 +400,6 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasForeignKey(d => d.RequestedBloodTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UrgentBloodRequests_BloodTypes_Requested");
-
-            entity.HasOne(d => d.RelatedTransfusionRequest)
-                .WithMany()
-                .HasForeignKey(d => d.RelatedTransfusionRequestId)
-                .HasConstraintName("FK_UrgentBloodRequests_TransfusionRequests_Related");
-
-            entity.HasOne(d => d.CreatedByUser)
-                .WithMany()
-                .HasForeignKey(d => d.CreatedByUserId)
-                .HasConstraintName("FK_UrgentBloodRequests_CreatedByUser");
         });
 
         modelBuilder.Entity<Hospital>(entity =>

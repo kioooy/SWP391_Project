@@ -261,7 +261,7 @@ const BlogManage = () => {
   return (
     <div style={{ padding: 24 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#E53935', mb: 4 }}>
-        Quản Lý ViếtViết
+        Quản Lý Bài Viết
       </Typography>
 
       <div

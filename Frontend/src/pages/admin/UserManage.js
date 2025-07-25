@@ -313,7 +313,7 @@ const UserManage = () => {
           <Chip
             label="Hoàn thành"
             size="small"
-            sx={{ backgroundColor: '#757575', color: 'white', fontWeight: 600 }}
+            sx={{ backgroundColor: '#43a047', color: 'white', fontWeight: 600 }}
           />
         );
       case 'scheduled':

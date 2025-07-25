@@ -120,7 +120,7 @@ const Dashboard = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
-        Dashboard
+        Bảng Thông Tin
       </Typography>
 
       {/* Tổng quan */}

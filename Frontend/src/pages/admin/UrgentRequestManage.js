@@ -208,7 +208,7 @@ const UrgentRequestManage = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
-        Quản Lý Yêu Cầu Máu Khẩn Cấp
+        Quản Lý Yêu Cầu Truyền Máu Khẩn Cấp
       </Typography>
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 4, mt: 3 }}>
         {loading ? (

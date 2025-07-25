@@ -35,12 +35,12 @@ public class BloodSearchController : ControllerBase
         if (componentId.HasValue)
         {
             compatibleBloodTypeIdsQuery = compatibleBloodTypeIdsQuery.Where(r => r.ComponentId == componentId);
-        } else {
-            compatibleBloodTypeIdsQuery = compatibleBloodTypeIdsQuery.Where(r => r.ComponentId == null);
         }
+        // Khi componentId = null, lấy tất cả quy tắc tương thích (không filter theo ComponentId)
 
         var compatibleBloodTypeIds = await compatibleBloodTypeIdsQuery
             .Select(r => r.BloodGiveId)
+            .Distinct() // Thêm Distinct để tránh trùng lặp khi có nhiều ComponentId cho cùng BloodGiveId
             .ToListAsync();
         Console.WriteLine($"[DEBUG] compatibleBloodTypeIds: {string.Join(",", compatibleBloodTypeIds)}");
 

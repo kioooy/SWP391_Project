@@ -16,7 +16,6 @@ import {
   Circle as CircleIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
 
 const StyledMenu = styled(Menu)(({ theme }) => ({
   '& .MuiPaper-root': {
@@ -46,7 +45,6 @@ const NotificationBell = ({ userId, isDonor, isRecipient, isAdmin, isStaff }) =>
   const [showAll, setShowAll] = useState(false);
 
   const open = Boolean(anchorEl);
-  const navigate = useNavigate();
 
   // Đặt fetchNotifications lên trước useEffect để tránh lỗi ReferenceError
   const fetchNotifications = async () => {
@@ -224,13 +222,22 @@ const NotificationBell = ({ userId, isDonor, isRecipient, isAdmin, isStaff }) =>
   };
 
   const handleNotificationClick = (notification) => {
-    if (
-      notification.notificationType === 'UrgentBloodRequest' ||
-      (notification.title && notification.title.includes('Yêu cầu máu khẩn'))
-    ) {
-      navigate('/manage-urgent-request-v2');
-    } else {
-      // Xử lý các loại thông báo khác (nếu có)
+    // Không tự động đánh dấu đã đọc nữa
+    // Chỉ điều hướng nếu cần
+    switch (notification.notificationType) {
+      case 'ReadyToDonate':
+      case 'FirstTime':
+        window.location.href = '/booking';
+        break;
+      case 'AlmostReady':
+        window.location.href = '/dashboard';
+        break;
+      case 'UrgentBloodRequest':
+      case 'DonorMobilization':
+        window.location.href = '/manage-urgent-request';
+        break;
+      default:
+        break;
     }
     handleClose();
   };

@@ -32,8 +32,7 @@ namespace Blood_Donation_Support.Controllers
             // Giả định: Các quy tắc tương thích cho máu toàn phần trong bảng BloodCompatibilityRules có ComponentId là NULL.
             var danhSachIdNhomMauChoTuongThich = await _context.BloodCompatibilityRules
                 .Where(rule => rule.BloodRecieveId == bloodTypeId
-                    && rule.IsCompatible
-                    && rule.ComponentId == null)
+                    && rule.IsCompatible)
                 .Select(rule => rule.BloodGiveId)
                 .ToListAsync();
 

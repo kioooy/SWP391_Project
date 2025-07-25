@@ -30,7 +30,7 @@ const SidebarLayout = () => {
     { path: "/dashboard", label: "Bảng Thông Tin", icon: <DashboardIcon /> },
     { path: "/blood-workflow", label: "Yêu Cầu Truyền Máu", icon: <WorkflowIcon /> },
     { path: "/manage-requests", label: "Yêu Cầu Hiến Máu", icon: <AssignmentIcon /> },
-    { path: "/manage-urgent-request-v2", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
+    { path: "/manage-urgent-request", label: "Yêu Cầu Khẩn Cấp", icon: <WarningIcon /> },
     { path: "/blood-search", label: "Tìm Máu", icon: <BloodtypeIcon /> },
     // { path: "/donor-mobilization", label: "Huy Động", icon: <GroupIcon /> }, // Ẩn mục Huy Động
     { path: "/search-by-distance", label: "Tìm Nâng Cao", icon: <SearchIcon /> },

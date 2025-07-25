@@ -63,16 +63,4 @@ namespace Blood_Donation_Support.DTO
         public int? PreemptedTransfusionRequestId { get; set; }
         public int? UsedBloodUnitId { get; set; }
     }
-
-    // DTO cho input của API gán máu cho yêu cầu khẩn cấp
-    public class AssignUrgentBloodUnitsInputDTO
-    {
-        public List<BloodUnitAssignment> BloodUnits { get; set; }
-    }
-    public class BloodUnitAssignment
-    {
-        public int BloodUnitId { get; set; }
-        public int AssignedVolume { get; set; }
-        public int? ComponentId { get; set; }
-    }
 } 

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Box, CircularProgress, Chip, Divider, TextField
+  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Box, CircularProgress, Chip, Divider, TextField, Grid, Card, CardContent
 } from '@mui/material';
+import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon } from '@mui/icons-material';
 import axios from 'axios';
+import DonorMobilizationComponent from '../DonorMobilizationComponent';
 
 const UrgentRequestManageV2 = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
   const [selected, setSelected] = useState(null); // Xem chi tiết
   const [acceptDialog, setAcceptDialog] = useState(false);
   const [componentSelectionDialog, setComponentSelectionDialog] = useState(false);
@@ -32,6 +37,16 @@ const UrgentRequestManageV2 = () => {
   const [assignBloodUnits, setAssignBloodUnits] = useState([]);
   const [assignVolumes, setAssignVolumes] = useState({});
 
+  // Bộ lọc states
+  const [filters, setFilters] = useState({
+    status: '',
+    bloodType: '',
+    patientName: '',
+    dateFrom: '',
+    dateTo: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
   const token = localStorage.getItem('token');
 
@@ -43,6 +58,7 @@ const UrgentRequestManageV2 = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRequests(res.data);
+      setFilteredRequests(res.data); // Khởi tạo dữ liệu đã lọc
     } catch (err) {
       setSnackbar({ open: true, message: 'Lỗi khi tải danh sách yêu cầu khẩn cấp!', severity: 'error' });
     } finally {
@@ -56,7 +72,8 @@ const UrgentRequestManageV2 = () => {
       const res = await axios.get(`${API_URL}/BloodType`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setBloodTypes(res.data.filter(bt => bt.bloodTypeId !== 99)); // Loại bỏ "Không biết"
+      // Giữ lại tất cả nhóm máu, bao gồm "Không biết" cho việc lọc
+      setBloodTypes(res.data);
     } catch (err) {
       console.error('Lỗi khi tải danh sách nhóm máu:', err);
     }
@@ -116,6 +133,65 @@ const UrgentRequestManageV2 = () => {
     fetchBloodTypes();
     fetchComponents();
   }, []);
+
+  // Effect để áp dụng bộ lọc khi filters hoặc requests thay đổi
+  useEffect(() => {
+    applyFilters();
+  }, [filters, requests]);
+
+  // Hàm áp dụng bộ lọc
+  const applyFilters = () => {
+    let filtered = [...requests];
+
+    // Lọc theo trạng thái
+    if (filters.status) {
+      filtered = filtered.filter(req => req.status === filters.status);
+    }
+
+    // Lọc theo nhóm máu
+    if (filters.bloodType) {
+      filtered = filtered.filter(req => req.bloodType?.bloodTypeName === filters.bloodType);
+    }
+
+    // Lọc theo tên bệnh nhân
+    if (filters.patientName) {
+      filtered = filtered.filter(req => 
+        req.patientName.toLowerCase().includes(filters.patientName.toLowerCase()) ||
+        req.contactName.toLowerCase().includes(filters.patientName.toLowerCase())
+      );
+    }
+
+    // Lọc theo ngày bắt đầu
+    if (filters.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      filtered = filtered.filter(req => new Date(req.requestDate) >= fromDate);
+    }
+
+    // Lọc theo ngày kết thúc
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999); // Cuối ngày
+      filtered = filtered.filter(req => new Date(req.requestDate) <= toDate);
+    }
+
+    setFilteredRequests(filtered);
+  };
+
+  // Hàm xóa bộ lọc
+  const clearFilters = () => {
+    setFilters({
+      status: '',
+      bloodType: '',
+      patientName: '',
+      dateFrom: '',
+      dateTo: ''
+    });
+  };
+
+  // Hàm cập nhật filter
+  const updateFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
   // Xử lý tiếp nhận
   const handleAccept = async (req) => {
@@ -278,6 +354,25 @@ const UrgentRequestManageV2 = () => {
     }
   };
 
+  // Hàm điều hướng tới trang tìm kiếm máu với thông tin từ yêu cầu khẩn cấp
+  const handleNavigateToBloodSearch = () => {
+    // Chuẩn bị dữ liệu để truyền qua trang BloodSearch
+    const searchParams = {
+      recipientBloodTypeId: chosenBloodTypeId,
+      component: chosenComponentId,
+      requiredVolume: totalVolume,
+      fromUrgentRequest: true,
+      urgentRequestId: currentRequest?.urgentRequestId,
+      patientName: currentRequest?.patientName
+    };
+    
+    // Lưu vào sessionStorage để trang BloodSearch có thể đọc
+    sessionStorage.setItem('urgentRequestSearchParams', JSON.stringify(searchParams));
+    
+    // Điều hướng tới trang BloodSearch
+    navigate('/blood-search');
+  };
+
   // Hàm helper để hiển thị trạng thái
   const getStatusDisplay = (status) => {
     switch (status) {
@@ -395,14 +490,165 @@ const UrgentRequestManageV2 = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2, color: '#E53935' }}>
-        Quản Lý Yêu Cầu Máu Khẩn Cấp (Giao diện mới thử nghiệm)
+        Quản Lý Yêu Cầu Máu Khẩn Cấp
       </Typography>
+
+      {/* Bộ lọc */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FilterIcon /> Bộ lọc
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setShowFilters(!showFilters)}
+                startIcon={<FilterIcon />}
+              >
+                {showFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                onClick={clearFilters}
+                startIcon={<ClearIcon />}
+                disabled={!filters.status && !filters.bloodType && !filters.patientName && !filters.dateFrom && !filters.dateTo}
+              >
+                Xóa bộ lọc
+              </Button>
+            </Box>
+          </Box>
+
+          {showFilters && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={2.4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Trạng thái</InputLabel>
+                  <Select
+                    value={filters.status}
+                    onChange={(e) => updateFilter('status', e.target.value)}
+                    label="Trạng thái"
+                  >
+                    <MenuItem value="">Tất cả</MenuItem>
+                    <MenuItem value="Pending">Chờ duyệt</MenuItem>
+                    <MenuItem value="InProgress">Đang xử lý</MenuItem>
+                    <MenuItem value="Fulfilled">Đã hoàn thành</MenuItem>
+                    <MenuItem value="Cancelled">Đã hủy</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={2.4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Nhóm máu</InputLabel>
+                  <Select
+                    value={filters.bloodType}
+                    onChange={(e) => updateFilter('bloodType', e.target.value)}
+                    label="Nhóm máu"
+                  >
+                    <MenuItem value="">Tất cả</MenuItem>
+                    {bloodTypes.map((bt) => (
+                      <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeName}>
+                        {bt.bloodTypeName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={2.4}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Tên bệnh nhân/người liên hệ"
+                  value={filters.patientName}
+                  onChange={(e) => updateFilter('patientName', e.target.value)}
+                  placeholder="Nhập tên để tìm kiếm..."
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={2.4}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Từ ngày"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => updateFilter('dateFrom', e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={2.4}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Đến ngày"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => updateFilter('dateTo', e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+          )}
+
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Hiển thị {filteredRequests.length} / {requests.length} yêu cầu
+            </Typography>
+            {(filters.status || filters.bloodType || filters.patientName || filters.dateFrom || filters.dateTo) && (
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {filters.status && (
+                  <Chip 
+                    label={`Trạng thái: ${getStatusDisplay(filters.status).text}`} 
+                    size="small" 
+                    onDelete={() => updateFilter('status', '')} 
+                  />
+                )}
+                {filters.bloodType && (
+                  <Chip 
+                    label={`Nhóm máu: ${filters.bloodType}`} 
+                    size="small" 
+                    onDelete={() => updateFilter('bloodType', '')} 
+                  />
+                )}
+                {filters.patientName && (
+                  <Chip 
+                    label={`Tìm kiếm: ${filters.patientName}`} 
+                    size="small" 
+                    onDelete={() => updateFilter('patientName', '')} 
+                  />
+                )}
+                {filters.dateFrom && (
+                  <Chip 
+                    label={`Từ: ${filters.dateFrom}`} 
+                    size="small" 
+                    onDelete={() => updateFilter('dateFrom', '')} 
+                  />
+                )}
+                {filters.dateTo && (
+                  <Chip 
+                    label={`Đến: ${filters.dateTo}`} 
+                    size="small" 
+                    onDelete={() => updateFilter('dateTo', '')} 
+                  />
+                )}
+              </Box>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 4, mt: 3 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <CircularProgress />
           </Box>
-        ) : requests.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <Typography variant="h6" color="textSecondary">
               Không có dữ liệu
@@ -424,7 +670,7 @@ const UrgentRequestManageV2 = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {requests.map((r) => {
+              {filteredRequests.map((r) => {
                 const statusInfo = getStatusDisplay(r.status);
                 return (
                   <TableRow key={r.urgentRequestId}>
@@ -552,7 +798,7 @@ const UrgentRequestManageV2 = () => {
                 onChange={(e) => setChosenBloodTypeId(e.target.value)}
                 label="Nhóm máu"
               >
-                {bloodTypes.map((bt) => (
+                {bloodTypes.filter(bt => bt.bloodTypeId !== 99).map((bt) => (
                   <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>
                     {bt.bloodTypeName}
                   </MenuItem>
@@ -613,7 +859,7 @@ const UrgentRequestManageV2 = () => {
                 onChange={(e) => setChosenBloodTypeId(e.target.value)}
                 label="Nhóm máu"
               >
-                {bloodTypes.map((bt) => (
+                {bloodTypes.filter(bt => bt.bloodTypeId !== 99).map((bt) => (
                   <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>
                     {bt.bloodTypeName}
                   </MenuItem>
@@ -736,7 +982,45 @@ const UrgentRequestManageV2 = () => {
             </Typography>
           </Box>
           {availableBloodUnits.availableExact.length === 0 && availableBloodUnits.availableCompatible.length === 0 ? (
-            <Alert severity="info">Không có máu phù hợp nào sẵn sàng.</Alert>
+            <Box>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Không có máu phù hợp nào sẵn sàng trong kho. 
+              </Alert>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Bạn có thể chuyển sang trang <strong>"Tìm kiếm máu"</strong> để tìm kiếm trong kho tổng và huy động người hiến phù hợp.
+              </Alert>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<SearchIcon />}
+                onClick={handleNavigateToBloodSearch}
+                fullWidth
+                sx={{ mt: 1 }}
+              >
+                Chuyển tới trang tìm kiếm máu
+              </Button>
+              
+              {/* Component huy động người hiến khi không có máu phù hợp */}
+              <Box sx={{ mt: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: '#fafafa' }}>
+                <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', fontWeight: 'bold' }}>
+                  🚨 Huy động cộng đồng hiến máu
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                  Không tìm thấy máu phù hợp trong kho. Bạn có thể gửi thông báo để huy động cộng đồng hiến máu ngay tại đây.
+                </Typography>
+                <DonorMobilizationComponent 
+                  embedded={true}
+                  bloodType={bloodTypes.find(bt => bt.bloodTypeId == chosenBloodTypeId)?.bloodTypeName || ""}
+                  onNotified={(donorsList) => {
+                    setSnackbar({
+                      open: true,
+                      message: `Đã gửi thông báo huy động thành công tới ${donorsList.length} người hiến máu! Hãy chờ phản hồi từ cộng đồng.`,
+                      severity: "success",
+                    });
+                  }}
+                />
+              </Box>
+            </Box>
           ) : (
             <Box>
               {availableBloodUnits.availableExact.length > 0 && (

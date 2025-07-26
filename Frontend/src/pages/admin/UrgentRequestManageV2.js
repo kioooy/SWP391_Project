@@ -670,7 +670,16 @@ const UrgentRequestManageV2 = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRequests.map((r) => {
+              {filteredRequests
+                .sort((a, b) => {
+                  // Sắp xếp theo ngày yêu cầu (mới nhất lên đầu)
+                  if (a.requestDate && b.requestDate) {
+                    return new Date(b.requestDate) - new Date(a.requestDate);
+                  }
+                  // Nếu không có ngày thì sắp xếp theo ID (lớn nhất lên đầu)
+                  return (b.urgentRequestId || 0) - (a.urgentRequestId || 0);
+                })
+                .map((r) => {
                 const statusInfo = getStatusDisplay(r.status);
                 return (
                   <TableRow key={r.urgentRequestId}>

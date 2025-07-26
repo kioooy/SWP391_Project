@@ -57,7 +57,7 @@ namespace Blood_Donation_Support.Controllers
                 ContactEmail = model.ContactEmail,
                 EmergencyLocation = model.EmergencyLocation,
                 Notes = model.Notes,
-                RequestDate = DateTime.UtcNow, // Ghi nhận thời gian tạo yêu cầu
+                RequestDate = DateTime.Now, // Ghi nhận thời gian tạo yêu cầu
                 Status = "Pending", // Trạng thái ban đầu là 'Pending'
                 IsActive = true, // Mặc định là Active
             };
@@ -86,7 +86,7 @@ namespace Blood_Donation_Support.Controllers
                     Title = "Yêu cầu máu khẩn cấp mới",
                     Message = $"Có một yêu cầu máu khẩn cấp mới từ {model.PatientName} (Nhóm máu: {bloodTypeName}). Vị trí: {model.EmergencyLocation}. ID yêu cầu: {urgentRequest.UrgentRequestId}. Vui lòng kiểm tra và xử lý ngay lập tức.",
                     NotificationType = "UrgentBloodRequest",
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     IsActive = true,
                     IsRead = false
                 };
@@ -217,7 +217,7 @@ namespace Blood_Donation_Support.Controllers
             }
 
             urgentRequest.Status = "Cancelled";
-            urgentRequest.CompletionDate = DateTime.UtcNow;
+            urgentRequest.CompletionDate = DateTime.Now;
             _context.UrgentBloodRequests.Update(urgentRequest);
 
             // --- Bổ sung logic trả máu về kho khi hủy yêu cầu ---
@@ -582,7 +582,7 @@ namespace Blood_Donation_Support.Controllers
                             UrgentRequestId = id,
                             CancelledByUserId = currentUserId,
                             CancelledByUserName = currentUser?.FullName ?? "Unknown",
-                            CancelledDate = DateTime.UtcNow,
+                            CancelledDate = DateTime.Now,
                             Reason = $"Ưu tiên cho yêu cầu máu khẩn cấp ID: {id}, Bệnh nhân: {urgentRequest.PatientName}",
                             CancelledTransfusionPatient = existingReservation.Transfusion?.PatientCondition ?? "Unknown"
                         };
@@ -672,7 +672,7 @@ namespace Blood_Donation_Support.Controllers
             }
 
             urgentRequest.Status = "Fulfilled";
-            urgentRequest.CompletionDate = DateTime.UtcNow;
+            urgentRequest.CompletionDate = DateTime.Now;
             _context.UrgentBloodRequests.Update(urgentRequest);
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đã hoàn thành yêu cầu khẩn cấp và cập nhật kho máu." });

@@ -648,6 +648,12 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                 const today = new Date();
                 const value = e.target.value;
                 switch(value) {
+                  case 'all':
+                    setDateFilter({
+                      startDate: null,
+                      endDate: null
+                    });
+                    break;
                   case 'today':
                     setDateFilter({
                       startDate: today.toISOString().split('T')[0],
@@ -691,6 +697,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               }}
               label="Lọc nhanh"
             >
+              <MenuItem value="all">Tất cả</MenuItem>
               <MenuItem value="today">Hôm nay</MenuItem>
               <MenuItem value="yesterday">Hôm qua</MenuItem>
               <MenuItem value="thisWeek">Tuần này</MenuItem>

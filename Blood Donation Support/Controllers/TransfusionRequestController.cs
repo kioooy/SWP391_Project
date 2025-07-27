@@ -462,6 +462,7 @@ namespace Blood_Donation_Support.Controllers
 
                 var originalStatus = transfusionRequest.Status;
                 transfusionRequest.Status = "Cancelled";
+                transfusionRequest.CancelledDate = DateTime.Now;
                 _context.TransfusionRequests.Update(transfusionRequest);
 
                 // Nếu yêu cầu đã được phê duyệt, chúng ta cần giải phóng các túi máu đã gán
@@ -476,6 +477,7 @@ namespace Blood_Donation_Support.Controllers
                     {
                         // Cập nhật trạng thái liên kết
                         assignedUnit.Status = "Cancelled";
+                        assignedUnit.Notes = "Yêu cầu truyền máu đã bị hủy, túi máu được hoàn trả lại kho.";
                         _context.TransfusionRequestBloodUnits.Update(assignedUnit);
 
                         // Hoàn trả thể tích cho túi máu

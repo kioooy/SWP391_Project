@@ -171,7 +171,7 @@ namespace Blood_Donation_Support.Controllers
 
             if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
             {
-                var daysSinceTransfusion = (DateTime.UtcNow - lastTransfusion.CompletionDate.Value).TotalDays;
+                var daysSinceTransfusion = (DateTime.Now - lastTransfusion.CompletionDate.Value).TotalDays;
                 if (daysSinceTransfusion < 365)
                 {
                     return BadRequest("Bạn vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 365 ngày.");
@@ -271,6 +271,7 @@ namespace Blood_Donation_Support.Controllers
             // Update member's data 
             member.LastDonationDate = DateOnly.FromDateTime(DateTime.Now); // Update the member's last donation date
             member.DonationCount = (member.DonationCount ?? 0) + 1;        // Increment the donation count (+1)
+            member.RecoveryDueDate = DateOnly.FromDateTime(DateTime.Now.AddDays(90)); // Set the recovery due date 90 days/12 week later))
             _context.Entry(member).State = EntityState.Modified;           // Mark the member entity as modified
 
             // Add Blood Unit

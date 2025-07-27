@@ -50,7 +50,8 @@ const EmergencyRequest = () => {
     contactEmail: '',
     location: '',
     reason: '',
-    notes: '',
+    otherReason: '', // Thêm biến cho lý do khác
+    notes: '', // Tiền sử bệnh nhân
     cccd: '',
   });
 
@@ -253,8 +254,8 @@ const EmergencyRequest = () => {
       // Kiểm tra số điện thoại Việt Nam
       if (!formData.contactPhone) {
         newErrors.contactPhone = 'Vui lòng nhập số điện thoại';
-      } else if (!/^0[3|5|7|8|9][0-9]{8}$/.test(formData.contactPhone)) {
-        newErrors.contactPhone = 'Số điện thoại không hợp lệ (phải là số Việt Nam, 10 số, bắt đầu 03,05,07,08,09)';
+      } else if (!/(?:\+84|0084|0)[235789][0-9]{1,2}[0-9]{7}(?:[^\d]+|$)/g.test(formData.contactPhone)) {
+        newErrors.contactPhone = 'Số điện thoại không hợp lệ (phải là số Việt Nam, có thể bắt đầu bằng +84, 0084 hoặc 0)';
       }
       // Kiểm tra email phải là gmail
       if (formData.contactEmail) {
@@ -311,10 +312,8 @@ const EmergencyRequest = () => {
         const payload = {
           PatientName: formData.patientName,
           RequestedBloodTypeId: selectedBloodType.id,
-
-
           CitizenNumber: formData.cccd,
-          Reason: formData.reason,
+          Reason: formData.reason === 'Khác' ? formData.otherReason : formData.reason,
           ContactName: formData.contactName,
           ContactPhone: formData.contactPhone,
           ContactEmail: formData.contactEmail,
@@ -341,6 +340,7 @@ const EmergencyRequest = () => {
           contactEmail: '',
           location: '',
           reason: '',
+          otherReason: '',
           notes: '',
           cccd: '',
         });
@@ -502,14 +502,10 @@ const EmergencyRequest = () => {
                   label="Nhập lý do khác"
                   multiline
                   rows={2}
-                  value={formData.notes}
-                  onChange={handleChange('notes')}
+                  value={formData.otherReason}
+                  onChange={handleChange('otherReason')}
                 />
               </Grid>
-
-
-
-
             )}
 
 
@@ -523,10 +519,6 @@ const EmergencyRequest = () => {
                 onChange={handleChange('notes')}
                 error={!!errors.notes}
                 helperText={errors.notes}
-
-
-
-
               />
             </Grid>
           </Grid>

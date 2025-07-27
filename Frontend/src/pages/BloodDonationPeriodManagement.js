@@ -58,6 +58,10 @@ const BloodDonationPeriodManagement = () => {
     location: ''
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [statusChangeDialog, setStatusChangeDialog] = useState({ open: false, periodId: null, newStatus: '', periodName: '' });
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [undoDialog, setUndoDialog] = useState({ open: false, period: null });
+  const [undoUpdating, setUndoUpdating] = useState(false);
 
   const fetchPeriods = async () => {
     try {
@@ -181,21 +185,36 @@ const BloodDonationPeriodManagement = () => {
   };
 
   const handleUndo = async (period) => {
+    // Hiển thị dialog xác nhận trước khi khôi phục
+    setUndoDialog({ open: true, period });
+  };
+
+  const confirmUndo = async () => {
+    if (!undoDialog.period) return;
+
+    setUndoUpdating(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`/api/BloodDonationPeriod/${period.periodId}/isActive/admin`, true, {
+      await axios.patch(`/api/BloodDonationPeriod/${undoDialog.period.periodId}/isActive/admin`, true, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         }
       });
       setPeriods(periods.map(p =>
-        p.periodId === period.periodId ? { ...p, isActive: true } : p
+        p.periodId === undoDialog.period.periodId ? { ...p, isActive: true } : p
       ));
-      setSnackbar({ open: true, message: 'Khôi phục đợt hiến máu thành công!', severity: 'success' });
+      setUndoDialog({ open: false, period: null });
+      setSnackbar({ open: true, message: `Đã khôi phục đợt hiến máu "${undoDialog.period.periodName}" thành công!`, severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: 'Khôi phục thất bại!', severity: 'error' });
+    } finally {
+      setUndoUpdating(false);
     }
+  };
+
+  const cancelUndo = () => {
+    setUndoDialog({ open: false, period: null });
   };
 
   const getStatusColor = (status) => {
@@ -242,6 +261,52 @@ const BloodDonationPeriodManagement = () => {
       </Box>
     );
   }
+
+  const confirmStatusChange = async () => {
+    if (!statusChangeDialog.periodId) return;
+
+    setStatusUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`/api/BloodDonationPeriod/${statusChangeDialog.periodId}/status/admin`, JSON.stringify(statusChangeDialog.newStatus), {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Cập nhật local state
+      setPeriods(periods.map(p =>
+        p.periodId === statusChangeDialog.periodId ? { ...p, status: statusChangeDialog.newStatus } : p
+      ));
+      
+      // Đóng dialog và hiển thị thông báo thành công
+      setStatusChangeDialog({ open: false, periodId: null, newStatus: '', periodName: '' });
+      setSnackbar({ 
+        open: true, 
+        message: `Đã cập nhật trạng thái đợt hiến máu "${statusChangeDialog.periodName}" thành "${getStatusText(statusChangeDialog.newStatus)}"!`, 
+        severity: 'success' 
+      });
+
+      // Tự động refresh dữ liệu sau 1 giây để đảm bảo đồng bộ
+      setTimeout(() => {
+        fetchPeriods();
+      }, 1000);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      setSnackbar({ 
+        open: true, 
+        message: `Cập nhật trạng thái thất bại! Lỗi: ${error.response?.data?.message || error.message}`, 
+        severity: 'error' 
+      });
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const cancelStatusChange = () => {
+    setStatusChangeDialog({ open: false, periodId: null, newStatus: '', periodName: '' });
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -318,11 +383,15 @@ const BloodDonationPeriodManagement = () => {
                           value={period.status}
                           onChange={(e) => handleStatusChange(period.periodId, e.target.value)}
                           displayEmpty
+                          disabled={statusUpdating && statusChangeDialog.periodId === period.periodId}
                         >
                           <MenuItem value="Active">Hoạt động</MenuItem>
                           <MenuItem value="Completed">Hoàn thành</MenuItem>
                           <MenuItem value="Cancelled">Đã hủy</MenuItem>
                         </Select>
+                        {statusUpdating && statusChangeDialog.periodId === period.periodId && (
+                          <CircularProgress size={16} sx={{ ml: 1 }} />
+                        )}
                       </FormControl>
                     ) : (
                       <Chip
@@ -356,8 +425,17 @@ const BloodDonationPeriodManagement = () => {
                               }
                             }}
                             color={period.isActive === false ? "success" : "error"}
+                            disabled={undoUpdating && undoDialog.period?.periodId === period.periodId}
                           >
-                            {period.isActive === false ? <UndoIcon /> : <DeleteIcon />}
+                            {period.isActive === false ? (
+                              undoUpdating && undoDialog.period?.periodId === period.periodId ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <UndoIcon />
+                              )
+                            ) : (
+                              <DeleteIcon />
+                            )}
                           </IconButton>
                         </Tooltip>
                       </Box>
@@ -371,14 +449,27 @@ const BloodDonationPeriodManagement = () => {
       </Paper>
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{
+          '& .MuiSnackbar-root': {
+            zIndex: 9999
+          }
+        }}
       >
         <MuiAlert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          sx={{ 
+            width: '100%',
+            fontSize: '14px',
+            fontWeight: 'medium',
+            '& .MuiAlert-message': {
+              padding: '8px 0'
+            }
+          }}
+          elevation={6}
         >
           {snackbar.message}
         </MuiAlert>
@@ -475,6 +566,154 @@ const BloodDonationPeriodManagement = () => {
           <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
           <Button onClick={handleDelete} color="error" variant="contained">
             Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Status Change Confirmation Dialog */}
+      <Dialog 
+        open={statusChangeDialog.open} 
+        onClose={cancelStatusChange}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#f5f5f5', 
+          borderBottom: '1px solid #e0e0e0',
+          fontWeight: 'bold'
+        }}>
+          Xác nhận thay đổi trạng thái
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              Bạn có chắc chắn muốn thay đổi trạng thái đợt hiến máu:
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#E53935', mb: 2 }}>
+              "{statusChangeDialog.periodName}"
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              Từ trạng thái hiện tại thành:
+            </Typography>
+            <Chip
+              label={getStatusText(statusChangeDialog.newStatus)}
+              color={getStatusColor(statusChangeDialog.newStatus)}
+              variant="filled"
+              sx={{ fontWeight: 'bold', fontSize: 16, px: 2 }}
+            />
+          </Box>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              Hành động này sẽ ảnh hưởng đến việc hiển thị và quản lý đợt hiến máu.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={cancelStatusChange}
+            variant="outlined"
+            sx={{ minWidth: 100 }}
+            disabled={statusUpdating}
+          >
+            Hủy
+          </Button>
+          <Button 
+            onClick={confirmStatusChange} 
+            color="primary" 
+            variant="contained"
+            sx={{ minWidth: 100 }}
+            disabled={statusUpdating}
+          >
+            {statusUpdating ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={20} color="inherit" />
+                <span>Đang cập nhật...</span>
+              </Box>
+            ) : (
+              "Xác nhận"
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Undo Confirmation Dialog */}
+      <Dialog
+        open={undoDialog.open}
+        onClose={cancelUndo}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#f5f5f5', 
+          borderBottom: '1px solid #e0e0e0',
+          fontWeight: 'bold',
+          color: '#2E7D32'
+        }}>
+          Xác nhận khôi phục đợt hiến máu
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              Bạn có chắc chắn muốn khôi phục đợt hiến máu:
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#E53935', mb: 2 }}>
+              "{undoDialog.period?.periodName}"
+            </Typography>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
+                Thông tin đợt hiến máu:
+              </Typography>
+              <Box sx={{ pl: 2 }}>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  • Thời gian: {undoDialog.period ? formatDate(undoDialog.period.periodDateFrom) : ''} - {undoDialog.period ? formatDate(undoDialog.period.periodDateTo) : ''}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  • Số lượng mục tiêu: {undoDialog.period?.targetQuantity || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  • Số lượng hiện tại: {undoDialog.period?.currentQuantity || 0}
+                </Typography>
+                <Typography variant="body2">
+                  • Trạng thái: <Chip 
+                    label={getStatusText(undoDialog.period?.status)} 
+                    color={getStatusColor(undoDialog.period?.status)} 
+                    size="small" 
+                    sx={{ ml: 1 }}
+                  />
+                </Typography>
+              </Box>
+            </Box>
+            <Alert severity="success" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                Hành động này sẽ khôi phục đợt hiến máu đã ẩn và hiển thị lại trong danh sách.
+              </Typography>
+            </Alert>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={cancelUndo}
+            variant="outlined"
+            sx={{ minWidth: 100 }}
+            disabled={undoUpdating}
+          >
+            Hủy
+          </Button>
+          <Button 
+            onClick={confirmUndo} 
+            color="success" 
+            variant="contained"
+            sx={{ minWidth: 100 }}
+            disabled={undoUpdating}
+          >
+            {undoUpdating ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={20} color="inherit" />
+                <span>Đang khôi phục...</span>
+              </Box>
+            ) : (
+              "Khôi phục"
+            )}
           </Button>
         </DialogActions>
       </Dialog>

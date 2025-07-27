@@ -143,7 +143,7 @@ const TransfusionAppointmentHistory = () => {
       ) : error ? (
         <Alert severity="error" sx={{ my: 4 }}>{error}</Alert>
       ) : nearestAppointment.length === 0 ? (
-        <Alert severity="info" sx={{ my: 4 }}>Không có lịch hẹn truyền máu đã duyệt hoặc chờ duyệt.</Alert>
+        <Alert severity="info" sx={{ my: 4 }}>Hiện không có lịch hẹn truyền máu.</Alert>
       ) : (
         nearestAppointment.map((item, idx) => (
           <Box key={item.transfusionId || idx} sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -171,7 +171,8 @@ const EmergencyRequest = () => {
 
 
   const handleLocationChange = (event) => {
-    const value = event.target.value.replace(/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ/]/g, '');
+    // Cho phép chữ cái, số, dấu cách, ký tự tiếng Việt và các ký tự đặc biệt: / , .
+    const value = event.target.value.replace(/[^a-zA-Z0-9\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ\/,.]/g, '');
     setFormData({
       ...formData,
       location: value,
@@ -267,8 +268,8 @@ const EmergencyRequest = () => {
 
 
       if (!formData.location) newErrors.location = 'Vui lòng nhập địa chỉ';
-      else if (/[^a-zA-Z0-9,.\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ,.]/g.test(formData.location)) {
-        newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm.';
+      else if (/[^a-zA-Z0-9\sàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ\/,.]/g.test(formData.location)) {
+        newErrors.location = 'Địa chỉ chỉ được chứa chữ, số, dấu phẩy, dấu chấm, dấu gạch chéo.';
       }
 
 

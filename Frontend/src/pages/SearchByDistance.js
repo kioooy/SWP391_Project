@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  Container,
+  Box,
   Typography,
   Card,
   CardContent,
@@ -255,12 +255,13 @@ const SearchByDistance = () => {
   ].filter(Boolean).length;
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", color: '#E53935', mb: 3 }}>
+        Tìm kiếm theo khoảng cách
+      </Typography>
+      
       <Card>
         <CardContent>
-          <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: "bold", color: '#E53935' }}>
-            Tìm kiếm theo khoảng cách
-          </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <FormControl fullWidth>
@@ -370,7 +371,7 @@ const SearchByDistance = () => {
           </CardContent>
         </Card>
       )}
-    </Container>
+    </Box>
   );
 }
 

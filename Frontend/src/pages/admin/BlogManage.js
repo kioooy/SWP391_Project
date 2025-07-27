@@ -461,12 +461,17 @@ const BlogManage = () => {
               <MenuItem value="Draft">Bản nháp</MenuItem>
             </Select>
           </FormControl>
-          <div style={{ marginTop: 8 }}>
+         <Button
+            component="label"
+            variant="outlined"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.9l3.09 6.26L22 13.27l-5 4.87L18.18 23 12 19.77 5.82 23 7 18.14l-5-4.87 6.91-1.01z" /></svg>}
+            sx={{ mt: 1, mb: 2, width: 'fit-content' }}
+          >
+            Chọn ảnh
             <input
+              hidden
               accept="image/jpeg,image/png"
               type="file"
-              id="new-blog-image-upload"
-              style={{ display: 'none' }} // Ẩn input mặc định
               onChange={e => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -486,12 +491,7 @@ const BlogManage = () => {
                 reader.readAsDataURL(file);
               }}
             />
-            <label htmlFor="new-blog-image-upload">
-              <Button variant="contained" component="span">
-                Chọn tệp
-              </Button>
-            </label>
-          </div>
+          </Button>
           {newBlogImagePreview && (
             <img src={newBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
           )}
@@ -549,12 +549,17 @@ const BlogManage = () => {
               setEditBlogImagePreview("");
             }}
           /> */}
-          <div style={{ marginTop: 8 }}>
+         <Button
+            component="label"
+            variant="outlined"
+            startIcon={<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.9l3.09 6.26L22 13.27l-5 4.87L18.18 23 12 19.77 5.82 23 7 18.14l-5-4.87 6.91-1.01z" /></svg>}
+            sx={{ mt: 1, mb: 2, width: 'fit-content' }}
+          >
+            Chọn ảnh
             <input
+              hidden
               accept="image/jpeg,image/png"
               type="file"
-              id="edit-blog-image-upload"
-              style={{ display: 'none' }} // Ẩn input mặc định
               onChange={e => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -569,17 +574,12 @@ const BlogManage = () => {
                 const reader = new FileReader();
                 reader.onload = ev => {
                   setEditBlogImagePreview(ev.target.result);
-                  setEditBlog({ ...newBlog, ImageUrl: ev.target.result });
+                  setEditBlog({ ...editBlog, ImageUrl: ev.target.result });
                 };
                 reader.readAsDataURL(file);
               }}
             />
-            <label htmlFor="edit-blog-image-upload">
-              <Button variant="contained" component="span">
-                Chọn tệp
-              </Button>
-            </label>
-          </div>
+          </Button>
 
           {editBlogImagePreview && (
             <img src={editBlogImagePreview} alt="Preview" style={{ maxWidth: 200, marginTop: 8, borderRadius: 4 }} />
@@ -621,7 +621,11 @@ const BlogManage = () => {
                 <img src={selectedBlog.ImageUrl || selectedBlog.imageUrl} alt="Ảnh blog" style={{ width: "100%", borderRadius: 4, marginTop: 4 }} />
               </div>
               <div>
-                <strong>📊 Trạng thái:</strong> {selectedBlog.Status || selectedBlog.status}
+                <strong>📊 Trạng thái:</strong> {
+                  (selectedBlog.Status || selectedBlog.status) === 'Published' ? 'Đã xuất bản' :
+                  (selectedBlog.Status || selectedBlog.status) === 'Draft' ? 'Bản nháp' :
+                  (selectedBlog.Status || selectedBlog.status) || 'Không xác định'
+                }
               </div>
               <div>
                 <strong>🔒 Kích hoạt:</strong> {(selectedBlog.IsActive === true || selectedBlog.isActive === true) ? 'Có' : (selectedBlog.IsActive === false || selectedBlog.isActive === false) ? 'Không' : 'Không xác định'}

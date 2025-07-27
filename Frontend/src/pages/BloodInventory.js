@@ -61,6 +61,8 @@ const BloodInventory = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedBlood, setSelectedBlood] = useState(null);
   const [viewDetail, setViewDetail] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bloodToDelete, setBloodToDelete] = useState(null);
   const [formData, setFormData] = useState({
     bloodTypeId: '',
     componentId: '',
@@ -241,16 +243,26 @@ const BloodInventory = () => {
     }
   };
 
+  // Mở dialog xác nhận xóa
+  const handleDeleteClick = (blood) => {
+    setBloodToDelete(blood);
+    setDeleteDialogOpen(true);
+  };
+
   // Xóa (soft delete)
-  const handleDelete = async (blood) => {
-    console.log("handleDelete triggered for blood unit:", blood);
+  const handleDelete = async () => {
+    if (!bloodToDelete) return;
+    
+    console.log("handleDelete triggered for blood unit:", bloodToDelete);
     const token = localStorage.getItem('token');
     try {
       // API endpoint to update the status of the blood unit
-      await axios.patch(`/api/BloodUnit/${blood.bloodUnitId}/status-discard`, {}, {
+      await axios.patch(`/api/BloodUnit/${bloodToDelete.bloodUnitId}/status-discard`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchInventory();
+      setDeleteDialogOpen(false);
+      setBloodToDelete(null);
     } catch (err) {
       console.error("Lỗi khi xóa đơn vị máu:", err.response?.data || err.message);
       setError(`Xóa thất bại! Lỗi: ${err.response?.data?.title || err.message}`);
@@ -417,7 +429,7 @@ const BloodInventory = () => {
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Xóa đơn vị máu">
-                            <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
                               <DeleteIcon />
                             </IconButton>
                           </Tooltip>
@@ -586,8 +598,29 @@ const BloodInventory = () => {
         </DialogActions>
       </Dialog>
 
-
-
+      {/* Dialog xác nhận xóa */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Xác nhận xóa đơn vị máu</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc muốn xóa đơn vị máu{" "}
+            <strong>ID: {bloodToDelete?.bloodUnitId}</strong>{" "}
+            (Nhóm máu: {bloodToDelete?.bloodTypeName}) không?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Hành động này sẽ chuyển đơn vị máu sang trạng thái "Đã loại bỏ".
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
+          <Button onClick={handleDelete} variant="contained" color="error">
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Container>
   );

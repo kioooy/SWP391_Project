@@ -451,6 +451,41 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     }
   };
 
+  // Hàm kiểm tra yêu cầu truyền máu hết hạn
+  const handleExpiredCheck = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.patch(`/api/TransfusionRequest/expired_check`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.data && response.data.expiredCount > 0) {
+        setSnackbar({
+          open: true,
+          message: `Đã cập nhật ${response.data.expiredCount} yêu cầu truyền máu hết hạn!`,
+          severity: "warning",
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Không có yêu cầu truyền máu nào hết hạn!",
+          severity: "info",
+        });
+      }
+      
+      // Reload danh sách sau khi kiểm tra
+      await reloadTransfusions();
+    } catch (err) {
+      console.error("Error checking expired transfusion requests:", err);
+      const errorMessage = err.response?.data?.message || "Kiểm tra yêu cầu hết hạn thất bại.";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    }
+  };
+
   const getStatistics = () => {
     return statusOptions.map((status) => ({
       status,
@@ -714,6 +749,14 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               Tạo yêu cầu truyền máu
             </Button>
           )}
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={handleExpiredCheck}
+            sx={{ ml: 1 }}
+          >
+            Kiểm tra hết hạn
+          </Button>
         </Box>
       </Card>
 

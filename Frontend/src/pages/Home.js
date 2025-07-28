@@ -499,12 +499,21 @@ const Home = () => {
                                 const to = dayjs(period.periodDateTo);
                                 const capitalizeWords = (str) =>
                                   str.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                
+                                // Hàm format thời gian với AM/PM (định dạng 24 giờ)
+                                const formatTimeWithAMPM = (time) => {
+                                  const hours = time.hour();
+                                  const minutes = time.minute();
+                                  const ampm = hours >= 12 ? 'PM' : 'AM';
+                                  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                                };
+                                
                                 if (from.isSame(to, 'day')) {
                                   return (
                                     <>
                                       <span style={{ fontWeight: 'bold' }}>Ngày:</span> {from.format('DD/MM/YYYY')}
                                       <br />
-                                      <span style={{ fontWeight: 'bold' }}>Thời gian:</span> {from.format('HH:mm')} - {to.format('HH:mm')}
+                                      <span style={{ fontWeight: 'bold' }}>Thời gian:</span> {formatTimeWithAMPM(from)} - {formatTimeWithAMPM(to)}
                                     </>
                                   );
                                 } else {
@@ -512,7 +521,7 @@ const Home = () => {
                                     <>
                                       <span>Ngày: {from.format('DD/MM/YYYY')} - {to.format('DD/MM/YYYY')}</span><br />
                                       <span>{capitalizeWords(from.format('dddd'))} - {capitalizeWords(to.format('dddd'))}</span><br />
-                                      <span>Thời gian: {from.format('HH:mm')} - {to.format('HH:mm')}</span>
+                                      <span>Thời gian: {formatTimeWithAMPM(from)} - {formatTimeWithAMPM(to)}</span>
                                     </>
                                   );
                                 }

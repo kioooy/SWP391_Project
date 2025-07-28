@@ -244,15 +244,30 @@ const BloodDonationPeriodManagement = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('vi-VN');
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    // Chuyển đổi sang định dạng 24 giờ với AM/PM
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    return `${day}/${month}/${year} ${hours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
   };
 
-  const filteredPeriods = periods.filter(period => {
-    if (statusFilter === 'all') {
-      return true;
-    }
-    return period.status === statusFilter;
-  });
+  const filteredPeriods = periods
+    .filter(period => {
+      if (statusFilter === 'all') {
+        return true;
+      }
+      return period.status === statusFilter;
+    })
+    .sort((a, b) => {
+      // Sắp xếp theo ID giảm dần (đợt mới tạo sẽ ở đầu)
+      return b.periodId - a.periodId;
+    });
 
   if (loading) {
     return (
@@ -353,12 +368,12 @@ const BloodDonationPeriodManagement = () => {
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Tên đợt</TableCell>
-                <TableCell>Thời gian bắt đầu</TableCell>
-                <TableCell>Thời gian kết thúc</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '150px' }}>Thời gian bắt đầu</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '150px' }}>Thời gian kết thúc</TableCell>
                 <TableCell>Trạng thái</TableCell>
-                <TableCell>Số lượng mục tiêu</TableCell>
-                <TableCell>Số lượng hiện tại</TableCell>
-                <TableCell>Thao tác</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '120px', textAlign: 'center' }}>Số lượng mục tiêu</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '120px', textAlign: 'center' }}>Số lượng hiện tại</TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '100px' }}>Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -374,8 +389,12 @@ const BloodDonationPeriodManagement = () => {
                       {period.periodName}
                     </Typography>
                   </TableCell>
-                  <TableCell>{formatDate(period.periodDateFrom)}</TableCell>
-                  <TableCell>{formatDate(period.periodDateTo)}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '150px' }}>
+                    {formatDate(period.periodDateFrom)}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '150px' }}>
+                    {formatDate(period.periodDateTo)}
+                  </TableCell>
                   <TableCell>
                     {(isAdmin || isStaff) ? (
                       <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -402,8 +421,8 @@ const BloodDonationPeriodManagement = () => {
                       />
                     )}
                   </TableCell>
-                  <TableCell>{period.targetQuantity}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ textAlign: 'center' }}>{period.targetQuantity}</TableCell>
+                  <TableCell sx={{ textAlign: 'center' }}>
                     <Chip
                       label={`${period.currentQuantity || 0}/${period.targetQuantity}`}
                       color={period.currentQuantity >= period.targetQuantity ? 'success' : 'warning'}

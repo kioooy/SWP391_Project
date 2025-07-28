@@ -46,7 +46,7 @@ namespace Blood_Donation_Support.Controllers
                     m.User.Address,
                     Latitude = m.Location.Y,
                     Longitude = m.Location.X,
-                    Distance = m.Location.Distance(center), 
+                    Distance = m.Location.Distance(center),
                     //hàm distance, tính khoảng cách 2 điểm, đầu vào là 2 điểm có dạng Point(x,y)
                     // ở đây t có ví dụ , center là điểm trung tâm, m.Location là điểm của donor
                     // m.Location.                  Distance(center)

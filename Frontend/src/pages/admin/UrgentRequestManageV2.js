@@ -30,8 +30,6 @@ const UrgentRequestManageV2 = () => {
   const [loadingBloodUnits, setLoadingBloodUnits] = useState(false);
   const [assignedVolumes, setAssignedVolumes] = useState({});
   const [totalVolume, setTotalVolume] = useState('');
-  const [fulfillTotalVolume, setFulfillTotalVolume] = useState('');
-  const [fulfillData, setFulfillData] = useState([]);
   // 1. Sau khi xác nhận nhóm máu & thành phần, chỉ mở dialog chọn/gán túi máu, không mở fulfillDialog
   const [assignDialog, setAssignDialog] = useState(false);
   const [assignBloodUnits, setAssignBloodUnits] = useState([]);
@@ -292,10 +290,10 @@ const UrgentRequestManageV2 = () => {
         setAssignedVolumes(rest);
         return prev.filter(id => id !== bloodUnitId);
       } else {
-        // Chọn thì tự động gán assignedVolume sao cho tổng không vượt quá fulfillTotalVolume
+        // Chọn thì tự động gán assignedVolume sao cho tổng không vượt quá totalVolume
         const unit = getUnitById(bloodUnitId);
         let currentTotal = Object.values(assignedVolumes).reduce((a, b) => a + b, 0);
-        let remain = Math.max(0, Number(fulfillTotalVolume) - currentTotal);
+        let remain = Math.max(0, Number(totalVolume) - currentTotal);
         let assign = Math.min(unit.remainingVolume, remain);
         if (assign <= 0) {
           setSnackbar({ open: true, message: 'Đã đủ tổng thể tích cần truyền!', severity: 'info' });
@@ -443,14 +441,14 @@ const UrgentRequestManageV2 = () => {
                   value={assignedVolumes[unit.bloodUnitId] || ''}
                   onChange={e => {
                     let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value)));
-                    // Không cho tổng vượt quá fulfillTotalVolume
+                    // Không cho tổng vượt quá totalVolume
                     let otherTotal = Object.entries(assignedVolumes).filter(([k]) => Number(k) !== unit.bloodUnitId).reduce((a, [_, b]) => a + b, 0);
-                    if (value + otherTotal > Number(fulfillTotalVolume)) {
-                      value = Math.max(1, Number(fulfillTotalVolume) - otherTotal);
+                    if (value + otherTotal > Number(totalVolume)) {
+                      value = Math.max(1, Number(totalVolume) - otherTotal);
                     }
                     setAssignedVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
                   }}
-                  inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(fulfillTotalVolume)), step: 1 }}
+                  inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
                   sx={{ width: 120, ml: 2 }}
                 />
               )}
@@ -463,7 +461,7 @@ const UrgentRequestManageV2 = () => {
 
   const totalAssigned = Object.values(assignedVolumes).reduce((a, b) => a + b, 0);
 
-  // Thêm hàm handleOpenFulfill
+  // Hàm mở dialog hoàn thành yêu cầu
   const handleOpenFulfill = async (req) => {
     setCurrentRequest(req);
     try {
@@ -471,16 +469,6 @@ const UrgentRequestManageV2 = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDetailRequest(res.data);
-      // Khởi tạo fulfillData với assignedBloodUnits
-      if (Array.isArray(res.data.assignedBloodUnits)) {
-        setFulfillData(res.data.assignedBloodUnits.map(unit => ({
-          bloodUnitId: unit.bloodUnitId,
-          usedVolume: unit.assignedVolume,
-          maxVolume: unit.assignedVolume
-        })));
-      } else {
-        setFulfillData([]);
-      }
       setFulfillDialog(true);
     } catch (err) {
       setSnackbar({ open: true, message: 'Lỗi khi tải chi tiết yêu cầu!', severity: 'error' });
@@ -773,7 +761,7 @@ const UrgentRequestManageV2 = () => {
                     <Box key={unit.bloodUnitId || idx} sx={{ mb: 1, p: 1, border: '1px solid #eee', borderRadius: 1 }}>
                       <div><b>ID:</b> {unit.bloodUnitId}</div>
                       <div><b>Nhóm máu:</b> {unit.bloodTypeName}</div>
-                      <div><b>Thành phần:</b> {unit.componentName}</div>
+                      <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
                       <div><b>Thể tích gán:</b> {unit.assignedVolume}ml</div>
                       <div><b>Trạng thái túi máu:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
                     </Box>
@@ -914,65 +902,104 @@ const UrgentRequestManageV2 = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog chọn máu để hoàn thành (cũ) */}
-      {/* Thay thế bằng dialog hoàn thành mới */}
+      {/* Dialog hoàn thành yêu cầu - Đơn giản hóa */}
       <Dialog open={fulfillDialog} onClose={() => setFulfillDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Hoàn thành yêu cầu truyền máu</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Lưu ý: Thể tích thực tế truyền có thể nhỏ hơn hoặc bằng dung tích đã gán. Vui lòng nhập đúng số ml máu đã truyền cho từng túi máu.
+            Hệ thống sẽ tự động sử dụng toàn bộ lượng máu đã được gán cho yêu cầu này.
           </Alert>
-          {fulfillData.length === 0 ? (
-            <Alert severity="info">Không có đơn vị máu nào đã gán cho yêu cầu này.</Alert>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {fulfillData.map((item, idx) => (
-                <Box key={item.bloodUnitId} sx={{ border: '1px solid #eee', borderRadius: 1, p: 1 }}>
-                  <div><b>ID:</b> {item.bloodUnitId}</div>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TextField
-                      label="Thể tích đã truyền (ml)"
-                      type="number"
-                      value={item.usedVolume}
-                      onChange={e => {
-                        let value = Math.max(0, Math.min(item.maxVolume, Number(e.target.value)));
-                        setFulfillData(prev => prev.map((d, i) => i === idx ? { ...d, usedVolume: value } : d));
-                      }}
-                      inputProps={{ min: 0, max: item.maxVolume, step: 1 }}
-                      sx={{ width: 200, mt: 1, mb: 1 }}
-                    />
-                    <span>/ {item.maxVolume}ml</span>
-                  </Box>
-                </Box>
-              ))}
+          
+          {detailRequest && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>
+                Thông tin yêu cầu
+              </Typography>
+              <Box sx={{ bgcolor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+                <Typography><strong>Bệnh nhân:</strong> {detailRequest.patientName}</Typography>
+                <Typography><strong>Nhóm máu:</strong> {detailRequest.bloodType?.bloodTypeName}</Typography>
+                <Typography><strong>Người liên hệ:</strong> {detailRequest.contactName} - {detailRequest.contactPhone}</Typography>
+                <Typography><strong>Địa chỉ:</strong> {detailRequest.emergencyLocation}</Typography>
+              </Box>
             </Box>
+          )}
+
+          {detailRequest && Array.isArray(detailRequest.assignedBloodUnits) && detailRequest.assignedBloodUnits.length > 0 ? (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, color: '#388e3c' }}>
+                Danh sách máu sẽ được sử dụng
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {detailRequest.assignedBloodUnits.map((unit, idx) => (
+                  <Box key={unit.bloodUnitId || idx} sx={{ 
+                    border: '2px solid #4caf50', 
+                    borderRadius: 2, 
+                    p: 2,
+                    bgcolor: '#f1f8e9'
+                  }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Typography><strong>ID túi máu:</strong> {unit.bloodUnitId}</Typography>
+                        <Typography><strong>Nhóm máu:</strong> {unit.bloodTypeName}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography><strong>Thành phần:</strong> {translateComponentName(unit.componentName)}</Typography>
+                        <Typography><strong>Thể tích sử dụng:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{unit.assignedVolume}ml</span></Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                ))}
+              </Box>
+              
+              <Box sx={{ mt: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
+                <Typography variant="h6" color="primary">
+                  <strong>Tổng thể tích sẽ sử dụng: {detailRequest.assignedBloodUnits.reduce((sum, unit) => sum + unit.assignedVolume, 0)}ml</strong>
+                </Typography>
+              </Box>
+            </Box>
+          ) : (
+            <Alert severity="warning">
+              Không có đơn vị máu nào đã được gán cho yêu cầu này. Vui lòng gán máu trước khi hoàn thành.
+            </Alert>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setFulfillDialog(false)}>Hủy</Button>
+          <Button onClick={() => setFulfillDialog(false)} color="inherit">
+            Hủy
+          </Button>
           <Button
             variant="contained"
-            color="primary"
-            disabled={fulfillData.length === 0 || submitting}
+            color="success"
+            disabled={!detailRequest || !Array.isArray(detailRequest.assignedBloodUnits) || detailRequest.assignedBloodUnits.length === 0 || submitting}
             onClick={async () => {
               setSubmitting(true);
               try {
-                await axios.patch(`${API_URL}/UrgentBloodRequest/${currentRequest.urgentRequestId}/fulfill`, fulfillData.map(d => ({
-                  bloodUnitId: d.bloodUnitId,
-                  usedVolume: d.usedVolume
-                })), { headers: { Authorization: `Bearer ${token}` } });
-                setSnackbar({ open: true, message: 'Đã hoàn thành yêu cầu truyền máu!', severity: 'success' });
+                await axios.patch(`${API_URL}/UrgentBloodRequest/${currentRequest.urgentRequestId}/fulfill`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                setSnackbar({ 
+                  open: true, 
+                  message: 'Đã hoàn thành yêu cầu truyền máu thành công!', 
+                  severity: 'success' 
+                });
                 setFulfillDialog(false);
                 setCurrentRequest(null);
+                setDetailRequest(null);
                 fetchRequests();
               } catch (err) {
-                setSnackbar({ open: true, message: 'Lỗi khi hoàn thành yêu cầu!', severity: 'error' });
+                console.error('Lỗi khi hoàn thành yêu cầu:', err);
+                setSnackbar({ 
+                  open: true, 
+                  message: err.response?.data?.error || 'Lỗi khi hoàn thành yêu cầu!', 
+                  severity: 'error' 
+                });
               } finally {
                 setSubmitting(false);
               }
             }}
+            startIcon={submitting ? <CircularProgress size={20} /> : null}
           >
-            Xác nhận hoàn thành
+            {submitting ? 'Đang xử lý...' : 'Xác nhận hoàn thành'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1062,7 +1089,7 @@ const UrgentRequestManageV2 = () => {
                         <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
                           <div><b>ID:</b> {unit.bloodUnitId}</div>
                           <div><b>Nhóm máu:</b> {unit.bloodTypeName}</div>
-                          <div><b>Thành phần:</b> {unit.componentName}</div>
+                          <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
                           <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
                           <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
                           <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
@@ -1118,7 +1145,7 @@ const UrgentRequestManageV2 = () => {
                         <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
                           <div><b>ID:</b> {unit.bloodUnitId}</div>
                           <div><b>Nhóm máu:</b> {unit.bloodTypeName}</div>
-                          <div><b>Thành phần:</b> {unit.componentName}</div>
+                          <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
                           <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
                           <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
                           <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>

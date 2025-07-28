@@ -472,7 +472,6 @@ const BloodSearch = ({ onSearchComplete }) => {
             2. Chọn thành phần máu (nếu cần)<br/>
             3. Nhập lượng máu cần thiết<br/>
             4. Nhấn "Tìm kiếm máu" để tra cứu kho máu phù hợp<br/>
-            5. Nếu không có máu phù hợp, hãy chuyển sang trang "Huy động người hiến" để gửi thông báo tới cộng đồng người hiến máu.<br/>
           </Typography>
         </CardContent>
       </Card>

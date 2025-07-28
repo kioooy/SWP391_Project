@@ -163,7 +163,15 @@ namespace Blood_Donation_Support.Controllers
                 urgentRequest.Status,
                 urgentRequest.CompletionDate,
                 urgentRequest.IsActive,
-                
+                AssignedBloodUnits = assignedBloodUnits.Select(abu => new
+                {
+                    abu.BloodUnitId,
+                    abu.BloodTypeName,
+                    abu.ComponentName,
+                    abu.AssignedVolume,
+                    abu.Status,
+                    abu.BloodStatus
+                }).ToList()
             });
         }
 
@@ -616,7 +624,7 @@ namespace Blood_Donation_Support.Controllers
 
         [HttpPatch("{id}/fulfill")]
         [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Staff,Admin")]
-        public async Task<IActionResult> FulfillUrgentRequest(int id, [FromBody] List<FulfillBloodUnitInput> usedUnits)
+        public async Task<IActionResult> FulfillUrgentRequest(int id)
         {
             var urgentRequest = await _context.UrgentBloodRequests.FindAsync(id);
             if (urgentRequest == null)
@@ -626,31 +634,17 @@ namespace Blood_Donation_Support.Controllers
 
             // Lấy các bản ghi máu đã gán cho yêu cầu này
             var assignedUnits = await _context.UrgentRequestBloodUnits
-                .Where(ubu => ubu.UrgentRequestId == id && (ubu.Status == "Assigned" || ubu.Status == "PartialUsed"))
+                .Where(ubu => ubu.UrgentRequestId == id && ubu.Status == "Assigned")
                 .ToListAsync();
 
-            foreach (var used in usedUnits)
+            foreach (var ubu in assignedUnits)
             {
-                var ubu = assignedUnits.FirstOrDefault(x => x.BloodUnitId == used.BloodUnitId);
-                if (ubu == null) continue;
-                var bloodUnit = await _context.BloodUnits.FindAsync(used.BloodUnitId);
+                var bloodUnit = await _context.BloodUnits.FindAsync(ubu.BloodUnitId);
                 if (bloodUnit == null) continue;
 
-                // Trừ máu thực tế
-                if (used.UsedVolume >= ubu.AssignedVolume)
-                {
-                    ubu.Status = "Used";
-                    bloodUnit.RemainingVolume -= ubu.AssignedVolume;
-                }
-                else if (used.UsedVolume > 0)
-                {
-                    ubu.Status = "PartialUsed";
-                    bloodUnit.RemainingVolume -= used.UsedVolume;
-                }
-                else
-                {
-                    ubu.Status = "Returned";
-                }
+                // Sử dụng toàn bộ lượng máu đã được gán
+                ubu.Status = "Used";
+                bloodUnit.RemainingVolume -= ubu.AssignedVolume;
                 _context.UrgentRequestBloodUnits.Update(ubu);
 
                 // Nếu máu đã dùng hết, chuyển trạng thái túi máu sang Used
@@ -662,7 +656,7 @@ namespace Blood_Donation_Support.Controllers
                 else
                 {
                     // Nếu máu còn dư và không còn gán cho ca nào khác, chuyển sang Available
-                    var stillAssigned = await _context.UrgentRequestBloodUnits.AnyAsync(x => x.BloodUnitId == bloodUnit.BloodUnitId && (x.Status == "Assigned" || x.Status == "PartialUsed"));
+                    var stillAssigned = await _context.UrgentRequestBloodUnits.AnyAsync(x => x.BloodUnitId == bloodUnit.BloodUnitId && x.Status == "Assigned");
                     if (!stillAssigned)
                     {
                         bloodUnit.BloodStatus = "Available";
@@ -678,11 +672,7 @@ namespace Blood_Donation_Support.Controllers
             return Ok(new { message = "Đã hoàn thành yêu cầu khẩn cấp và cập nhật kho máu." });
         }
 
-        public class FulfillBloodUnitInput
-        {
-            public int BloodUnitId { get; set; }
-            public int UsedVolume { get; set; }
-        }
+
 
         [HttpPatch("{id}/actual-blood-type")]
         [Authorize(Roles = "Staff,Admin")]

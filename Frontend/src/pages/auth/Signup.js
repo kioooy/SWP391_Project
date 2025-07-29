@@ -237,6 +237,7 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const currentStepRef = React.useRef(0);
   const [otherOccupation, setOtherOccupation] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   // Update ref when activeStep changes
   React.useEffect(() => {
@@ -247,6 +248,20 @@ const Signup = () => {
   const renderConfirmation = () => {
     return (
       <Box>
+        {/* Popup thông báo lỗi từ backend */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Box sx={{ whiteSpace: 'pre-line' }}>
+              {error}
+            </Box>
+          </Alert>
+        )}
+        {/* Popup thông báo lỗi validate */}
+        {validationError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setValidationError('')}>
+            {validationError}
+          </Alert>
+        )}
         <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
           Xác nhận thông tin đăng ký
         </Typography>
@@ -308,7 +323,20 @@ const Signup = () => {
           <Button
             type="button"
             variant="contained"
-            onClick={formik.handleSubmit}
+            onClick={async () => {
+              const errors = await formik.validateForm();
+              if (Object.keys(errors).length > 0) {
+                setValidationError('Vui lòng kiểm tra lại các trường thông tin. Một số trường chưa hợp lệ hoặc còn thiếu.');
+                // Đánh dấu tất cả các trường bị lỗi là touched để hiện helperText
+                formik.setTouched(
+                  Object.keys(errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
+                  true
+                );
+                return;
+              }
+              setValidationError('');
+              formik.handleSubmit();
+            }}
             disabled={loading}
           >
             Xác nhận & Đăng ký
@@ -365,8 +393,10 @@ const Signup = () => {
             Object.keys(errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
             true
           );
+          setValidationError('Vui lòng kiểm tra lại các trường thông tin. Một số trường chưa hợp lệ hoặc còn thiếu.');
           return;
         }
+        setValidationError('');
         setActiveStep(activeStep + 1);
         return;
       }

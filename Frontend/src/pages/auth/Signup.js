@@ -43,7 +43,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import LockIcon from '@mui/icons-material/Lock';
 import dayjs from 'dayjs';
 
-const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Tạo mật khẩu'];
+const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Tạo mật khẩu', 'Xác nhận thông tin'];
 
 // const idTypes = [
 //   'Chứng minh nhân dân',
@@ -256,6 +256,81 @@ const Signup = () => {
     currentStepRef.current = activeStep;
   }, [activeStep]);
 
+  // Thêm hàm render xác nhận thông tin
+  const renderConfirmation = () => {
+    return (
+      <Box>
+        <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
+          Xác nhận thông tin đăng ký
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          Xin vui lòng kiểm tra lại các thông tin bên dưới, các thông tin được cung cấp sẽ dùng để tạo tài khoản và liên lạc với bạn.
+        </Typography>
+        <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Loại tài khoản:</Typography>
+              <Typography>{formik.values.accountType === 'donor' ? 'Hiến máu' : 'Truyền máu'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Họ và tên:</Typography>
+              <Typography>{formik.values.fullName}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Số CCCD:</Typography>
+              <Typography>{formik.values.personalId}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Ngày sinh:</Typography>
+              <Typography>{formik.values.dateOfBirth ? dayjs(formik.values.dateOfBirth).format('DD/MM/YYYY') : ''}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Giới tính:</Typography>
+              <Typography>{formik.values.gender === 'male' ? 'Nam' : 'Nữ'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Địa chỉ:</Typography>
+              <Typography>{`${formik.values.street}, ${formik.values.district}, ${formik.values.city}`}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Số điện thoại:</Typography>
+              <Typography>{formik.values.mobilePhone}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Email:</Typography>
+              <Typography>{formik.values.email}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Cân nặng:</Typography>
+              <Typography>{formik.values.weight} kg</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Chiều cao:</Typography>
+              <Typography>{formik.values.height} cm</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Nhóm máu:</Typography>
+              <Typography>{bloodTypes.find(b => b.id == formik.values.bloodTypeId)?.label || ''}</Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+          <Button onClick={handleBack} sx={{ mr: 1 }}>
+            Quay lại
+          </Button>
+          <Button
+            type="button"
+            variant="contained"
+            onClick={formik.handleSubmit}
+            disabled={loading}
+          >
+            Xác nhận & Đăng ký
+          </Button>
+        </Box>
+      </Box>
+    );
+  };
+
   const formik = useFormik({
     initialValues: {
       accountType: '',
@@ -295,6 +370,7 @@ const Signup = () => {
     validateOnChange: true,
     validateOnBlur: true,
     onSubmit: async (values) => {
+
       console.log('=== DEBUG: onSubmit được gọi ===');
       console.log('Active step:', activeStep);
       console.log('Form values:', values);
@@ -304,6 +380,7 @@ const Signup = () => {
       // Kiểm tra nếu chưa phải bước cuối cùng
       if (activeStep < 3) {
         console.log('=== DEBUG: Chưa phải bước cuối, chuyển sang bước tiếp theo ===');
+
         const errors = await formik.validateForm();
         console.log('Validation errors:', errors);
         if (Object.keys(errors).length > 0) {
@@ -538,7 +615,7 @@ const Signup = () => {
               Nhập thông tin giấy tờ
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Vui lòng nhập thông tin trên giấy tờ và bấm "xác nhận" để hoàn thành.
+              Vui lòng đúng nhập thông tin trên giấy tờ và bấm "xác nhận" để hoàn thành.
             </Typography>
 
             {error && (
@@ -936,14 +1013,7 @@ const Signup = () => {
             )}
 
             <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <LockIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-                  <Typography variant="h6" color="primary.main">
-                    Thông tin bảo mật
-                  </Typography>
-                </Box>
-              </Grid>
+              
 
               {/* Mật khẩu */}
               <Grid item xs={12}>
@@ -1025,12 +1095,13 @@ const Signup = () => {
                   console.log('Form touched:', formik.touched);
                 }}
               >
-                Hoàn thành đăng ký
+                Tiếp tục
               </Button>
             </Box>
           </Box>
         );
-
+      case 4:
+        return renderConfirmation();
       default:
         return null;
     }

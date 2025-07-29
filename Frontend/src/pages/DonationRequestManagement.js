@@ -31,6 +31,18 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import HealthSurveyReview from '../components/HealthSurveyReview';
 
+// Danh sách nhóm máu để cập nhật
+const bloodTypes = [
+  { id: 1, label: 'A+' },
+  { id: 2, label: 'A-' },
+  { id: 3, label: 'B+' },
+  { id: 4, label: 'B-' },
+  { id: 5, label: 'AB+' },
+  { id: 6, label: 'AB-' },
+  { id: 7, label: 'O+' },
+  { id: 8, label: 'O-' },
+];
+
 const DonationRequestManagement = () => {
   const { user } = useSelector((state) => state.auth);
   const [requests, setRequests] = useState([]);
@@ -53,6 +65,10 @@ const DonationRequestManagement = () => {
 
   // Thêm dialog hiển thị PatientCondition
   const [openPatientCondition, setOpenPatientCondition] = useState(false);
+
+  // Thêm dialog cập nhật nhóm máu
+  const [openBloodTypeDialog, setOpenBloodTypeDialog] = useState(false);
+  const [newBloodTypeId, setNewBloodTypeId] = useState('');
 
   const fetchRequests = async () => {
     try {
@@ -119,6 +135,28 @@ const DonationRequestManagement = () => {
   };
 
   const handleOpenActionDialog = (request, mode) => {
+    // Kiểm tra nếu là hoàn thành và nhóm máu "Không biết"
+    if (mode === 'complete') {
+      // Kiểm tra nhiều trường hợp có thể của "Không biết"
+      const isUnknownBloodType = 
+        request.bloodTypeId === 99 || 
+        request.bloodTypeId === '99' ||
+        request.bloodTypeName === 'Không biết' ||
+        request.bloodTypeName === 'Không Biết' ||
+        request.bloodTypeName === 'không biết' ||
+        request.bloodTypeName?.toLowerCase().includes('không biết') ||
+        request.bloodTypeName?.toLowerCase().includes('không') ||
+        // Thêm kiểm tra cho trường hợp null/undefined
+        !request.bloodTypeId ||
+        !request.bloodTypeName;
+        
+      if (isUnknownBloodType) {
+        setSelectedRequest(request);
+        setOpenBloodTypeDialog(true);
+        return;
+      }
+    }
+    
     setActionRequest({
       ...request,
       notes: "", // Luôn để trống khi mở dialog hoàn thành/hủy
@@ -133,10 +171,77 @@ const DonationRequestManagement = () => {
     setActionMode('');
   };
 
+  const handleCloseBloodTypeDialog = () => {
+    setOpenBloodTypeDialog(false);
+    setSelectedRequest(null);
+    setNewBloodTypeId('');
+  };
+
+  const handleUpdateBloodTypeAndComplete = async () => {
+    if (!selectedRequest || !newBloodTypeId) {
+      setSnackbar({ open: true, message: 'Vui lòng chọn nhóm máu!', severity: 'warning' });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // 1. Cập nhật nhóm máu cho member
+      await axios.patch(`/api/User/${selectedRequest.memberId}/blood-type`, {
+        BloodTypeId: parseInt(newBloodTypeId)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // 2. Hoàn thành yêu cầu hiến máu
+      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/update-completed`, {
+        MemberId: selectedRequest.memberId,
+        Status: 'Completed',
+        Notes: `Đã cập nhật nhóm máu: ${bloodTypes.find(bt => bt.id == newBloodTypeId)?.label}`,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Cập nhật UI tạm thời
+      const updatedBloodTypeName = bloodTypes.find(bt => bt.id == newBloodTypeId)?.label;
+      setRequests(
+        requests.map((req) =>
+          req.donationId === selectedRequest.donationId
+            ? { 
+                ...req, 
+                status: 'Completed',
+                bloodTypeName: updatedBloodTypeName,
+                bloodTypeId: newBloodTypeId,
+                notes: `Đã cập nhật nhóm máu: ${updatedBloodTypeName}`
+              }
+            : req
+        )
+      );
+
+      setSnackbar({ 
+        open: true, 
+        message: 'Đã hoàn thành và cập nhật nhóm máu thành công!', 
+        severity: 'success' 
+      });
+
+    } catch (err) {
+      let message = 'Có lỗi xảy ra khi cập nhật!';
+      if (err.response && err.response.data) {
+        if (typeof err.response.data === 'string') {
+          message = err.response.data;
+        } else if (err.response.data.message) {
+          message = err.response.data.message;
+        }
+      }
+      setSnackbar({ open: true, message, severity: 'error' });
+    } finally {
+      handleCloseBloodTypeDialog();
+    }
+  };
+
   const handleConfirmActionRequest = async () => {
     if (!actionRequest) return;
     const token = localStorage.getItem('token');
-    console.log('Gọi hoàn thành:', actionRequest.donationId, actionRequest.memberId);
     if (!actionRequest.donationId || isNaN(actionRequest.donationId)) {
       setSnackbar({ open: true, message: 'ID yêu cầu không hợp lệ!', severity: 'error' });
       handleCloseActionDialog();
@@ -308,10 +413,22 @@ const DonationRequestManagement = () => {
             <TableBody>
               {filteredRequests.map((req) => (
                 <TableRow key={req.donationId} hover>
-                  <TableCell>{req.donationId}</TableCell>
-                  <TableCell sx={{ minWidth: 180, maxWidth: 260 }}>{req.fullName || req.memberName}</TableCell>
-                  <TableCell>{req.citizenNumber}</TableCell>
-                  <TableCell>{req.bloodTypeName}</TableCell>
+                                  <TableCell>{req.donationId}</TableCell>
+                <TableCell sx={{ minWidth: 180, maxWidth: 260 }}>{req.fullName || req.memberName}</TableCell>
+                <TableCell>{req.citizenNumber}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {req.bloodTypeName}
+                    {(req.bloodTypeId === 99 || req.bloodTypeName === 'Không biết') && (
+                      <Chip 
+                        label="⚠️ Cần cập nhật" 
+                        color="warning" 
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                  </Box>
+                </TableCell>
                   <TableCell>
                     {dayjs(req.preferredDonationDate).format('DD/MM/YYYY')}
                   </TableCell>
@@ -345,7 +462,7 @@ const DonationRequestManagement = () => {
                       </Box>
                     )}
                     {req.status === 'Approved' && (
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Button
                           variant="contained"
                           color="success"
@@ -444,6 +561,79 @@ const DonationRequestManagement = () => {
             color={actionMode === 'complete' ? 'success' : 'error'}
           >
             Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog cập nhật nhóm máu */}
+      <Dialog open={openBloodTypeDialog} onClose={handleCloseBloodTypeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ 
+          bgcolor: 'warning.light', 
+          color: 'warning.contrastText',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          ⚠️ Cập nhật nhóm máu trước khi hoàn thành
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              <strong>Người hiến:</strong> {selectedRequest?.fullName || selectedRequest?.memberName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              <strong>CCCD:</strong> {selectedRequest?.citizenNumber}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Nhóm máu hiện tại:</strong>
+            </Typography>
+              <Chip label="Không biết" color="warning" size="small" />
+            </Box>
+          </Box>
+          
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Vui lòng cập nhật nhóm máu chính xác từ kết quả xét nghiệm trước khi hoàn thành yêu cầu hiến máu.
+          </Alert>
+
+          <FormControl fullWidth variant="outlined">
+            <InputLabel>Nhóm máu (*)</InputLabel>
+            <Select
+              value={newBloodTypeId}
+              onChange={(e) => setNewBloodTypeId(e.target.value)}
+              label="Nhóm máu (*)"
+            >
+              {bloodTypes.map((type) => (
+                <MenuItem key={type.id} value={type.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip 
+                      label={type.label} 
+                      color="primary" 
+                      size="small" 
+                      variant="outlined"
+                    />
+                    {type.label}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button 
+            onClick={handleCloseBloodTypeDialog}
+            variant="outlined"
+          >
+            Hủy
+          </Button>
+          <Button 
+            onClick={handleUpdateBloodTypeAndComplete}
+            variant="contained"
+            color="success"
+            disabled={!newBloodTypeId}
+            sx={{ minWidth: 180 }}
+          >
+            Cập nhật & Hoàn thành
           </Button>
         </DialogActions>
       </Dialog>

@@ -332,6 +332,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   // Tổng thể tích đã chọn
   const totalSelectedVolume = approveSelectedUnits.reduce((sum, u) => sum + u.volume, 0);
   const requiredVolume = transfusionToApprove?.transfusionVolume || 0;
+const totalAvailableVolume = suitableBloodUnits.reduce((sum, u) => sum + u.remainingVolume, 0) + suitableAlternatives.reduce((sum, alt) => sum + (alt.totalAvailable || 0), 0);
+const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length > 0;
 
   const handleConfirmApprove = async () => {
     setApproveLoading(true);
@@ -1012,20 +1014,22 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               Người nhận: <strong>{transfusionToApprove?.fullName}</strong>
             </Typography>
             <Typography variant="body1">
-              Yêu cầu: <strong>{transfusionToApprove?.transfusionVolume} ml {transfusionToApprove?.componentName} ({transfusionToApprove?.bloodTypeName})</strong>
+              Yêu cầu: <strong>{transfusionToApprove?.transfusionVolume} ml {bloodComponentTranslations[transfusionToApprove?.componentName] || transfusionToApprove?.componentName} ({transfusionToApprove?.bloodTypeName})</strong>
             </Typography>
             {/* Danh sách máu phù hợp từ API suitable */}
-            <Typography variant="subtitle2" sx={{ mt: 2 }}>Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):</Typography>
-            {(suitableBloodUnits.length === 0 && suitableAlternatives.length === 0) ? (
-              <>
-                <Typography color="error" sx={{ mb: 2 }}>
-                  Không có túi máu phù hợp trong kho!
-                </Typography>
-                <DonorMobilizationComponent embedded bloodType={transfusionToApprove?.bloodTypeName} />
-              </>
-            ) : (
-              <>
-                {/* Đúng nhóm máu */}
+            <Typography variant="subtitle2" sx={{ mt: 2 }}>
+  Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):
+</Typography>
+{(!hasAnyUnits || totalAvailableVolume < requiredVolume) ? (
+  <> 
+    <Typography color="error" sx={{ mb: 2 }}>
+      Không có túi máu phù hợp trong kho!
+    </Typography>
+    <DonorMobilizationComponent embedded bloodType={transfusionToApprove?.bloodTypeName} />
+  </>
+) : (
+  <>
+    {/* Đúng nhóm máu */}
                 {suitableBloodUnits.length > 0 && (
                   <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1, mb: 2 }}>
                     <Typography variant="subtitle2" color="primary">Túi máu đúng nhóm:</Typography>
@@ -1104,8 +1108,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     ))}
                   </Box>
                 )}
-              </>
-            )}
+
             <Typography variant="body2" sx={{ mt: 1 }}>
               Tổng dung tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
             </Typography>
@@ -1117,6 +1120,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               rows={3}
               fullWidth
             />
+          </>
+        )}
           </Box>
         </DialogContent>
         <DialogActions>

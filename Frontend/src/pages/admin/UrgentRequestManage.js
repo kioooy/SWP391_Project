@@ -19,6 +19,10 @@ const UrgentRequestManage = () => {
   const [bloodUnits, setBloodUnits] = useState([]); // Available blood units
   const [loading, setLoading] = useState(false); // For initial data load
   const [submitting, setSubmitting] = useState(false); // For action buttons
+  const [selectBloodTypeOpen, setSelectBloodTypeOpen] = useState(false);
+  const [selectedRequestToSetBloodType, setSelectedRequestToSetBloodType] = useState(null);
+  const [bloodTypes, setBloodTypes] = useState([]);
+  const [chosenBloodTypeId, setChosenBloodTypeId] = useState('');
 
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
@@ -76,6 +80,18 @@ const UrgentRequestManage = () => {
   };
 
 
+  const fetchBloodTypes = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/BloodType`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBloodTypes(res.data);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Lỗi khi tải danh sách nhóm máu!', severity: 'error' });
+    }
+  };
+
+
   useEffect(() => {
     fetchRequests();
     fetchTransfusionRequests(); // Fetch once on component mount
@@ -96,6 +112,15 @@ const UrgentRequestManage = () => {
 
     try {
       if (action === 'accept') {
+        // Tìm request
+        const req = requests.find(r => r.urgentRequestId === id);
+        if (req && req.requestedBloodTypeId === 99) {
+          setSelectedRequestToSetBloodType(req);
+          fetchBloodTypes();
+          setSelectBloodTypeOpen(true);
+          setSubmitting(false);
+          return; // Không gọi API accept ngay
+        }
         url += '/accept';
         msg = 'Đã tiếp nhận yêu cầu!';
         await axios.patch(url, payload, { headers: { Authorization: `Bearer ${token}` } });
@@ -125,7 +150,12 @@ const UrgentRequestManage = () => {
   // Opens the fulfill dialog and fetches relevant data
   const handleOpenFulfillDialog = (request) => {
     setSelectedRequestToFulfill(request);
-    fetchBloodUnits(request.urgentRequestId);
+    // Nếu nhóm máu là 99 (không biết), không fetch blood units, chỉ cảnh báo
+    if (request.requestedBloodTypeId === 99) {
+      setBloodUnits([]); // clear danh sách máu
+    } else {
+      fetchBloodUnits(request.urgentRequestId);
+    }
     setFulfillOpen(true);
     setFulfillType(''); // Reset fulfill type on open
     setPreemptedTransfusionId('');
@@ -178,7 +208,7 @@ const UrgentRequestManage = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
-        Quản Lý Yêu Cầu Máu Khẩn Cấp
+        Quản Lý Yêu Cầu Truyền Máu Khẩn Cấp
       </Typography>
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 4, mt: 3 }}>
         {loading ? (
@@ -278,70 +308,133 @@ const UrgentRequestManage = () => {
       <Dialog open={fulfillOpen} onClose={() => setFulfillOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Hoàn thành yêu cầu máu khẩn cấp cho {selectedRequestToFulfill?.patientName}</DialogTitle>
         <DialogContent>
-          <Typography variant="subtitle1" sx={{ mb: 2 }}>
-            Vui lòng chọn cách hoàn thành yêu cầu máu khẩn cấp:
-          </Typography>
-          <FormControl component="fieldset" fullWidth sx={{ mt: 2 }}>
-            <RadioGroup value={fulfillType} onChange={(e) => setFulfillType(e.target.value)}>
-              <FormControlLabel value="transfusion" control={<Radio />} label="Ưu tiên từ yêu cầu truyền máu" />
-              <FormControlLabel value="bloodUnit" control={<Radio />} label="Sử dụng đơn vị máu trực tiếp" />
-            </RadioGroup>
-          </FormControl>
-          {fulfillType === 'transfusion' && (
-            <FormControl fullWidth sx={{ mt: 2, minWidth: 250, width: '100%' }} disabled={submitting}>
-              <InputLabel id="transfusion-request-label">Chọn yêu cầu truyền máu</InputLabel>
-              <Select
-                labelId="transfusion-request-label"
-                label="Chọn yêu cầu truyền máu"
-                value={preemptedTransfusionId}
-                onChange={(e) => setPreemptedTransfusionId(e.target.value)}
-                fullWidth
-                sx={{ width: '100%' }}
-              >
-                {transfusionRequests.length === 0 && (
-                  <MenuItem disabled sx={{ minWidth: 0 }}>Không có yêu cầu truyền máu phù hợp</MenuItem>
-                )}
-                {transfusionRequests.map((tr) => (
-                  <MenuItem key={tr.transfusionId} value={tr.transfusionId} sx={{ minWidth: 0 }}>
-                    {tr.patientCondition} - {tr.bloodType?.bloodTypeName} (ID: {tr.transfusionId})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-          {fulfillType === 'bloodUnit' && (
-            <FormControl fullWidth sx={{ mt: 2, minWidth: 250, width: '100%' }} disabled={submitting}>
-              <InputLabel id="blood-unit-label">Chọn đơn vị máu</InputLabel>
-              <Select
-                labelId="blood-unit-label"
-                label="Chọn đơn vị máu"
-                value={usedBloodUnitId}
-                onChange={(e) => setUsedBloodUnitId(e.target.value)}
-                fullWidth
-                sx={{ width: '100%' }}
-              >
-                {bloodUnits.length === 0 && (
-                  <MenuItem disabled sx={{ minWidth: 0 }}>Không có đơn vị máu phù hợp</MenuItem>
-                )}
-                {bloodUnits.map((unit) => (
-                  <MenuItem key={unit.bloodUnitId} value={unit.bloodUnitId} sx={{ minWidth: 0 }}>
-                    {unit.bloodTypeName} - {unit.componentName} - {unit.remainingVolume}ml
-                    {unit.isReserved && ` (Đã đặt bởi ${unit.reservedForPatientName})`}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          {selectedRequestToFulfill?.requestedBloodTypeId === 99 ? (
+            <Alert severity="error" sx={{ mb: 2, fontSize: 16 }}>
+              Không xác định được nhóm máu bệnh nhân.<br />
+              <b>Vui lòng xác định nhóm máu trước khi chọn máu để truyền!</b>
+            </Alert>
+          ) : (
+            <>
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                Vui lòng chọn cách hoàn thành yêu cầu máu khẩn cấp:
+              </Typography>
+              <FormControl component="fieldset" fullWidth sx={{ mt: 2 }}>
+                <RadioGroup value={fulfillType} onChange={(e) => setFulfillType(e.target.value)}>
+                  <FormControlLabel value="transfusion" control={<Radio />} label="Ưu tiên từ yêu cầu truyền máu" />
+                  <FormControlLabel value="bloodUnit" control={<Radio />} label="Sử dụng đơn vị máu trực tiếp" />
+                </RadioGroup>
+              </FormControl>
+              {fulfillType === 'transfusion' && (
+                <FormControl fullWidth sx={{ mt: 2, minWidth: 250, width: '100%' }} disabled={submitting}>
+                  <InputLabel id="transfusion-request-label">Chọn yêu cầu truyền máu</InputLabel>
+                  <Select
+                    labelId="transfusion-request-label"
+                    label="Chọn yêu cầu truyền máu"
+                    value={preemptedTransfusionId}
+                    onChange={(e) => setPreemptedTransfusionId(e.target.value)}
+                    fullWidth
+                    sx={{ width: '100%' }}
+                  >
+                    {transfusionRequests.length === 0 && (
+                      <MenuItem disabled sx={{ minWidth: 0 }}>Không có yêu cầu truyền máu phù hợp</MenuItem>
+                    )}
+                    {transfusionRequests.map((tr) => (
+                      <MenuItem key={tr.transfusionId} value={tr.transfusionId} sx={{ minWidth: 0 }}>
+                        {tr.patientCondition} - {tr.bloodType?.bloodTypeName} (ID: {tr.transfusionId})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              {fulfillType === 'bloodUnit' && (
+                <FormControl fullWidth sx={{ mt: 2, minWidth: 250, width: '100%' }} disabled={submitting}>
+                  <InputLabel id="blood-unit-label">Chọn đơn vị máu</InputLabel>
+                  <Select
+                    labelId="blood-unit-label"
+                    label="Chọn đơn vị máu"
+                    value={usedBloodUnitId}
+                    onChange={(e) => setUsedBloodUnitId(e.target.value)}
+                    fullWidth
+                    sx={{ width: '100%' }}
+                  >
+                    {bloodUnits.length === 0 && (
+                      <MenuItem disabled sx={{ minWidth: 0 }}>Không có đơn vị máu phù hợp</MenuItem>
+                    )}
+                    {bloodUnits.map((unit) => (
+                      <MenuItem key={unit.bloodUnitId} value={unit.bloodUnitId} sx={{ minWidth: 0 }}>
+                        {unit.bloodTypeName} - {unit.componentName} - {unit.remainingVolume}ml
+                        {unit.isReserved && ` (Đã đặt bởi ${unit.reservedForPatientName})`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFulfillOpen(false)} disabled={submitting}>Hủy</Button>
+          {/* Ẩn nút xác nhận nếu chưa biết nhóm máu */}
+          {selectedRequestToFulfill?.requestedBloodTypeId !== 99 && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleFulfillSubmit}
+              disabled={submitting || (!preemptedTransfusionId && !usedBloodUnitId)}
+            >
+              {submitting ? <CircularProgress size={24} /> : 'Xác nhận'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+
+      {/* Dialog chọn nhóm máu khi tiếp nhận yêu cầu bloodtype = 99 */}
+      <Dialog open={selectBloodTypeOpen} onClose={() => setSelectBloodTypeOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Chọn nhóm máu cho bệnh nhân</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel id="blood-type-label">Nhóm máu</InputLabel>
+            <Select
+              labelId="blood-type-label"
+              label="Nhóm máu"
+              value={chosenBloodTypeId}
+              onChange={(e) => setChosenBloodTypeId(e.target.value)}
+              fullWidth
+            >
+              {bloodTypes.map(bt => (
+                <MenuItem key={bt.bloodTypeId} value={bt.bloodTypeId}>{bt.bloodTypeName}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectBloodTypeOpen(false)}>Hủy</Button>
           <Button
             variant="contained"
             color="primary"
-            onClick={handleFulfillSubmit}
-            disabled={submitting || (!preemptedTransfusionId && !usedBloodUnitId)}
+            disabled={!chosenBloodTypeId || submitting}
+            onClick={async () => {
+              if (!selectedRequestToSetBloodType) return;
+              try {
+                // Gọi API cập nhật bloodtype cho yêu cầu
+                await axios.patch(`${API_URL}/UrgentBloodRequest/${selectedRequestToSetBloodType.urgentRequestId}/set-blood-type`,
+                  { bloodTypeId: chosenBloodTypeId },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                // Sau khi cập nhật, tự động tiếp nhận
+                await axios.patch(`${API_URL}/UrgentBloodRequest/${selectedRequestToSetBloodType.urgentRequestId}/accept`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                setSnackbar({ open: true, message: 'Đã cập nhật nhóm máu và tiếp nhận yêu cầu!', severity: 'success' });
+                setSelectBloodTypeOpen(false);
+                setChosenBloodTypeId('');
+                setSelectedRequestToSetBloodType(null);
+                fetchRequests();
+              } catch (err) {
+                setSnackbar({ open: true, message: 'Cập nhật nhóm máu hoặc tiếp nhận thất bại!', severity: 'error' });
+              }
+            }}
           >
-            {submitting ? <CircularProgress size={24} /> : 'Xác nhận'}
+            Xác nhận
           </Button>
         </DialogActions>
       </Dialog>

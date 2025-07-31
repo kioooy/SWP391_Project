@@ -50,6 +50,8 @@ public partial class BloodDonationSupportContext : DbContext
 
     public virtual DbSet<UrgentBloodRequest> UrgentBloodRequests { get; set; }
 
+    public virtual DbSet<UrgentRequestBloodUnit> UrgentRequestBloodUnits { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -398,16 +400,6 @@ public partial class BloodDonationSupportContext : DbContext
                 .HasForeignKey(d => d.RequestedBloodTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UrgentBloodRequests_BloodTypes_Requested");
-
-            entity.HasOne(d => d.RelatedTransfusionRequest)
-                .WithMany()
-                .HasForeignKey(d => d.RelatedTransfusionRequestId)
-                .HasConstraintName("FK_UrgentBloodRequests_TransfusionRequests_Related");
-
-            entity.HasOne(d => d.CreatedByUser)
-                .WithMany()
-                .HasForeignKey(d => d.CreatedByUserId)
-                .HasConstraintName("FK_UrgentBloodRequests_CreatedByUser");
         });
 
         modelBuilder.Entity<Hospital>(entity =>

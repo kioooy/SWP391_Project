@@ -199,7 +199,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       "Approved": "warning", // Đã duyệt - cam
       "Pending": "default", // Chờ duyệt - nâu
       "Completed": "success", // Hoàn thành - xanh lá
-      "Cancelled": "default", // Đã hủy - nâu
+      "Cancelled": "error", // Đã hủy - đỏ
       "Rejected": "error", // Đã từ chối - đỏ
     };
     return colors[status] || "default";
@@ -332,6 +332,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   // Tổng thể tích đã chọn
   const totalSelectedVolume = approveSelectedUnits.reduce((sum, u) => sum + u.volume, 0);
   const requiredVolume = transfusionToApprove?.transfusionVolume || 0;
+const totalAvailableVolume = suitableBloodUnits.reduce((sum, u) => sum + u.remainingVolume, 0) + suitableAlternatives.reduce((sum, alt) => sum + (alt.totalAvailable || 0), 0);
+const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length > 0;
 
   const handleConfirmApprove = async () => {
     setApproveLoading(true);
@@ -448,6 +450,41 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
       });
     } finally {
       setCancelLoading(false);
+    }
+  };
+
+  // Hàm kiểm tra yêu cầu truyền máu hết hạn
+  const handleExpiredCheck = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.patch(`/api/TransfusionRequest/expired_check`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.data && response.data.expiredCount > 0) {
+        setSnackbar({
+          open: true,
+          message: `Đã cập nhật ${response.data.expiredCount} yêu cầu truyền máu hết hạn!`,
+          severity: "warning",
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Không có yêu cầu truyền máu nào hết hạn!",
+          severity: "info",
+        });
+      }
+      
+      // Reload danh sách sau khi kiểm tra
+      await reloadTransfusions();
+    } catch (err) {
+      console.error("Error checking expired transfusion requests:", err);
+      const errorMessage = err.response?.data?.message || "Kiểm tra yêu cầu hết hạn thất bại.";
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
     }
   };
 
@@ -648,6 +685,12 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                 const today = new Date();
                 const value = e.target.value;
                 switch(value) {
+                  case 'all':
+                    setDateFilter({
+                      startDate: null,
+                      endDate: null
+                    });
+                    break;
                   case 'today':
                     setDateFilter({
                       startDate: today.toISOString().split('T')[0],
@@ -691,6 +734,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               }}
               label="Lọc nhanh"
             >
+              <MenuItem value="all">Tất cả</MenuItem>
               <MenuItem value="today">Hôm nay</MenuItem>
               <MenuItem value="yesterday">Hôm qua</MenuItem>
               <MenuItem value="thisWeek">Tuần này</MenuItem>
@@ -707,6 +751,14 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               Tạo yêu cầu truyền máu
             </Button>
           )}
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={handleExpiredCheck}
+            sx={{ ml: 1 }}
+          >
+            Kiểm tra hết hạn
+          </Button>
         </Box>
       </Card>
 
@@ -836,7 +888,6 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                         size="small"
                         sx={
                           transfusion?.status === 'Pending' ? { backgroundColor: '#795548', color: 'white' } :
-                          transfusion?.status === 'Cancelled' ? { backgroundColor: '#795548', color: 'white' } :
                           undefined
                         }
                       />
@@ -963,20 +1014,22 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               Người nhận: <strong>{transfusionToApprove?.fullName}</strong>
             </Typography>
             <Typography variant="body1">
-              Yêu cầu: <strong>{transfusionToApprove?.transfusionVolume} ml {transfusionToApprove?.componentName} ({transfusionToApprove?.bloodTypeName})</strong>
+              Yêu cầu: <strong>{transfusionToApprove?.transfusionVolume} ml {bloodComponentTranslations[transfusionToApprove?.componentName] || transfusionToApprove?.componentName} ({transfusionToApprove?.bloodTypeName})</strong>
             </Typography>
             {/* Danh sách máu phù hợp từ API suitable */}
-            <Typography variant="subtitle2" sx={{ mt: 2 }}>Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):</Typography>
-            {(suitableBloodUnits.length === 0 && suitableAlternatives.length === 0) ? (
-              <>
-                <Typography color="error" sx={{ mb: 2 }}>
-                  Không có túi máu phù hợp trong kho!
-                </Typography>
-                <DonorMobilizationComponent embedded bloodType={transfusionToApprove?.bloodTypeName} />
-              </>
-            ) : (
-              <>
-                {/* Đúng nhóm máu */}
+            <Typography variant="subtitle2" sx={{ mt: 2 }}>
+  Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):
+</Typography>
+{(!hasAnyUnits || totalAvailableVolume < requiredVolume) ? (
+  <> 
+    <Typography color="error" sx={{ mb: 2 }}>
+      Không có túi máu phù hợp trong kho!
+    </Typography>
+    <DonorMobilizationComponent embedded bloodType={transfusionToApprove?.bloodTypeName} />
+  </>
+) : (
+  <>
+    {/* Đúng nhóm máu */}
                 {suitableBloodUnits.length > 0 && (
                   <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1, mb: 2 }}>
                     <Typography variant="subtitle2" color="primary">Túi máu đúng nhóm:</Typography>
@@ -1055,8 +1108,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
                     ))}
                   </Box>
                 )}
-              </>
-            )}
+
             <Typography variant="body2" sx={{ mt: 1 }}>
               Tổng dung tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
             </Typography>
@@ -1068,6 +1120,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               rows={3}
               fullWidth
             />
+          </>
+        )}
           </Box>
         </DialogContent>
         <DialogActions>

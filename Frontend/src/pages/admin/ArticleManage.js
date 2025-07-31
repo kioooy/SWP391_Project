@@ -299,7 +299,7 @@ const ArticleManage = () => {
           style={{ width: "70%" }}
         />
          <Button variant="contained" onClick={() => setIsCreateOpen(true)}>
-          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" /></svg> Tạo bài viết
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" /></svg> Thêm Tài Liệu
         </Button>
       </div>
 
@@ -443,7 +443,7 @@ const ArticleManage = () => {
       />
       {selectedArticle && (
         <Dialog open={openDetailDialog} onClose={() => { setOpenDetailDialog(false); setSelectedArticle(null); }} maxWidth="sm" fullWidth>
-          <DialogTitle>📝 Chi tiết bài viết</DialogTitle>
+          <DialogTitle>📝 Chi tiết tài liệu</DialogTitle>
           <DialogContent style={{ paddingTop: 12 }}>
             {selectedArticle && (
               <div style={{ display: "grid", rowGap: 12 }}>
@@ -468,7 +468,11 @@ const ArticleManage = () => {
                   )}
                 </div>
                 <div>
-                  <strong>📊 Trạng thái:</strong> {selectedArticle.Status || selectedArticle.status}
+                  <strong>📊 Trạng thái:</strong> {
+                    (selectedArticle.Status || selectedArticle.status) === 'Published' ? 'Đã xuất bản' :
+                    (selectedArticle.Status || selectedArticle.status) === 'Draft' ? 'Bản nháp' :
+                    (selectedArticle.Status || selectedArticle.status) || 'Không xác định'
+                  }
                 </div>
                 <div>
                   <strong>🔒 Kích hoạt:</strong> {(selectedArticle.IsActive === true || selectedArticle.isActive === true) ? 'Có' : (selectedArticle.IsActive === false || selectedArticle.isActive === false) ? 'Không' : 'Không xác định'}
@@ -584,7 +588,7 @@ const ArticleManage = () => {
         <DialogActions>
           <Button onClick={() => setIsCreateOpen(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleCreate}>
-            Tạo
+            Thêm
           </Button>
         </DialogActions>
       </Dialog>

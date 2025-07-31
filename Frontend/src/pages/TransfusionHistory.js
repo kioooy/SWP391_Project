@@ -138,7 +138,7 @@ const TransfusionHistory = () => {
             <Box key={item.transfusionId || idx} sx={{ p: 2, mb: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Grid container spacing={2} sx={{ flex: 1 }}>
                 <Grid item xs={12} sm={2}>
-                  <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                  <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
                   <Typography variant="body1" fontWeight="bold">
                     {formatDate(item.requestDate)}
                   </Typography>
@@ -279,7 +279,7 @@ const TransfusionHistory = () => {
                         <Typography variant="body1" fontWeight="bold">{selected.transfusionVolume ? `${selected.transfusionVolume} ml` : '---'}</Typography>
                       </Box>
                       <Box sx={{ mb: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Ngày yêu cầu</Typography>
+                        <Typography variant="body2" color="text.secondary">Ngày truyền máu</Typography>
                         <Typography variant="body1" fontWeight="bold">{formatDate(selected.requestDate)}</Typography>
                       </Box>
                     </Grid>

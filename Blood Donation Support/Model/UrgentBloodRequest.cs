@@ -18,12 +18,7 @@ namespace Blood_Donation_Support.Model
         public string Status { get; set; } = null!;
         public DateTime? CompletionDate { get; set; }
         public bool IsActive { get; set; }
-        public int? RelatedTransfusionRequestId { get; set; }
-        public int? CreatedByUserId { get; set; }
-
         // Navigation properties
         public virtual BloodType BloodType { get; set; } = null!;
-        public virtual TransfusionRequest? RelatedTransfusionRequest { get; set; }
-        public virtual User? CreatedByUser { get; set; }
     }
 } 

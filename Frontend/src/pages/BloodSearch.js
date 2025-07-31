@@ -34,6 +34,7 @@ import {
   LocalHospital as HospitalIcon,
 } from "@mui/icons-material";
 import axios from "axios";
+import DonorMobilizationComponent from "./DonorMobilizationComponent";
 
 const BloodSearch = ({ onSearchComplete }) => {
   const [searchForm, setSearchForm] = useState({
@@ -58,6 +59,8 @@ const BloodSearch = ({ onSearchComplete }) => {
     message: "",
     severity: "success",
   });
+
+  const [urgentRequestInfo, setUrgentRequestInfo] = useState(null);
 
   // Đối tượng ánh xạ dịch thuật cho nhóm máu
   const bloodTypeTranslations = {
@@ -116,6 +119,37 @@ const BloodSearch = ({ onSearchComplete }) => {
     };
     fetchBloodTypes();
     fetchComponents();
+
+    // Kiểm tra xem có thông tin từ yêu cầu khẩn cấp không
+    const urgentRequestParams = sessionStorage.getItem('urgentRequestSearchParams');
+    if (urgentRequestParams) {
+      try {
+        const params = JSON.parse(urgentRequestParams);
+        setSearchForm({
+          recipientBloodTypeId: params.recipientBloodTypeId || "",
+          requiredVolume: params.requiredVolume || "",
+          component: params.component || "",
+        });
+
+        // Lưu thông tin yêu cầu khẩn cấp để hiển thị
+        setUrgentRequestInfo({
+          patientName: params.patientName,
+          urgentRequestId: params.urgentRequestId
+        });
+        
+        // Hiển thị thông báo cho người dùng biết đã tự động điền thông tin
+        setSnackbar({
+          open: true,
+          message: `Đã tự động điền thông tin từ yêu cầu khẩn cấp của bệnh nhân ${params.patientName || 'không rõ'}`,
+          severity: "info",
+        });
+        
+        // Xóa dữ liệu khỏi sessionStorage sau khi đã sử dụng
+        sessionStorage.removeItem('urgentRequestSearchParams');
+      } catch (error) {
+        console.error("Error parsing urgent request params:", error);
+      }
+    }
   }, []);
 
   const handleSearch = async () => {
@@ -219,13 +253,28 @@ const BloodSearch = ({ onSearchComplete }) => {
 
   return (
 
-    <Box sx={{ backgroundColor: "white", minHeight: "100vh" }}>
+    <Box sx={{ minHeight: "auto", pb: 2 }}>
 
       <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold", color: '#E53935' }}>
         Tìm kiếm máu và người hiến phù hợp
       </Typography>
 
-      <Grid container spacing={3}>
+      <Box sx={{ backgroundColor: "white", mt: 6 }}>
+        {/* Hiển thị thông tin yêu cầu khẩn cấp nếu có */}
+        {urgentRequestInfo && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              🚨 Yêu cầu máu khẩn cấp
+            </Typography>
+            <Typography variant="body2">
+              <strong>Bệnh nhân:</strong> {urgentRequestInfo.patientName}<br/>
+              <strong>Mã yêu cầu:</strong> #{urgentRequestInfo.urgentRequestId}<br/>
+              <em>Thông tin tìm kiếm đã được tự động điền từ yêu cầu khẩn cấp này.</em>
+            </Typography>
+          </Alert>
+        )}
+
+        <Grid container spacing={3}>
         {/* Tìm kiếm máu phù hợp */}
         <Grid item xs={12}>
           <Card sx={{ boxShadow: 'none', background: 'none', backgroundColor: 'transparent' }}>
@@ -369,7 +418,34 @@ const BloodSearch = ({ onSearchComplete }) => {
                           </TableContainer>
                         </>
                       ) : (
-                        <Alert severity="info">Không có người hiến phù hợp.</Alert>
+                        <>
+                          <Alert severity="info" sx={{ mb: 2 }}>Không có người hiến phù hợp.</Alert>
+                          {/* Hiển thị component huy động người hiến khi không có máu và không có người hiến */}
+                          <Card variant="outlined" sx={{ mt: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                                <NotificationsIcon color="warning" />
+                                <Typography variant="h6" color="warning.main">
+                                  Huy động người hiến máu
+                                </Typography>
+                              </Box>
+                              <Typography variant="body2" sx={{ mb: 2, color: "text.secondary" }}>
+                                Không tìm thấy máu và người hiến phù hợp. Bạn có thể gửi thông báo để huy động cộng đồng hiến máu.
+                              </Typography>
+                              <DonorMobilizationComponent 
+                                embedded={true}
+                                bloodType={bloodTypes.find(bt => bt.bloodTypeId == searchForm.recipientBloodTypeId)?.bloodTypeName || ""}
+                                onNotified={(donorsList) => {
+                                  setSnackbar({
+                                    open: true,
+                                    message: `Đã gửi thông báo thành công tới ${donorsList.length} người hiến máu!`,
+                                    severity: "success",
+                                  });
+                                }}
+                              />
+                            </CardContent>
+                          </Card>
+                        </>
                       )}
                     </>
                   )}
@@ -382,9 +458,10 @@ const BloodSearch = ({ onSearchComplete }) => {
         {/* Huy động người hiến */}
         {/* PHẦN NÀY ĐÃ ĐƯỢC TÁCH RIÊNG, XÓA HOÀN TOÀN */}
       </Grid>
+      </Box>
 
       {/* Hướng dẫn sử dụng */}
-      <Card sx={{ mt: 3 }}>
+      <Card sx={{ mt: 3, mb: 0 }}>
         <CardContent sx={{ background: 'none', backgroundColor: 'transparent' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Hướng dẫn sử dụng
@@ -395,7 +472,6 @@ const BloodSearch = ({ onSearchComplete }) => {
             2. Chọn thành phần máu (nếu cần)<br/>
             3. Nhập lượng máu cần thiết<br/>
             4. Nhấn "Tìm kiếm máu" để tra cứu kho máu phù hợp<br/>
-            5. Nếu không có máu phù hợp, hãy chuyển sang trang "Huy động người hiến" để gửi thông báo tới cộng đồng người hiến máu.<br/>
           </Typography>
         </CardContent>
       </Card>

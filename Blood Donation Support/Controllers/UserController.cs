@@ -466,7 +466,7 @@ namespace Blood_Donation_Support.Controllers
 
                     if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
                     {
-                        var daysSinceTransfusion = (DateTime.UtcNow - lastTransfusion.CompletionDate.Value).TotalDays;
+                        var daysSinceTransfusion = (DateTime.Now - lastTransfusion.CompletionDate.Value).TotalDays;
                         if (daysSinceTransfusion < 365)
                         {
                             return BadRequest(new { message = "Thành viên này vừa truyền máu xong, chưa thể đăng ký hiến máu cho đến khi hồi phục đủ 365 ngày." });
@@ -657,6 +657,62 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound(new { message = $"Không tìm thấy thành viên với UserId: {userId}" });
             return Ok(new { userId = member.UserId, bloodTypeId = member.BloodTypeId });
+        }
+
+        // API: PATCH /api/User/{userId}/blood-type
+        [HttpPatch("{userId}/blood-type")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> UpdateMemberBloodType(int userId, [FromBody] UpdateBloodTypeRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Tìm member theo userId
+            var member = await _context.Members
+                .Include(m => m.BloodType)
+                .FirstOrDefaultAsync(m => m.UserId == userId);
+            
+            if (member == null)
+                return NotFound(new { message = $"Không tìm thấy thành viên với UserId: {userId}" });
+
+            // Kiểm tra bloodTypeId hợp lệ (1-8, không cho phép 99 - "Không biết")
+            if (request.BloodTypeId < 1 || request.BloodTypeId > 8)
+                return BadRequest(new { message = "BloodTypeId phải từ 1-8 (A+, A-, B+, B-, AB+, AB-, O+, O-)" });
+
+            // Kiểm tra bloodType có tồn tại không
+            var newBloodType = await _context.BloodTypes.FindAsync(request.BloodTypeId);
+            if (newBloodType == null)
+                return BadRequest(new { message = $"Không tìm thấy nhóm máu với ID: {request.BloodTypeId}" });
+
+            // Lưu thông tin cũ để log
+            var oldBloodTypeId = member.BloodTypeId;
+            var oldBloodTypeName = member.BloodType?.BloodTypeName ?? "Không biết";
+
+            // Cập nhật nhóm máu
+            member.BloodTypeId = request.BloodTypeId;
+            _context.Entry(member).State = EntityState.Modified;
+
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new
+                {
+                    message = "Cập nhật nhóm máu thành công",
+                    memberId = userId,
+                    oldBloodTypeId = oldBloodTypeId,
+                    oldBloodTypeName = oldBloodTypeName,
+                    newBloodTypeId = request.BloodTypeId,
+                    newBloodTypeName = newBloodType.BloodTypeName
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { message = "Có lỗi xảy ra khi cập nhật nhóm máu", error = ex.Message });
+            }
         }
     }
 }

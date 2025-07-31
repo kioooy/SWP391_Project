@@ -125,7 +125,7 @@ const MainLayout = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    if (currentUser && currentUser.role === 'Member') {
+    if (currentUser && (currentUser.role === 'Member' || currentUser.isRecipient)) {
       const hasShownSnackbar = sessionStorage.getItem('hasShownLocationSnackbar');
 
       // Nếu người dùng chưa có vị trí hoặc Snackbar chưa được hiển thị trong phiên này
@@ -261,7 +261,7 @@ const MainLayout = () => {
         { label: "Tin Tức", icon: <ArticleIcon />, isNews: true },
         { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
         // { path: "/blood-search", label: "Tra Cứu Nhóm Máu ", icon: <BloodtypeIcon /> },
-        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+        { path: "/emergency-request", label: "Truyền Máu Khẩn Cấp", icon: <LocalHospitalIcon /> },
       ];
     } else {
       menuItems = [
@@ -271,7 +271,7 @@ const MainLayout = () => {
         // { path: "/blood-search", label: "Tra Cứu Nhóm Máu", icon: <BloodtypeIcon /> },
         { path: "/booking", label: "Đặt Lịch", icon: <EventIcon /> },
         { path: "/certificate", label: "Chứng Chỉ", icon: <VerifiedIcon /> },
-        { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
+        // { path: "/emergency-request", label: "Truyền Máu Khẩn Cấp", icon: <LocalHospitalIcon /> },
         { path: "/history", label: "Lịch Sử Đặt Hẹn", icon: <HistoryIcon /> },
       ];
     }
@@ -292,7 +292,8 @@ const MainLayout = () => {
       { path: "/", label: "Trang Chủ", icon: <HomeIcon /> },
       { label: "Tin Tức", isNews: true, icon: <ArticleIcon /> },
       { path: "/blog", label: "Bài Viết", icon: <EditNoteIcon /> },
-      { path: "/blood-compatibility", label: "Tra cứu nhóm máu phù hợp", icon: <BloodtypeIcon /> },
+      { path: "/blood-compatibility", label: "Tra cứu nhóm máu", icon: <BloodtypeIcon /> },
+      { path: "/transfusion-appointment-history", label: "Lịch hẹn truyền máu", icon: <EventIcon /> },
       { path: "/transfusion-history", label: "Lịch Sử Truyền Máu", icon: <HistoryIcon /> },
       { path: "/emergency-request", label: "Yêu Cầu Khẩn", icon: <LocalHospitalIcon /> },
     ];
@@ -417,6 +418,32 @@ const MainLayout = () => {
         <ContentContainer maxWidth="lg">
           <Outlet />
         </ContentContainer>
+        {/* Thêm Snackbar vị trí cho tài khoản nhận máu */}
+        <Snackbar
+          open={openLocationSnackbar}
+          autoHideDuration={10000}
+          onClose={() => setOpenLocationSnackbar(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => setOpenLocationSnackbar(false)}
+            severity="warning"
+            sx={{ width: '100%' }}
+          >
+            {locationSnackbarMessage}
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                navigate('/user-profile-recipient?scrollToLocation=true');
+                setOpenLocationSnackbar(false);
+              }}
+              sx={{ ml: 2, fontWeight: 'bold' }}
+            >
+              CẬP NHẬT NGAY
+            </Button>
+          </Alert>
+        </Snackbar>
         <Footer />
       </MainContainer>
     );

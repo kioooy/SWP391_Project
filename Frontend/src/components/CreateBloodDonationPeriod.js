@@ -38,6 +38,41 @@ const validationSchema = Yup.object({
     .required('Số lượng mục tiêu là bắt buộc')
     .positive('Số lượng mục tiêu phải là số dương')
     .integer('Số lượng mục tiêu phải là số nguyên'),
+}).test('time-validation', 'Thời gian không hợp lệ', function(value) {
+  const { periodDateFrom, periodDateTo } = value;
+  
+  if (!periodDateFrom || !periodDateTo) {
+    return true; // Bỏ qua nếu chưa có đủ dữ liệu
+  }
+
+  // Chuyển đổi sang dayjs object nếu cần
+  const fromDate = dayjs.isDayjs(periodDateFrom) ? periodDateFrom : dayjs(periodDateFrom);
+  const toDate = dayjs.isDayjs(periodDateTo) ? periodDateTo : dayjs(periodDateTo);
+
+  // Kiểm tra thời gian bắt đầu phải trước thời gian kết thúc
+  if (fromDate.isAfter(toDate)) {
+    return this.createError({
+      message: 'Thời gian bắt đầu phải trước thời gian kết thúc'
+    });
+  }
+
+  // Kiểm tra khoảng thời gian tối thiểu (ít nhất 1 giờ)
+  const duration = toDate.diff(fromDate, 'hour', true);
+  if (duration < 1) {
+    return this.createError({
+      message: 'Khoảng thời gian phải ít nhất 1 giờ'
+    });
+  }
+
+  // Kiểm tra thời gian bắt đầu không được trong quá khứ
+  const now = dayjs();
+  if (fromDate.isBefore(now, 'day')) {
+    return this.createError({
+      message: 'Không thể tạo đợt hiến máu trong quá khứ'
+    });
+  }
+
+  return true;
 });
 
 const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
@@ -86,18 +121,43 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
         throw new Error('Không có thông tin bệnh viện');
       }
 
+      // Kiểm tra validation thời gian
+      if (values.periodDateFrom && values.periodDateTo) {
+        // Đảm bảo là dayjs object
+        const fromDate = dayjs.isDayjs(values.periodDateFrom) ? values.periodDateFrom : dayjs(values.periodDateFrom);
+        const toDate = dayjs.isDayjs(values.periodDateTo) ? values.periodDateTo : dayjs(values.periodDateTo);
+        
+        // Kiểm tra thời gian bắt đầu phải trước thời gian kết thúc
+        if (fromDate.isAfter(toDate)) {
+          throw new Error('Thời gian bắt đầu phải trước thời gian kết thúc');
+        }
+
+        // Kiểm tra khoảng thời gian tối thiểu (ít nhất 1 giờ)
+        const duration = toDate.diff(fromDate, 'hour', true);
+        if (duration < 1) {
+          throw new Error('Khoảng thời gian phải ít nhất 1 giờ');
+        }
+
+        // Kiểm tra thời gian bắt đầu không được trong quá khứ
+        const now = dayjs();
+        if (fromDate.isBefore(now, 'day')) {
+          throw new Error('Không thể tạo đợt hiến máu trong quá khứ');
+        }
+      }
+
       let periodName = values.periodName;
       if (!periodName) {
         const dateStr = dayjs(values.date).format('DD/MM/YYYY');
         periodName = `Hiến Máu Nhân Đạo Ngày (${dateStr})`;
       }
 
+      // Đảm bảo thời gian được gửi đúng múi giờ local
       const requestData = {
         periodName,
         location: `${hospital.name} - ${hospital.address}`,
         status: 'Active', // luôn gửi status là Active
-        periodDateFrom: values.periodDateFrom.toDate(),
-        periodDateTo: values.periodDateTo.toDate(),
+        periodDateFrom: values.periodDateFrom.format('YYYY-MM-DDTHH:mm'),
+        periodDateTo: values.periodDateTo.format('YYYY-MM-DDTHH:mm'),
         targetQuantity: values.targetQuantity
       };
 
@@ -170,6 +230,13 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                       {error}
                     </Alert>
                   )}
+                  
+                  {/* Hiển thị lỗi validation tổng thể */}
+                  {errors.timeValidation && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {errors.timeValidation}
+                    </Alert>
+                  )}
 
                   {/* Hiển thị thông tin bệnh viện */}
                   {/* ĐÃ XÓA: Alert hiển thị địa điểm hiến máu và các thông tin bệnh viện */}
@@ -199,11 +266,18 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         onChange={newDate => {
                           setFieldValue('date', newDate);
                           // Khi đổi ngày, cập nhật lại ngày cho periodDateFrom và periodDateTo, giữ nguyên giờ/phút
-                          setFieldValue('periodDateFrom', dayjs(newDate).hour(values.periodDateFrom.hour()).minute(values.periodDateFrom.minute()));
-                          setFieldValue('periodDateTo', dayjs(newDate).hour(values.periodDateTo.hour()).minute(values.periodDateTo.minute()));
+                          if (newDate) {
+                            const currentFromHour = values.periodDateFrom ? values.periodDateFrom.hour() : 8;
+                            const currentFromMinute = values.periodDateFrom ? values.periodDateFrom.minute() : 0;
+                            const currentToHour = values.periodDateTo ? values.periodDateTo.hour() : 17;
+                            const currentToMinute = values.periodDateTo ? values.periodDateTo.minute() : 0;
+                            
+                            setFieldValue('periodDateFrom', newDate.hour(currentFromHour).minute(currentFromMinute));
+                            setFieldValue('periodDateTo', newDate.hour(currentToHour).minute(currentToMinute));
+                          }
                           // Nếu user chưa sửa tên thì tự động cập nhật tên đợt
                           if (!isNameEdited && newDate) {
-                            const dateStr = dayjs(newDate).format('DD/MM/YYYY');
+                            const dateStr = newDate.format('DD/MM/YYYY');
                             setFieldValue('periodName', `Hiến Máu Nhân Đạo Ngày (${dateStr})`);
                           }
                         }}
@@ -225,7 +299,9 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         value={values.periodDateFrom}
                         onChange={newTime => {
                           // Kết hợp ngày đã chọn với giờ mới
-                          setFieldValue('periodDateFrom', dayjs(values.date).hour(dayjs(newTime).hour()).minute(dayjs(newTime).minute()));
+                          if (newTime && values.date) {
+                            setFieldValue('periodDateFrom', values.date.hour(newTime.hour()).minute(newTime.minute()));
+                          }
                         }}
                         renderInput={(params) => (
                           <TextField
@@ -244,7 +320,9 @@ const CreateBloodDonationPeriod = ({ open, onClose, onSuccess }) => {
                         label="Giờ kết thúc"
                         value={values.periodDateTo}
                         onChange={newTime => {
-                          setFieldValue('periodDateTo', dayjs(values.date).hour(dayjs(newTime).hour()).minute(dayjs(newTime).minute()));
+                          if (newTime && values.date) {
+                            setFieldValue('periodDateTo', values.date.hour(newTime.hour()).minute(newTime.minute()));
+                          }
                         }}
                         renderInput={(params) => (
                           <TextField

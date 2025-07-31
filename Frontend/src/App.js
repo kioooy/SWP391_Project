@@ -49,6 +49,9 @@ import UrgentRequestManage from "./pages/admin/UrgentRequestManage";
 import UserManage from './pages/admin/UserManage';
 import axios from "axios";
 import BloodCompatibilityPage from "./pages/BloodCompatibilityPage";
+import TransfusionAppointmentHistory from "./pages/TransfusionAppointmentHistory"
+import UrgentRequestManageV2 from "./pages/admin/UrgentRequestManageV2";
+
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -91,6 +94,7 @@ const App = () => {
         <Route path="/article/:id" element={<ArticleDetail />} />
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/transfusion-history" element={<TransfusionHistory />} />
+        <Route path="/transfusion-appointment-history" element={<TransfusionAppointmentHistory />} />
         <Route
           path="/profile"
           element={
@@ -209,6 +213,14 @@ const App = () => {
           element={
             <RequireAuth roles={["Admin", "Staff"]}>
               <UrgentRequestManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/manage-urgent-request-v2"
+          element={
+            <RequireAuth roles={["Admin", "Staff"]}>
+              <UrgentRequestManageV2 />
             </RequireAuth>
           }
         />

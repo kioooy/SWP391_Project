@@ -99,6 +99,12 @@ namespace Blood_Donation_Support.Controllers
             }
             // Khi tạo yêu cầu truyền máu mới, gán IsRecipient = true
             member.IsRecipient = true;
+
+            // Cập nhật nhóm máu nếu bệnh nhân chưa biết nhóm máu
+            if (member.BloodTypeId == 99 && model.BloodTypeId != 99)
+            {
+                member.BloodTypeId = model.BloodTypeId;
+            }
             _context.Members.Update(member);
             
             var bloodType = await _context.BloodTypes.FindAsync(model.BloodTypeId);
@@ -462,6 +468,7 @@ namespace Blood_Donation_Support.Controllers
 
                 var originalStatus = transfusionRequest.Status;
                 transfusionRequest.Status = "Cancelled";
+                transfusionRequest.CancelledDate = DateTime.Now;
                 _context.TransfusionRequests.Update(transfusionRequest);
 
                 // Nếu yêu cầu đã được phê duyệt, chúng ta cần giải phóng các túi máu đã gán
@@ -476,6 +483,7 @@ namespace Blood_Donation_Support.Controllers
                     {
                         // Cập nhật trạng thái liên kết
                         assignedUnit.Status = "Cancelled";
+                        assignedUnit.Notes = "Yêu cầu truyền máu đã bị hủy, túi máu được hoàn trả lại kho.";
                         _context.TransfusionRequestBloodUnits.Update(assignedUnit);
 
                         // Hoàn trả thể tích cho túi máu
@@ -553,26 +561,28 @@ namespace Blood_Donation_Support.Controllers
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> GetTransfusionRequestUpcomming()
         {
-            // Get current user id
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
-            // Check translation request id from current user
-            var transfusionRequest = await _context.TransfusionRequests.FirstOrDefaultAsync(tr => tr.Member.UserId == currentUserId);
-            if (transfusionRequest == null)
-                return NotFound($"Không tìm thấy lịch sử truyền máu.");
-
-            return Ok(await _context.TransfusionRequests
-                .Where(tr => tr.IsActive == true && tr.MemberId == currentUserId && tr.PreferredReceiveDate >= DateTime.Today)
-                .Select(tr => new
-                {
-                    tr.TransfusionId,              // Tranfusion Request ID
-                    tr.Status,                     // Status
-                    tr.PreferredReceiveDate,       // Receive Date
-                    tr.ResponsibleBy.FullName,     // Responsible User Name ( Staff )
-                    tr.TransfusionVolume,          // Transfusion Volume 
-                    tr.BloodType.BloodTypeName,    // Blood Type 
+            var history = await _context.TransfusionRequests
+                .Where(tr => tr.MemberId == currentUserId)
+                .Include(tr => tr.BloodType)
+                .Include(tr => tr.Component)
+                .OrderByDescending(tr => tr.RequestDate)
+                .Select(tr => new {
+                    tr.TransfusionId,
+                    tr.BloodType.BloodTypeName,
+                    tr.Component.ComponentName,
+                    tr.TransfusionVolume,
+                    tr.Status,
+                    tr.RequestDate,
+                    tr.ApprovalDate,
+                    tr.CompletionDate,
+                    tr.CancelledDate,
+                    tr.Notes,
+                    tr.PatientCondition
                 })
-                .ToListAsync());
+                .ToListAsync();
+            return Ok(history);
         }
 
         // Check for expired transfusion requests

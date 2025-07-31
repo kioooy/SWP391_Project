@@ -43,7 +43,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import LockIcon from '@mui/icons-material/Lock';
 import dayjs from 'dayjs';
 
-const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Tạo mật khẩu'];
+const steps = ['Chọn loại tài khoản', 'Nhập thông tin', 'Hồ sơ hiến máu', 'Tạo mật khẩu', 'Xác nhận thông tin'];
 
 // const idTypes = [
 //   'Chứng minh nhân dân',
@@ -155,6 +155,7 @@ const bloodTypes = [
   { id: 6, label: 'AB-' },
   { id: 7, label: 'O+' },
   { id: 8, label: 'O-' },
+  { id: 99, label: 'Không biết' },
 ];
 
 const getValidationSchema = (activeStep) => {
@@ -170,7 +171,8 @@ const getValidationSchema = (activeStep) => {
       .required('Vui lòng nhập số CCCD');
     baseSchema.fullName = Yup.string()
       .min(2, 'Họ tên phải có ít nhất 2 ký tự')
-      .matches(/^[\p{L}\s]+$/u, 'Họ tên chỉ được chứa chữ và khoảng trắng')
+      .max(60, 'Họ tên không được vượt quá 60 ký tự')
+      .matches(/^[\p{L}\s'-]+$/u, 'Họ tên chỉ được chứa chữ cái và khoảng trắng')
       .required('Vui lòng nhập họ và tên');
     baseSchema.dateOfBirth = Yup.date()
       .nullable()
@@ -186,7 +188,10 @@ const getValidationSchema = (activeStep) => {
     baseSchema.gender = Yup.string().required('Vui lòng chọn giới tính');
     baseSchema.city = Yup.string().required('Vui lòng chọn tỉnh/thành phố');
     baseSchema.district = Yup.string().required('Vui lòng chọn quận/huyện');
-    baseSchema.street = Yup.string().required('Vui lòng nhập số nhà, tên đường');
+    baseSchema.street = Yup.string()
+      .min(5, 'Địa chỉ phải có ít nhất 5 ký tự')
+      .max(120, 'Địa chỉ không được vượt quá 120 ký tự')
+      .required('Vui lòng nhập số nhà, tên đường');
   }
 
   if (activeStep >= 2) {
@@ -214,10 +219,11 @@ const getValidationSchema = (activeStep) => {
   if (activeStep >= 3) {
     baseSchema.password = Yup.string()
       .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-      .matches(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-        'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
-      )
+      .max(50, 'Mật khẩu không được vượt quá 50 ký tự')
+      .matches(/[a-z]/, 'Mật khẩu phải có ít nhất 1 chữ thường')
+      .matches(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
+      .matches(/[0-9]/, 'Mật khẩu phải có ít nhất 1 số')
+      .matches(/[@$!%*?&]/, 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt (@$!%*?&)')
       .required('Vui lòng nhập mật khẩu');
     baseSchema.confirmPassword = Yup.string()
       .oneOf([Yup.ref('password'), null], 'Xác nhận mật khẩu không khớp')
@@ -232,6 +238,13 @@ const Signup = () => {
   const dispatch = useDispatch();
   const { error, loading } = useSelector((state) => state.auth);
 
+  // Debug logging for loading and error states
+  React.useEffect(() => {
+    console.log('=== DEBUG: Auth state changed ===');
+    console.log('Loading:', loading);
+    console.log('Error:', error);
+  }, [loading, error]);
+
   const [activeStep, setActiveStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -242,6 +255,81 @@ const Signup = () => {
   React.useEffect(() => {
     currentStepRef.current = activeStep;
   }, [activeStep]);
+
+  // Thêm hàm render xác nhận thông tin
+  const renderConfirmation = () => {
+    return (
+      <Box>
+        <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
+          Xác nhận thông tin đăng ký
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          Xin vui lòng kiểm tra lại các thông tin bên dưới, các thông tin được cung cấp sẽ dùng để tạo tài khoản và liên lạc với bạn.
+        </Typography>
+        <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Loại tài khoản:</Typography>
+              <Typography>{formik.values.accountType === 'donor' ? 'Hiến máu' : 'Truyền máu'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Họ và tên:</Typography>
+              <Typography>{formik.values.fullName}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Số CCCD:</Typography>
+              <Typography>{formik.values.personalId}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Ngày sinh:</Typography>
+              <Typography>{formik.values.dateOfBirth ? dayjs(formik.values.dateOfBirth).format('DD/MM/YYYY') : ''}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Giới tính:</Typography>
+              <Typography>{formik.values.gender === 'male' ? 'Nam' : 'Nữ'}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Địa chỉ:</Typography>
+              <Typography>{`${formik.values.street}, ${formik.values.district}, ${formik.values.city}`}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Số điện thoại:</Typography>
+              <Typography>{formik.values.mobilePhone}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Email:</Typography>
+              <Typography>{formik.values.email}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Cân nặng:</Typography>
+              <Typography>{formik.values.weight} kg</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Chiều cao:</Typography>
+              <Typography>{formik.values.height} cm</Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle2">Nhóm máu:</Typography>
+              <Typography>{bloodTypes.find(b => b.id == formik.values.bloodTypeId)?.label || ''}</Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+          <Button onClick={handleBack} sx={{ mr: 1 }}>
+            Quay lại
+          </Button>
+          <Button
+            type="button"
+            variant="contained"
+            onClick={formik.handleSubmit}
+            disabled={loading}
+          >
+            Xác nhận & Đăng ký
+          </Button>
+        </Box>
+      </Box>
+    );
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -282,21 +370,39 @@ const Signup = () => {
     validateOnChange: true,
     validateOnBlur: true,
     onSubmit: async (values) => {
+
+      console.log('=== DEBUG: onSubmit được gọi ===');
+      console.log('Active step:', activeStep);
+      console.log('Form values:', values);
+      console.log('Form errors:', formik.errors);
+      console.log('Form touched:', formik.touched);
+      
       // Kiểm tra nếu chưa phải bước cuối cùng
       if (activeStep < 3) {
+        console.log('=== DEBUG: Chưa phải bước cuối, chuyển sang bước tiếp theo ===');
+
         const errors = await formik.validateForm();
+        console.log('Validation errors:', errors);
         if (Object.keys(errors).length > 0) {
+          console.log('=== DEBUG: Có lỗi validation, không chuyển bước ===');
           formik.setTouched(
             Object.keys(errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
             true
           );
           return;
         }
+        console.log('=== DEBUG: Không có lỗi, chuyển sang bước tiếp theo ===');
         setActiveStep(activeStep + 1);
         return;
       }
+      
+      console.log('=== DEBUG: Đây là bước cuối cùng, bắt đầu đăng ký ===');
       // Submit registration data on final step
       try {
+        console.log('=== DEBUG: Bắt đầu quá trình đăng ký ===');
+        console.log('Step hiện tại:', activeStep);
+        console.log('Form values:', values);
+        
         const registrationData = {
           fullName: values.fullName,
           password: values.password,
@@ -313,18 +419,67 @@ const Signup = () => {
           isDonor: values.accountType === 'donor',
           isRecipient: values.accountType === 'recipient',
         };
-        await dispatch(register(registrationData)).unwrap();
+        
+        console.log('=== DEBUG: Dữ liệu đăng ký đã chuẩn bị ===');
+        console.log('Registration data:', registrationData);
+        console.log('Account type:', values.accountType);
+        console.log('Role ID:', registrationData.roleId);
+        
+        console.log('=== DEBUG: Gửi request đăng ký ===');
+        const result = await dispatch(register(registrationData)).unwrap();
+        console.log('=== DEBUG: Đăng ký thành công ===');
+        console.log('Registration result:', result);
+        console.log('Chuyển hướng về trang chủ...');
+        
         navigate('/');
+        console.log('=== DEBUG: Hoàn thành đăng ký và chuyển hướng ===');
       } catch (err) {
+        console.error('=== DEBUG: Lỗi đăng ký ===');
+        console.error('Error details:', err);
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
         // Error is handled by the auth slice
       }
     },
   });
 
+  // Debug logging for fullName changes
+  React.useEffect(() => {
+    if (formik.values.fullName) {
+      console.log('=== DEBUG: fullName value changed ===');
+      console.log('Current fullName value:', formik.values.fullName);
+      console.log('fullName length:', formik.values.fullName?.length);
+      console.log('fullName characters:', Array.from(formik.values.fullName).map(c => `${c} (${c.charCodeAt(0)})`));
+      
+      // Kiểm tra xem có ký tự lạ không
+      const suspiciousChars = Array.from(formik.values.fullName).filter(c => {
+        const code = c.charCodeAt(0);
+        return code > 127 && !/[ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵýỷỹ]/.test(c);
+      });
+      
+      if (suspiciousChars.length > 0) {
+        console.warn('=== WARNING: Suspicious characters detected ===');
+        console.warn('Suspicious chars:', suspiciousChars);
+      }
+    }
+  }, [formik.values.fullName]);
+
   // Update validation when step changes
   React.useEffect(() => {
-    formik.validateForm();
+    console.log('=== DEBUG: Validating form for step ===', activeStep);
+    formik.validateForm().then(errors => {
+      console.log('Validation errors for step', activeStep, ':', errors);
+    });
   }, [activeStep]);
+
+  // Debug logging for form validation
+  React.useEffect(() => {
+    console.log('=== DEBUG: Form validation state ===');
+    console.log('Form is valid:', formik.isValid);
+    console.log('Form is dirty:', formik.dirty);
+    console.log('Form errors:', formik.errors);
+    console.log('Form touched:', formik.touched);
+  }, [formik.isValid, formik.errors, formik.touched]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -332,6 +487,18 @@ const Signup = () => {
 
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  // Hàm làm sạch giá trị fullName
+  const cleanFullName = (value) => {
+    if (!value) return value;
+
+    // Chỉ chuẩn hóa khoảng trắng, giữ nguyên mọi ký tự Unicode
+    let cleaned = value
+      .replace(/\s+/g, ' ') // Thay thế nhiều khoảng trắng liên tiếp bằng 1 khoảng trắng
+      .trim(); // Loại bỏ khoảng trắng thừa ở đầu và cuối
+
+    return cleaned;
   };
 
   const renderStepContent = (step) => {
@@ -448,7 +615,7 @@ const Signup = () => {
               Nhập thông tin giấy tờ
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Vui lòng nhập thông tin trên giấy tờ và bấm "xác nhận" để hoàn thành.
+              Vui lòng đúng nhập thông tin trên giấy tờ và bấm "xác nhận" để hoàn thành.
             </Typography>
 
             {error && (
@@ -497,14 +664,22 @@ const Signup = () => {
                   label="Họ và tên (*)"
                   placeholder="VD: Nguyễn Văn A"
                   value={formik.values.fullName}
-                  onChange={e => {
-                    // Chỉ cho nhập chữ và khoảng trắng
-                    const onlyLetters = e.target.value.replace(/[^\p{L}\s]/gu, '');
-                    formik.setFieldValue('fullName', onlyLetters);
+                  onChange={(e) => formik.setFieldValue('fullName', e.target.value)}
+                  onBlur={(e) => {
+                    const cleaned = cleanFullName(e.target.value);
+                    formik.setFieldValue('fullName', cleaned);
+                    formik.handleBlur(e);
                   }}
                   error={formik.touched.fullName && Boolean(formik.errors.fullName)}
                   helperText={formik.touched.fullName && formik.errors.fullName}
-                  inputProps={{ maxLength: 60 }}
+                  inputProps={{
+                    maxLength: 60,
+                    autoComplete: 'new-password',
+                    spellCheck: false,
+                    autoCorrect: 'off',
+                    autoCapitalize: 'words',
+                  }}
+                  autoComplete="new-password"
                 />
               </Grid>
 
@@ -533,6 +708,7 @@ const Signup = () => {
                   />
                 </LocalizationProvider>
               </Grid>
+
 
               {/* Giới tính */}
               <Grid item xs={12}>
@@ -626,11 +802,7 @@ const Signup = () => {
                       label="Số nhà, tên đường"
                       placeholder="Nhập số nhà, tên đường"
                       value={formik.values.street}
-                      onChange={e => {
-                        // Cho phép nhập số, chữ, khoảng trắng và các dấu , . /
-                        const onlyValid = e.target.value.replace(/[^\p{L}0-9\s,./]/gu, '');
-                        formik.setFieldValue('street', onlyValid);
-                      }}
+                      onChange={formik.handleChange}
                       error={formik.touched.street && Boolean(formik.errors.street)}
                       helperText={formik.touched.street && formik.errors.street}
                       inputProps={{ maxLength: 120 }}
@@ -770,6 +942,12 @@ const Signup = () => {
 
               {/* Nhóm máu */}
               <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                  <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Chọn nhóm máu của bạn. Nếu chưa biết, có thể chọn "Không biết" và cập nhật sau
+                  </Typography>
+                </Box>
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Nhóm máu (*)</InputLabel>
                   <Select
@@ -781,7 +959,9 @@ const Signup = () => {
                     variant="outlined"
                   >
                     {bloodTypes.map((type) => (
-                      <MenuItem key={type.id} value={type.id}>{type.label}</MenuItem>
+                      <MenuItem key={type.id} value={type.id}>
+                        {type.label}
+                      </MenuItem>
                     ))}
                   </Select>
                   {formik.touched.bloodTypeId && formik.errors.bloodTypeId && (
@@ -810,7 +990,15 @@ const Signup = () => {
 
       case 3:
         return (
-          <Box component="form" onSubmit={formik.handleSubmit}>
+          <Box component="form" onSubmit={(e) => {
+            console.log('=== DEBUG: Step 3 form submit ===');
+            console.log('Form submit event:', e);
+            console.log('Form values:', formik.values);
+            console.log('Form errors:', formik.errors);
+            console.log('Form touched:', formik.touched);
+            console.log('Form is valid:', formik.isValid);
+            formik.handleSubmit(e);
+          }}>
             <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
               Tạo mật khẩu
             </Typography>
@@ -825,21 +1013,14 @@ const Signup = () => {
             )}
 
             <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <LockIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-                  <Typography variant="h6" color="primary.main">
-                    Thông tin bảo mật
-                  </Typography>
-                </Box>
-              </Grid>
+              
 
               {/* Mật khẩu */}
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                   <InfoIcon sx={{ fontSize: 18, color: 'info.main', mt: 0.5 }} />
                   <Typography variant="caption" color="text.secondary">
-                    Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
+                    Mật khẩu phải có ít nhất 8 ký tự, tối đa 50 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)
                   </Typography>
                 </Box>
                 <TextField
@@ -905,13 +1086,22 @@ const Signup = () => {
                 type="submit"
                 variant="contained"
                 disabled={loading}
+                onClick={() => {
+                  console.log('=== DEBUG: Nút "Hoàn thành đăng ký" được click ===');
+                  console.log('Loading state:', loading);
+                  console.log('Active step:', activeStep);
+                  console.log('Form is valid:', formik.isValid);
+                  console.log('Form errors:', formik.errors);
+                  console.log('Form touched:', formik.touched);
+                }}
               >
-                Hoàn thành đăng ký
+                Tiếp tục
               </Button>
             </Box>
           </Box>
         );
-
+      case 4:
+        return renderConfirmation();
       default:
         return null;
     }

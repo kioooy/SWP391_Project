@@ -177,6 +177,11 @@ const Home = () => {
 
   // State cho popup thông báo
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('warning');
+  
+  // State để lưu thông tin ngày hiến máu gần nhất
+  const [lastDonationDate, setLastDonationDate] = useState(null);
 
   // Lấy user từ redux
   const user = useSelector((state) => state.auth.user);
@@ -205,6 +210,28 @@ const Home = () => {
       .then(res => setHospitals(res.data))
       .catch(() => setHospitals([]));
   }, []);
+
+  // Thêm useEffect để lấy thông tin ngày hiến máu gần nhất
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && user) {
+      axios.get('/api/User/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        const userData = Array.isArray(res.data) ? res.data[0] : res.data;
+        if (userData && userData.lastDonationDate) {
+          setLastDonationDate(userData.lastDonationDate);
+        } else {
+          setLastDonationDate(null);
+        }
+      }).catch(err => {
+        setLastDonationDate(null);
+        console.error('Lỗi lấy thông tin ngày hiến máu gần nhất:', err);
+      });
+    } else {
+      setLastDonationDate(null);
+    }
+  }, [user]);
 
   // Nếu là member truyền máu (isRecipient)
   if (isRecipient) {
@@ -237,6 +264,45 @@ const Home = () => {
     if (isAuthenticated) {
       navigate('/booking');
     } else {
+      navigate('/login');
+    }
+  };
+
+  // Hàm kiểm tra 90 ngày kể từ lần hiến máu gần nhất
+  const checkDonationEligibility = () => {
+    if (lastDonationDate) {
+      const last = dayjs(lastDonationDate);
+      const today = dayjs();
+      if (today.diff(last, 'day') < 90) {
+        setSnackbarMessage('Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.');
+        setSnackbarSeverity('warning');
+        setOpenSnackbar(true);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Hàm xử lý khi bấm "Đăng ký ngay"
+  const handleRegisterNow = (period) => {
+    if (user) {
+      // Kiểm tra 90 ngày trước khi cho phép đăng ký
+      if (!checkDonationEligibility()) {
+        return;
+      }
+      
+      // Lưu thông tin đợt hiến máu đã chọn vào localStorage để BookingPage lấy lại
+      localStorage.setItem(
+        'selectedPeriodInfo',
+        JSON.stringify({
+          period: period,
+          fromDate: period.periodDateFrom,
+          toDate: period.periodDateTo
+        })
+      );
+      navigate('/booking');
+    } else {
+      localStorage.setItem('showLoginSnackbar', 'true');
       navigate('/login');
     }
   };
@@ -534,23 +600,7 @@ const Home = () => {
                             variant="contained"
                             color="primary"
                             fullWidth
-                            onClick={() => {
-                              if (user) {
-                                // Lưu thông tin đợt hiến máu đã chọn vào localStorage để BookingPage lấy lại
-                                localStorage.setItem(
-                                  'selectedPeriodInfo',
-                                  JSON.stringify({
-                                    period: period,
-                                    fromDate: period.periodDateFrom,
-                                    toDate: period.periodDateTo
-                                  })
-                                );
-                                navigate('/booking');
-                              } else {
-                                localStorage.setItem('showLoginSnackbar', 'true');
-                                navigate('/login');
-                              }
-                            }}
+                            onClick={() => handleRegisterNow(period)}
                             sx={{ mt: 2 }}
                           >
                             Đăng ký ngay
@@ -797,12 +847,18 @@ const Home = () => {
       {/* Snackbar popup thông báo */}
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={1200}
+        autoHideDuration={3000}
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <MuiAlert elevation={6} variant="filled" severity="warning" sx={{ fontSize: '1rem' }}>
-          Vui lòng đăng nhập để đặt lịch
+        <MuiAlert 
+          elevation={6} 
+          variant="filled" 
+          severity={snackbarSeverity} 
+          sx={{ width: '100%' }}
+          onClose={() => setOpenSnackbar(false)}
+        >
+          {snackbarMessage || 'Vui lòng đăng nhập để đặt lịch'}
         </MuiAlert>
       </Snackbar>
     </Box>

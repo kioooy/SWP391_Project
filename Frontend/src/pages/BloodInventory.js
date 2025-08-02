@@ -379,7 +379,6 @@ const BloodInventory = () => {
                     <TableCell>Ngày nhập</TableCell>
                     <TableCell>Ngày hết hạn</TableCell>
                     <TableCell>Thể tích (ml)</TableCell>
-                    <TableCell>Còn lại (ml)</TableCell>
                     <TableCell>Trạng thái</TableCell>
                     {isAdmin && <TableCell>Thao tác</TableCell>}
                   </TableRow>
@@ -411,7 +410,6 @@ const BloodInventory = () => {
                       <TableCell>{components.find(c => c.name === row.componentName)?.description}</TableCell>
                       <TableCell>{row.addDate ? new Date(row.addDate).toLocaleDateString() : ''}</TableCell>
                       <TableCell>{row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : ''}</TableCell>
-                      <TableCell>{row.volume}</TableCell>
                       <TableCell>{row.remainingVolume}</TableCell>
                       <TableCell>{getStatusChip(row.bloodStatus, row.remainingVolume)}</TableCell>
 

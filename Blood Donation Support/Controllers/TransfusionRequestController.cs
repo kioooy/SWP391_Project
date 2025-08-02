@@ -99,6 +99,12 @@ namespace Blood_Donation_Support.Controllers
             }
             // Khi tạo yêu cầu truyền máu mới, gán IsRecipient = true
             member.IsRecipient = true;
+
+            // Cập nhật nhóm máu nếu bệnh nhân chưa biết nhóm máu
+            if (member.BloodTypeId == 99 && model.BloodTypeId != 99)
+            {
+                member.BloodTypeId = model.BloodTypeId;
+            }
             _context.Members.Update(member);
             
             var bloodType = await _context.BloodTypes.FindAsync(model.BloodTypeId);
@@ -477,7 +483,7 @@ namespace Blood_Donation_Support.Controllers
                     {
                         // Cập nhật trạng thái liên kết
                         assignedUnit.Status = "Cancelled";
-                        assignedUnit.Notes = "Yêu cầu truyền máu đã bị hủy, túi máu được hoàn trả lại kho.";
+                        assignedUnit.Notes = $"Yêu cầu truyền máu {id} đã bị hủy, túi máu được hoàn trả lại kho.";
                         _context.TransfusionRequestBloodUnits.Update(assignedUnit);
 
                         // Hoàn trả thể tích cho túi máu

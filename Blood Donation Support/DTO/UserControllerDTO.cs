@@ -165,4 +165,11 @@ namespace Blood_Donation_Support.DTO
         public double Latitude { get; set; }
         public double Longitude { get; set; }
     }
+
+    public class UpdateBloodTypeRequest
+    {
+        [Required(ErrorMessage = "BloodTypeId là bắt buộc")]
+        [Range(1, 8, ErrorMessage = "BloodTypeId phải từ 1-8 (A+, A-, B+, B-, AB+, AB-, O+, O-)")]
+        public int BloodTypeId { get; set; }
+    }
 }

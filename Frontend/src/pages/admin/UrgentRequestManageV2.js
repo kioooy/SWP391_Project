@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Box, CircularProgress, Chip, Divider, TextField, Grid, Card, CardContent
+  Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Box, CircularProgress, Chip, Divider, TextField, Grid, Card, CardContent, Tabs, Tab
 } from '@mui/material';
 import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon } from '@mui/icons-material';
 import axios from 'axios';
@@ -34,6 +34,7 @@ const UrgentRequestManageV2 = () => {
   const [assignDialog, setAssignDialog] = useState(false);
   const [assignBloodUnits, setAssignBloodUnits] = useState([]);
   const [assignVolumes, setAssignVolumes] = useState({});
+  const [currentTab, setCurrentTab] = useState(0); // State để quản lý tab hiện tại
 
   // Bộ lọc states
   const [filters, setFilters] = useState({
@@ -102,6 +103,25 @@ const UrgentRequestManageV2 = () => {
     }
   };
 
+  // ==========================================
+  // LOGIC XỬ LÝ TIÊU CHÍ CHỌN MÁU KHẨN CẤP
+  // ==========================================
+  // 
+  // Hàm này gọi API để lấy danh sách máu theo 4 tiêu chí ưu tiên:
+  // 1. availableExact: Máu cùng nhóm (AB+ cho AB+)
+  // 2. availableCompatible: Máu tương thích (A+ cho AB+)
+  // 3. reserved: Máu đã đặt chỗ (cần cân nhắc)
+  // 4. eligibleDonors: Người hiến gần đó (bán kính 20km)
+  //
+  // API sẽ trả về cấu trúc:
+  // {
+  //   availableExact: [máu cùng nhóm],
+  //   availableCompatible: [máu tương thích], 
+  //   reserved: [máu đã đặt chỗ],
+  //   eligibleDonors: [người hiến gần đó]
+  // }
+  // ==========================================
+  
   // Fetch suggested blood units
   const fetchSuggestedBloodUnits = async (requestId, bloodTypeId = null, componentId = null) => {
     setLoadingBloodUnits(true);
@@ -118,6 +138,23 @@ const UrgentRequestManageV2 = () => {
       });
       console.log('📦 Dữ liệu trả về từ API:', res.data);
       setAvailableBloodUnits(res.data);
+      
+      // Cập nhật danh sách máu để gán
+      const allBloodUnits = [
+        ...res.data.availableExact,
+        ...res.data.availableCompatible,
+        ...res.data.reserved
+      ];
+      setAssignBloodUnits(allBloodUnits);
+      
+      // Kiểm tra nếu không có máu trong kho thì hiển thị thông báo
+      if (allBloodUnits.length === 0 && res.data.eligibleDonors && res.data.eligibleDonors.length > 0) {
+        setSnackbar({ 
+          open: true, 
+          message: `Không có máu phù hợp trong kho. Tìm thấy ${res.data.eligibleDonors.length} người hiến máu trong bán kính 20km.`, 
+          severity: 'info' 
+        });
+      }
     } catch (err) {
       console.error('❌ Lỗi khi gọi API suggest-blood-units:', err);
       setSnackbar({ open: true, message: 'Lỗi khi tải danh sách máu phù hợp!', severity: 'error' });
@@ -473,6 +510,11 @@ const UrgentRequestManageV2 = () => {
     } catch (err) {
       setSnackbar({ open: true, message: 'Lỗi khi tải chi tiết yêu cầu!', severity: 'error' });
     }
+  };
+
+  // Hàm xử lý thay đổi tab
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
   };
 
   return (
@@ -1006,172 +1048,568 @@ const UrgentRequestManageV2 = () => {
 
       {/* Dialog chọn/gán túi máu */}
       <Dialog open={assignDialog} onClose={() => setAssignDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Chọn và gán túi máu cho bệnh nhân: {currentRequest?.patientName || detailRequest?.patientName || ''}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="subtitle1">
+        <DialogTitle sx={{ pb: 1.5 }}>
+          <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+            Chọn và gán túi máu cho bệnh nhân: {currentRequest?.patientName || detailRequest?.patientName || ''}
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 0.75, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
               Tổng thể tích cần truyền: <strong>{totalVolume} ml</strong>
             </Typography>
-            <Typography variant="subtitle1" color="primary">
+            <Typography variant="body2" color="primary" sx={{ fontSize: '0.9rem' }}>
               Đã chọn: <strong>{Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0)} ml</strong>
               <span style={{ color: 'gray' }}> / {totalVolume} ml</span>
             </Typography>
           </Box>
-          {availableBloodUnits.availableExact.length === 0 && availableBloodUnits.availableCompatible.length === 0 ? (
-            <Box>
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                Không có máu phù hợp nào sẵn sàng trong kho. 
-              </Alert>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Bạn có thể chuyển sang trang <strong>"Tìm kiếm máu"</strong> để tìm kiếm trong kho tổng và huy động người hiến phù hợp.
-              </Alert>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<SearchIcon />}
-                onClick={handleNavigateToBloodSearch}
-                fullWidth
-                sx={{ mt: 1 }}
-              >
-                Chuyển tới trang tìm kiếm máu
-              </Button>
-              
-              {/* Component huy động người hiến khi không có máu phù hợp */}
-              <Box sx={{ mt: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: '#fafafa' }}>
-                <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', fontWeight: 'bold' }}>
-                  🚨 Huy động cộng đồng hiến máu
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-                  Không tìm thấy máu phù hợp trong kho. Bạn có thể gửi thông báo để huy động cộng đồng hiến máu ngay tại đây.
-                </Typography>
-                <DonorMobilizationComponent 
-                  embedded={true}
-                  bloodType={bloodTypes.find(bt => bt.bloodTypeId == chosenBloodTypeId)?.bloodTypeName || ""}
-                  onNotified={(donorsList) => {
-                    setSnackbar({
-                      open: true,
-                      message: `Đã gửi thông báo huy động thành công tới ${donorsList.length} người hiến máu! Hãy chờ phản hồi từ cộng đồng.`,
-                      severity: "success",
-                    });
-                  }}
-                />
-              </Box>
+
+          {/* ==========================================
+          TIÊU CHÍ CHỌN MÁU CHO YÊU CẦU MÁU KHẨN CẤP
+          ==========================================
+          
+          Hệ thống áp dụng 4 tiêu chí ưu tiên theo thứ tự:
+          
+          1️⃣ MÁU CÙNG NHÓM (tốt nhất)
+             - Ưu tiên cao nhất: AB+ cho AB+, A+ cho A+, B+ cho B+, O+ cho O+
+             - An toàn nhất, ít rủi ro nhất
+             - Ví dụ: Bệnh nhân AB+ → Chọn máu AB+
+          
+          2️⃣ MÁU TƯƠNG THÍCH
+             - Áp dụng quy tắc tương thích máu
+             - AB+ nhận được: AB+, A+, B+, O+
+             - A+ nhận được: A+, O+
+             - B+ nhận được: B+, O+
+             - O+ chỉ nhận được: O+
+          
+          3️⃣ MÁU ĐÃ ĐẶT CHỖ
+             - Sử dụng máu đã được đặt chỗ cho yêu cầu khác
+             - Cần cân nhắc mức độ khẩn cấp
+          
+          4️⃣ HUY ĐỘNG NGƯỜI HIẾN
+             - Tìm người hiến máu trong bán kính 20km
+             - Gửi thông báo khẩn cấp
+             - Chờ phản hồi từ cộng đồng
+          ========================================== */}
+          
+          {/* Thông báo hướng dẫn về thứ tự ưu tiên */}
+          <Alert severity="info" sx={{ mb: 1.5, py: 0.75 }}>
+            <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+              <strong>Hướng dẫn chọn máu:</strong>
+              <br />1️⃣ <strong>Máu cùng nhóm</strong> (tốt nhất) → 2️⃣ <strong>Máu tương thích</strong> → 3️⃣ <strong>Máu đã đặt chỗ</strong> → 4️⃣ <strong>Huy động người hiến</strong>
+            </Typography>
+          </Alert>
+
+          {loadingBloodUnits ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
             </Box>
           ) : (
-            <Box>
-              {availableBloodUnits.availableExact.length > 0 && (
-  <Box sx={{ mb: 2 }}>
-    <Typography variant="h6" sx={{ color: '#388e3c', mb: 1, borderBottom: '2px solid #388e3c', pb: 0.5 }}>
-      Túi máu chính xác ({availableBloodUnits.availableExact.length})
-    </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {availableBloodUnits.availableExact.map((unit) => (
-                      <Box key={unit.bloodUnitId} sx={{ border: '1px solid #eee', borderRadius: 1, p: 2, display: 'flex', alignItems: 'flex-start', gap: 2, background: assignVolumes[unit.bloodUnitId] ? '#f5fafd' : 'white' }}>
-                  <Checkbox
-                    checked={!!assignVolumes[unit.bloodUnitId]}
-                    onChange={e => {
-                            if (e.target.checked) {
-                              const currentTotal = Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0);
-                              const remainingVolume = Number(totalVolume) - currentTotal;
-                              if (remainingVolume <= 0) {
-                                setSnackbar({ open: true, message: 'Đã đạt đủ tổng thể tích cần truyền!', severity: 'warning' });
-                                return;
-                              }
-                              const assignVolume = Math.min(unit.remainingVolume, remainingVolume);
-                              setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: assignVolume }));
-                            } else {
-                              setAssignVolumes(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => Number(k) !== unit.bloodUnitId)));
-                            }
-                          }}
-                          disabled={!assignVolumes[unit.bloodUnitId] && Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0) >= Number(totalVolume)}
-                          sx={{ mt: 1 }}
-                  />
-                        <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
-                          <div><b>ID:</b> {unit.bloodUnitId}</div>
-                          <div><b>Nhóm máu:</b> {unit.bloodTypeName}</div>
-                          <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
-                          <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
-                          <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
-                          <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
-                          <div><b>Trạng thái:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
+            <>
+              {/* Thông tin tổng quan về tình trạng máu */}
+              <Box sx={{ mb: 2.5, p: 1.5, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                <Typography variant="body1" sx={{ mb: 1.5, color: '#495057', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  📊 Tổng quan tình trạng máu
+                </Typography>
+                <Grid container spacing={1.5}>
+                  <Grid item xs={12} sm={3}>
+                    <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#e8f5e8', borderRadius: 1, border: '1px solid #4caf50' }}>
+                      <Typography variant="h6" color="#2e7d32" sx={{ fontSize: '1.1rem', mb: 0 }}>
+                        {availableBloodUnits.availableExact?.length || 0}
+                      </Typography>
+                      <Typography variant="body2" color="#2e7d32" sx={{ fontSize: '0.8rem' }}>
+                        Máu cùng nhóm
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={3}>
+                    <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
+                      <Typography variant="h6" color="#1976d2" sx={{ fontSize: '1.1rem', mb: 0 }}>
+                        {availableBloodUnits.availableCompatible?.length || 0}
+                      </Typography>
+                      <Typography variant="body2" color="#1976d2" sx={{ fontSize: '0.8rem' }}>
+                        Máu tương thích
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={3}>
+                    <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#fff3e0', borderRadius: 1, border: '1px solid #ff9800' }}>
+                      <Typography variant="h6" color="#f57c00" sx={{ fontSize: '1.1rem', mb: 0 }}>
+                        {availableBloodUnits.reserved?.length || 0}
+                      </Typography>
+                      <Typography variant="body2" color="#f57c00" sx={{ fontSize: '0.8rem' }}>
+                        Máu đã đặt chỗ
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={3}>
+                    <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#ffebee', borderRadius: 1, border: '1px solid #f44336' }}>
+                      <Typography variant="h6" color="#d32f2f" sx={{ fontSize: '1.1rem', mb: 0 }}>
+                        {availableBloodUnits.eligibleDonors?.length || 0}
+                      </Typography>
+                      <Typography variant="body2" color="#d32f2f" sx={{ fontSize: '0.8rem' }}>
+                        Người hiến gần đây
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Hệ thống Tab cho tình trạng máu - TÁCH RIÊNG */}
+              <Box sx={{ mb: 2.5, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <Tabs 
+                    value={currentTab} 
+                    onChange={handleTabChange} 
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{
+                      '& .MuiTab-root': {
+                        minHeight: 42,
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        py: 0.75,
+                      },
+                      '& .Mui-selected': {
+                        color: '#1976d2',
+                      }
+                    }}
+                  >
+                    <Tab 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ 
+                            width: 16, 
+                            height: 16, 
+                            borderRadius: '50%', 
+                            bgcolor: '#2e7d32',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.875rem',
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}>
+                            {availableBloodUnits.availableExact?.length || 0}
+                          </Box>
+                          Máu cùng nhóm
                         </Box>
-                  {assignVolumes[unit.bloodUnitId] && (
-                    <TextField
-                      label="Thể tích gán (ml)"
-                      type="number"
-                      value={assignVolumes[unit.bloodUnitId]}
-                      onChange={e => {
-                              const currentTotal = Object.entries(assignVolumes).filter(([id]) => Number(id) !== unit.bloodUnitId).reduce((sum, [_, vol]) => sum + vol, 0);
-                              const maxAllowed = Number(totalVolume) - currentTotal;
-                              let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value), maxAllowed));
-                        setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
-                      }}
-                            inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
-                            sx={{ width: 120, ml: 2, mt: 1 }}
+                      } 
                     />
+                    <Tab 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ 
+                            width: 16, 
+                            height: 16, 
+                            borderRadius: '50%', 
+                            bgcolor: '#1976d2',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.875rem',
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}>
+                            {availableBloodUnits.availableCompatible?.length || 0}
+                          </Box>
+                          Máu tương thích
+                        </Box>
+                      } 
+                    />
+                    <Tab 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ 
+                            width: 16, 
+                            height: 16, 
+                            borderRadius: '50%', 
+                            bgcolor: '#ff9800',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.875rem',
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}>
+                            {availableBloodUnits.reserved?.length || 0}
+                          </Box>
+                          Máu đã đặt chỗ
+                        </Box>
+                      } 
+                    />
+                    <Tab 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ 
+                            width: 16, 
+                            height: 16, 
+                            borderRadius: '50%', 
+                            bgcolor: '#d32f2f',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.875rem',
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}>
+                            {availableBloodUnits.eligibleDonors?.length || 0}
+                          </Box>
+                          Người hiến gần đây
+                        </Box>
+                      } 
+                    />
+                  </Tabs>
+                </Box>
+                
+                {/* ==========================================
+                HIỂN THỊ NỘI DUNG THEO TIÊU CHÍ CHỌN MÁU
+                ==========================================
+                
+                Tab 0: MÁU CÙNG NHÓM (Ưu tiên cao nhất)
+                - Hiển thị máu cùng nhóm với bệnh nhân
+                - Ví dụ: Bệnh nhân AB+ → Hiển thị máu AB+
+                - An toàn nhất, ít rủi ro nhất
+                ========================================== */}
+                
+                {/* Nội dung của từng tab */}
+                <Box sx={{ p: 1.5 }}>
+                  {currentTab === 0 && (
+                    <>
+                      {/* Phần chọn máu cùng nhóm để gán */}
+                      {availableBloodUnits.availableExact && availableBloodUnits.availableExact.length > 0 ? (
+                        <>
+                          <Typography variant="body1" sx={{ mb: 1.5, color: '#2e7d32', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                            ✅ Chọn máu cùng nhóm để gán
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            {availableBloodUnits.availableExact.map((unit) => (
+                              <Box key={unit.bloodUnitId} sx={{ 
+                                border: '2px solid #4caf50', 
+                                borderRadius: 1.5, 
+                                p: 1.5, 
+                                display: 'flex', 
+                                alignItems: 'flex-start', 
+                                gap: 1.5, 
+                                background: assignVolumes[unit.bloodUnitId] ? '#f1f8e9' : '#f9f9f9',
+                                position: 'relative'
+                              }}>
+                                <Box sx={{ 
+                                  position: 'absolute', 
+                                  top: -10, 
+                                  left: 10, 
+                                  bgcolor: '#2e7d32', 
+                                  color: 'white', 
+                                  px: 0.75, 
+                                  py: 0.5, 
+                                  borderRadius: 0.75, 
+                                  fontSize: '0.7rem',
+                                  fontWeight: 'bold'
+                                }}>
+                                  ƯU TIÊN
+                                </Box>
+                                <Checkbox
+                                  checked={!!assignVolumes[unit.bloodUnitId]}
+                                  onChange={e => {
+                                    if (e.target.checked) {
+                                      const currentTotal = Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0);
+                                      const remainingVolume = Number(totalVolume) - currentTotal;
+                                      if (remainingVolume <= 0) {
+                                        setSnackbar({ open: true, message: 'Đã đạt đủ tổng thể tích cần truyền!', severity: 'warning' });
+                                        return;
+                                      }
+                                      const assignVolume = Math.min(unit.remainingVolume, remainingVolume);
+                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: assignVolume }));
+                                    } else {
+                                      setAssignVolumes(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => Number(k) !== unit.bloodUnitId)));
+                                    }
+                                  }}
+                                  disabled={!assignVolumes[unit.bloodUnitId] && Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0) >= Number(totalVolume)}
+                                  sx={{ mt: 0.75 }}
+                                />
+                                <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 1.5, fontSize: '0.8rem' }}>
+                                  <div><b>ID:</b> {unit.bloodUnitId}</div>
+                                  <div><b>Nhóm máu:</b> <span style={{ color: '#2e7d32', fontWeight: 'bold' }}>{unit.bloodTypeName}</span></div>
+                                  <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
+                                  <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
+                                  <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
+                                  <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
+                                  <div><b>Trạng thái:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
+                                </Box>
+                                {assignVolumes[unit.bloodUnitId] && (
+                                  <TextField
+                                    label="Thể tích gán (ml)"
+                                    type="number"
+                                    value={assignVolumes[unit.bloodUnitId]}
+                                    onChange={e => {
+                                      const currentTotal = Object.entries(assignVolumes).filter(([id]) => Number(id) !== unit.bloodUnitId).reduce((sum, [_, vol]) => sum + vol, 0);
+                                      const maxAllowed = Number(totalVolume) - currentTotal;
+                                      let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value), maxAllowed));
+                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
+                                    }}
+                                    inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
+                                    size="small"
+                                    sx={{ width: 110, ml: 1.5, mt: 0.75 }}
+                                  />
+                                )}
+                              </Box>
+                            ))}
+                          </Box>
+                        </>
+                      ) : (
+                        <Alert severity="info" sx={{ py: 0.75 }}>Không có máu cùng nhóm nào sẵn sàng.</Alert>
+                      )}
+                    </>
+                  )}
+
+                  {/* ==========================================
+                  Tab 1: MÁU TƯƠNG THÍCH (Ưu tiên thứ 2)
+                  ==========================================
+                  
+                  Hiển thị máu tương thích theo quy tắc:
+                  - AB+ nhận được: AB+, A+, B+, O+
+                  - A+ nhận được: A+, O+
+                  - B+ nhận được: B+, O+
+                  - O+ chỉ nhận được: O+
+                  
+                  Ví dụ: Bệnh nhân AB+ → Hiển thị A+, B+, O+
+                  ========================================== */}
+                  
+                  {currentTab === 1 && (
+                    <>
+                      {/* Phần chọn máu tương thích để gán */}
+                      {availableBloodUnits.availableCompatible && availableBloodUnits.availableCompatible.length > 0 ? (
+                        <>
+                          <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 'bold' }}>
+                            ✅ Chọn máu tương thích để gán
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {availableBloodUnits.availableCompatible.map((unit) => (
+                              <Box key={unit.bloodUnitId} sx={{ 
+                                border: '2px solid #2196f3', 
+                                borderRadius: 2, 
+                                p: 2, 
+                                display: 'flex', 
+                                alignItems: 'flex-start', 
+                                gap: 2, 
+                                background: assignVolumes[unit.bloodUnitId] ? '#e3f2fd' : '#f9f9f9',
+                                position: 'relative'
+                              }}>
+                                <Box sx={{ 
+                                  position: 'absolute', 
+                                  top: -10, 
+                                  left: 10, 
+                                  bgcolor: '#1976d2', 
+                                  color: 'white', 
+                                  px: 1, 
+                                  py: 0.5, 
+                                  borderRadius: 1, 
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold'
+                                }}>
+                                  TƯƠNG THÍCH
+                                </Box>
+                                <Checkbox
+                                  checked={!!assignVolumes[unit.bloodUnitId]}
+                                  onChange={e => {
+                                    if (e.target.checked) {
+                                      const currentTotal = Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0);
+                                      const remainingVolume = Number(totalVolume) - currentTotal;
+                                      if (remainingVolume <= 0) {
+                                        setSnackbar({ open: true, message: 'Đã đạt đủ tổng thể tích cần truyền!', severity: 'warning' });
+                                        return;
+                                      }
+                                      const assignVolume = Math.min(unit.remainingVolume, remainingVolume);
+                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: assignVolume }));
+                                    } else {
+                                      setAssignVolumes(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => Number(k) !== unit.bloodUnitId)));
+                                    }
+                                  }}
+                                  disabled={!assignVolumes[unit.bloodUnitId] && Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0) >= Number(totalVolume)}
+                                  sx={{ mt: 1 }}
+                                />
+                                <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
+                                  <div><b>ID:</b> {unit.bloodUnitId}</div>
+                                  <div><b>Nhóm máu:</b> <span style={{ color: '#1976d2', fontWeight: 'bold' }}>{unit.bloodTypeName}</span></div>
+                                  <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
+                                  <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
+                                  <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
+                                  <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
+                                  <div><b>Trạng thái:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
+                                </Box>
+                                {assignVolumes[unit.bloodUnitId] && (
+                                  <TextField
+                                    label="Thể tích gán (ml)"
+                                    type="number"
+                                    value={assignVolumes[unit.bloodUnitId]}
+                                    onChange={e => {
+                                      const currentTotal = Object.entries(assignVolumes).filter(([id]) => Number(id) !== unit.bloodUnitId).reduce((sum, [_, vol]) => sum + vol, 0);
+                                      const maxAllowed = Number(totalVolume) - currentTotal;
+                                      let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value), maxAllowed));
+                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
+                                    }}
+                                    inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
+                                    sx={{ width: 120, ml: 2, mt: 1 }}
+                                  />
+                                )}
+                              </Box>
+                            ))}
+                          </Box>
+                        </>
+                      ) : (
+                        <Alert severity="info">Không có máu tương thích nào sẵn sàng.</Alert>
+                      )}
+                    </>
+                  )}
+
+                  {currentTab === 2 && (
+                    <>
+                      {/* Phần chọn máu đã đặt chỗ để gán */}
+                      {availableBloodUnits.reserved && availableBloodUnits.reserved.length > 0 ? (
+                        <>
+                          <Typography variant="h6" sx={{ mb: 2, color: '#ff9800', fontWeight: 'bold' }}>
+                            ✅ Chọn máu đã đặt chỗ để gán
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {availableBloodUnits.reserved.map((unit) => (
+                              <Box key={unit.bloodUnitId} sx={{ 
+                                border: '2px solid #ff9800', 
+                                borderRadius: 2, 
+                                p: 2, 
+                                display: 'flex', 
+                                alignItems: 'flex-start', 
+                                gap: 2, 
+                                background: assignVolumes[unit.bloodUnitId] ? '#fff3e0' : '#f9f9f9',
+                                position: 'relative'
+                              }}>
+                                <Box sx={{ 
+                                  position: 'absolute', 
+                                  top: -10, 
+                                  left: 10, 
+                                  bgcolor: '#ff9800', 
+                                  color: 'white', 
+                                  px: 1, 
+                                  py: 0.5, 
+                                  borderRadius: 1, 
+                                  fontSize: '0.75rem',
+                                  fontWeight: 'bold'
+                                }}>
+                                  ĐÃ ĐẶT CHỖ
+                                </Box>
+                                <Checkbox
+                                  checked={!!assignVolumes[unit.bloodUnitId]}
+                                  onChange={e => {
+                                    if (e.target.checked) {
+                                      const currentTotal = Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0);
+                                      const remainingVolume = Number(totalVolume) - currentTotal;
+                                      if (remainingVolume <= 0) {
+                                        setSnackbar({ open: true, message: 'Đã đạt đủ tổng thể tích cần truyền!', severity: 'warning' });
+                                        return;
+                                      }
+                                      const assignVolume = Math.min(unit.remainingVolume, remainingVolume);
+                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: assignVolume }));
+                                    } else {
+                                      setAssignVolumes(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => Number(k) !== unit.bloodUnitId)));
+                                    }
+                                  }}
+                                  disabled={!assignVolumes[unit.bloodUnitId] && Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0) >= Number(totalVolume)}
+                                  sx={{ mt: 1 }}
+                                />
+                                <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
+                                  <div><b>ID:</b> {unit.bloodUnitId}</div>
+                                  <div><b>Nhóm máu:</b> <span style={{ color: '#ff9800', fontWeight: 'bold' }}>{unit.bloodTypeName}</span></div>
+                                  <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
+                                  <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
+                                  <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
+                                  <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
+                                  <div><b>Trạng thái:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
+                                </Box>
+                                {assignVolumes[unit.bloodUnitId] && (
+                                  <TextField
+                                    label="Thể tích gán (ml)"
+                                    type="number"
+                                    value={assignVolumes[unit.bloodUnitId]}
+                                    onChange={e => {
+                                      const currentTotal = Object.entries(assignVolumes).filter(([id]) => Number(id) !== unit.bloodUnitId).reduce((sum, [_, vol]) => sum + vol, 0);
+                                      const maxAllowed = Number(totalVolume) - currentTotal;
+                                      let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value), maxAllowed));
+                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
+                                    }}
+                                    inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
+                                    sx={{ width: 120, ml: 2, mt: 1 }}
+                                  />
+                                )}
+                              </Box>
+                            ))}
+                          </Box>
+                        </>
+                      ) : (
+                        <Alert severity="info">Không có máu đã đặt chỗ nào.</Alert>
+                      )}
+                    </>
+                  )}
+
+                  {currentTab === 3 && (
+                    <>
+                      <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        🚨 Người hiến gần đây ({availableBloodUnits.eligibleDonors?.length || 0})
+                      </Typography>
+                      {availableBloodUnits.eligibleDonors && availableBloodUnits.eligibleDonors.length > 0 ? (
+                        <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+                          {availableBloodUnits.eligibleDonors.map((donor, index) => (
+                            <Box key={donor.userId || index} sx={{ 
+                              border: '1px solid #d32f2f', 
+                              borderRadius: 1, 
+                              p: 2, 
+                              mb: 1,
+                              bgcolor: '#ffebee'
+                            }}>
+                              <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                  <Typography><strong>Tên:</strong> {donor.fullName}</Typography>
+                                  <Typography><strong>Nhóm máu:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.bloodTypeName}</span></Typography>
+                                  <Typography><strong>SĐT:</strong> {donor.phoneNumber || 'N/A'}</Typography>
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <Typography><strong>Email:</strong> {donor.email || 'N/A'}</Typography>
+                                  <Typography><strong>Địa chỉ:</strong> {donor.address || 'N/A'}</Typography>
+                                  <Typography><strong>Khoảng cách:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.distanceKm?.toFixed(1)} km</span></Typography>
+                                </Grid>
+                              </Grid>
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        <Alert severity="info">Không có người hiến máu nào trong bán kính 20km.</Alert>
+                      )}
+
+                      {/* Phần huy động người hiến khi không có máu phù hợp */}
+                      {availableBloodUnits.eligibleDonors && availableBloodUnits.eligibleDonors.length > 0 && (
+                        <Box sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
+                          <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', fontWeight: 'bold' }}>
+                            🚨 Huy động cộng đồng hiến máu
+                          </Typography>
+                          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                            Không tìm thấy máu phù hợp trong kho. Bạn có thể gửi thông báo để huy động cộng đồng hiến máu ngay tại đây.
+                          </Typography>
+                          <DonorMobilizationComponent 
+                            embedded={true}
+                            bloodType={bloodTypes.find(bt => bt.bloodTypeId == chosenBloodTypeId)?.bloodTypeName || ""}
+                            onNotified={(donorsList) => {
+                              setSnackbar({
+                                open: true,
+                                message: `Đã gửi thông báo huy động thành công tới ${donorsList.length} người hiến máu! Hãy chờ phản hồi từ cộng đồng.`,
+                                severity: "success",
+                              });
+                            }}
+                          />
+                        </Box>
+                      )}
+                    </>
                   )}
                 </Box>
-              ))}
-                  </Box>
-                </Box>
-              )}
-              {availableBloodUnits.availableCompatible.length > 0 && (
-  <Box sx={{ mb: 2 }}>
-    <Typography variant="h6" sx={{ color: '#1976d2', mb: 1, borderBottom: '2px solid #1976d2', pb: 0.5 }}>
-      Túi máu tương thích ({availableBloodUnits.availableCompatible.length})
-    </Typography>
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {availableBloodUnits.availableCompatible.map((unit) => (
-                      <Box key={unit.bloodUnitId} sx={{ border: '1px solid #eee', borderRadius: 1, p: 2, display: 'flex', alignItems: 'flex-start', gap: 2, background: assignVolumes[unit.bloodUnitId] ? '#f5fafd' : 'white' }}>
-                        <Checkbox
-                          checked={!!assignVolumes[unit.bloodUnitId]}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              const currentTotal = Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0);
-                              const remainingVolume = Number(totalVolume) - currentTotal;
-                              if (remainingVolume <= 0) {
-                                setSnackbar({ open: true, message: 'Đã đạt đủ tổng thể tích cần truyền!', severity: 'warning' });
-                                return;
-                              }
-                              const assignVolume = Math.min(unit.remainingVolume, remainingVolume);
-                              setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: assignVolume }));
-                            } else {
-                              setAssignVolumes(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => Number(k) !== unit.bloodUnitId)));
-                            }
-                          }}
-                          disabled={!assignVolumes[unit.bloodUnitId] && Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0) >= Number(totalVolume)}
-                          sx={{ mt: 1 }}
-                        />
-                        <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
-                          <div><b>ID:</b> {unit.bloodUnitId}</div>
-                          <div><b>Nhóm máu:</b> {unit.bloodTypeName}</div>
-                          <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
-                          <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
-                          <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
-                          <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
-                          <div><b>Trạng thái:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
-                        </Box>
-                        {assignVolumes[unit.bloodUnitId] && (
-                          <TextField
-                            label="Thể tích gán (ml)"
-                            type="number"
-                            value={assignVolumes[unit.bloodUnitId]}
-                            onChange={e => {
-                              const currentTotal = Object.entries(assignVolumes).filter(([id]) => Number(id) !== unit.bloodUnitId).reduce((sum, [_, vol]) => sum + vol, 0);
-                              const maxAllowed = Number(totalVolume) - currentTotal;
-                              let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value), maxAllowed));
-                              setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
-                            }}
-                            inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
-                            sx={{ width: 120, ml: 2, mt: 1 }}
-                          />
-                        )}
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Box>
+              </Box>
+            </>
           )}
         </DialogContent>
         <DialogActions>

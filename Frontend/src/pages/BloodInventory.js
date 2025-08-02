@@ -267,7 +267,10 @@ const BloodInventory = () => {
 
     try {
       setLoading(true);
-      await axios.delete(`/api/BloodUnit/${bloodToDelete.bloodUnitId}`);
+      const token = localStorage.getItem('token');
+      await axios.patch(`/api/BloodUnit/${bloodToDelete.bloodUnitId}/status-discard`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setDeleteDialogOpen(false);
       setBloodToDelete(null);
       fetchInventory();
@@ -712,15 +715,6 @@ const BloodInventory = () => {
                   }}
                   inputProps={{ min: 0 }}
                 />
-                <TextField
-                  label="Ghi chú"
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  margin="normal"
-                  value={formData.note}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                />
               </>
             )}
             {selectedBlood && (
@@ -747,23 +741,10 @@ const BloodInventory = () => {
                   value={formData.bloodStatus}
                   onChange={(e) => setFormData({ ...formData, bloodStatus: e.target.value })}
                 >
-
-
-
-
                   <MenuItem value="Available">Có sẵn</MenuItem>
                   <MenuItem value="Reserved">Đã đặt</MenuItem>
                   <MenuItem value="Expired">Hết hạn</MenuItem>
                 </TextField>
-                <TextField
-                  label="Ghi chú"
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  margin="normal"
-                  value={formData.note}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                />
               </>
             )}
           </LocalizationProvider>
@@ -806,11 +787,6 @@ const BloodInventory = () => {
             </Grid>
             <Grid item xs={12}>
               <Typography><strong>Người hiến:</strong> {viewDetail?.fullName || 'Không có'}</Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography sx={{ whiteSpace: 'pre-line' }}>
-                <strong>Ghi chú:</strong> {viewDetail?.notes || 'Không có'}
-              </Typography>
             </Grid>
           </Grid>
         </DialogContent>

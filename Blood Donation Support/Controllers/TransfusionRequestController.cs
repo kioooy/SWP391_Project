@@ -483,7 +483,7 @@ namespace Blood_Donation_Support.Controllers
                     {
                         // Cập nhật trạng thái liên kết
                         assignedUnit.Status = "Cancelled";
-                        assignedUnit.Notes = "Yêu cầu truyền máu đã bị hủy, túi máu được hoàn trả lại kho.";
+                        assignedUnit.Notes = $"Yêu cầu truyền máu {id} đã bị hủy, túi máu được hoàn trả lại kho.";
                         _context.TransfusionRequestBloodUnits.Update(assignedUnit);
 
                         // Hoàn trả thể tích cho túi máu

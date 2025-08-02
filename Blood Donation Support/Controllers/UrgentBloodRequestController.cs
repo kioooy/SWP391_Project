@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using NetTopologySuite.Geometries; // Thêm namespace cho Point
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -343,6 +344,48 @@ namespace Blood_Donation_Support.Controllers
                 reserved = await reservedQuery.ToListAsync();
             }
 
+            // 4. Tìm kiếm người hiến máu đủ điều kiện trong bán kính 20km nếu không có máu trong kho
+            List<object> eligibleDonors = new();
+            if ((availableExact.Count + availableCompatible.Count + reserved.Count) == 0)
+            {
+                // Chuyển đổi EmergencyLocation của yêu cầu khẩn cấp thành Point
+                var emergencyPoint = ParseLocationToPoint(urgentRequest.EmergencyLocation);
+                const double searchRadiusKm = 20.0; // Bán kính tìm kiếm 20km
+
+                if (emergencyPoint != null)
+                {
+                    var minDonationIntervalDays = 84; // 84 ngày
+                    // var minTransfusionRecoveryDays = 365; // 365 ngày - Tạm thời bỏ qua do không tìm thấy trường LastTransfusionDate
+
+                    var potentialDonors = await _context.Users
+                        .Include(u => u.Member)
+                            .ThenInclude(m => m.BloodType) // Bao gồm BloodType của Member
+                        .Where(u => u.IsActive == true && u.Member != null && u.Member.IsDonor == true && u.Member.Location != null) // Sửa IsDonor
+                        .Where(u => compatibleBloodTypeIds.Contains(u.Member.BloodTypeId ?? 0)) // Lọc theo nhóm máu tương thích
+                        .Where(u => (u.Member.LastDonationDate == null || EF.Functions.DateDiffDay(u.Member.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), DateTime.Today) >= minDonationIntervalDays))
+                        // Kiểm tra lịch hiến máu sắp tới trong bảng DonationRequests
+                        .Where(u => !_context.DonationRequests.Any(dr => dr.MemberId == u.Member.UserId && dr.Status == "Scheduled" && dr.PreferredDonationDate >= DateOnly.FromDateTime(DateTime.Today)))
+                        .ToListAsync(); // Lấy dữ liệu về client trước
+
+                    eligibleDonors = potentialDonors
+                        .AsEnumerable() // Chuyển sang client-side evaluation để tính khoảng cách
+                        .Where(u => CalculateDistance(emergencyPoint, u.Member.Location) <= searchRadiusKm)
+                        .Select(u => new
+                        {
+                            u.UserId,
+                            u.FullName,
+                            u.PhoneNumber, // Thay thế ContactPhone bằng PhoneNumber
+                            u.Email,       // Thay thế ContactEmail bằng Email
+                            u.Address,
+                            BloodTypeName = u.Member.BloodType != null ? u.Member.BloodType.BloodTypeName : "Không biết",
+                            u.Member.LastDonationDate,
+                            DistanceKm = CalculateDistance(emergencyPoint, u.Member.Location) // Thêm khoảng cách vào kết quả
+                        })
+                        .OrderBy(d => d.DistanceKm) // Sắp xếp theo khoảng cách
+                        .ToList<object>();
+                }
+            }
+
             return Ok(new
             {
                 availableExact = availableExact.Select(bu => new {
@@ -371,7 +414,8 @@ namespace Blood_Donation_Support.Controllers
                     bu.RemainingVolume,
                     bu.ExpiryDate,
                     bu.BloodStatus
-                })
+                }),
+                eligibleDonors = eligibleDonors // Thêm danh sách người hiến máu
             });
         }
 
@@ -698,5 +742,62 @@ namespace Blood_Donation_Support.Controllers
             public int? RequestedBloodTypeId { get; set; }
             // Có thể thêm các trường khác nếu muốn cập nhật nhiều thông tin
         }
+
+        /// <summary>
+        /// Chuyển đổi chuỗi tọa độ "latitude,longitude" thành đối tượng Point của NetTopologySuite.
+        /// </summary>
+        /// <param name="locationString">Chuỗi tọa độ (ví dụ: "10.762622,106.660172")</param>
+        /// <returns>Đối tượng Point hoặc null nếu chuỗi không hợp lệ.</returns>
+        private Point ParseLocationToPoint(string locationString)
+        {
+            if (string.IsNullOrEmpty(locationString))
+            {
+                return null;
+            }
+            var parts = locationString.Split(',');
+            if (parts.Length == 2 && double.TryParse(parts[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat) && double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lon))
+            {
+                // SRID 4326 là WGS84 (hệ tọa độ địa lý)
+                return new Point(lon, lat) { SRID = 4326 };
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Tính khoảng cách giữa hai điểm địa lý (Latitude, Longitude) sử dụng công thức Haversine.
+        /// </summary>
+        /// <param name="point1">Điểm thứ nhất.</param>
+        /// <param name="point2">Điểm thứ hai.</param>
+        /// <returns>Khoảng cách theo km.</returns>
+        private double CalculateDistance(Point point1, Point point2)
+        {
+            if (point1 == null || point2 == null)
+            {
+                return double.MaxValue; // Hoặc một giá trị lớn để biểu thị không thể tính toán
+            }
+
+            const double R = 6371; // Bán kính Trái Đất bằng km
+
+            var dLat = ToRadians(point2.Y - point1.Y);
+            var dLon = ToRadians(point2.X - point1.X);
+
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(ToRadians(point1.Y)) * Math.Cos(ToRadians(point2.Y)) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            return R * c; // Khoảng cách theo km
+        }
+
+        /// <summary>
+        /// Chuyển đổi độ sang radian.
+        /// </summary>
+        /// <param name="angle">Góc theo độ.</param>
+        /// <returns>Góc theo radian.</returns>
+        private double ToRadians(double angle)
+        {
+            return Math.PI * angle / 180.0;
+        }
     }
-} 
+}

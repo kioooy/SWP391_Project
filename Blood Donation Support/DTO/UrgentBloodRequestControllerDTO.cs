@@ -75,4 +75,9 @@ namespace Blood_Donation_Support.DTO
         public int AssignedVolume { get; set; }
         public int? ComponentId { get; set; }
     }
+    public class EmailToDonor
+    {
+        [Required]
+        public required List<string> Email { get; set; }
+    }
 } 

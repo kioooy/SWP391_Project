@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon } from '@mui/icons-material';
 import axios from 'axios';
-import DonorMobilizationComponent from '../DonorMobilizationComponent';
+
 
 const UrgentRequestManageV2 = () => {
   const navigate = useNavigate();
@@ -1568,12 +1568,11 @@ const UrgentRequestManageV2 = () => {
                                 <Grid item xs={12} sm={6}>
                                   <Typography><strong>Tên:</strong> {donor.fullName}</Typography>
                                   <Typography><strong>Nhóm máu:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.bloodTypeName}</span></Typography>
-                                  <Typography><strong>SĐT:</strong> {donor.phoneNumber || 'N/A'}</Typography>
+                                  <Typography><strong>SĐT:</strong> {donor.phone || 'N/A'}</Typography>
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
                                   <Typography><strong>Email:</strong> {donor.email || 'N/A'}</Typography>
-                                  <Typography><strong>Địa chỉ:</strong> {donor.address || 'N/A'}</Typography>
-                                  <Typography><strong>Khoảng cách:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.distanceKm?.toFixed(1)} km</span></Typography>
+                                  <Typography><strong>Khoảng cách:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.distanceKm?.toFixed(2)} km</span></Typography>
                                 </Grid>
                               </Grid>
                             </Box>
@@ -1581,29 +1580,6 @@ const UrgentRequestManageV2 = () => {
                         </Box>
                       ) : (
                         <Alert severity="info">Không có người hiến máu nào trong bán kính 20km.</Alert>
-                      )}
-
-                      {/* Phần huy động người hiến khi không có máu phù hợp */}
-                      {availableBloodUnits.eligibleDonors && availableBloodUnits.eligibleDonors.length > 0 && (
-                        <Box sx={{ mt: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
-                          <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', fontWeight: 'bold' }}>
-                            🚨 Huy động cộng đồng hiến máu
-                          </Typography>
-                          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-                            Không tìm thấy máu phù hợp trong kho. Bạn có thể gửi thông báo để huy động cộng đồng hiến máu ngay tại đây.
-                          </Typography>
-                          <DonorMobilizationComponent 
-                            embedded={true}
-                            bloodType={bloodTypes.find(bt => bt.bloodTypeId == chosenBloodTypeId)?.bloodTypeName || ""}
-                            onNotified={(donorsList) => {
-                              setSnackbar({
-                                open: true,
-                                message: `Đã gửi thông báo huy động thành công tới ${donorsList.length} người hiến máu! Hãy chờ phản hồi từ cộng đồng.`,
-                                severity: "success",
-                              });
-                            }}
-                          />
-                        </Box>
                       )}
                     </>
                   )}

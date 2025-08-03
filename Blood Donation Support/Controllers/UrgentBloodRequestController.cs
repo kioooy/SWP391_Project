@@ -278,6 +278,10 @@ namespace Blood_Donation_Support.Controllers
             return Ok(new { message = $"Yêu cầu khẩn cấp {id} đã được tiếp nhận và chuyển sang trạng thái InProgress." });
         }
 
+        /// <summary>
+        /// API gợi ý đơn vị máu phù hợp cho yêu cầu khẩn cấp
+        /// NGHIỆP VỤ: Tiêu chí chọn nhóm máu phù hợp theo thứ tự ưu tiên
+        /// </summary>
         [HttpGet("{id}/suggest-blood-units")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> SuggestBloodUnits(int id, [FromQuery] int? bloodTypeId = null, [FromQuery] int? componentId = null)
@@ -290,7 +294,12 @@ namespace Blood_Donation_Support.Controllers
             // Sử dụng bloodTypeId từ query parameter nếu có sử dụng từ urgent request
             var requestedBloodTypeId = bloodTypeId ?? urgentRequest.RequestedBloodTypeId;
             
-            // Lấy các nhóm máu tương thích
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] UrgentRequestId: {id}, RequestedBloodTypeId: {requestedBloodTypeId}, ComponentId: {componentId}");
+            
+            // ===== NGHIỆP VỤ: XÁC ĐỊNH NHÓM MÁU TƯƠNG THÍCH =====
+            // Dựa trên bảng BloodCompatibilityRules để xác định các nhóm máu có thể truyền cho nhau
+            // Ví dụ: Người nhận A+ có thể nhận từ A+, A-, O+, O-
             var compatibleBloodTypeIds = await _context.BloodCompatibilityRules
                 .Where(r => r.BloodRecieveId == requestedBloodTypeId && r.IsCompatible)
                 .Select(r => r.BloodGiveId)
@@ -298,7 +307,12 @@ namespace Blood_Donation_Support.Controllers
             if (!compatibleBloodTypeIds.Contains(requestedBloodTypeId))
                 compatibleBloodTypeIds.Add(requestedBloodTypeId);
 
-            // 1. Máu Available đúng nhóm máu
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] CompatibleBloodTypeIds: [{string.Join(", ", compatibleBloodTypeIds)}]");
+
+            // ===== TIÊU CHÍ 1: MÁU CÙNG NHÓM (ƯU TIÊN CAO NHẤT) =====
+            // Ưu tiên máu cùng nhóm với người nhận (ví dụ: A+ cho A+)
+            // Điều kiện: Available, chưa hết hạn, còn thể tích
             var availableExactQuery = _context.BloodUnits
                 .Include(bu => bu.BloodType)
                 .Include(bu => bu.Component)
@@ -312,7 +326,16 @@ namespace Blood_Donation_Support.Controllers
             
             var availableExact = await availableExactQuery.ToListAsync();
 
-            // 2. Máu Available nhóm tương thích (khác nhóm nhưng truyền được)
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] AvailableExact Count: {availableExact.Count}");
+            foreach (var bu in availableExact)
+            {
+                Console.WriteLine($"[DEBUG] AvailableExact: BloodUnitId={bu.BloodUnitId}, BloodType={bu.BloodType.BloodTypeName}, Component={bu.Component.ComponentName}");
+            }
+
+            // ===== TIÊU CHÍ 2: MÁU TƯƠNG THÍCH (ƯU TIÊN THỨ 2) =====
+            // Nếu không có máu cùng nhóm, tìm máu tương thích (ví dụ: O+ cho A+)
+            // Điều kiện: Available, chưa hết hạn, còn thể tích, thuộc nhóm tương thích
             var availableCompatibleQuery = _context.BloodUnits
                 .Include(bu => bu.BloodType)
                 .Include(bu => bu.Component)
@@ -326,7 +349,16 @@ namespace Blood_Donation_Support.Controllers
             
             var availableCompatible = await availableCompatibleQuery.ToListAsync();
 
-            // 3. Máu Reserved (chỉ trả về nếu 2 nhóm trên không đủ)
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] AvailableCompatible Count: {availableCompatible.Count}");
+            foreach (var bu in availableCompatible)
+            {
+                Console.WriteLine($"[DEBUG] AvailableCompatible: BloodUnitId={bu.BloodUnitId}, BloodType={bu.BloodType.BloodTypeName}, Component={bu.Component.ComponentName}");
+            }
+
+            // ===== TIÊU CHÍ 3: MÁU ĐÃ ĐẶT TRƯỚC (ƯU TIÊN THỨ 3) =====
+            // Chỉ xem xét máu Reserved nếu 2 nhóm trên không đủ
+            // Có thể lấy máu đã đặt cho ca truyền máu thường để ưu tiên cho khẩn cấp
             List<BloodUnit> reserved = new();
             if (availableExact.Count + availableCompatible.Count == 0)
             {
@@ -344,47 +376,116 @@ namespace Blood_Donation_Support.Controllers
                 reserved = await reservedQuery.ToListAsync();
             }
 
-            // 4. Tìm kiếm người hiến máu đủ điều kiện trong bán kính 20km nếu không có máu trong kho
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] Reserved Count: {reserved.Count}");
+            Console.WriteLine($"[DEBUG] Total Available Blood: {availableExact.Count + availableCompatible.Count + reserved.Count}");
+
+            // ===== TIÊU CHÍ 4: TÌM NGƯỜI HIẾN MÁU (CUỐI CÙNG) =====
+            // Nếu không có máu trong kho, tìm người hiến máu trong bán kính 20km
+            // Điều kiện: Đủ điều kiện hiến máu, nhóm máu tương thích, không có lịch hiến sắp tới
             List<object> eligibleDonors = new();
+            
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] Checking eligible donors condition: {(availableExact.Count + availableCompatible.Count + reserved.Count) == 0}");
+            
             if ((availableExact.Count + availableCompatible.Count + reserved.Count) == 0)
             {
                 // Chuyển đổi EmergencyLocation của yêu cầu khẩn cấp thành Point
                 var emergencyPoint = ParseLocationToPoint(urgentRequest.EmergencyLocation);
-                const double searchRadiusKm = 20.0; // Bán kính tìm kiếm 20km
+                const double searchRadiusMeters = 20000.0; // Bán kính tìm kiếm 20km = 20000m
+
+                // ===== DEBUG LOG =====
+                Console.WriteLine($"[DEBUG] EmergencyLocation: {urgentRequest.EmergencyLocation}");
+                Console.WriteLine($"[DEBUG] EmergencyPoint: {emergencyPoint}");
 
                 if (emergencyPoint != null)
                 {
-                    var minDonationIntervalDays = 84; // 84 ngày
-                    // var minTransfusionRecoveryDays = 365; // 365 ngày - Tạm thời bỏ qua do không tìm thấy trường LastTransfusionDate
+                    // ===== DEBUG LOG =====
+                    Console.WriteLine($"[DEBUG] SearchRadiusMeters: {searchRadiusMeters}");
 
-                    var potentialDonors = await _context.Users
-                        .Include(u => u.Member)
-                            .ThenInclude(m => m.BloodType) // Bao gồm BloodType của Member
-                        .Where(u => u.IsActive == true && u.Member != null && u.Member.IsDonor == true && u.Member.Location != null) // Sửa IsDonor
-                        .Where(u => compatibleBloodTypeIds.Contains(u.Member.BloodTypeId ?? 0)) // Lọc theo nhóm máu tương thích
-                        .Where(u => (u.Member.LastDonationDate == null || EF.Functions.DateDiffDay(u.Member.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue), DateTime.Today) >= minDonationIntervalDays))
-                        // Kiểm tra lịch hiến máu sắp tới trong bảng DonationRequests
-                        .Where(u => !_context.DonationRequests.Any(dr => dr.MemberId == u.Member.UserId && dr.Status == "Scheduled" && dr.PreferredDonationDate >= DateOnly.FromDateTime(DateTime.Today)))
-                        .ToListAsync(); // Lấy dữ liệu về client trước
-
-                    eligibleDonors = potentialDonors
-                        .AsEnumerable() // Chuyển sang client-side evaluation để tính khoảng cách
-                        .Where(u => CalculateDistance(emergencyPoint, u.Member.Location) <= searchRadiusKm)
-                        .Select(u => new
-                        {
-                            u.UserId,
-                            u.FullName,
-                            u.PhoneNumber, // Thay thế ContactPhone bằng PhoneNumber
-                            u.Email,       // Thay thế ContactEmail bằng Email
-                            u.Address,
-                            BloodTypeName = u.Member.BloodType != null ? u.Member.BloodType.BloodTypeName : "Không biết",
-                            u.Member.LastDonationDate,
-                            DistanceKm = CalculateDistance(emergencyPoint, u.Member.Location) // Thêm khoảng cách vào kết quả
+                    // ===== NGHIỆP VỤ: TIÊU CHÍ CHỌN NGƯỜI HIẾN MÁU (CHUẨN HÓA THEO BloodDistanceSearch) =====
+                    // 1. Member phải là donor (IsDonor = true)
+                    // 2. Phải có thông tin vị trí (Location)
+                    // 3. Nhóm máu phải tương thích với người nhận
+                    // 4. Khoảng cách <= bán kính tìm kiếm
+                    // 5. Đủ điều kiện hiến máu (84 ngày sau lần hiến gần nhất)
+                    // 6. Không có lịch hiến sắp tới
+                    // 7. Không trong thời gian phục hồi sau truyền máu (365 ngày)
+                    
+                    var donors = await _context.Members
+                        .Where(m => m.IsDonor == true && m.Location != null)
+                        .Where(m => compatibleBloodTypeIds.Contains(m.BloodTypeId ?? 0)) // Lọc theo nhóm máu tương thích
+                        .Where(m => m.Location.Distance(emergencyPoint) <= searchRadiusMeters) // Lọc theo khoảng cách (sử dụng NetTopologySuite)
+                        .Select(m => new {
+                            m.UserId,
+                            m.User.FullName,
+                            Phone = m.User.PhoneNumber,
+                            m.User.Email,
+                            BloodTypeId = m.BloodTypeId,
+                            BloodType = m.BloodType.BloodTypeName,
+                            m.User.Address,
+                            Latitude = m.Location.Y,
+                            Longitude = m.Location.X,
+                            Distance = m.Location.Distance(emergencyPoint), // Khoảng cách theo mét
+                            m.Weight,
+                            m.Height,
+                            m.LastDonationDate
                         })
-                        .OrderBy(d => d.DistanceKm) // Sắp xếp theo khoảng cách
-                        .ToList<object>();
+                        .ToListAsync();
+
+                    // ===== DEBUG LOG =====
+                    Console.WriteLine($"[DEBUG] Donors Count (before additional filters): {donors.Count}");
+                    foreach (var donor in donors)
+                    {
+                        Console.WriteLine($"[DEBUG] Donor: UserId={donor.UserId}, BloodType={donor.BloodType}, Distance={donor.Distance}m, LastDonationDate={donor.LastDonationDate}");
+                    }
+
+                    // Lọc tiếp trên C# với điều kiện ngày phục hồi (giống BloodDistanceSearch)
+                    var filteredDonors = donors
+                        .Where(m => (m.LastDonationDate == null ||
+                                    (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84))
+                        // Loại trừ member vừa truyền máu xong (trong vòng 365 ngày)
+                        .Where(m => !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && tr.CompletionDate.Value > DateTime.Now.AddDays(-365)))
+                        // Loại trừ member có lịch hiến sắp tới
+                        .Where(m => !_context.DonationRequests.Any(dr => dr.MemberId == m.UserId && dr.Status == "Scheduled" && dr.PreferredDonationDate >= DateOnly.FromDateTime(DateTime.Today)))
+                        .Select(m => new
+                        {
+                            m.UserId,
+                            m.FullName,
+                            m.Phone,
+                            m.Email,
+                            BloodTypeName = m.BloodType,
+                            DistanceKm = Math.Round(m.Distance / 1000.0, 2), // Khoảng cách theo km
+                            LastDonationDate = m.LastDonationDate
+                        })
+                        .OrderBy(d => d.DistanceKm) // Sắp xếp theo khoảng cách gần nhất
+                        .ToList();
+
+                    // ===== DEBUG LOG =====
+                    Console.WriteLine($"[DEBUG] FilteredDonors Count (after additional filters): {filteredDonors.Count}");
+                    foreach (var donor in filteredDonors)
+                    {
+                        Console.WriteLine($"[DEBUG] FilteredDonor: UserId={donor.UserId}, BloodType={donor.BloodTypeName}, Distance={donor.DistanceKm}km");
+                    }
+
+                    eligibleDonors = filteredDonors.Select(d => (object)d).ToList();
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] EmergencyPoint is null - cannot calculate distance");
                 }
             }
+            else
+            {
+                Console.WriteLine($"[DEBUG] Skipping eligible donors search - blood units available");
+            }
+
+            // ===== DEBUG LOG =====
+            Console.WriteLine($"[DEBUG] Final Results:");
+            Console.WriteLine($"[DEBUG] - availableExact: {availableExact.Count}");
+            Console.WriteLine($"[DEBUG] - availableCompatible: {availableCompatible.Count}");
+            Console.WriteLine($"[DEBUG] - reserved: {reserved.Count}");
+            Console.WriteLine($"[DEBUG] - eligibleDonors: {eligibleDonors.Count}");
 
             return Ok(new
             {
@@ -593,7 +694,14 @@ namespace Blood_Donation_Support.Controllers
                 if (bloodUnit.ExpiryDate < DateOnly.FromDateTime(DateTime.Now))
                     return BadRequest($"Đơn vị máu {bu.BloodUnitId} đã hết hạn!");
 
-                // Thêm log kiểm tra giá trị truyền vào và rule tương thích
+                // ===== NGHIỆP VỤ: KIỂM TRA TÍNH TƯƠNG THÍCH MÁU =====
+                // Kiểm tra xem máu có thể truyền cho người nhận không dựa trên bảng BloodCompatibilityRules
+                // Ví dụ: Máu O+ có thể truyền cho A+, B+, AB+, O+ nhưng không thể truyền cho A-, B-, AB-, O-
+                // Điều kiện kiểm tra:
+                // 1. BloodGiveId = nhóm máu của túi máu
+                // 2. BloodRecieveId = nhóm máu của người nhận  
+                // 3. IsCompatible = true (có thể truyền)
+                // 4. ComponentId phù hợp (nếu có yêu cầu thành phần cụ thể)
                 var compatibleRules = await _context.BloodCompatibilityRules
                     .Where(rule =>
                         rule.BloodGiveId == bloodUnit.BloodTypeId &&
@@ -614,18 +722,24 @@ namespace Blood_Donation_Support.Controllers
                 }
                 else if (bloodUnit.BloodStatus == "Reserved")
                 {
-                    // Logic xử lý máu Reserved: hủy liên kết với ca truyền máu thường cũ
+                    // ===== NGHIỆP VỤ: XỬ LÝ MÁU ĐÃ ĐẶT TRƯỚC =====
+                    // Khi lấy máu Reserved cho yêu cầu khẩn cấp, cần hủy liên kết với ca truyền máu thường
+                    // Nguyên tắc: Yêu cầu khẩn cấp có ưu tiên cao hơn ca truyền máu thường
                     var existingReservation = await _context.BloodReservations
                         .Include(r => r.Transfusion)
                         .FirstOrDefaultAsync(r => r.BloodUnitId == bu.BloodUnitId && r.Status == "Active");
                     
                     if (existingReservation != null)
                     {
-                        // Hủy liên kết với ca truyền máu thường cũ
+                        // ===== NGHIỆP VỤ: HỦY LIÊN KẾT VỚI CA TRUYỀN MÁU THƯỜNG =====
+                        // Chuyển trạng thái reservation từ "Active" sang "Cancelled"
+                        // Lý do: Ưu tiên cho yêu cầu khẩn cấp
                         existingReservation.Status = "Cancelled";
                         _context.BloodReservations.Update(existingReservation);
 
-                        // Log lại thông tin hủy liên kết
+                        // ===== NGHIỆP VỤ: LOG LẠI THÔNG TIN HỦY LIÊN KẾT =====
+                        // Ghi lại thông tin để theo dõi và báo cáo
+                        // Có thể lưu vào bảng Logs hoặc ghi file log
                         var logEntry = new
                         {
                             LogType = "BloodReservationCancelled",
@@ -666,6 +780,10 @@ namespace Blood_Donation_Support.Controllers
             return Ok(new { message = "Đã gán máu cho yêu cầu khẩn cấp thành công." });
         }
 
+        /// <summary>
+        /// API hoàn thành yêu cầu máu khẩn cấp
+        /// NGHIỆP VỤ: Cập nhật trạng thái máu và yêu cầu sau khi hoàn thành
+        /// </summary>
         [HttpPatch("{id}/fulfill")]
         [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> FulfillUrgentRequest(int id)
@@ -676,7 +794,8 @@ namespace Blood_Donation_Support.Controllers
             if (urgentRequest.Status == "Fulfilled" || urgentRequest.Status == "Cancelled")
                 return BadRequest("Yêu cầu đã hoàn thành hoặc đã hủy.");
 
-            // Lấy các bản ghi máu đã gán cho yêu cầu này
+            // ===== NGHIỆP VỤ: LẤY DANH SÁCH MÁU ĐÃ GÁN =====
+            // Lấy các bản ghi máu đã gán cho yêu cầu này (trạng thái "Assigned")
             var assignedUnits = await _context.UrgentRequestBloodUnits
                 .Where(ubu => ubu.UrgentRequestId == id && ubu.Status == "Assigned")
                 .ToListAsync();
@@ -686,12 +805,15 @@ namespace Blood_Donation_Support.Controllers
                 var bloodUnit = await _context.BloodUnits.FindAsync(ubu.BloodUnitId);
                 if (bloodUnit == null) continue;
 
-                // Sử dụng toàn bộ lượng máu đã được gán
+                // ===== NGHIỆP VỤ: CẬP NHẬT TRẠNG THÁI MÁU ĐÃ SỬ DỤNG =====
+                // Chuyển trạng thái từ "Assigned" sang "Used" (đã sử dụng)
                 ubu.Status = "Used";
+                // Giảm thể tích còn lại của túi máu
                 bloodUnit.RemainingVolume -= ubu.AssignedVolume;
                 _context.UrgentRequestBloodUnits.Update(ubu);
 
-                // Nếu máu đã dùng hết, chuyển trạng thái túi máu sang Used
+                // ===== NGHIỆP VỤ: XỬ LÝ TRẠNG THÁI TÚI MÁU =====
+                // Nếu máu đã dùng hết (RemainingVolume <= 0), chuyển trạng thái sang "Used"
                 if (bloodUnit.RemainingVolume <= 0)
                 {
                     bloodUnit.RemainingVolume = 0;
@@ -699,7 +821,9 @@ namespace Blood_Donation_Support.Controllers
                 }
                 else
                 {
-                    // Nếu máu còn dư và không còn gán cho ca nào khác, chuyển sang Available
+                    // ===== NGHIỆP VỤ: KIỂM TRA VÀ CẬP NHẬT TRẠNG THÁI TÚI MÁU =====
+                    // Nếu máu còn dư và không còn gán cho ca nào khác, chuyển sang "Available"
+                    // Điều kiện: Không còn bản ghi nào trong UrgentRequestBloodUnits với trạng thái "Assigned"
                     var stillAssigned = await _context.UrgentRequestBloodUnits.AnyAsync(x => x.BloodUnitId == bloodUnit.BloodUnitId && x.Status == "Assigned");
                     if (!stillAssigned)
                     {
@@ -709,6 +833,8 @@ namespace Blood_Donation_Support.Controllers
                 _context.BloodUnits.Update(bloodUnit);
             }
 
+            // ===== NGHIỆP VỤ: HOÀN THÀNH YÊU CẦU KHẨN CẤP =====
+            // Chuyển trạng thái yêu cầu từ "InProgress" sang "Fulfilled"
             urgentRequest.Status = "Fulfilled";
             urgentRequest.CompletionDate = DateTime.Now;
             _context.UrgentBloodRequests.Update(urgentRequest);

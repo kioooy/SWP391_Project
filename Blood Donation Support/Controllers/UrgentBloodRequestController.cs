@@ -52,7 +52,7 @@ namespace Blood_Donation_Support.Controllers
             var urgentRequest = new UrgentBloodRequest
             {
                 PatientName = model.PatientName,
-                RequestedBloodTypeId = model.RequestedBloodTypeId,
+                RequestedBloodTypeId = 99, // Không Biết
                 Reason = model.Reason,
                 CitizenNumber = model.CitizenNumber,
                 ContactName = model.ContactName,
@@ -836,7 +836,7 @@ namespace Blood_Donation_Support.Controllers
                     var stillAssigned = await _context.UrgentRequestBloodUnits.AnyAsync(x => x.BloodUnitId == bloodUnit.BloodUnitId && x.Status == "Assigned");
                     if (!stillAssigned)
                     {
-                        bloodUnit.BloodStatus = "PartialUsed";
+                        bloodUnit.BloodStatus = "Available";
                     }
                 }
                 _context.BloodUnits.Update(bloodUnit);

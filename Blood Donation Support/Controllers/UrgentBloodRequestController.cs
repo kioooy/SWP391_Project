@@ -1,11 +1,13 @@
 using Blood_Donation_Support.Data;
 using Blood_Donation_Support.DTO;
 using Blood_Donation_Support.Model;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries; // Thêm namespace cho Point
+using System.Net;
+using System.Net.Mail;
+using System.Security.Claims;
 
 namespace Blood_Donation_Support.Controllers
 {
@@ -555,6 +557,57 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // --- Tín Coding: Start ---
+
+        // Sent Email Donor To Call Volunteer 
+        [HttpPost("send-email-donor")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> SendEmailToDonor([FromBody] EmailToDonor model)
+        {
+            if (model == null)
+                return NotFound("Không Tìm Thấy Email Để Gửi.");
+            
+            // Gửi email đến người hiến máu
+            MailAddressCollection mailSent = new MailAddressCollection();
+            MailMessage mail = new MailMessage();
+
+            mail.From = new MailAddress("tinbusiness.work@gmail.com"); // My Email Address
+            foreach (var email in model.Email)
+                mail.Bcc.Add(new MailAddress(email)); // Add each email address from the model           
+            mail.Priority = MailPriority.High; // High Priority ( Important )
+            
+            mail.Subject = "Yêu Cầu Máu Khẩn Cấp - Tình Nguyện Viên Cần Giúp Đỡ";
+            mail.Body = @"<div style='color: #000000; font-family: Arial, sans-serif;'>
+                            <h1>Xin chào tình nguyện viên,</h1>
+                            <br>Chúng tôi đã nhận được <strong>yêu cầu máu khẩn cấp</strong> từ một bệnh nhân cần sự giúp đỡ của bạn.</br>
+                            <p><strong>Vui lòng liên hệ</strong> với chúng tôi để biết thêm chi tiết và xác nhận khả năng hiến máu của bạn.</p>
+                            <p>Chúng tôi trân trọng tinh thần thiện nguyện của bạn – sự giúp đỡ kịp thời lúc này có thể cứu sống một mạng người.</p>
+
+                            <br>Cảm ơn bạn đã sẵn sàng giúp đỡ cho bệnh viện!</br>
+                            <p>Trân trọng,</p>
+
+                            <br><strong>Bệnh Viện Truyền Máu Huyết Học</strong></br>
+                            <p>Số Điện Thoại: 02839575334</p>
+                            <p>Email Liên Hệ: tinbusiness.work@gmail.com</p>
+                          </div>"; 
+            mail.IsBodyHtml = true; // Mark Body Is HTML 
+
+            try
+            {
+                using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
+                {
+                    smtp.EnableSsl = true; // Enable SSL
+                    smtp.UseDefaultCredentials = false; // Use default credentials
+                    smtp.Credentials = new NetworkCredential("tinbusiness.work", "hbuv ayid svux duza"); // Use app-specific password
+                    await smtp.SendMailAsync(mail); // Send email asynchronously
+                }
+            }
+            catch (Exception)
+            {
+                return BadRequest("Lỗi khi gửi email");
+            }
+            
+            return Ok("Email đã được gửi thành công.");
+        }
 
         // Get History of Urgent Blood Requests ( Emergency ) for Current User
         // GET api/urgentbloodrequest/history

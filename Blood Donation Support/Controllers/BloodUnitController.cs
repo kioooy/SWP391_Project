@@ -224,10 +224,72 @@ public class BloodUnitController : ControllerBase
         return NoContent(); // Return 204 No Content if successful
     }
 
-        // --- Quý Coding: Start ---
+    // History Tracking Blood Unit
+    // GET: api/BloodUnit/{id}/history
+    [HttpGet("{id}/history")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetBloodUnitHistory(int id)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState); // Status 400 Bad Request if model state is invalid
 
-        // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
-        [HttpGet("compatible")]
+        var bloodUnit = await _context.BloodUnits.FindAsync(id);
+        if (bloodUnit == null)
+            return NotFound($"Không tìm thấy mã đơn vị máu: {id}.");
+
+        // Urgent Blood Request History Track
+        var urgentBloodUnit = await _context.UrgentRequestBloodUnits
+            .Where(ubu => ubu.BloodUnitId == id && ubu.Status == "Used")
+            .Select(ubu => new
+            {
+                ubu.UrgentRequest.UrgentRequestId,      // Urgent Request Blood Unit ID
+                ubu.BloodUnit.Component.ComponentName,  // Component Name
+                ubu.AssignedDate,                       // Assigned Date
+                ubu.AssignedVolume,                     // Assigned Volume (mL)
+            })
+            .ToListAsync();
+        // Transfusion Request History Track
+        var transBloodUntit = await _context.TransfusionRequestBloodUnits
+            .Where(tbu => tbu.BloodUnitId == id && tbu.Status == "Used")
+            .Select(tbu => new
+            {
+                tbu.TransfusionRequest.TransfusionId,            // Transfusion Request ID
+                tbu.TransfusionRequest.Component.ComponentName,  // Component Name
+                tbu.AssignedDate,                                // Assigned Date
+                tbu.AssignedVolume,                              // Assigned Volume (mL)
+            })
+            .ToListAsync();
+        // Donation Request History Track
+        var donationBloodUnit = await _context.DonationRequests
+            .Where(dbu => dbu.CompletionDate.HasValue && 
+                   DateOnly.FromDateTime(dbu.CompletionDate.Value) == bloodUnit.AddDate &&
+                   dbu.MemberId == bloodUnit.MemberId && dbu.Status == "Completed")
+            .Select(dbu => new
+            {
+                dbu.DonationId,                     // Donation Request ID
+                dbu.Component.ComponentName,        // Component Name
+                AssignedDate = dbu.CompletionDate,  // Assigned Date (Completation Date)
+                dbu.DonationVolume,                 // Donation Volume (mL)
+            })
+            .ToListAsync();
+
+        // return status 404 if not found any history track
+        if (!donationBloodUnit.Any() && !transBloodUntit.Any() && !urgentBloodUnit.Any())
+            return NotFound("Không tìm thấy lịch sử yêu cầu máu cho đơn vị máu này."); // Status 404 Not Found if no history found
+
+        //  Display the results
+        return Ok( new
+        {
+            DonationRequest = donationBloodUnit,    // Donation Request History Track
+            TransfusionRequest = transBloodUntit,   // Transfusion Request History Track
+            UrgentBloodRequest = urgentBloodUnit,   // Urgent Blood Request History Track
+        }); // Return 200 OK with the blood unit history
+    }
+
+    // --- Quý Coding: Start ---
+
+    // GET: api/BloodUnit/compatible?bloodTypeId=1&componentId=1&minVolume=200
+    [HttpGet("compatible")]
     [Authorize(Roles = "Staff,Admin")]
     public async Task<IActionResult> GetCompatibleBloodUnits(int bloodTypeId, int componentId, int minVolume)
     {

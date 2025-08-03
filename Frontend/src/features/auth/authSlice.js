@@ -50,7 +50,56 @@ export const register = createAsyncThunk(
       console.error('Validation errors:', error.response?.data?.errors);
       console.error('Model errors:', error.response?.data?.errors?.model);
       console.error('DateOfBirth errors:', error.response?.data?.errors?.['$.dateOfBirth']);
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      
+      // Xử lý hiển thị tất cả lỗi validation
+      let errorMessage = '';
+      
+      // Kiểm tra cấu trúc lỗi từ backend
+      const responseData = error.response?.data;
+      
+      if (responseData?.errors) {
+        // Trường hợp 1: Lỗi validation có cấu trúc errors object
+        const errors = responseData.errors;
+        const errorMessages = [];
+        
+        Object.keys(errors).forEach(key => {
+          if (Array.isArray(errors[key])) {
+            errorMessages.push(...errors[key]);
+          } else if (typeof errors[key] === 'string') {
+            errorMessages.push(errors[key]);
+          } else if (typeof errors[key] === 'object') {
+            // Xử lý nested errors
+            Object.keys(errors[key]).forEach(nestedKey => {
+              if (Array.isArray(errors[key][nestedKey])) {
+                errorMessages.push(...errors[key][nestedKey]);
+              } else if (typeof errors[key][nestedKey] === 'string') {
+                errorMessages.push(errors[key][nestedKey]);
+              }
+            });
+          }
+        });
+        
+        if (errorMessages.length > 0) {
+          errorMessage = errorMessages.join('\n');
+        }
+      } else if (responseData?.message) {
+        // Trường hợp 2: Lỗi có message đơn lẻ
+        errorMessage = responseData.message;
+      } else if (typeof responseData === 'string') {
+        // Trường hợp 3: Response là string
+        errorMessage = responseData;
+      } else if (Array.isArray(responseData)) {
+        // Trường hợp 4: Response là array
+        errorMessage = responseData.join('\n');
+      }
+      
+      // Nếu vẫn không có errorMessage, dùng fallback
+      if (!errorMessage) {
+        errorMessage = 'Registration failed';
+      }
+      
+      console.log('Final error message:', errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );

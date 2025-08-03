@@ -291,7 +291,7 @@ namespace Blood_Donation_Support.Controllers
             if (urgentRequest == null)
                 return NotFound("Không tìm thấy yêu cầu máu khẩn cấp.");
 
-            // Sử dụng bloodTypeId từ query parameter nếu có,否则 sử dụng từ urgent request
+            // Sử dụng bloodTypeId từ query parameter nếu có sử dụng từ urgent request
             var requestedBloodTypeId = bloodTypeId ?? urgentRequest.RequestedBloodTypeId;
             
             // ===== NGHIỆP VỤ: XÁC ĐỊNH NHÓM MÁU TƯƠNG THÍCH =====
@@ -783,7 +783,7 @@ namespace Blood_Donation_Support.Controllers
                     var stillAssigned = await _context.UrgentRequestBloodUnits.AnyAsync(x => x.BloodUnitId == bloodUnit.BloodUnitId && x.Status == "Assigned");
                     if (!stillAssigned)
                     {
-                        bloodUnit.BloodStatus = "Available";
+                        bloodUnit.BloodStatus = "PartialUsed";
                     }
                 }
                 _context.BloodUnits.Update(bloodUnit);

@@ -220,7 +220,7 @@ const AppointmentHistory = () => {
           <Chip
             label="Hoàn thành"
             size="small"
-            sx={{ backgroundColor: '#757575', color: 'white', fontWeight: 600 }}
+            sx={{ backgroundColor: '#4caf50', color: 'white', fontWeight: 600 }}
           />
         );
       case 'scheduled':

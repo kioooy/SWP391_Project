@@ -197,9 +197,8 @@ namespace Blood_Donation_Support.Controllers
                 PreferredDonationDate = model.PreferredDonationDate, // Preferred Donation Date 
                 ResponsibleById = model.ResponsibleById,             // Responsible By Id 
                 RequestDate = DateTime.Now,                          // Request Date (current date)
-                ApprovalDate = DateTime.Now,                         // Approval Date (current date)
                 DonationVolume = model.DonationVolume,               // Donation Volume
-                Status = "Approved",                                 // Status (default "Approved" as per new business logic)
+                Status = "Pending",                                  // Status (default "Pending" as per new business logic)
                 Notes = model.Notes,                                 // Notes 
                 PatientCondition = model.PatientCondition            // Patient Condition
             };
@@ -315,26 +314,44 @@ namespace Blood_Donation_Support.Controllers
                 throw;
             }
         }
+
+        // approved donation request by id
+        // PATCH: api/DonationRequest/{id}/approved
+        [HttpPatch("{id}/approved")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> ApprovedDonationRequest(int id, string note)
+        {
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+
+            var existingRequest = await _context.DonationRequests.FindAsync(id);
+            if (existingRequest == null)
+                return NotFound($"Không Tìm Thấy Mã Yêu Cầu Hiến Máu: {id}.");
+
+            existingRequest.ResponsibleById = currentUserId;
+            existingRequest.ApprovalDate = DateTime.Now;
+            existingRequest.Status = "Approved";
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = $"Đã Cho Phép Yêu Cầu Hiến Máu: {id} Thành Công" });
+        }
+
         // Reject donation request by id
         // PATCH: api/DonationRequest/{id}/reject
         [HttpPatch("{id}/reject")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> RejectDonationRequest(int id, string note)
         {
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
             var name = User.FindFirst(ClaimTypes.Name)?.Value;
             int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
 
             var existingRequest = await _context.DonationRequests.FindAsync(id);
             if (existingRequest == null)
                 return NotFound($"Không Tìm Thấy Mã Yêu Cầu Hiến Máu: {id}.");
-            if (existingRequest.ResponsibleById != currentUserId)
-                return BadRequest("Bạn Không Có Quyền Hạn Để Từ Chối Yêu Cầu Này.");
 
             existingRequest.ResponsibleById = currentUserId;
             existingRequest.RejectedDate = DateTime.Now;
             existingRequest.Status = "Rejected";
-            existingRequest.Notes = $"Lý do từ chối của bác sĩ phụ trách {name}: {note}";
+            existingRequest.Notes = $"Lý do từ chối của nhân viên y tế phụ trách {name}: {note}";
             existingRequest.PatientCondition = "Rejected";
             _context.Entry(existingRequest).State = EntityState.Modified;
 
@@ -354,7 +371,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return Ok(new { message = $"Đã Hủy Yêu Cầu Hiến Máu {id} Thành Công" });
+                return Ok(new { message = $"Đã Hủy Yêu Cầu Hiến Máu ID: {id} Thành Công" });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -366,7 +383,7 @@ namespace Blood_Donation_Support.Controllers
         // Cancel donation request by id
         // PATCH: api/DonationRequest/{id}/cancel
         [HttpPatch("{id}/cancel")]
-        [Authorize(Roles = "Member,Staff,Admin")]
+        [Authorize(Roles = "Member,Admin")]
         public async Task<IActionResult> CancelDonationRequest(int id)
         {
             var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -382,11 +399,6 @@ namespace Blood_Donation_Support.Controllers
             {
                 existingRequest.Status = "Cancelled";
                 existingRequest.Notes = "Đã hủy bởi người dùng";
-            }
-            else
-            {
-                existingRequest.Status = "Rejected";
-                existingRequest.Notes = $"Hủy bởi {roleName}: {name}";
             }
             _context.Entry(existingRequest).State = EntityState.Modified;
 
@@ -406,7 +418,7 @@ namespace Blood_Donation_Support.Controllers
             {
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return Ok(new { message = $"Đã hủy yêu cầu hiến máu ID {id} thành công" });
+                return Ok(new { message = $"Đã hủy yêu cầu hiến máu ID: {id} thành công" });
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -427,7 +439,7 @@ namespace Blood_Donation_Support.Controllers
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
             // Find donation requests that have expired (preferred date in past) but haven't been completed, cancelled or rejected
             var expiredRequests = await _context.DonationRequests
-                .Where(dr => dr.PreferredDonationDate < currentDate && dr.Status == "Approved")
+                .Where(dr => dr.PreferredDonationDate < currentDate && ( dr.Status == "Approved" || dr.Status == "Pending"))
                 .ToListAsync();
 
             if (expiredRequests.Count == 0)
@@ -437,7 +449,7 @@ namespace Blood_Donation_Support.Controllers
             foreach (var request in expiredRequests)
             {
                 request.Status = "Cancelled";
-                request.Notes = $"Hệ thống tự động hủy đơn vào lúc {DateTime.Now} do quá hạn đợt hiến máu ({request.PreferredDonationDate}).";
+                request.Notes = $"Hệ thống tự động hủy đơn do quá hạn đợt hiến máu ({request.PreferredDonationDate}).";
                 _context.Entry(request).State = EntityState.Modified;
             }
 

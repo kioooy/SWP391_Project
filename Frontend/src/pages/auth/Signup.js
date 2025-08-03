@@ -990,15 +990,7 @@ const Signup = () => {
 
       case 3:
         return (
-          <Box component="form" onSubmit={(e) => {
-            console.log('=== DEBUG: Step 3 form submit ===');
-            console.log('Form submit event:', e);
-            console.log('Form values:', formik.values);
-            console.log('Form errors:', formik.errors);
-            console.log('Form touched:', formik.touched);
-            console.log('Form is valid:', formik.isValid);
-            formik.handleSubmit(e);
-          }}>
+          <Box>
             <Typography variant="h5" fontWeight="bold" gutterBottom color="primary.main">
               Tạo mật khẩu
             </Typography>
@@ -1083,16 +1075,13 @@ const Signup = () => {
                 Quay lại
               </Button>
               <Button
-                type="submit"
+                type="button"
                 variant="contained"
                 disabled={loading}
                 onClick={() => {
-                  console.log('=== DEBUG: Nút "Hoàn thành đăng ký" được click ===');
-                  console.log('Loading state:', loading);
-                  console.log('Active step:', activeStep);
-                  console.log('Form is valid:', formik.isValid);
-                  console.log('Form errors:', formik.errors);
-                  console.log('Form touched:', formik.touched);
+                  console.log('=== DEBUG: Nút "Tiếp tục" ở bước 4 được click ===');
+                  console.log('Chuyển từ bước 4 sang bước 5');
+                  handleNext();
                 }}
               >
                 Tiếp tục

@@ -43,7 +43,7 @@ const EmergencyRequest = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     patientName: '',
-    bloodType: '',
+    bloodType: 'Không rõ', // Mặc định là "Không rõ"
     quantity: '',
     contactName: '',
     contactPhone: '',
@@ -243,7 +243,7 @@ const EmergencyRequest = () => {
     const newErrors = {};
     if (activeStep === 0) {
       if (!formData.patientName) newErrors.patientName = 'Vui lòng nhập tên bệnh nhân';
-      if (!formData.bloodType) newErrors.bloodType = 'Vui lòng chọn nhóm máu';
+      // Bỏ validation cho bloodType vì đã mặc định là "Không rõ"
       if (!formData.cccd) {
         newErrors.cccd = 'Vui lòng nhập số CCCD';
       } else if (!/^\d{12}$/.test(formData.cccd)) {
@@ -333,7 +333,7 @@ const EmergencyRequest = () => {
         setActiveStep(0);
         setFormData({
           patientName: '',
-          bloodType: '',
+          bloodType: 'Không rõ', // Mặc định là "Không rõ"
           quantity: '',
           contactName: '',
           contactPhone: '',
@@ -449,7 +449,8 @@ const EmergencyRequest = () => {
                 inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 12 }}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* Ẩn mục nhóm máu cần - mặc định là "Không rõ" */}
+            {/* <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.bloodType}>
                 <InputLabel>Nhóm máu cần</InputLabel>
                 <Select
@@ -467,12 +468,12 @@ const EmergencyRequest = () => {
                   <FormHelperText>{errors.bloodType}</FormHelperText>
                 )}
               </FormControl>
-            </Grid>
+            </Grid> */}
 
 
 
 
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={12}>
               <FormControl fullWidth>
                 <InputLabel>Lý do cần máu</InputLabel>
                 <Select
@@ -641,19 +642,20 @@ const EmergencyRequest = () => {
 
 
 
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Nhóm máu cần
-                    </Typography>
-                    <Typography>
-                      <Chip
-                        icon={<Bloodtype />}
-                        label={formData.bloodType}
-                        color="error"
-                        size="small"
-                      />
-                    </Typography>
-                  </Grid>
+                                     {/* Ẩn mục nhóm máu cần ở bước xác nhận */}
+                   {/* <Grid item xs={12} md={6}>
+                     <Typography variant="subtitle2" color="text.secondary">
+                       Nhóm máu cần
+                     </Typography>
+                     <Typography>
+                       <Chip
+                         icon={<Bloodtype />}
+                         label={formData.bloodType}
+                         color="error"
+                         size="small"
+                       />
+                     </Typography>
+                   </Grid> */}
 
 
 

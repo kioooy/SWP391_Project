@@ -78,7 +78,12 @@ const BloodInventory = () => {
   // State cho lịch sử đơn vị máu
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedBloodHistory, setSelectedBloodHistory] = useState(null);
-  const [bloodHistory, setBloodHistory] = useState([]);
+  const [bloodHistory, setBloodHistory] = useState({
+    donationHistory: [],
+    transfusionHistory: [],
+    urgentHistory: [],
+    allHistory: []
+  });
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   // State cho tìm kiếm theo ID hoặc nhóm máu
@@ -327,87 +332,81 @@ const BloodInventory = () => {
       }
       
       // Kiểm tra và xử lý dữ liệu response
-      let historyData = [];
+      let donationHistory = [];
+      let transfusionHistory = [];
+      let urgentHistory = [];
+      
       if (response.data) {
         // Nếu response.data là array
         if (Array.isArray(response.data)) {
-          historyData = response.data;
-          console.log('Sử dụng response.data trực tiếp (array)');
+          // Nếu là array, phân loại dựa trên các field có sẵn
+          response.data.forEach(item => {
+            if (item.donationId) {
+              donationHistory.push({ ...item, requestType: 'DonationRequest' });
+            } else if (item.transfusionId) {
+              transfusionHistory.push({ ...item, requestType: 'TransfusionRequest' });
+            } else if (item.urgentRequestId) {
+              urgentHistory.push({ ...item, requestType: 'UrgentBloodRequest' });
+            }
+          });
         }
         // Nếu response.data là object có chứa array
         else if (typeof response.data === 'object') {
           console.log('Response.data là object, kiểm tra các key:', Object.keys(response.data));
           
-          // Chỉ lấy lịch sử sử dụng thực tế trong truyền máu
-          const usageHistory = [];
+          // Lấy lịch sử hiến máu
+          if (response.data.donationRequest && Array.isArray(response.data.donationRequest)) {
+            donationHistory = response.data.donationRequest
+              .filter(item => item.donationId && item.donationVolume > 0)
+              .map(item => ({
+                ...item,
+                requestType: 'DonationRequest'
+              }));
+            console.log('Tìm thấy lịch sử hiến máu:', donationHistory);
+          }
           
+          // Lấy lịch sử truyền máu
           if (response.data.transfusionRequest && Array.isArray(response.data.transfusionRequest)) {
-            // Chỉ lấy những bản ghi có transfusionId và assignedVolume > 0
-            const validTransfusionRequests = response.data.transfusionRequest
+            transfusionHistory = response.data.transfusionRequest
               .filter(item => item.transfusionId && item.assignedVolume > 0)
               .map(item => ({
                 ...item,
                 requestType: 'TransfusionRequest'
               }));
-            usageHistory.push(...validTransfusionRequests);
-            console.log('Tìm thấy lịch sử sử dụng trong truyền máu:', validTransfusionRequests);
+            console.log('Tìm thấy lịch sử truyền máu:', transfusionHistory);
           }
           
+          // Lấy lịch sử yêu cầu khẩn cấp
           if (response.data.urgentBloodRequest && Array.isArray(response.data.urgentBloodRequest)) {
-            // Chỉ lấy những bản ghi có urgentRequestId và assignedVolume > 0
-            const validUrgentRequests = response.data.urgentBloodRequest
+            urgentHistory = response.data.urgentBloodRequest
               .filter(item => item.urgentRequestId && item.assignedVolume > 0)
               .map(item => ({
                 ...item,
                 requestType: 'UrgentBloodRequest'
               }));
-            usageHistory.push(...validUrgentRequests);
-            console.log('Tìm thấy lịch sử sử dụng trong yêu cầu khẩn:', validUrgentRequests);
-          }
-          
-          // Bỏ qua donationRequest vì đó không phải là lịch sử sử dụng
-          
-          if (usageHistory.length > 0) {
-            historyData = usageHistory;
-            console.log('Tổng hợp lịch sử sử dụng thực tế:', historyData);
-          } else {
-            // Kiểm tra các key có thể chứa dữ liệu lịch sử khác
-            const possibleKeys = ['transfusionHistory', 'usageHistory', 'history', 'data', 'items', 'results'];
-            for (const key of possibleKeys) {
-              if (response.data[key] && Array.isArray(response.data[key])) {
-                historyData = response.data[key];
-                console.log(`Tìm thấy dữ liệu trong key: ${key}`);
-                break;
-              }
-            }
-          }
-          
-          // Nếu không tìm thấy key nào, thử sử dụng response.data trực tiếp
-          if (historyData.length === 0) {
-            console.log('Không tìm thấy array trong các key, kiểm tra response.data có length không');
-            if (response.data.length > 0) {
-              historyData = response.data;
-              console.log('Sử dụng response.data trực tiếp (có length)');
-            }
+            console.log('Tìm thấy lịch sử yêu cầu khẩn cấp:', urgentHistory);
           }
         }
       }
       
-      console.log('Dữ liệu lịch sử đã xử lý:', historyData);
-      console.log('Số lượng bản ghi:', historyData.length);
-      console.log('historyData type:', typeof historyData);
-      console.log('historyData is array:', Array.isArray(historyData));
+      // Tổng hợp tất cả lịch sử để hiển thị
+      const allHistory = [...donationHistory, ...transfusionHistory, ...urgentHistory];
+      console.log('Tổng hợp tất cả lịch sử:', allHistory);
       
-      // Nếu historyData không phải array, thử chuyển đổi
-      if (!Array.isArray(historyData) && historyData) {
-        console.log('historyData không phải array, thử chuyển đổi...');
-        if (typeof historyData === 'object') {
-          historyData = [historyData];
-          console.log('Đã chuyển object thành array:', historyData);
-        }
-      }
+      // Lưu từng loại lịch sử riêng biệt
+      setBloodHistory({
+        donationHistory,
+        transfusionHistory,
+        urgentHistory,
+        allHistory
+      });
       
-      setBloodHistory(historyData || []);
+      console.log('Dữ liệu lịch sử đã xử lý:', {
+        donationHistory: donationHistory.length,
+        transfusionHistory: transfusionHistory.length,
+        urgentHistory: urgentHistory.length,
+        total: allHistory.length
+      });
       
     } catch (error) {
       console.error('Lỗi khi lấy lịch sử đơn vị máu:', error);
@@ -426,7 +425,12 @@ const BloodInventory = () => {
         setError(`Không thể kết nối để lấy lịch sử. Lỗi: ${error.message}`);
       }
       
-      setBloodHistory([]);
+      setBloodHistory({
+        donationHistory: [],
+        transfusionHistory: [],
+        urgentHistory: [],
+        allHistory: []
+      });
     } finally {
       setLoadingHistory(false);
     }
@@ -436,7 +440,12 @@ const BloodInventory = () => {
   const handleCloseHistoryDialog = () => {
     setHistoryDialogOpen(false);
     setSelectedBloodHistory(null);
-    setBloodHistory([]);
+    setBloodHistory({
+      donationHistory: [],
+      transfusionHistory: [],
+      urgentHistory: [],
+      allHistory: []
+    });
   };
 
   // Hàm cập nhật trạng thái đơn vị máu dựa trên remainingVolume
@@ -468,35 +477,38 @@ const BloodInventory = () => {
     // Kiểm tra nếu hết máu (remainingVolume = 0) - ưu tiên cao nhất
     if (remainingVolume === 0) {
       console.log('remainingVolume = 0, hiển thị "Đã sử dụng"');
-      return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng" color="info" size="small" />;
+      return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng" sx={{ backgroundColor: '#9e9e9e', color: 'white' }} size="small" />;
     }
     
-    // Kiểm tra nếu còn ít máu (remainingVolume < volume ban đầu)
-    if (remainingVolume > 0 && remainingVolume < 100) { // Giả sử volume ban đầu là 100ml
-      console.log('remainingVolume < 100, hiển thị "Đã sử dụng một phần"');
-      return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng một phần" color="warning" size="small" />;
-    }
-    
-    // Nếu còn đủ máu, kiểm tra bloodStatus
+    // Nếu còn đủ máu, kiểm tra bloodStatus trước
     switch (status?.toLowerCase()) {
       case 'available':
+        // Nếu available nhưng remainingVolume < 100, có thể đã sử dụng một phần
+        if (remainingVolume > 0 && remainingVolume < 100) {
+          console.log('status = available nhưng remainingVolume < 100, hiển thị "Đã sử dụng một phần"');
+          return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng một phần" color="warning" size="small" />;
+        }
         console.log('status = available, hiển thị "Có sẵn"');
         return <Chip icon={<CheckCircleIcon />} label="Có sẵn" color="success" size="small" />;
       case 'reserved':
         console.log('status = reserved, hiển thị "Đã đặt"');
-        return <Chip icon={<WarningIcon />} label="Đã đặt" color="warning" size="small" />;
+        return <Chip icon={<WarningIcon />} label="Đã đặt" color="secondary" size="small" />;
       case 'expired':
         console.log('status = expired, hiển thị "Hết hạn"');
         return <Chip icon={<WarningIcon />} label="Hết hạn" color="error" size="small" />;
       case 'used':
         console.log('status = used, hiển thị "Đã sử dụng"');
-        return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng" color="info" size="small" />;
+        return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng" sx={{ backgroundColor: '#9e9e9e', color: 'white' }} size="small" />;
       case 'discarded':
         console.log('status = discarded, hiển thị "Đã loại bỏ"');
         return <Chip icon={<WarningIcon />} label="Đã loại bỏ" color="error" size="small" />;
       default:
-        console.log('status không rõ:', status, 'nhưng remainingVolume > 0, hiển thị "Có sẵn"');
-        // Nếu remainingVolume > 0 nhưng status không rõ, coi như có sẵn
+        // Nếu status không rõ nhưng remainingVolume > 0
+        if (remainingVolume > 0 && remainingVolume < 100) {
+          console.log('status không rõ nhưng remainingVolume < 100, hiển thị "Đã sử dụng một phần"');
+          return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng một phần" color="warning" size="small" />;
+        }
+        console.log('status không rõ nhưng remainingVolume > 0, hiển thị "Có sẵn"');
         return <Chip icon={<CheckCircleIcon />} label="Có sẵn" color="success" size="small" />;
     }
   };
@@ -508,25 +520,27 @@ const BloodInventory = () => {
       return 'Đã sử dụng';
     }
     
-    // Kiểm tra nếu còn ít máu (remainingVolume < volume ban đầu)
-    if (remainingVolume > 0 && remainingVolume < 100) { // Giả sử volume ban đầu là 100ml
-      return 'Đã sử dụng một phần';
-    }
-    
-    // Nếu còn đủ máu, kiểm tra bloodStatus
+    // Nếu còn đủ máu, kiểm tra bloodStatus trước
     switch (status?.toLowerCase()) {
       case 'available':
+        // Nếu available nhưng remainingVolume < 100, có thể đã sử dụng một phần
+        if (remainingVolume > 0 && remainingVolume < 100) {
+          return 'Đã sử dụng một phần';
+        }
         return 'Có sẵn';
       case 'reserved':
         return 'Đã đặt';
       case 'expired':
         return 'Hết hạn';
-      case 'used': // Thêm trạng thái này nếu có thể xuất hiện trong dữ liệu
+      case 'used':
         return 'Đã sử dụng';
-      case 'discarded': // Thêm trạng thái này nếu có thể xuất hiện trong dữ liệu
+      case 'discarded':
         return 'Đã loại bỏ';
       default:
-        // Nếu remainingVolume > 0 nhưng status không rõ, coi như có sẵn
+        // Nếu status không rõ nhưng remainingVolume > 0
+        if (remainingVolume > 0 && remainingVolume < 100) {
+          return 'Đã sử dụng một phần';
+        }
         return 'Có sẵn';
     }
   };
@@ -833,7 +847,7 @@ const BloodInventory = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <LinearProgress />
             </Box>
-          ) : bloodHistory.length === 0 ? (
+          ) : bloodHistory.allHistory.length === 0 ? (
             <Box sx={{ py: 4 }}>
               <Typography variant="body1" sx={{ textAlign: 'center', color: 'text.secondary', mb: 2 }}>
                 Chưa có lịch sử sử dụng cho đơn vị máu này.
@@ -847,43 +861,143 @@ const BloodInventory = () => {
             </Box>
           ) : (
             <>
-              <TableContainer component={Paper} sx={{ mt: 2 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu truyền máu</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Thể tích sử dụng (ml)</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Ngày sử dụng</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {bloodHistory.map((history, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{history.transfusionId || 'N/A'}</TableCell>
-                        <TableCell>
-                          {history.componentName === 'Plasma' ? 'Huyết tương' :
-                           history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
-                           history.componentName === 'Platelets' ? 'Tiểu cầu' :
-                           history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
-                           history.componentName || 'N/A'}
-                        </TableCell>
-                        <TableCell>{history.assignedVolume || 0}</TableCell>
-                        <TableCell>
-                          {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          }) : 'N/A'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              {/* Lịch sử hiến máu */}
+              {bloodHistory.donationHistory.length > 0 && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #1976d2', pb: 1 }}>
+                    📋 Lịch sử hiến máu ({bloodHistory.donationHistory.length} bản ghi)
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+                          <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu hiến</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thể tích hiến (ml)</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày hiến</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {bloodHistory.donationHistory.map((history, index) => (
+                          <TableRow key={`donation-${index}`}>
+                            <TableCell>{history.donationId || 'N/A'}</TableCell>
+                            <TableCell>
+                              {history.componentName === 'Plasma' ? 'Huyết tương' :
+                               history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
+                               history.componentName === 'Platelets' ? 'Tiểu cầu' :
+                               history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
+                               history.componentName || 'N/A'}
+                            </TableCell>
+                            <TableCell>{history.donationVolume || 0}</TableCell>
+                            <TableCell>
+                              {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }) : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+
+              {/* Lịch sử truyền máu */}
+              {bloodHistory.transfusionHistory.length > 0 && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #2e7d32', pb: 1 }}>
+                    🏥 Lịch sử truyền máu ({bloodHistory.transfusionHistory.length} bản ghi)
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#e8f5e8' }}>
+                          <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu truyền</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thể tích sử dụng (ml)</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày sử dụng</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {bloodHistory.transfusionHistory.map((history, index) => (
+                          <TableRow key={`transfusion-${index}`}>
+                            <TableCell>{history.transfusionId || 'N/A'}</TableCell>
+                            <TableCell>
+                              {history.componentName === 'Plasma' ? 'Huyết tương' :
+                               history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
+                               history.componentName === 'Platelets' ? 'Tiểu cầu' :
+                               history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
+                               history.componentName || 'N/A'}
+                            </TableCell>
+                            <TableCell>{history.assignedVolume || 0}</TableCell>
+                            <TableCell>
+                              {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }) : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+
+              {/* Lịch sử yêu cầu khẩn cấp */}
+              {bloodHistory.urgentHistory.length > 0 && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #d32f2f', pb: 1 }}>
+                    🚨 Lịch sử yêu cầu khẩn cấp ({bloodHistory.urgentHistory.length} bản ghi)
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: '#ffebee' }}>
+                          <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu khẩn</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thể tích sử dụng (ml)</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày sử dụng</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {bloodHistory.urgentHistory.map((history, index) => (
+                          <TableRow key={`urgent-${index}`}>
+                            <TableCell>{history.urgentRequestId || 'N/A'}</TableCell>
+                            <TableCell>
+                              {history.componentName === 'Plasma' ? 'Huyết tương' :
+                               history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
+                               history.componentName === 'Platelets' ? 'Tiểu cầu' :
+                               history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
+                               history.componentName || 'N/A'}
+                            </TableCell>
+                            <TableCell>{history.assignedVolume || 0}</TableCell>
+                            <TableCell>
+                              {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }) : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
             </>
           )}
         </DialogContent>

@@ -506,57 +506,74 @@ const DonationRequestManagement = () => {
 
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer>
-          <Table stickyHeader>
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Họ tên</TableCell>
-                <TableCell>Số CCCD</TableCell>
-                <TableCell>Nhóm máu</TableCell>
-                <TableCell>Ngày hẹn</TableCell>
-                <TableCell>Đợt hiến máu</TableCell>
-                <TableCell>Trạng thái</TableCell>
-                <TableCell>Ghi chú</TableCell>
-                <TableCell>Thao tác</TableCell>
+                <TableCell sx={{ width: '8%' }}>ID</TableCell>
+                <TableCell sx={{ width: '15%' }}>Họ tên</TableCell>
+                <TableCell sx={{ width: '12%' }}>Số CCCD</TableCell>
+                <TableCell sx={{ width: '10%' }}>Nhóm máu</TableCell>
+                <TableCell sx={{ width: '12%' }}>Lượng máu (ml)</TableCell>
+                <TableCell sx={{ width: '10%' }}>Ngày hẹn</TableCell>
+                <TableCell sx={{ width: '15%' }}>Đợt hiến máu</TableCell>
+                <TableCell sx={{ width: '10%' }}>Trạng thái</TableCell>
+                <TableCell sx={{ width: '8%' }}>Ghi chú</TableCell>
+                <TableCell sx={{ width: '10%' }}>Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredRequests.map((req) => (
                 <TableRow key={req.donationId} hover>
-                                  <TableCell>{req.donationId}</TableCell>
-                <TableCell sx={{ minWidth: 180, maxWidth: 260 }}>{req.fullName || req.memberName}</TableCell>
-                <TableCell>{req.citizenNumber}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TableCell sx={{ width: '8%' }}>{req.donationId}</TableCell>
+                  <TableCell sx={{ width: '15%', wordWrap: 'break-word', whiteSpace: 'normal' }}>
+                    {req.fullName || req.memberName}
+                  </TableCell>
+                  <TableCell sx={{ width: '12%' }}>{req.citizenNumber}</TableCell>
+                <TableCell sx={{ width: '10%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     {req.bloodTypeName}
                     {(req.bloodTypeId === 99 || req.bloodTypeName === 'Không biết') && (
                       <Chip 
-                        label="⚠️ Cần cập nhật" 
+                        label="⚠️" 
                         color="warning" 
                         size="small"
                         variant="outlined"
+                        sx={{ fontSize: '0.7rem', height: '20px' }}
                       />
                     )}
                   </Box>
                 </TableCell>
-                  <TableCell>
-                    {dayjs(req.preferredDonationDate).format('DD/MM/YYYY')}
-                  </TableCell>
-                  <TableCell>{`${req.periodId} - ${req.periodName}`}
-                    <Box mt={1}>
-                      <Typography variant="body2" color="primary" fontWeight="bold">Sức khỏe</Typography>
-                      <Button variant="outlined" size="small" onClick={() => { setSelectedRequest(req); setOpenPatientCondition(true); }}>Chi tiết</Button>
+                <TableCell sx={{ width: '12%' }}>
+                  {req.donationVolume ? `${req.donationVolume} ml` : 'Chưa xác định'}
+                </TableCell>
+                <TableCell sx={{ width: '10%' }}>
+                  {dayjs(req.preferredDonationDate).format('DD/MM/YYYY')}
+                </TableCell>
+                  <TableCell sx={{ width: '15%' }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontSize: '0.8rem', mb: 0.5 }}>{`${req.periodId} - ${req.periodName}`}</Typography>
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        sx={{ fontSize: '0.7rem', height: '24px' }}
+                        onClick={() => { setSelectedRequest(req); setOpenPatientCondition(true); }}
+                      >
+                        Chi tiết
+                      </Button>
                     </Box>
                   </TableCell>
-                  <TableCell>{getStatusChip(req.status)}</TableCell>
-                  <TableCell>{req.status === 'Cancelled' && req.notes ? <b>{req.notes}</b> : req.notes}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ width: '10%' }}>{getStatusChip(req.status)}</TableCell>
+                  <TableCell sx={{ width: '8%', wordWrap: 'break-word', whiteSpace: 'normal', maxWidth: '0' }}>
+                    {req.status === 'Cancelled' && req.notes ? <b>{req.notes}</b> : req.notes}
+                  </TableCell>
+                  <TableCell sx={{ width: '10%' }}>
                     {req.status === 'Pending' && (
-                      <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Button
                           variant="contained"
                           color="success"
-                          size="small"
+                          size="medium"
+                          sx={{ fontSize: '0.8rem', height: '32px', minWidth: '80px', whiteSpace: 'nowrap' }}
                           onClick={() => handleOpenDialog(req, 'Approve')}
                         >
                           Duyệt
@@ -564,7 +581,8 @@ const DonationRequestManagement = () => {
                         <Button
                           variant="contained"
                           color="error"
-                          size="small"
+                          size="medium"
+                          sx={{ fontSize: '0.8rem', height: '32px', minWidth: '80px', whiteSpace: 'nowrap' }}
                           onClick={() => handleOpenDialog(req, 'Reject')}
                         >
                           Từ chối
@@ -572,11 +590,12 @@ const DonationRequestManagement = () => {
                       </Box>
                     )}
                     {req.status === 'Approved' && (
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Button
                           variant="contained"
                           color="success"
-                          size="small"
+                          size="medium"
+                          sx={{ fontSize: '0.8rem', height: '32px', minWidth: '80px', whiteSpace: 'nowrap' }}
                           onClick={() => handleOpenActionDialog(req, 'complete')}
                         >
                           Hoàn thành
@@ -584,7 +603,8 @@ const DonationRequestManagement = () => {
                         <Button
                           variant="contained"
                           color="error"
-                          size="small"
+                          size="medium"
+                          sx={{ fontSize: '0.8rem', height: '32px', minWidth: '80px', whiteSpace: 'nowrap' }}
                           onClick={() => handleOpenDialog(req, 'Reject')}
                         >
                           Từ chối

@@ -296,9 +296,6 @@ namespace Blood_Donation_Support.Controllers
             // Sử dụng bloodTypeId từ query parameter nếu có sử dụng từ urgent request
             var requestedBloodTypeId = bloodTypeId ?? urgentRequest.RequestedBloodTypeId;
             
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] UrgentRequestId: {id}, RequestedBloodTypeId: {requestedBloodTypeId}, ComponentId: {componentId}");
-            
             // ===== NGHIỆP VỤ: XÁC ĐỊNH NHÓM MÁU TƯƠNG THÍCH =====
             // Dựa trên bảng BloodCompatibilityRules để xác định các nhóm máu có thể truyền cho nhau
             // Ví dụ: Người nhận A+ có thể nhận từ A+, A-, O+, O-
@@ -308,9 +305,6 @@ namespace Blood_Donation_Support.Controllers
                 .ToListAsync();
             if (!compatibleBloodTypeIds.Contains(requestedBloodTypeId))
                 compatibleBloodTypeIds.Add(requestedBloodTypeId);
-
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] CompatibleBloodTypeIds: [{string.Join(", ", compatibleBloodTypeIds)}]");
 
             // ===== TIÊU CHÍ 1: MÁU CÙNG NHÓM (ƯU TIÊN CAO NHẤT) =====
             // Ưu tiên máu cùng nhóm với người nhận (ví dụ: A+ cho A+)
@@ -328,13 +322,6 @@ namespace Blood_Donation_Support.Controllers
             
             var availableExact = await availableExactQuery.ToListAsync();
 
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] AvailableExact Count: {availableExact.Count}");
-            foreach (var bu in availableExact)
-            {
-                Console.WriteLine($"[DEBUG] AvailableExact: BloodUnitId={bu.BloodUnitId}, BloodType={bu.BloodType.BloodTypeName}, Component={bu.Component.ComponentName}");
-            }
-
             // ===== TIÊU CHÍ 2: MÁU TƯƠNG THÍCH (ƯU TIÊN THỨ 2) =====
             // Nếu không có máu cùng nhóm, tìm máu tương thích (ví dụ: O+ cho A+)
             // Điều kiện: Available, chưa hết hạn, còn thể tích, thuộc nhóm tương thích
@@ -350,13 +337,6 @@ namespace Blood_Donation_Support.Controllers
             }
             
             var availableCompatible = await availableCompatibleQuery.ToListAsync();
-
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] AvailableCompatible Count: {availableCompatible.Count}");
-            foreach (var bu in availableCompatible)
-            {
-                Console.WriteLine($"[DEBUG] AvailableCompatible: BloodUnitId={bu.BloodUnitId}, BloodType={bu.BloodType.BloodTypeName}, Component={bu.Component.ComponentName}");
-            }
 
             // ===== TIÊU CHÍ 3: MÁU ĐÃ ĐẶT TRƯỚC (ƯU TIÊN THỨ 3) =====
             // Chỉ xem xét máu Reserved nếu 2 nhóm trên không đủ
@@ -378,17 +358,10 @@ namespace Blood_Donation_Support.Controllers
                 reserved = await reservedQuery.ToListAsync();
             }
 
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] Reserved Count: {reserved.Count}");
-            Console.WriteLine($"[DEBUG] Total Available Blood: {availableExact.Count + availableCompatible.Count + reserved.Count}");
-
             // ===== TIÊU CHÍ 4: TÌM NGƯỜI HIẾN MÁU (CUỐI CÙNG) =====
             // Nếu không có máu trong kho, tìm người hiến máu trong bán kính 20km
             // Điều kiện: Đủ điều kiện hiến máu, nhóm máu tương thích, không có lịch hiến sắp tới
             List<object> eligibleDonors = new();
-            
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] Checking eligible donors condition: {(availableExact.Count + availableCompatible.Count + reserved.Count) == 0}");
             
             if ((availableExact.Count + availableCompatible.Count + reserved.Count) == 0)
             {
@@ -396,15 +369,8 @@ namespace Blood_Donation_Support.Controllers
                 var emergencyPoint = ParseLocationToPoint(urgentRequest.EmergencyLocation);
                 const double searchRadiusMeters = 20000.0; // Bán kính tìm kiếm 20km = 20000m
 
-                // ===== DEBUG LOG =====
-                Console.WriteLine($"[DEBUG] EmergencyLocation: {urgentRequest.EmergencyLocation}");
-                Console.WriteLine($"[DEBUG] EmergencyPoint: {emergencyPoint}");
-
                 if (emergencyPoint != null)
                 {
-                    // ===== DEBUG LOG =====
-                    Console.WriteLine($"[DEBUG] SearchRadiusMeters: {searchRadiusMeters}");
-
                     // ===== NGHIỆP VỤ: TIÊU CHÍ CHỌN NGƯỜI HIẾN MÁU (CHUẨN HÓA THEO BloodDistanceSearch) =====
                     // 1. Member phải là donor (IsDonor = true)
                     // 2. Phải có thông tin vị trí (Location)
@@ -432,15 +398,8 @@ namespace Blood_Donation_Support.Controllers
                             m.Weight,
                             m.Height,
                             m.LastDonationDate
-                        })
-                        .ToListAsync();
-
-                    // ===== DEBUG LOG =====
-                    Console.WriteLine($"[DEBUG] Donors Count (before additional filters): {donors.Count}");
-                    foreach (var donor in donors)
-                    {
-                        Console.WriteLine($"[DEBUG] Donor: UserId={donor.UserId}, BloodType={donor.BloodType}, Distance={donor.Distance}m, LastDonationDate={donor.LastDonationDate}");
-                    }
+                                            })
+                    .ToListAsync();
 
                     // Lọc tiếp trên C# với điều kiện ngày phục hồi (giống BloodDistanceSearch)
                     var filteredDonors = donors
@@ -463,62 +422,59 @@ namespace Blood_Donation_Support.Controllers
                         .OrderBy(d => d.DistanceKm) // Sắp xếp theo khoảng cách gần nhất
                         .ToList();
 
-                    // ===== DEBUG LOG =====
-                    Console.WriteLine($"[DEBUG] FilteredDonors Count (after additional filters): {filteredDonors.Count}");
-                    foreach (var donor in filteredDonors)
-                    {
-                        Console.WriteLine($"[DEBUG] FilteredDonor: UserId={donor.UserId}, BloodType={donor.BloodTypeName}, Distance={donor.DistanceKm}km");
-                    }
-
                     eligibleDonors = filteredDonors.Select(d => (object)d).ToList();
                 }
-                else
-                {
-                    Console.WriteLine($"[DEBUG] EmergencyPoint is null - cannot calculate distance");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"[DEBUG] Skipping eligible donors search - blood units available");
             }
 
-            // ===== DEBUG LOG =====
-            Console.WriteLine($"[DEBUG] Final Results:");
-            Console.WriteLine($"[DEBUG] - availableExact: {availableExact.Count}");
-            Console.WriteLine($"[DEBUG] - availableCompatible: {availableCompatible.Count}");
-            Console.WriteLine($"[DEBUG] - reserved: {reserved.Count}");
-            Console.WriteLine($"[DEBUG] - eligibleDonors: {eligibleDonors.Count}");
-
+            // ===== PHẦN TRẢ VỀ DỮ LIỆU CHO FRONTEND =====
+            // Đây là phần nghiệp vụ trả về dữ liệu gợi ý túi máu cho yêu cầu khẩn cấp
+            // Giảng viên có thể xem phần này để hiểu cấu trúc dữ liệu trả về
             return Ok(new
             {
+                // ===== TIÊU CHÍ 1: MÁU CÙNG NHÓM (ƯU TIÊN CAO NHẤT) =====
+                // Trả về danh sách túi máu cùng nhóm với người nhận (ví dụ: A+ cho A+)
+                // Điều kiện: Available, chưa hết hạn, còn thể tích
                 availableExact = availableExact.Select(bu => new {
-                    bu.BloodUnitId,
-                    bu.BloodType.BloodTypeName,
-                    bu.Component.ComponentName,
-                    bu.Volume,
-                    bu.RemainingVolume,
-                    bu.ExpiryDate,
-                    bu.BloodStatus
+                    bu.BloodUnitId,           // ID túi máu
+                    bu.BloodType.BloodTypeName, // Tên nhóm máu (A+, B-, O+, etc.)
+                    bu.Component.ComponentName, // Tên thành phần máu (Toàn phần, Hồng cầu, etc.)
+                    bu.Volume,                // Thể tích ban đầu
+                    bu.RemainingVolume,       // Thể tích còn lại
+                    bu.ExpiryDate,            // Ngày hết hạn
+                    bu.BloodStatus            // Trạng thái máu (Available)
                 }),
+                
+                // ===== TIÊU CHÍ 2: MÁU TƯƠNG THÍCH (ƯU TIÊN THỨ 2) =====
+                // Trả về danh sách túi máu tương thích (ví dụ: O+ cho A+)
+                // Điều kiện: Available, chưa hết hạn, còn thể tích, thuộc nhóm tương thích
                 availableCompatible = availableCompatible.Select(bu => new {
-                    bu.BloodUnitId,
-                    bu.BloodType.BloodTypeName,
-                    bu.Component.ComponentName,
-                    bu.Volume,
-                    bu.RemainingVolume,
-                    bu.ExpiryDate,
-                    bu.BloodStatus
+                    bu.BloodUnitId,           // ID túi máu
+                    bu.BloodType.BloodTypeName, // Tên nhóm máu tương thích
+                    bu.Component.ComponentName, // Tên thành phần máu
+                    bu.Volume,                // Thể tích ban đầu
+                    bu.RemainingVolume,       // Thể tích còn lại
+                    bu.ExpiryDate,            // Ngày hết hạn
+                    bu.BloodStatus            // Trạng thái máu (Available)
                 }),
+                
+                // ===== TIÊU CHÍ 3: MÁU ĐÃ ĐẶT TRƯỚC (ƯU TIÊN THỨ 3) =====
+                // Trả về danh sách túi máu đã đặt cho ca truyền máu thường
+                // Có thể lấy để ưu tiên cho yêu cầu khẩn cấp
                 reserved = reserved.Select(bu => new {
-                    bu.BloodUnitId,
-                    bu.BloodType.BloodTypeName,
-                    bu.Component.ComponentName,
-                    bu.Volume,
-                    bu.RemainingVolume,
-                    bu.ExpiryDate,
-                    bu.BloodStatus
+                    bu.BloodUnitId,           // ID túi máu
+                    bu.BloodType.BloodTypeName, // Tên nhóm máu
+                    bu.Component.ComponentName, // Tên thành phần máu
+                    bu.Volume,                // Thể tích ban đầu
+                    bu.RemainingVolume,       // Thể tích còn lại
+                    bu.ExpiryDate,            // Ngày hết hạn
+                    bu.BloodStatus            // Trạng thái máu (Reserved)
                 }),
-                eligibleDonors = eligibleDonors // Thêm danh sách người hiến máu
+                
+                // ===== TIÊU CHÍ 4: NGƯỜI HIẾN MÁU (CUỐI CÙNG) =====
+                // Trả về danh sách người hiến máu trong bán kính 20km
+                // Chỉ hiển thị khi không có máu trong kho
+                // Điều kiện: Đủ điều kiện hiến máu, nhóm máu tương thích, không có lịch hiến sắp tới
+                eligibleDonors = eligibleDonors // Danh sách người hiến máu phù hợp
             });
         }
 

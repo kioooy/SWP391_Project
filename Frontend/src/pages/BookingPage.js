@@ -386,7 +386,7 @@ const BookingPage = () => {
         const last = dayjs(lastDonationDate);
         const today = dayjs();
         if (today.diff(last, 'day') < 90) {
-          setSnackbar({ open: true, message: 'Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.', severity: 'error' });
+          setSnackbar({ open: true, message: 'Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.', severity: 'warning' });
           return;
         }
       }
@@ -665,6 +665,21 @@ const BookingPage = () => {
       setDonationVolume(350);
     }
   }, [userWeight]);
+
+  // Kiểm tra 90 ngày khi truy cập trang
+  useEffect(() => {
+    if (lastDonationDate) {
+      const last = dayjs(lastDonationDate);
+      const today = dayjs();
+      if (today.diff(last, 'day') < 90) {
+        setSnackbar({ 
+          open: true, 
+          message: 'Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.', 
+          severity: 'warning' 
+        });
+      }
+    }
+  }, [lastDonationDate]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -1358,7 +1373,13 @@ const BookingPage = () => {
         </DialogActions>
       </Dialog>
       <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <MuiAlert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <MuiAlert 
+          elevation={6} 
+          variant="filled" 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </MuiAlert>
       </Snackbar>

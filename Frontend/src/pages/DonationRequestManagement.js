@@ -352,7 +352,7 @@ const DonationRequestManagement = () => {
       case 'Approved':
         return <Chip label="Đã duyệt" color="warning" />;
       case 'Pending':
-        return <Chip label="Chờ duyệt" sx={{ backgroundColor: '#795548', color: 'white' }} />;
+        return <Chip label="Chờ duyệt" sx={{ backgroundColor: '#FF9800', color: 'white' }} />;
       case 'Rejected':
         return <Chip label="Đã từ chối" color="error" />;
       case 'Cancelled':
@@ -390,6 +390,64 @@ const DonationRequestManagement = () => {
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
         Quản Lý Yêu Cầu Hiến Máu
       </Typography>
+
+      {/* Hướng dẫn xử lý đơn hiến máu */}
+      <Paper sx={{ mb: 3, p: 2, backgroundColor: '#f8f9fa' }}>
+        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: '#1976d2' }}>
+          Hướng dẫn xử lý đơn hiến máu dành cho nhân viên y tế
+        </Typography>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#e3f2fd' }}>Bước</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#e3f2fd' }}>Nội dung</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#e3f2fd', textAlign: 'center' }}>Trạng thái</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', verticalAlign: 'top' }}>1. Tiếp nhận</TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ mb: 1 }}>• Xác minh thông tin người hiến</Typography>
+                  <Typography variant="body2">• Kiểm tra thông tin sức khỏe</Typography>
+                  <Typography variant="body2">• Hướng dẫn xét nghiệm máu lâm sàng</Typography>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center' }}>
+                  <Chip label="Đã duyệt" color="warning" size="small" sx={{ minWidth: 120 }} />
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', verticalAlign: 'top' }}>2. Duyệt yêu cầu</TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ mb: 1 }}>• Nếu đạt yêu cầu → chọn Duyệt</Typography>
+                  <Typography variant="body2">• Nếu không đạt → chọn Từ chối</Typography>
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                    <Chip label="Duyệt" color="success" size="small" sx={{ minWidth: 120 }} />
+                    <Chip label="Từ chối" color="error" size="small" sx={{ minWidth: 120 }} />
+                  </Box>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', verticalAlign: 'top' }}>3. Hoàn thành hiến máu</TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ mb: 1 }}>• Nếu đã hiến máu thành công → chọn Hoàn thành</Typography>
+                  <Typography variant="body2">• Nếu có sự cố trong quá trình lấy máu → chọn Hủy, ghi rõ lý do</Typography>
+              
+                </TableCell>
+                <TableCell sx={{ textAlign: 'center' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                    <Chip label="Hoàn thành" color="success" size="small" sx={{ minWidth: 120 }} />
+                    <Chip label="Từ chối" color="error" size="small" sx={{ minWidth: 120 }} />
+                  </Box>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       {/* Tổng hợp trạng thái căn giữa, bỏ lọc theo trạng thái */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
@@ -631,7 +689,7 @@ const DonationRequestManagement = () => {
           alignItems: 'center',
           gap: 1
         }}>
-          ⚠️ Cập nhật nhóm máu trước khi hoàn thành
+          ⚠️ Xác nhận nhóm máu trước khi hoàn thành
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Box sx={{ mb: 2 }}>

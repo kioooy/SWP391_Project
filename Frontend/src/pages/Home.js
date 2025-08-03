@@ -182,6 +182,8 @@ const Home = () => {
   
   // State để lưu thông tin ngày hiến máu gần nhất
   const [lastDonationDate, setLastDonationDate] = useState(null);
+  // State để lưu thông tin lịch hiến máu hiện tại
+  const [currentDonationRequest, setCurrentDonationRequest] = useState(null);
 
   // Lấy user từ redux
   const user = useSelector((state) => state.auth.user);
@@ -211,10 +213,11 @@ const Home = () => {
       .catch(() => setHospitals([]));
   }, []);
 
-  // Thêm useEffect để lấy thông tin ngày hiến máu gần nhất
+  // Thêm useEffect để lấy thông tin ngày hiến máu gần nhất và lịch hiến máu hiện tại
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token && user) {
+      // Lấy thông tin ngày hiến máu gần nhất
       axios.get('/api/User/profile', {
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => {
@@ -228,8 +231,23 @@ const Home = () => {
         setLastDonationDate(null);
         console.error('Lỗi lấy thông tin ngày hiến máu gần nhất:', err);
       });
+
+      // Lấy lịch hiến máu hiện tại
+      axios.get('/api/DonationRequest/history', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        // Tìm lịch hiến máu chưa hoàn thành (Pending, Approved)
+        const activeRequest = res.data.find(request => 
+          request.status === 'Pending' || request.status === 'Approved'
+        );
+        setCurrentDonationRequest(activeRequest || null);
+      }).catch(err => {
+        setCurrentDonationRequest(null);
+        console.error('Lỗi lấy lịch hiến máu hiện tại:', err);
+      });
     } else {
       setLastDonationDate(null);
+      setCurrentDonationRequest(null);
     }
   }, [user]);
 
@@ -288,6 +306,14 @@ const Home = () => {
     if (user) {
       // Kiểm tra 90 ngày trước khi cho phép đăng ký
       if (!checkDonationEligibility()) {
+        return;
+      }
+
+      // Kiểm tra xem có đang có lịch hiến máu chưa hoàn thành không
+      if (currentDonationRequest) {
+        setSnackbarMessage('Bạn đang có lịch hiến máu. Vui lòng hoàn thành hoặc hủy lịch trước khi đặt lịch mới!');
+        setSnackbarSeverity('warning');
+        setOpenSnackbar(true);
         return;
       }
       

@@ -338,39 +338,38 @@ const BloodInventory = () => {
         else if (typeof response.data === 'object') {
           console.log('Response.data là object, kiểm tra các key:', Object.keys(response.data));
           
-          // Xử lý format mới: { donationRequest: [], transfusionRequest: [], urgentBloodRequest: [] }
-          const allRequests = [];
+          // Chỉ lấy lịch sử sử dụng thực tế trong truyền máu
+          const usageHistory = [];
           
           if (response.data.transfusionRequest && Array.isArray(response.data.transfusionRequest)) {
-            const transfusionRequests = response.data.transfusionRequest.map(item => ({
-              ...item,
-              requestType: 'TransfusionRequest'
-            }));
-            allRequests.push(...transfusionRequests);
-            console.log('Tìm thấy dữ liệu trong transfusionRequest:', transfusionRequests);
-          }
-          
-          if (response.data.donationRequest && Array.isArray(response.data.donationRequest)) {
-            const donationRequests = response.data.donationRequest.map(item => ({
-              ...item,
-              requestType: 'DonationRequest'
-            }));
-            allRequests.push(...donationRequests);
-            console.log('Tìm thấy dữ liệu trong donationRequest:', donationRequests);
+            // Chỉ lấy những bản ghi có transfusionId và assignedVolume > 0
+            const validTransfusionRequests = response.data.transfusionRequest
+              .filter(item => item.transfusionId && item.assignedVolume > 0)
+              .map(item => ({
+                ...item,
+                requestType: 'TransfusionRequest'
+              }));
+            usageHistory.push(...validTransfusionRequests);
+            console.log('Tìm thấy lịch sử sử dụng trong truyền máu:', validTransfusionRequests);
           }
           
           if (response.data.urgentBloodRequest && Array.isArray(response.data.urgentBloodRequest)) {
-            const urgentRequests = response.data.urgentBloodRequest.map(item => ({
-              ...item,
-              requestType: 'UrgentBloodRequest'
-            }));
-            allRequests.push(...urgentRequests);
-            console.log('Tìm thấy dữ liệu trong urgentBloodRequest:', urgentRequests);
+            // Chỉ lấy những bản ghi có urgentRequestId và assignedVolume > 0
+            const validUrgentRequests = response.data.urgentBloodRequest
+              .filter(item => item.urgentRequestId && item.assignedVolume > 0)
+              .map(item => ({
+                ...item,
+                requestType: 'UrgentBloodRequest'
+              }));
+            usageHistory.push(...validUrgentRequests);
+            console.log('Tìm thấy lịch sử sử dụng trong yêu cầu khẩn:', validUrgentRequests);
           }
           
-          if (allRequests.length > 0) {
-            historyData = allRequests;
-            console.log('Tổng hợp tất cả requests:', historyData);
+          // Bỏ qua donationRequest vì đó không phải là lịch sử sử dụng
+          
+          if (usageHistory.length > 0) {
+            historyData = usageHistory;
+            console.log('Tổng hợp lịch sử sử dụng thực tế:', historyData);
           } else {
             // Kiểm tra các key có thể chứa dữ liệu lịch sử khác
             const possibleKeys = ['transfusionHistory', 'usageHistory', 'history', 'data', 'items', 'results'];
@@ -610,7 +609,7 @@ const BloodInventory = () => {
                       row.bloodUnitId.toString().includes(searchBloodUnitId) ||
                       row.bloodTypeName.toLowerCase().includes(searchBloodUnitId.toLowerCase())
                     )
-                    .sort((a, b) => new Date(b.addDate) - new Date(a.addDate)) // Sắp xếp theo ngày nhập giảm dần (mới nhất lên đầu)
+                    .sort((a, b) => b.bloodUnitId - a.bloodUnitId) // Sắp xếp theo ID giảm dần (lớn đến bé)
                     .map((row) => (
 
 

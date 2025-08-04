@@ -44,73 +44,52 @@ const Login = () => {
 
   // ===== NGHIỆP VỤ: KIỂM TRA NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP VÀ XỬ LÝ URGENT DONATION =====
   useEffect(() => {
-    console.log('🔍 [DEBUG] useEffect triggered - checking authentication and urgent donation...');
-    
-    // Kiểm tra nếu người dùng đã đăng nhập
+    // ===== BƯỚC 1: KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP =====
+    // Lấy token từ localStorage để kiểm tra user đã đăng nhập chưa
     const token = localStorage.getItem('token');
     const isAuthenticated = token !== null;
     
-    console.log('🔍 [DEBUG] Token from localStorage:', token);
-    console.log('🔍 [DEBUG] Is authenticated:', isAuthenticated);
-    
-    // Kiểm tra URL parameters cho urgent donation
+    // ===== BƯỚC 2: PHÂN TÍCH URL PARAMETERS CHO URGENT DONATION =====
+    // Tạo đối tượng URLSearchParams để lấy các tham số từ URL
     const urlParams = new URLSearchParams(window.location.search);
-    const redirect = urlParams.get('redirect');
+    
+    // Lấy các tham số quan trọng từ URL:
+    // - redirect: đường dẫn sẽ chuyển đến sau khi đăng nhập (ví dụ: /urgent-donation-registration)
+    // - urgentRequestId: ID của yêu cầu máu khẩn cấp
+    // - bloodType: nhóm máu cần thiết
+    const redirect = urlParams.get('redirect');           // ← THÀNH PHẦN CHÍNH ĐỂ BIẾT ĐÓ LÀ URGENT DONATION
     const urgentRequestId = urlParams.get('urgentRequestId');
     const bloodType = urlParams.get('bloodType');
 
-    console.log('🔍 [DEBUG] URL parameters:');
-    console.log('  - redirect:', redirect);
-    console.log('  - urgentRequestId:', urgentRequestId);
-    console.log('  - bloodType:', bloodType);
-    console.log('🔍 [DEBUG] Current URL:', window.location.href);
-
-    // Nếu có thông tin urgent donation, lưu vào localStorage
+    // ===== BƯỚC 3: XỬ LÝ THÔNG TIN URGENT DONATION =====
+    // Kiểm tra xem có đầy đủ thông tin urgent donation không
     if (redirect && urgentRequestId && bloodType) {
-      console.log('✅ [DEBUG] All urgent donation parameters found!');
+      // ===== LƯU THÔNG TIN VÀO LOCALSTORAGE =====
+      // Lưu thông tin urgent donation vào localStorage để sử dụng sau khi đăng nhập
+      localStorage.setItem('redirectAfterLogin', redirect);        // Đường dẫn sẽ chuyển đến
+      localStorage.setItem('urgentRequestId', urgentRequestId);    // ID yêu cầu khẩn cấp
+      localStorage.setItem('bloodType', bloodType);               // Nhóm máu cần thiết
       
-      localStorage.setItem('redirectAfterLogin', redirect);
-      localStorage.setItem('urgentRequestId', urgentRequestId);
-      localStorage.setItem('bloodType', bloodType);
-      
-      console.log('💾 [DEBUG] Urgent donation info saved to localStorage');
-      console.log('💾 [DEBUG] redirectAfterLogin:', localStorage.getItem('redirectAfterLogin'));
-      console.log('💾 [DEBUG] urgentRequestId:', localStorage.getItem('urgentRequestId'));
-      console.log('💾 [DEBUG] bloodType:', localStorage.getItem('bloodType'));
-      
-      // Nếu đã đăng nhập, chuyển hướng ngay lập tức
+      // ===== BƯỚC 4: KIỂM TRA VÀ CHUYỂN HƯỚNG NGAY LẬP TỨC =====
+      // Nếu user đã đăng nhập rồi, chuyển hướng ngay lập tức đến trang urgent donation
       if (isAuthenticated) {
-        console.log('🚀 [DEBUG] User is authenticated, redirecting immediately...');
-        console.log('🚀 [DEBUG] Navigating to:', redirect);
-        
         try {
-          navigate(redirect);
-          console.log('✅ [DEBUG] Navigation called successfully');
+          navigate(redirect);  // Chuyển hướng đến trang urgent donation
         } catch (error) {
-          console.error('❌ [DEBUG] Navigation error:', error);
+          console.error('Navigation error:', error);
         }
-        return;
-      } else {
-        console.log('⚠️ [DEBUG] User not authenticated, will show login form');
+        return;  // Thoát khỏi useEffect
       }
-    } else {
-      console.log('⚠️ [DEBUG] Missing urgent donation parameters:');
-      console.log('  - redirect exists:', !!redirect);
-      console.log('  - urgentRequestId exists:', !!urgentRequestId);
-      console.log('  - bloodType exists:', !!bloodType);
     }
     
-    // Nếu chưa đăng nhập, xóa token cũ
+    // ===== BƯỚC 5: DỌN DẸP TOKEN CŨ NẾU CHƯA ĐĂNG NHẬP =====
+    // Nếu chưa đăng nhập, xóa token cũ để đảm bảo tính nhất quán
     if (!isAuthenticated) {
-      console.log('🧹 [DEBUG] User not authenticated, cleaning up old tokens...');
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
-      console.log('🧹 [DEBUG] Cleanup completed');
     }
-    
-    console.log('🔍 [DEBUG] useEffect completed');
   }, [navigate]);
 
   useEffect(() => {
@@ -146,11 +125,8 @@ const Login = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
-      console.log('🔍 [DEBUG] Login form submitted with:', values);
       try {
-        console.log('🔍 [DEBUG] Dispatching login thunk...');
         const resultAction = await dispatch(loginThunk(values)).unwrap();
-        console.log('✅ [DEBUG] Login successful:', resultAction);
         
         const userId = resultAction.userId;
         const token = resultAction.token;
@@ -158,143 +134,129 @@ const Login = () => {
         // Lưu role vào localStorage
         if (resultAction.role) {
           localStorage.setItem('role', resultAction.role);
-          console.log('💾 [DEBUG] Role saved to localStorage:', resultAction.role);
         }
         // Lưu userId vào localStorage cho các chức năng khác
         localStorage.setItem('user', JSON.stringify({ UserId: userId, ...resultAction }));
-        console.log('💾 [DEBUG] User info saved to localStorage');
 
+        // ===== SAU KHI ĐĂNG NHẬP THÀNH CÔNG - XỬ LÝ URGENT DONATION REDIRECT =====
         // Sau khi đăng nhập thành công, cố gắng lấy và cập nhật vị trí
         if (userId && token) {
-          console.log('Bắt đầu cập nhật vị trí...');
           try {
             if (navigator.geolocation) {
-              // Thêm timeout cho geolocation để tránh bị kẹt
+              // ===== TIMEOUT CHO GEOLOCATION =====
+              // Thêm timeout cho geolocation để tránh bị kẹt quá lâu
               const geoTimeout = setTimeout(() => {
-                console.log('Geolocation timeout - tiếp tục chuyển hướng');
-                                 // Tiếp tục chuyển hướng ngay cả khi geolocation timeout
-                 const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-                 console.log('🔍 [DEBUG] After login - redirectAfterLogin from localStorage:', redirectAfterLogin);
-                 if (redirectAfterLogin) {
-                   localStorage.removeItem('redirectAfterLogin');
-                   console.log('🚀 [DEBUG] Redirecting to urgent donation after login:', redirectAfterLogin);
-                   navigate(redirectAfterLogin);
-                 } else {
-                   console.log('🚀 [DEBUG] Redirecting to home page after login');
-                   navigate('/');
-                 }
+                // ===== KIỂM TRA VÀ CHUYỂN HƯỚNG SAU TIMEOUT =====
+                // Tiếp tục chuyển hướng ngay cả khi geolocation timeout
+                const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+                
+                if (redirectAfterLogin) {
+                  // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
+                  localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
+                  navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                } else {
+                  // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
+                  navigate('/');
+                }
               }, 5000); // 5 giây timeout
 
-              navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                  clearTimeout(geoTimeout); // Clear timeout nếu thành công
-                  const { latitude, longitude } = position.coords;
-                  console.log('Vị trí được lấy:', latitude, longitude);
-                  try {
-                    const response = await fetch(`${API_BASE_URL}/User/${userId}/location`, {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({ latitude, longitude }),
-                    });
-                    
-                    if (response.ok) {
-                      console.log('Vị trí đã được cập nhật thành công trên backend.');
-                    } else {
-                      console.error('Lỗi khi cập nhật vị trí:', response.status, response.statusText);
-                    }
-                  } catch (error) {
-                    console.error('Lỗi khi cập nhật vị trí lên backend:', error);
-                  }
-                  
-                  // Chuyển hướng sau khi xử lý vị trí
-                  const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-                  console.log('🔍 [DEBUG] After geolocation success - redirectAfterLogin:', redirectAfterLogin);
-                  if (redirectAfterLogin) {
-                    localStorage.removeItem('redirectAfterLogin');
-                    console.log('🚀 [DEBUG] Redirecting to urgent donation after geolocation:', redirectAfterLogin);
-                    navigate(redirectAfterLogin);
-                  } else {
-                    console.log('🚀 [DEBUG] Redirecting to home page after geolocation');
-                    navigate('/');
-                  }
-                },
-                (error) => {
-                  clearTimeout(geoTimeout); // Clear timeout nếu có lỗi
-                  // Xử lý lỗi khi người dùng từ chối hoặc có vấn đề khác
-                  console.error('Lỗi khi lấy vị trí:', error);
-                  if (error.code === error.PERMISSION_DENIED) {
-                    setShowLocationAlert(true); // Hiển thị Alert khi từ chối
-                  } else {
-                    // Các lỗi khác (ví dụ: timeout)
-                    // Có thể hiển thị một thông báo khác nếu cần
-                  }
-                  
-                  // Chuyển hướng ngay cả khi có lỗi geolocation
-                  const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-                  console.log('🔍 [DEBUG] After geolocation error - redirectAfterLogin:', redirectAfterLogin);
-                  if (redirectAfterLogin) {
-                    localStorage.removeItem('redirectAfterLogin');
-                    console.log('🚀 [DEBUG] Redirecting to urgent donation after geolocation error:', redirectAfterLogin);
-                    navigate(redirectAfterLogin);
-                  } else {
-                    console.log('🚀 [DEBUG] Redirecting to home page after geolocation error');
-                    navigate('/');
-                  }
-                },
+                             navigator.geolocation.getCurrentPosition(
+                 async (position) => {
+                   clearTimeout(geoTimeout); // Clear timeout nếu thành công
+                   const { latitude, longitude } = position.coords;
+                   try {
+                     const response = await fetch(`${API_BASE_URL}/User/${userId}/location`, {
+                       method: 'PUT',
+                       headers: {
+                         'Content-Type': 'application/json',
+                         'Authorization': `Bearer ${token}`,
+                       },
+                       body: JSON.stringify({ latitude, longitude }),
+                     });
+                     
+                     if (!response.ok) {
+                       console.error('Lỗi khi cập nhật vị trí:', response.status, response.statusText);
+                     }
+                   } catch (error) {
+                     console.error('Lỗi khi cập nhật vị trí lên backend:', error);
+                   }
+                   
+                   // ===== CHUYỂN HƯỚNG SAU KHI XỬ LÝ VỊ TRÍ THÀNH CÔNG =====
+                   // Chuyển hướng sau khi xử lý vị trí thành công
+                   const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+                   
+                   if (redirectAfterLogin) {
+                     // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
+                     localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
+                     navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                   } else {
+                     // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
+                     navigate('/');
+                   }
+                 },
+                                 (error) => {
+                   clearTimeout(geoTimeout); // Clear timeout nếu có lỗi
+                   // Xử lý lỗi khi người dùng từ chối hoặc có vấn đề khác
+                   console.error('Lỗi khi lấy vị trí:', error);
+                   if (error.code === error.PERMISSION_DENIED) {
+                     setShowLocationAlert(true); // Hiển thị Alert khi từ chối
+                   }
+                   
+                   // ===== CHUYỂN HƯỚNG SAU KHI GEOLOCATION CÓ LỖI =====
+                   // Chuyển hướng ngay cả khi có lỗi geolocation
+                   const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+                   
+                   if (redirectAfterLogin) {
+                     // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
+                     localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
+                     navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                   } else {
+                     // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
+                     navigate('/');
+                   }
+                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
               );
-            } else {
-              console.log('Trình duyệt không hỗ trợ Geolocation.');
-              // Chuyển hướng ngay lập tức nếu không hỗ trợ geolocation
-              const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-              console.log('🔍 [DEBUG] No geolocation support - redirectAfterLogin:', redirectAfterLogin);
-              if (redirectAfterLogin) {
-                localStorage.removeItem('redirectAfterLogin');
-                console.log('🚀 [DEBUG] Redirecting to urgent donation (no geolocation):', redirectAfterLogin);
-                navigate(redirectAfterLogin);
-              } else {
-                console.log('🚀 [DEBUG] Redirecting to home page (no geolocation)');
-                navigate('/');
-              }
-            }
-          } catch (geoInitErr) {
-            console.error('Lỗi khởi tạo Geolocation:', geoInitErr);
-            // Chuyển hướng ngay cả khi có lỗi khởi tạo geolocation
-            const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-            console.log('🔍 [DEBUG] Geolocation init error - redirectAfterLogin:', redirectAfterLogin);
-            if (redirectAfterLogin) {
-              localStorage.removeItem('redirectAfterLogin');
-              console.log('🚀 [DEBUG] Redirecting to urgent donation (geolocation init error):', redirectAfterLogin);
-              navigate(redirectAfterLogin);
-            } else {
-              console.log('🚀 [DEBUG] Redirecting to home page (geolocation init error)');
-              navigate('/');
-            }
-          }
-        } else {
-          // Nếu không có userId hoặc token, chuyển hướng ngay
-          const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
-          console.log('🔍 [DEBUG] No userId/token - redirectAfterLogin:', redirectAfterLogin);
-          if (redirectAfterLogin) {
-            localStorage.removeItem('redirectAfterLogin');
-            console.log('🚀 [DEBUG] Redirecting to urgent donation (no userId/token):', redirectAfterLogin);
-            navigate(redirectAfterLogin);
-          } else {
-            console.log('🚀 [DEBUG] Redirecting to home page (no userId/token)');
-            navigate('/');
-          }
-        }
-
-        console.log('Kết quả đăng nhập:', resultAction);
-      } catch (err) {
-        // Error is handled by the auth slice
-        console.error('Lỗi đăng nhập:', err);
-        console.error('Chi tiết lỗi:', err.message);
-        console.error('Stack trace:', err.stack);
-      }
+                         } else {
+               // ===== TRƯỜNG HỢP KHÔNG HỖ TRỢ GEOLOCATION =====
+               // ===== CHUYỂN HƯỚNG NGAY LẬP TỨC =====
+               // Chuyển hướng ngay lập tức nếu không hỗ trợ geolocation
+               const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+               
+               if (redirectAfterLogin) {
+                 // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
+                 localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
+                 navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+               } else {
+                 // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
+                 navigate('/');
+               }
+             }
+                     } catch (geoInitErr) {
+             console.error('Lỗi khởi tạo Geolocation:', geoInitErr);
+             // Chuyển hướng ngay cả khi có lỗi khởi tạo geolocation
+             const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+             if (redirectAfterLogin) {
+               localStorage.removeItem('redirectAfterLogin');
+               navigate(redirectAfterLogin);
+             } else {
+               navigate('/');
+             }
+           }
+         } else {
+           // Nếu không có userId hoặc token, chuyển hướng ngay
+           const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+           if (redirectAfterLogin) {
+             localStorage.removeItem('redirectAfterLogin');
+             navigate(redirectAfterLogin);
+           } else {
+             navigate('/');
+           }
+         }
+             } catch (err) {
+         // Error is handled by the auth slice
+         console.error('Lỗi đăng nhập:', err);
+       }
     },
   });
 

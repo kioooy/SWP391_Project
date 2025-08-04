@@ -288,25 +288,34 @@ namespace Blood_Donation_Support.Controllers
             }
         }
 
-        // add urgent donation request
+        // ===== API ĐĂNG KÝ HIẾN MÁU KHẨN CẤP =====
         // POST: api/DonationRequest/register-urgent
+        // Mục đích: Cho phép Member và Admin đăng ký hiến máu khẩn cấp
+        // Authorization: Chỉ Member và Admin mới có quyền truy cập
         [HttpPost("register-urgent")]
         [Authorize(Roles = "Member,Admin")]  
         public async Task<IActionResult> RegisterUrgentDonationRequest([FromBody] CreateUrgentDonationRequest model)
         {
+            // ===== BƯỚC 0: KIỂM TRA VALIDATION MODEL =====
+            // Kiểm tra xem dữ liệu đầu vào có hợp lệ không (theo các validation rules trong CreateUrgentDonationRequest)
             if (!ModelState.IsValid) 
                 return BadRequest(ModelState);
 
+            // ===== BƯỚC 1: KIỂM TRA THÔNG TIN THÀNH VIÊN =====
             // Check if the user is authenticated and has the required role
             var member = await _context.Members.FirstOrDefaultAsync(u => u.UserId == model.MemberId); 
             if (member == null)
                 return NotFound("Không tìm thấy thành viên.");
 
+            // ===== BƯỚC 2: KIỂM TRA ĐIỀU KIỆN THỜI GIAN CHỜ HIẾN MÁU =====
             // Kiểm tra điều kiện hiến máu (84 ngày sau lần hiến gần nhất)
+            // Theo quy định y tế, người hiến máu phải chờ ít nhất 84 ngày (12 tuần) giữa các lần hiến
             if (member.LastDonationDate != null && member.LastDonationDate > DateOnly.FromDateTime(DateTime.Now.AddDays(-84)))
                 return BadRequest("Bạn cần đợi ít nhất 84 ngày (12 tuần) kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.");
 
+            // ===== BƯỚC 3: KIỂM TRA LỊCH SỬ TRUYỀN MÁU =====
             // Kiểm tra member vừa truyền máu xong hoặc đang trong thời gian hồi phục
+            // Người vừa truyền máu phải chờ ít nhất 365 ngày (1 năm) mới được hiến máu
             var lastTransfusion = await _context.TransfusionRequests
                 .Where(tr => tr.MemberId == member.UserId && tr.Status == "Completed")
                 .OrderByDescending(tr => tr.CompletionDate)
@@ -321,7 +330,9 @@ namespace Blood_Donation_Support.Controllers
                 }
             }
 
+            // ===== BƯỚC 4: KIỂM TRA YÊU CẦU KHẨN CẤP =====
             // Kiểm tra xem có yêu cầu khẩn cấp tồn tại không (nếu có UrgentRequestId)
+            // Đảm bảo yêu cầu khẩn cấp thực sự tồn tại trong hệ thống
             if (model.UrgentRequestId.HasValue)
             {
                 var urgentRequest = await _context.UrgentBloodRequests
@@ -330,7 +341,9 @@ namespace Blood_Donation_Support.Controllers
                     return NotFound("Không tìm thấy yêu cầu khẩn cấp.");
             }
 
+            // ===== BƯỚC 5: KIỂM TRA YÊU CẦU HIẾN MÁU ĐANG ACTIVE =====
             // Kiểm tra xem member có lịch hiến máu đang chờ hoặc đã duyệt không (cả thường và khẩn cấp)
+            // Điều này ngăn chặn việc đăng ký nhiều lần cùng lúc
             var hasActiveDonation = await _context.DonationRequests
                 .AnyAsync(dr => dr.MemberId == member.UserId && 
                          (dr.Status == "Pending" || dr.Status == "Approved"));
@@ -338,7 +351,8 @@ namespace Blood_Donation_Support.Controllers
             if (hasActiveDonation)
                 return BadRequest("Bạn đã có lịch hiến máu đang chờ xử lý hoặc đã được duyệt. Vui lòng hoàn thành hoặc hủy lịch trước khi đăng ký mới!");
 
-            // Tạo donation request khẩn cấp
+            // ===== BƯỚC 6: TẠO YÊU CẦU HIẾN MÁU KHẨN CẤP =====
+            // Tạo donation request khẩn cấp với các thông tin cần thiết
             var urgentDonationRequest = new DonationRequest
             {
                 MemberId = member.UserId,
@@ -348,7 +362,7 @@ namespace Blood_Donation_Support.Controllers
                 ResponsibleById = model.ResponsibleById,
                 RequestDate = DateTime.Now,
                 DonationVolume = model.DonationVolume,
-                Status = "Pending",
+                Status = "Pending", // Trạng thái ban đầu là chờ xử lý
                 Notes = model.Notes,
                 PatientCondition = model.PatientCondition,
                 IsUrgent = true, // Đánh dấu là hiến máu khẩn cấp
@@ -356,6 +370,7 @@ namespace Blood_Donation_Support.Controllers
                 IsActive = true
             };
 
+            // ===== BƯỚC 7: LƯU VÀO DATABASE =====
             var transaction = await _context.Database.BeginTransactionAsync();
             try 
             {
@@ -363,39 +378,43 @@ namespace Blood_Donation_Support.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                            // Tạo thông báo cho Admin/Staff về hiến máu khẩn cấp mới
-            var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.RoleId).FirstOrDefaultAsync();
-            var staffRoleId = await _context.Roles.Where(r => r.Name == "Staff").Select(r => r.RoleId).FirstOrDefaultAsync();
+                // ===== BƯỚC 8: TẠO THÔNG BÁO CHO ADMIN/STAFF =====
+                // Tạo thông báo cho Admin/Staff về hiến máu khẩn cấp mới
+                var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.RoleId).FirstOrDefaultAsync();
+                var staffRoleId = await _context.Roles.Where(r => r.Name == "Staff").Select(r => r.RoleId).FirstOrDefaultAsync();
 
-            var adminStaffUsers = await _context.Users
-                .Where(u => u.RoleId == adminRoleId || u.RoleId == staffRoleId)
-                .Select(u => u.UserId)
-                .ToListAsync();
+                var adminStaffUsers = await _context.Users
+                    .Where(u => u.RoleId == adminRoleId || u.RoleId == staffRoleId)
+                    .Select(u => u.UserId)
+                    .ToListAsync();
 
-            // Lấy thông tin user của member để tránh null reference
-            var memberUser = await _context.Users
-                .Where(u => u.UserId == member.UserId)
-                .Select(u => u.FullName)
-                .FirstOrDefaultAsync();
+                // Lấy thông tin user của member để tránh null reference
+                var memberUser = await _context.Users
+                    .Where(u => u.UserId == member.UserId)
+                    .Select(u => u.FullName)
+                    .FirstOrDefaultAsync();
 
-            var donorName = memberUser ?? "Người hiến máu";
+                var donorName = memberUser ?? "Người hiến máu";
 
-            foreach (var userId in adminStaffUsers)
-            {
-                var notification = new Notification
+                // Tạo notification cho từng admin/staff
+                foreach (var userId in adminStaffUsers)
                 {
-                    UserId = userId,
-                    Title = "Đăng ký hiến máu khẩn cấp mới",
-                    Message = $"Có một đăng ký hiến máu khẩn cấp mới từ {donorName}. ID đăng ký: {urgentDonationRequest.DonationId}. Vui lòng kiểm tra và xử lý ngay lập tức.",
-                    NotificationType = "UrgentDonationRequest",
-                    CreatedAt = DateTime.Now,
-                    IsActive = true,
-                    IsRead = false
-                };
-                _context.Notifications.Add(notification);
-            }
-            await _context.SaveChangesAsync();
+                    var notification = new Notification
+                    {
+                        UserId = userId,
+                        Title = "Đăng ký hiến máu khẩn cấp mới",
+                        Message = $"Có một đăng ký hiến máu khẩn cấp mới từ {donorName}. ID đăng ký: {urgentDonationRequest.DonationId}. Vui lòng kiểm tra và xử lý ngay lập tức.",
+                        NotificationType = "UrgentDonationRequest",
+                        CreatedAt = DateTime.Now,
+                        IsActive = true,
+                        IsRead = false
+                    };
+                    _context.Notifications.Add(notification);
+                }
+                await _context.SaveChangesAsync();
 
+                // ===== BƯỚC 9: TRẢ VỀ KẾT QUẢ THÀNH CÔNG =====
+                // Trả về thông tin chi tiết của yêu cầu hiến máu khẩn cấp vừa tạo
                 return CreatedAtAction(nameof(GetDonationRequest), new { id = urgentDonationRequest.DonationId }, new
                 {
                     urgentDonationRequest.DonationId,
@@ -415,6 +434,8 @@ namespace Blood_Donation_Support.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
+                // ===== XỬ LÝ LỖI CONCURRENCY =====
+                // Nếu có lỗi xung đột dữ liệu, rollback transaction và throw exception
                 await transaction.RollbackAsync();
                 throw;
             }

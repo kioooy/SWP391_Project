@@ -406,7 +406,7 @@ namespace Blood_Donation_Support.Controllers
                     bloodUnit.RemainingVolume -= assigned.AssignedVolume;
                     if (bloodUnit.RemainingVolume > 0)
                     {
-                        bloodUnit.BloodStatus = "PartialUsed";
+                        bloodUnit.BloodStatus = "Available";
                     }
                     else
                     {

@@ -1,4 +1,8 @@
+// ===== IMPORTS =====
+// React core và hooks
 import React, { useState, useEffect, useCallback } from "react";
+
+// Material-UI components cho UI
 import {
   Box,
   Card,
@@ -28,63 +32,91 @@ import {
   InputLabel,
   Select,
 } from "@mui/material";
+
+// Material-UI icons
 import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
   Bloodtype as BloodIcon,
 } from "@mui/icons-material";
+
+// Form handling và validation
 import { useFormik } from "formik";
 import * as Yup from "yup";
+
+// Redux state management
 import { useSelector } from 'react-redux';
 import { selectUser } from '../features/auth/authSlice';
+
+// HTTP client cho API calls
 import axios from "axios";
+
+// Material-UI Autocomplete cho dropdown search
 import { Autocomplete, createFilterOptions } from "@mui/material";
+
+// React Router cho navigation
 import { useNavigate } from "react-router-dom";
-// Thêm import cho DonorMobilizationComponent
+
+// Component tùy chỉnh cho việc huy động người hiến máu
 import DonorMobilizationComponent from "./DonorMobilizationComponent";
 
-// Thay thế useTransfusionStore bằng kết nối API thật và bổ sung các trường mới
+// ===== CUSTOM HOOK: QUẢN LÝ STATE VÀ API CHO TRUYỀN MÁU =====
+// Hook này thay thế useTransfusionStore bằng kết nối API thật và bổ sung các trường mới
 const useTransfusionStore = () => {
-  const [transfusions, setTransfusions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // ===== STATE MANAGEMENT =====
+  const [transfusions, setTransfusions] = useState([]); // Danh sách yêu cầu truyền máu
+  const [loading, setLoading] = useState(false);        // Trạng thái loading
+  const [error, setError] = useState(null);             // Lỗi nếu có
 
+  // ===== EFFECT: FETCH DỮ LIỆU BAN ĐẦU =====
   useEffect(() => {
     console.count('useTransfusionStore useEffect');
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Lấy token từ localStorage để xác thực
         const token = localStorage.getItem("token");
+        
+        // Gọi API lấy danh sách yêu cầu truyền máu
         const res = await axios.get("/api/TransfusionRequest", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        
+        // Cập nhật state với dữ liệu từ API
         setTransfusions(res.data);
         console.log("Fetched transfusions:", res.data); // Debug log
       } catch (err) {
+        // Xử lý lỗi khi không thể lấy dữ liệu
         setError("Không thể lấy dữ liệu truyền máu!");
       } finally {
+        // Luôn tắt loading sau khi hoàn thành
         setLoading(false);
       }
     };
     fetchData();
   }, []);
 
+  // ===== FUNCTION: CẬP NHẬT YÊU CẦU TRUYỀN MÁU =====
   const updateTransfusion = useCallback(async (id, data) => {
     console.count('updateTransfusion useCallback');
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // Gọi API cập nhật yêu cầu truyền máu
       await axios.patch(`/api/TransfusionRequest/${id}`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Sau khi cập nhật, reload lại danh sách
+      
+      // Sau khi cập nhật, reload lại danh sách để đồng bộ dữ liệu
       const res = await axios.get("/api/TransfusionRequest", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransfusions(res.data);
       return { success: true };
     } catch (err) {
+      // Xử lý lỗi khi cập nhật thất bại
       setError("Cập nhật trạng thái truyền máu thất bại!");
       return { success: false };
     } finally {
@@ -92,7 +124,8 @@ const useTransfusionStore = () => {
     }
   }, []);
 
-  // Thêm hàm reloadTransfusions
+  // ===== FUNCTION: RELOAD DỮ LIỆU TRUYỀN MÁU =====
+  // Thêm hàm reloadTransfusions để refresh dữ liệu khi cần
   const reloadTransfusions = useCallback(async () => {
     console.count('reloadTransfusions useCallback');
     setLoading(true);
@@ -120,60 +153,89 @@ const useTransfusionStore = () => {
   };
 };
 
+// ===== MAIN COMPONENT: QUẢN LÝ TRUYỀN MÁU =====
+// Component chính để quản lý các yêu cầu truyền máu
+// Props:
+// - onApprovalComplete: Callback khi hoàn thành duyệt
+// - showOnlyPending: Chỉ hiển thị yêu cầu đang chờ
+// - showOnlyApproved: Chỉ hiển thị yêu cầu đã duyệt
+// - showCreateButton: Hiển thị nút tạo mới
+// - layoutProps: Props cho layout
 const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, showOnlyApproved = false, showCreateButton = false, layoutProps = {} }) => {
-  const user = useSelector(selectUser);
+  // ===== REDUX STATE =====
+  const user = useSelector(selectUser); // Lấy thông tin user từ Redux store
+  
+  // ===== CUSTOM HOOK STATE =====
   const { transfusions, loading, error, updateTransfusion, clearError, reloadTransfusions } = useTransfusionStore();
+  
+  // ===== DIALOG STATES =====
+  // Dialog chỉnh sửa yêu cầu truyền máu
   const [editDialog, setEditDialog] = useState({
     open: false,
     transfusion: null,
   });
+  
+  // ===== NOTIFICATION STATE =====
+  // Snackbar để hiển thị thông báo
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
+  
+  // ===== CREATE DIALOG STATES =====
+  // Dialog tạo yêu cầu truyền máu mới
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [createForm, setCreateForm] = useState({
-    MemberId: "",
-    BloodTypeId: "",
-    BloodComponentId: "",
-    TransfusionVolume: "",
-    PreferredReceiveDate: "",
-    Notes: "",
+    MemberId: "",           // ID thành viên
+    BloodTypeId: "",        // ID nhóm máu
+    BloodComponentId: "",   // ID chế phẩm máu
+    TransfusionVolume: "",  // Thể tích truyền
+    PreferredReceiveDate: "", // Ngày nhận dự kiến
+    Notes: "",              // Ghi chú
   });
-  const [createFormError, setCreateFormError] = useState("");
-  const [createLoading, setCreateLoading] = useState(false);
-  const [newlyCreatedId, setNewlyCreatedId] = useState(null); // Track newly created request
-  const [statusFilter, setStatusFilter] = useState("All"); // Filter for status
-  const [dateFilter, setDateFilter] = useState({ startDate: null, endDate: null }); // Filter for date range
-  const [members, setMembers] = useState([]);
-  const [bloodTypes, setBloodTypes] = useState([]);
-  const [bloodComponents, setBloodComponents] = useState([]);
+  const [createFormError, setCreateFormError] = useState(""); // Lỗi form tạo mới
+  const [createLoading, setCreateLoading] = useState(false);  // Loading khi tạo
+  const [newlyCreatedId, setNewlyCreatedId] = useState(null); // Track ID yêu cầu vừa tạo
+  
+  // ===== FILTER STATES =====
+  const [statusFilter, setStatusFilter] = useState("All"); // Filter theo trạng thái
+  const [dateFilter, setDateFilter] = useState({ startDate: null, endDate: null }); // Filter theo khoảng thời gian
+  
+  // ===== DROPDOWN DATA STATES =====
+  const [members, setMembers] = useState([]);        // Danh sách thành viên
+  const [bloodTypes, setBloodTypes] = useState([]);  // Danh sách nhóm máu
+  const [bloodComponents, setBloodComponents] = useState([]); // Danh sách chế phẩm máu
 
-  // State và hàm cho Dialog chi tiết
+  // ===== DETAIL DIALOG STATES =====
+  // Dialog hiển thị chi tiết yêu cầu truyền máu
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedTransfusionForDetails, setSelectedTransfusionForDetails] = useState(null);
 
-  // States và hàm cho dialog Approve
+  // ===== APPROVE DIALOG STATES =====
+  // Dialog duyệt yêu cầu truyền máu và chọn máu
   const [openApproveDialog, setOpenApproveDialog] = useState(false);
   const [transfusionToApprove, setTransfusionToApprove] = useState(null);
-  const [approveSelectedUnits, setApproveSelectedUnits] = useState([]); // [{bloodUnitId, volume}]
-  const [approveNotes, setApproveNotes] = useState("");
-  const [approveLoading, setApproveLoading] = useState(false);
+  const [approveSelectedUnits, setApproveSelectedUnits] = useState([]); // [{bloodUnitId, volume}] - Danh sách máu đã chọn
+  const [approveNotes, setApproveNotes] = useState(""); // Ghi chú khi duyệt
+  const [approveLoading, setApproveLoading] = useState(false); // Loading khi duyệt
   const [suitableBloodUnits, setSuitableBloodUnits] = useState([]); // Danh sách máu phù hợp từ API
-  // State cho suitable alternatives
+  // State cho suitable alternatives - máu tương thích thay thế
   const [suitableAlternatives, setSuitableAlternatives] = useState([]);
 
-  // States và hàm cho dialog Complete
+  // ===== COMPLETE DIALOG STATES =====
+  // Dialog hoàn thành yêu cầu truyền máu
   const [openCompleteDialog, setOpenCompleteDialog] = useState(false);
   const [transfusionToComplete, setTransfusionToComplete] = useState(null);
   const [completeLoading, setCompleteLoading] = useState(false);
 
-  // States và hàm cho dialog Cancel
+  // ===== CANCEL DIALOG STATES =====
+  // Dialog hủy yêu cầu truyền máu
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [transfusionToCancel, setTransfusionToCancel] = useState(null);
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  // ===== TRANSLATION OBJECTS =====
   // Đối tượng ánh xạ dịch thuật cho các thành phần máu
   const bloodComponentTranslations = {
     "Whole Blood": "Máu toàn phần",
@@ -192,8 +254,12 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     "Rejected": "Từ chối",
   };
 
+  // Danh sách các trạng thái có thể có
   const statusOptions = ["Approved", "Pending", "Completed", "Cancelled", "Rejected"]; // Cập nhật để khớp với BE
 
+  // ===== HELPER FUNCTIONS =====
+  
+  // Hàm lấy màu cho từng trạng thái
   const getStatusColor = (status) => {
     // Màu giống DonationRequestManagement.js
     const colors = {
@@ -206,18 +272,21 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     return colors[status] || "default";
   };
 
+  // Hàm format ngày giờ theo định dạng Việt Nam
   const formatDateTime = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleString("vi-VN");
   };
 
-  // Formik validation schema
+  // ===== FORMIK VALIDATION =====
+  // Schema validation cho form chỉnh sửa
   const validationSchema = Yup.object({
     ResponsibleById: Yup.number().nullable(),
     Status: Yup.string().oneOf(statusOptions).required("Status is required"),
     Notes: Yup.string().max(500, "Notes must be less than 500 characters"),
   });
 
+  // Formik instance cho form chỉnh sửa
   const formik = useFormik({
     initialValues: {
       Status: "",
@@ -252,6 +321,9 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     },
   });
 
+  // ===== DIALOG HANDLERS =====
+  
+  // Hàm mở dialog chỉnh sửa
   const handleEditClick = (transfusion) => {
     formik.setValues({
       Status: transfusion.status,
@@ -260,30 +332,34 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     setEditDialog({ open: true, transfusion });
   };
 
+  // Hàm đóng dialog chỉnh sửa
   const handleCloseDialog = () => {
     setEditDialog({ open: false, transfusion: null });
     formik.resetForm();
   };
 
-  // ----- Hàm xử lý cho các Dialog Approve/Complete/Cancel -----
-
-  // Approve Dialog
+  // ===== APPROVE DIALOG HANDLERS =====
+  
+  // Hàm mở dialog duyệt yêu cầu truyền máu
   const handleOpenApproveDialog = async (transfusion) => {
     setTransfusionToApprove(transfusion);
     setOpenApproveDialog(true);
     setApproveSelectedUnits([]);
     setApproveNotes("");
-    // Gọi API suitable
+    
+    // Gọi API tìm máu phù hợp
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`/api/BloodUnit/suitable`, {
         params: {
-          bloodTypeId: transfusion.bloodTypeId,
-          componentId: transfusion.componentId,
-          requiredVolume: transfusion.transfusionVolume
+          bloodTypeId: transfusion.bloodTypeId,    // Nhóm máu cần truyền
+          componentId: transfusion.componentId,    // Chế phẩm máu cần truyền
+          requiredVolume: transfusion.transfusionVolume // Thể tích cần thiết
         },
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // Xử lý response từ API suitable
       // Nếu response là object (có .units), set vào state phù hợp
       if (res.data && res.data.units) {
         setSuitableBloodUnits(res.data.units);
@@ -301,6 +377,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     }
   };
 
+  // Hàm đóng dialog duyệt
   const handleCloseApproveDialog = () => {
     setOpenApproveDialog(false);
     setTransfusionToApprove(null);
@@ -310,56 +387,91 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     setSuitableAlternatives([]);
   };
 
+  // ===== BLOOD UNIT SELECTION HANDLERS =====
+  
   // Hàm chọn máu (multi-select, cộng dồn thể tích)
+  // bloodUnitId: ID của đơn vị máu
+  // maxVolume: Thể tích tối đa có thể lấy từ đơn vị máu này
   const handleSelectBloodUnit = (bloodUnitId, maxVolume) => {
     // Nếu đã chọn thì bỏ chọn, chưa chọn thì thêm với volume mặc định maxVolume
     setApproveSelectedUnits(prev => {
       const exists = prev.find(u => u.bloodUnitId === bloodUnitId);
       if (exists) {
+        // Nếu đã chọn thì bỏ chọn (toggle)
         return prev.filter(u => u.bloodUnitId !== bloodUnitId);
       } else {
+        // Nếu chưa chọn thì thêm vào danh sách với thể tích mặc định
         return [...prev, { bloodUnitId, volume: maxVolume }];
       }
     });
   };
 
-  // Hàm thay đổi thể tích lấy từ từng túi
+  // Hàm thay đổi thể tích lấy từ từng túi máu
+  // bloodUnitId: ID của đơn vị máu
+  // value: Giá trị thể tích mới
+  // maxVolume: Thể tích tối đa có thể lấy
   const handleChangeUnitVolume = (bloodUnitId, value, maxVolume) => {
     let v = value === "" ? "" : parseInt(value);
+    // Đảm bảo không vượt quá thể tích tối đa
     if (v !== "" && v > maxVolume) v = maxVolume;
+    // Cập nhật thể tích cho đơn vị máu được chọn
     setApproveSelectedUnits(prev => prev.map(u => u.bloodUnitId === bloodUnitId ? { ...u, volume: v } : u));
   };
 
-  // Tổng thể tích đã chọn
+  // ===== VOLUME CALCULATIONS =====
+  
+  // Tổng thể tích đã chọn từ các đơn vị máu
   const totalSelectedVolume = approveSelectedUnits.reduce((sum, u) => sum + u.volume, 0);
+  
+  // Thể tích cần thiết cho yêu cầu truyền máu
   const requiredVolume = transfusionToApprove?.transfusionVolume || 0;
-const totalAvailableVolume = suitableBloodUnits.reduce((sum, u) => sum + u.remainingVolume, 0) + suitableAlternatives.reduce((sum, alt) => sum + (alt.totalAvailable || 0), 0);
-const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length > 0;
+  
+  // Tổng thể tích có sẵn (máu đúng nhóm + máu tương thích)
+  const totalAvailableVolume = suitableBloodUnits.reduce((sum, u) => sum + u.remainingVolume, 0) + 
+                              suitableAlternatives.reduce((sum, alt) => sum + (alt.totalAvailable || 0), 0);
+  
+  // Kiểm tra có đơn vị máu nào phù hợp không
+  const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length > 0;
 
+  // ===== APPROVE CONFIRMATION HANDLER =====
+  
+  // Hàm xác nhận duyệt yêu cầu truyền máu
   const handleConfirmApprove = async () => {
     setApproveLoading(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // Tạo payload cho API approve
       const payload = {
-        bloodUnits: approveSelectedUnits.map(u => ({ bloodUnitId: u.bloodUnitId, volumeUsed: u.volume })),
+        bloodUnits: approveSelectedUnits.map(u => ({ 
+          bloodUnitId: u.bloodUnitId, 
+          volumeUsed: u.volume 
+        })),
         notes: approveNotes || null,
       };
+      
       console.log("[APPROVE] PATCH payload:", payload);
+      
+      // Gọi API duyệt yêu cầu truyền máu
       await axios.patch(`/api/TransfusionRequest/${transfusionToApprove.transfusionId}/approve`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // Hiển thị thông báo thành công
       setSnackbar({
         open: true,
         message: `Yêu cầu ${transfusionToApprove.transfusionId} đã được gán!`,
         severity: "success",
       });
+      
+      // Đóng dialog và reload dữ liệu
       handleCloseApproveDialog();
       if (onApprovalComplete) {
         onApprovalComplete();
       }
       await reloadTransfusions();
     } catch (err) {
-      // Đã xóa log kiểm thử chức năng duyệt yêu cầu truyền máu
+      // Xử lý lỗi khi duyệt thất bại
       let errorMessage = "Gán yêu cầu thất bại.";
       if (err.response?.data) {
         if (typeof err.response.data === "string") {
@@ -378,29 +490,39 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     }
   };
 
-  // Complete Dialog
+  // ===== COMPLETE DIALOG HANDLERS =====
+  
+  // Hàm mở dialog hoàn thành yêu cầu truyền máu
   const handleOpenCompleteDialog = (transfusion) => {
     setTransfusionToComplete(transfusion);
     setOpenCompleteDialog(true);
   };
 
+  // Hàm đóng dialog hoàn thành
   const handleCloseCompleteDialog = () => {
     setOpenCompleteDialog(false);
     setTransfusionToComplete(null);
   };
 
+  // Hàm xác nhận hoàn thành yêu cầu truyền máu
   const handleConfirmComplete = async () => {
     setCompleteLoading(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // Gọi API hoàn thành yêu cầu truyền máu
       await axios.patch(`/api/TransfusionRequest/${transfusionToComplete.transfusionId}/complete`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // Hiển thị thông báo thành công
       setSnackbar({
         open: true,
         message: `Yêu cầu ${transfusionToComplete.transfusionId} đã hoàn thành!`,
         severity: "success",
       });
+      
+      // Đóng dialog và reload dữ liệu
       handleCloseCompleteDialog();
       await reloadTransfusions();
     } catch (err) {
@@ -416,29 +538,39 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     }
   };
 
-  // Cancel Dialog
+  // ===== CANCEL DIALOG HANDLERS =====
+  
+  // Hàm mở dialog hủy yêu cầu truyền máu
   const handleOpenCancelDialog = (transfusion) => {
     setTransfusionToCancel(transfusion);
     setOpenCancelDialog(true);
   };
 
+  // Hàm đóng dialog hủy
   const handleCloseCancelDialog = () => {
     setOpenCancelDialog(false);
     setTransfusionToCancel(null);
   };
 
+  // Hàm xác nhận hủy yêu cầu truyền máu
   const handleConfirmCancel = async () => {
     setCancelLoading(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // Gọi API hủy yêu cầu truyền máu
       await axios.patch(`/api/TransfusionRequest/${transfusionToCancel.transfusionId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // Hiển thị thông báo thành công
       setSnackbar({
         open: true,
         message: `Yêu cầu ${transfusionToCancel.transfusionId} đã hủy!`,
         severity: "success",
       });
+      
+      // Đóng dialog và reload dữ liệu
       handleCloseCancelDialog();
       await reloadTransfusions();
     } catch (err) {
@@ -454,14 +586,20 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     }
   };
 
+  // ===== EXPIRED CHECK HANDLER =====
+  
   // Hàm kiểm tra yêu cầu truyền máu hết hạn
+  // Tự động hủy các yêu cầu đã quá hạn
   const handleExpiredCheck = async () => {
     try {
       const token = localStorage.getItem("token");
+      
+      // Gọi API kiểm tra và cập nhật yêu cầu hết hạn
       const response = await axios.patch(`/api/TransfusionRequest/expired_check`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
+      // Hiển thị thông báo kết quả
       if (response.data && response.data.expiredCount > 0) {
         setSnackbar({
           open: true,
@@ -489,6 +627,9 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     }
   };
 
+  // ===== STATISTICS HELPER =====
+  
+  // Hàm tính toán thống kê theo trạng thái
   const getStatistics = () => {
     return statusOptions.map((status) => ({
       status,
@@ -496,29 +637,41 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     }));
   };
 
+  // ===== FILTERING LOGIC =====
+  
   // Filter transfusions based on status and date
+  // Lọc danh sách yêu cầu truyền máu theo trạng thái và ngày tháng
   const filteredTransfusions = transfusions.filter(transfusion => {
     // Show only pending if specified
+    // Chỉ hiển thị yêu cầu đang chờ nếu được chỉ định
     if (showOnlyPending && transfusion.status !== "Pending") {
       return false;
     }
+    
     // Show only approved if specified
+    // Chỉ hiển thị yêu cầu đã duyệt nếu được chỉ định
     if (showOnlyApproved && transfusion.status !== "Approved") {
       return false;
     }
+    
     // Filter by status
+    // Lọc theo trạng thái
     if (statusFilter === 'All') {
       // Không lọc gì cả
     } else if (statusFilter === 'Rejected') {
+      // Nhóm "Từ chối" bao gồm cả Rejected và Cancelled
       if (transfusion.status !== 'Rejected' && transfusion.status !== 'Cancelled') {
         return false;
       }
     } else {
+      // Lọc theo trạng thái cụ thể
       if (transfusion.status !== statusFilter) {
         return false;
       }
     }
+    
     // Filter by date range
+    // Lọc theo khoảng thời gian
     if (dateFilter.startDate || dateFilter.endDate) {
       const requestDate = new Date(transfusion.requestDate);
       
@@ -538,19 +691,24 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     return true;
   });
 
+  // ===== USE EFFECT: FETCH DROPDOWN DATA =====
+  
+  // Effect để lấy dữ liệu cho các dropdown khi component mount
   useEffect(() => {
     console.count('TransfusionManagement useEffect');
     const fetchDataForDropdowns = async () => {
       const token = localStorage.getItem("token");
       try {
-        // Lấy danh sách member
+        // Lấy danh sách member (chỉ những người có thể nhận máu)
         const resMembers = await axios.get("/api/User/members", { headers: { Authorization: `Bearer ${token}` } });
         setMembers((resMembers.data || []).filter(m => m.isRecipient === true));
         console.log("Fetched members for dropdown:", resMembers.data); // Debug log
+        
         // Lấy danh sách nhóm máu
         const resBloodTypes = await axios.get("/api/BloodType", { headers: { Authorization: `Bearer ${token}` } });
         setBloodTypes(resBloodTypes.data || []);
         // console.log("Fetched blood types:", resBloodTypes.data); // Debug log
+        
         // Lấy danh sách thành phần máu
         const resBloodComponents = await axios.get("/api/BloodComponent", { headers: { Authorization: `Bearer ${token}` } });
         setBloodComponents(resBloodComponents.data || []);
@@ -563,19 +721,29 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     fetchDataForDropdowns();
   }, []);
 
+  // ===== DETAIL DIALOG HANDLERS =====
+  
+  // Hàm xử lý khi click vào row để xem chi tiết
   const handleRowClick = async (transfusion) => {
     try {
       const token = localStorage.getItem("token");
+      
+      // Gọi API lấy chi tiết yêu cầu truyền máu
       const res = await axios.get(`/api/TransfusionRequest/${transfusion.transfusionId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       const detail = res.data;
       console.log('[DEBUG] Chi tiết yêu cầu truyền máu từ API:', detail);
+      
+      // Kiểm tra và log thông tin máu được gán
       if (detail.BloodUnits || detail.bloodUnits) {
         console.log('[DEBUG] BloodUnits:', detail.BloodUnits || detail.bloodUnits);
       } else {
         console.log('[DEBUG] Không có trường BloodUnits trong dữ liệu chi tiết!');
       }
+      
+      // Cập nhật state và mở dialog chi tiết
       setSelectedTransfusionForDetails(detail);
       setOpenDetailDialog(true);
     } catch (err) {
@@ -583,11 +751,14 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     }
   };
 
+  // Hàm đóng dialog chi tiết
   const handleCloseDetailDialog = () => {
     setOpenDetailDialog(false);
     setSelectedTransfusionForDetails(null);
   };
 
+  // ===== AUTOCOMPLETE FILTER CONFIGURATION =====
+  
   // Filter options for Autocomplete (cho phép tìm kiếm theo FullName, CitizenNumber, Email, PhoneNumber)
   const filterOptions = createFilterOptions({
     matchFrom: 'any',
@@ -597,19 +768,23 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
     } ${option.citizenNumber || ''} ${option.email || ''} ${option.phoneNumber || ''}`,
   });
 
-
   const navigate = useNavigate();
 
+  // ===== NAVIGATION HANDLER =====
+  
   // Thêm hàm chuyển tab sang tìm kiếm máu (nếu có props hoặc context), hoặc mở dialog tạo yêu cầu huy động máu
   const handleConnectDonor = () => {
     navigate("/blood-search");
-
   };
 
+  // ===== JSX RENDER =====
+  
   return (
     <React.Fragment>
+      {/* ===== STATUS FILTER SECTION ===== */}
       {/* Bộ lọc trạng thái dạng Paper giống DonationRequestManagement */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        {/* Tất cả */}
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #9e9e9e' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
           onClick={() => setStatusFilter('All')}
@@ -619,6 +794,8 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           <Typography variant="h4" fontWeight="bold">{transfusions.length}</Typography>
           <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
         </Paper>
+        
+        {/* Đã gán */}
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
           onClick={() => setStatusFilter('Approved')}
@@ -628,6 +805,8 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Approved').length}</Typography>
           <Chip label="Đã gán" color="warning" sx={{ mt: 1 }} />
         </Paper>
+        
+        {/* Hoàn thành */}
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
           onClick={() => setStatusFilter('Completed')}
@@ -637,6 +816,8 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Completed').length}</Typography>
           <Chip label="Hoàn thành" color="success" sx={{ mt: 1 }} />
         </Paper>
+        
+        {/* Đã từ chối/Hủy */}
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected' || statusFilter === 'Cancelled') ? 4 : 1 }}
           onClick={() => setStatusFilter('Rejected')}
@@ -646,6 +827,8 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length}</Typography>
           <Chip label="Đã từ chối/Hủy" color="error" sx={{ mt: 1 }} />
         </Paper>
+        
+        {/* Chờ gán */}
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Pending' ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Pending' ? 4 : 1 }}
           onClick={() => setStatusFilter('Pending')}
@@ -656,6 +839,8 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           <Chip label="Chờ gán" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
         </Paper>
       </Box>
+      
+      {/* ===== FILTER AND ACTION SECTION ===== */}
       {/* Bộ lọc ngày và nút tạo mới giữ nguyên */}
       <Card sx={{ mb: 2, p: 2, boxShadow: 'none', background: 'none' }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
@@ -1030,7 +1215,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
   </>
 ) : (
   <>
-    {/* Đúng nhóm máu */}
+    {/* Đúng nhóm máu, máu chính xác */}
                 {suitableBloodUnits.length > 0 && (
                   <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1, mb: 2 }}>
                     <Typography variant="subtitle2" color="primary">Túi máu đúng nhóm:</Typography>
@@ -1067,23 +1252,34 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                   </Box>
                 )}
                 {/* Các nhóm máu tương thích khác */}
+                {/* Hiển thị các nhóm máu tương thích khác nếu có */} 
                 {suitableAlternatives.length > 0 && (
                   <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #eee', borderRadius: 1, p: 1 }}>
                     <Typography variant="subtitle2" color="secondary">Các nhóm máu tương thích khác:</Typography>
+                    {/* Duyệt qua từng nhóm máu tương thích */} 
+
                     {suitableAlternatives.map(alt => (
                       <Box key={alt.BloodTypeId} sx={{ mb: 2 }}>
+                        {/* Hiển thị tên nhóm máu và tổng lượng máu có sẵn */} 
+
                         <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
+                          {/* Duyệt qua từng đơn vị máu trong nhóm máu tương thích */} 
+
                           {alt.BloodTypeName} (Tổng: {alt.totalAvailable}ml)
                         </Typography>
                         {alt.units.map(unit => {
+                          {/* Kiểm tra xem đơn vị máu đã được chọn chưa */} 
+
                           const selected = approveSelectedUnits.find(u => u.bloodUnitId === unit.bloodUnitId);
                           return (
                             <Box key={unit.bloodUnitId} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, ml: 2 }}>
+                              {/* Checkbox để chọn đơn vị máu */} 
                               <input
                                 type="checkbox"
                                 checked={!!selected}
                                 onChange={() => handleSelectBloodUnit(unit.bloodUnitId, unit.remainingVolume)}
                               />
+                              {/* Thông tin chi tiết đơn vị máu */} 
                               <Typography variant="body2">
                                 {unit.BloodTypeName || unit.bloodTypeName || 'N/A'}
                                 {" | "}
@@ -1092,6 +1288,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                                 {" | Lượng còn lại: "}{unit.remainingVolume}ml
                                 {" | HSD: "}{formatDateTime(unit.expiryDate)}
                               </Typography>
+                              {/* Input để điều chỉnh thể tích nếu đơn vị máu được chọn */} 
                               {selected && (
                                 <TextField
                                   type="number"
@@ -1402,7 +1599,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
               helperText={createFormError}
             />
             <TextField
-              label="Ngày mong muốn nhận máu"
+              label="Ngày truyền máu"
               type="datetime-local"
               value={createForm.PreferredReceiveDate}
               onChange={e => setCreateForm({ ...createForm, PreferredReceiveDate: e.target.value })}
@@ -1410,7 +1607,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
               inputProps={{ 
                 min: new Date().toISOString().slice(0, 16) // Không cho chọn ngày trong quá khứ
               }}
-              helperText="Chọn ngày và giờ mong muốn được truyền máu (tùy chọn)"
+              helperText="Chọn ngày và giờ truyền máu"
             />
             <TextField
               label="Ghi chú"

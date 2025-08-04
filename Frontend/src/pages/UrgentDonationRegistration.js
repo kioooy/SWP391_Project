@@ -26,13 +26,16 @@ import { Bloodtype, Warning, Schedule, LocationOn } from '@mui/icons-material';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 
 const validationSchema = Yup.object({
-  preferredDate: Yup.date()
-    .min(new Date(), 'Ngày hiến máu phải từ hôm nay trở đi')
-    .required('Ngày hiến máu là bắt buộc'),
-  preferredTime: Yup.string()
-    .required('Thời gian hiến máu là bắt buộc'),
+  componentId: Yup.number()
+    .required('Chế phẩm máu là bắt buộc'),
+  donationVolume: Yup.number()
+    .min(250, 'Lượng máu tối thiểu là 250ml')
+    .max(500, 'Lượng máu tối đa là 500ml')
+    .required('Lượng máu hiến là bắt buộc'),
   notes: Yup.string()
     .max(500, 'Ghi chú không được quá 500 ký tự'),
+  patientCondition: Yup.string()
+    .required('Tình trạng bệnh nhân là bắt buộc'),
 });
 
 const UrgentDonationRegistration = () => {
@@ -42,6 +45,7 @@ const UrgentDonationRegistration = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [bloodComponents, setBloodComponents] = useState([]);
 
   // Lấy thông tin từ localStorage
   const urgentRequestId = localStorage.getItem('urgentRequestId');
@@ -65,6 +69,8 @@ const UrgentDonationRegistration = () => {
 
     // Lấy thông tin chi tiết yêu cầu khẩn cấp
     fetchUrgentRequestDetails();
+    // Lấy danh sách chế phẩm máu
+    fetchBloodComponents();
   }, [urgentRequestId]);
 
   const fetchUrgentRequestDetails = async () => {
@@ -90,11 +96,32 @@ const UrgentDonationRegistration = () => {
     }
   };
 
+  const fetchBloodComponents = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/BloodComponent`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Không thể lấy danh sách chế phẩm máu');
+      }
+
+      const data = await response.json();
+      setBloodComponents(data);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách chế phẩm máu:', error);
+    }
+  };
+
   const formik = useFormik({
     initialValues: {
-      preferredDate: '',
-      preferredTime: '',
+      componentId: '',
+      donationVolume: 350,
       notes: '',
+      patientCondition: '',
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -105,14 +132,15 @@ const UrgentDonationRegistration = () => {
 
         const donationRequest = {
           memberId: user.UserId,
-          preferredDonationDate: values.preferredDate,
-          preferredTime: values.preferredTime,
+          componentId: parseInt(values.componentId),
+          responsibleById: 1, // Default staff ID
+          donationVolume: parseInt(values.donationVolume),
           notes: values.notes,
+          patientCondition: values.patientCondition,
           urgentRequestId: parseInt(urgentRequestId), // Liên kết với yêu cầu khẩn cấp
-          isUrgent: true, // Đánh dấu là hiến máu khẩn cấp
         };
 
-        const response = await fetch(`${API_BASE_URL}/DonationRequest`, {
+        const response = await fetch(`${API_BASE_URL}/DonationRequest/register-urgent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -142,7 +170,7 @@ const UrgentDonationRegistration = () => {
         setTimeout(() => {
           navigate('/urgent-donation-success', { 
             state: { 
-              donationId: result.donationRequestId,
+              donationId: result.donationId,
               urgentRequestId: urgentRequestId 
             } 
           });
@@ -257,7 +285,7 @@ const UrgentDonationRegistration = () => {
               <Alert severity="warning" sx={{ mb: 2 }}>
                 <Typography variant="body2">
                   <strong>Lưu ý:</strong> Đây là yêu cầu hiến máu khẩn cấp. 
-                  Vui lòng chọn thời gian sớm nhất có thể để cứu sống bệnh nhân.
+                  Staff sẽ liên hệ với bạn ngay để sắp xếp thời gian hiến máu phù hợp.
                 </Typography>
               </Alert>
             </CardContent>
@@ -274,39 +302,53 @@ const UrgentDonationRegistration = () => {
             <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 2 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    id="preferredDate"
-                    name="preferredDate"
-                    label="Ngày hiến máu"
-                    type="date"
-                    value={formik.values.preferredDate}
-                    onChange={formik.handleChange}
-                    error={formik.touched.preferredDate && Boolean(formik.errors.preferredDate)}
-                    helperText={formik.touched.preferredDate && formik.errors.preferredDate}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                  />
+                  <FormControl fullWidth>
+                    <InputLabel id="componentId-label">Chế phẩm máu</InputLabel>
+                    <Select
+                      labelId="componentId-label"
+                      id="componentId"
+                      name="componentId"
+                      value={formik.values.componentId}
+                      onChange={formik.handleChange}
+                      error={formik.touched.componentId && Boolean(formik.errors.componentId)}
+                      label="Chế phẩm máu"
+                    >
+                      {bloodComponents.map((component) => (
+                        <MenuItem key={component.componentId} value={component.componentId}>
+                          {component.componentName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel id="preferredTime-label">Thời gian hiến máu</InputLabel>
-                    <Select
-                      labelId="preferredTime-label"
-                      id="preferredTime"
-                      name="preferredTime"
-                      value={formik.values.preferredTime}
-                      onChange={formik.handleChange}
-                      error={formik.touched.preferredTime && Boolean(formik.errors.preferredTime)}
-                      label="Thời gian hiến máu"
-                    >
-                      <MenuItem value="08:00">08:00 - 10:00</MenuItem>
-                      <MenuItem value="10:00">10:00 - 12:00</MenuItem>
-                      <MenuItem value="14:00">14:00 - 16:00</MenuItem>
-                      <MenuItem value="16:00">16:00 - 18:00</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    id="donationVolume"
+                    name="donationVolume"
+                    label="Lượng máu hiến (ml)"
+                    type="number"
+                    value={formik.values.donationVolume}
+                    onChange={formik.handleChange}
+                    error={formik.touched.donationVolume && Boolean(formik.errors.donationVolume)}
+                    helperText={formik.touched.donationVolume && formik.errors.donationVolume}
+                    inputProps={{ min: 250, max: 500 }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="patientCondition"
+                    name="patientCondition"
+                    label="Tình trạng bệnh nhân"
+                    value={formik.values.patientCondition}
+                    onChange={formik.handleChange}
+                    error={formik.touched.patientCondition && Boolean(formik.errors.patientCondition)}
+                    helperText={formik.touched.patientCondition && formik.errors.patientCondition}
+                    placeholder="Ví dụ: Cần máu gấp cho ca phẫu thuật khẩn cấp..."
+                  />
                 </Grid>
 
                 <Grid item xs={12}>

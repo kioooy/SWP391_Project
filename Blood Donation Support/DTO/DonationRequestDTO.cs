@@ -21,6 +21,23 @@ namespace Blood_Donation_Support.DTO
         [Required]
         public required string PatientCondition { get; set; }
     }
+
+    public class CreateUrgentDonationRequest
+    {
+        [Required]
+        public int MemberId { get; set; }
+        [Required]
+        public int ComponentId { get; set; }
+        [Required]
+        public required int ResponsibleById { get; set; }
+        [Required]
+        public required int DonationVolume { get; set; }
+        public string? Notes { get; set; }
+        [Required]
+        public required string PatientCondition { get; set; }
+        public int? UrgentRequestId { get; set; } // Liên kết với yêu cầu khẩn cấp (nếu có)
+    }
+
     public class UpdateStatusDonationRequest
     {
         [Required]

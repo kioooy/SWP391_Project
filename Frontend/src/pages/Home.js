@@ -184,6 +184,8 @@ const Home = () => {
   const [lastDonationDate, setLastDonationDate] = useState(null);
   // State để lưu thông tin lịch hiến máu hiện tại
   const [currentDonationRequest, setCurrentDonationRequest] = useState(null);
+  // State để lưu trạng thái đăng ký hiến máu
+  const [registrationStatus, setRegistrationStatus] = useState(null);
 
   // Lấy user từ redux
   const user = useSelector((state) => state.auth.user);
@@ -232,22 +234,32 @@ const Home = () => {
         console.error('Lỗi lấy thông tin ngày hiến máu gần nhất:', err);
       });
 
-      // Lấy lịch hiến máu hiện tại
-      axios.get('/api/DonationRequest/history', {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(res => {
+      // Lấy lịch hiến máu hiện tại và trạng thái đăng ký
+      Promise.all([
+        axios.get('/api/DonationRequest/upcoming/all-role', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('/api/DonationRequest/registration-status', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]).then(([upcomingRes, statusRes]) => {
         // Tìm lịch hiến máu chưa hoàn thành (Pending, Approved)
-        const activeRequest = res.data.find(request => 
+        const activeRequest = upcomingRes.data.find(request => 
           request.status === 'Pending' || request.status === 'Approved'
         );
         setCurrentDonationRequest(activeRequest || null);
+        
+        // Lưu trạng thái đăng ký để sử dụng trong checkDonationEligibility
+        setRegistrationStatus(statusRes.data);
       }).catch(err => {
         setCurrentDonationRequest(null);
+        setRegistrationStatus(null);
         console.error('Lỗi lấy lịch hiến máu hiện tại:', err);
       });
     } else {
       setLastDonationDate(null);
       setCurrentDonationRequest(null);
+      setRegistrationStatus(null);
     }
   }, [user]);
 
@@ -286,13 +298,21 @@ const Home = () => {
     }
   };
 
-  // Hàm kiểm tra 90 ngày kể từ lần hiến máu gần nhất
+  // Hàm kiểm tra điều kiện hiến máu sử dụng API registration-status
   const checkDonationEligibility = () => {
-    if (lastDonationDate) {
+    if (registrationStatus) {
+      if (!registrationStatus.canRegister) {
+        setSnackbarMessage(registrationStatus.message);
+        setSnackbarSeverity('warning');
+        setOpenSnackbar(true);
+        return false;
+      }
+    } else if (lastDonationDate) {
+      // Fallback logic nếu chưa có registrationStatus
       const last = dayjs(lastDonationDate);
       const today = dayjs();
-      if (today.diff(last, 'day') < 90) {
-        setSnackbarMessage('Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.');
+      if (today.diff(last, 'day') < 84) { // Cập nhật từ 90 ngày thành 84 ngày
+        setSnackbarMessage('Bạn cần đợi ít nhất 84 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.');
         setSnackbarSeverity('warning');
         setOpenSnackbar(true);
         return false;
@@ -304,7 +324,7 @@ const Home = () => {
   // Hàm xử lý khi bấm "Đăng ký ngay"
   const handleRegisterNow = (period) => {
     if (user) {
-      // Kiểm tra 90 ngày trước khi cho phép đăng ký
+      // Kiểm tra điều kiện hiến máu sử dụng API registration-status
       if (!checkDonationEligibility()) {
         return;
       }

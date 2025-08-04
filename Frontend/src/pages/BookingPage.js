@@ -46,6 +46,7 @@ import { useSelector } from 'react-redux';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
 import BookingTransfusion from './BookingTransfusion';
+import RegistrationStatusCheck from '../components/RegistrationStatusCheck';
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
   backgroundColor: '#f5f5f5',
@@ -197,6 +198,7 @@ const BookingPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [hospitalAddress, setHospitalAddress] = useState('');
   const [lastDonationDate, setLastDonationDate] = useState(null);
+  const [registrationStatus, setRegistrationStatus] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -381,14 +383,15 @@ const BookingPage = () => {
         setSnackbar({ open: true, message: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!', severity: 'error' });
         return;
       }
-      // Kiểm tra 90 ngày kể từ lần hiến máu gần nhất
-      if (lastDonationDate) {
-        const last = dayjs(lastDonationDate);
-        const today = dayjs();
-        if (today.diff(last, 'day') < 90) {
-          setSnackbar({ open: true, message: 'Bạn cần đợi ít nhất 90 ngày kể từ lần hiến máu gần nhất để đặt lịch hẹn mới.', severity: 'warning' });
-          return;
-        }
+
+      // Kiểm tra trạng thái đăng ký trước khi submit
+      if (registrationStatus && !registrationStatus.canRegister) {
+        setSnackbar({ 
+          open: true, 
+          message: registrationStatus.message, 
+          severity: 'error' 
+        });
+        return;
       }
       const periodId = selectedPeriod ? selectedPeriod.periodId : null;
       const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
@@ -687,6 +690,9 @@ const BookingPage = () => {
         <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
           Đặt lịch hiến máu
         </Typography>
+
+        {/* Kiểm tra trạng thái đăng ký */}
+        <RegistrationStatusCheck onStatusChange={setRegistrationStatus} />
 
         <Grid container spacing={4}>
           {/* Left Sidebar - Tabs */}
@@ -1220,6 +1226,7 @@ const BookingPage = () => {
                     size="large"
                     sx={{ px: 4, py: 1.5 }}
                     onClick={handleSubmit}
+                    disabled={registrationStatus && !registrationStatus.canRegister}
                   >
                     Hoàn thành đăng ký
                   </Button>

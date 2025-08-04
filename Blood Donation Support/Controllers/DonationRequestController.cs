@@ -49,7 +49,7 @@ namespace Blood_Donation_Support.Controllers
                 PeriodAddress = dr.Period != null ? dr.Period.Hospital.Address : "Bệnh viện Truyền máu Huyết học", // Period Address hoặc địa chỉ mặc định
                 dr.Component.ComponentName,                // Component Name
                 dr.PreferredDonationDate,                  // Preferred Donation Date
-                ResponsibleBy = dr.ResponsibleBy.FullName, // Responsible By Full Name
+                ResponsibleBy = dr.ResponsibleBy != null ? dr.ResponsibleBy.FullName : null, // Responsible By Full Name
                 dr.DonationVolume,                         // Donation Volume
                 dr.Notes,                                  // Notes 
                 dr.Status,                                 // Status of the donation request
@@ -223,15 +223,12 @@ namespace Blood_Donation_Support.Controllers
                 }
             }
 
-            // Check if the member has an upcoming donation request
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var hasUpcoming = await _context.DonationRequests
-                .Include(dr => dr.Period)
+            // Check if the member has an active donation request
+            var hasActiveDonation = await _context.DonationRequests
                 .AnyAsync(dr => dr.MemberId == member.UserId && 
-                         (dr.Status == "Pending" || dr.Status == "Approved") &&
-                         ((dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) || dr.Period.PeriodDateFrom >= DateTime.Today));
-            if (hasUpcoming)
-                return BadRequest("Bạn đang có lịch hiến máu. Vui lòng hoàn thành hoặc hủy lịch trước khi đặt lịch mới!");
+                         (dr.Status == "Pending" || dr.Status == "Approved"));
+            if (hasActiveDonation)
+                return BadRequest("Bạn đã có lịch hiến máu đang chờ xử lý hoặc đã được duyệt. Vui lòng hoàn thành hoặc hủy lịch trước khi đăng ký mới!");
             
             // Add new donation request
              var donationRequest = new DonationRequest
@@ -333,18 +330,13 @@ namespace Blood_Donation_Support.Controllers
                     return NotFound("Không tìm thấy yêu cầu khẩn cấp.");
             }
 
-            // Kiểm tra xem member có lịch hiến máu sắp tới không (chỉ kiểm tra hiến máu thường, không kiểm tra hiến máu khẩn)
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var hasUpcomingRegular = await _context.DonationRequests
-                .Include(dr => dr.Period)
+            // Kiểm tra xem member có lịch hiến máu đang chờ hoặc đã duyệt không (cả thường và khẩn cấp)
+            var hasActiveDonation = await _context.DonationRequests
                 .AnyAsync(dr => dr.MemberId == member.UserId && 
-                         dr.IsUrgent == false && // Chỉ kiểm tra hiến máu thường
-                         (dr.Status == "Pending" || dr.Status == "Approved") &&
-                         ((dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) || 
-                          (dr.Period != null && dr.Period.PeriodDateFrom >= DateTime.Today)));
+                         (dr.Status == "Pending" || dr.Status == "Approved"));
             
-            if (hasUpcomingRegular)
-                return BadRequest("Bạn đang có lịch hiến máu thường. Vui lòng hoàn thành hoặc hủy lịch trước khi đặt lịch hiến máu khẩn cấp!");
+            if (hasActiveDonation)
+                return BadRequest("Bạn đã có lịch hiến máu đang chờ xử lý hoặc đã được duyệt. Vui lòng hoàn thành hoặc hủy lịch trước khi đăng ký mới!");
 
             // Tạo donation request khẩn cấp
             var urgentDonationRequest = new DonationRequest
@@ -352,7 +344,7 @@ namespace Blood_Donation_Support.Controllers
                 MemberId = member.UserId,
                 PeriodId = null, // Không thuộc đợt hiến máu nào (NULL cho hiến máu khẩn cấp)
                 ComponentId = model.ComponentId,
-                PreferredDonationDate = null, // Không cần ngày cụ thể cho hiến máu khẩn cấp
+                PreferredDonationDate = DateOnly.FromDateTime(DateTime.Now), // Đặt ngày hẹn là ngày hiện tại cho hiến máu khẩn cấp
                 ResponsibleById = model.ResponsibleById,
                 RequestDate = DateTime.Now,
                 DonationVolume = model.DonationVolume,
@@ -371,30 +363,38 @@ namespace Blood_Donation_Support.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // Tạo thông báo cho Admin/Staff về hiến máu khẩn cấp mới
-                var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.RoleId).FirstOrDefaultAsync();
-                var staffRoleId = await _context.Roles.Where(r => r.Name == "Staff").Select(r => r.RoleId).FirstOrDefaultAsync();
+                            // Tạo thông báo cho Admin/Staff về hiến máu khẩn cấp mới
+            var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.RoleId).FirstOrDefaultAsync();
+            var staffRoleId = await _context.Roles.Where(r => r.Name == "Staff").Select(r => r.RoleId).FirstOrDefaultAsync();
 
-                var adminStaffUsers = await _context.Users
-                    .Where(u => u.RoleId == adminRoleId || u.RoleId == staffRoleId)
-                    .Select(u => u.UserId)
-                    .ToListAsync();
+            var adminStaffUsers = await _context.Users
+                .Where(u => u.RoleId == adminRoleId || u.RoleId == staffRoleId)
+                .Select(u => u.UserId)
+                .ToListAsync();
 
-                foreach (var userId in adminStaffUsers)
+            // Lấy thông tin user của member để tránh null reference
+            var memberUser = await _context.Users
+                .Where(u => u.UserId == member.UserId)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync();
+
+            var donorName = memberUser ?? "Người hiến máu";
+
+            foreach (var userId in adminStaffUsers)
+            {
+                var notification = new Notification
                 {
-                    var notification = new Notification
-                    {
-                        UserId = userId,
-                        Title = "Đăng ký hiến máu khẩn cấp mới",
-                        Message = $"Có một đăng ký hiến máu khẩn cấp mới từ {member.User.FullName}. ID đăng ký: {urgentDonationRequest.DonationId}. Vui lòng kiểm tra và xử lý ngay lập tức.",
-                        NotificationType = "UrgentDonationRequest",
-                        CreatedAt = DateTime.Now,
-                        IsActive = true,
-                        IsRead = false
-                    };
-                    _context.Notifications.Add(notification);
-                }
-                await _context.SaveChangesAsync();
+                    UserId = userId,
+                    Title = "Đăng ký hiến máu khẩn cấp mới",
+                    Message = $"Có một đăng ký hiến máu khẩn cấp mới từ {donorName}. ID đăng ký: {urgentDonationRequest.DonationId}. Vui lòng kiểm tra và xử lý ngay lập tức.",
+                    NotificationType = "UrgentDonationRequest",
+                    CreatedAt = DateTime.Now,
+                    IsActive = true,
+                    IsRead = false
+                };
+                _context.Notifications.Add(notification);
+            }
+            await _context.SaveChangesAsync();
 
                 return CreatedAtAction(nameof(GetDonationRequest), new { id = urgentDonationRequest.DonationId }, new
                 {
@@ -434,9 +434,21 @@ namespace Blood_Donation_Support.Controllers
             if (member == null)
                 return NotFound($"Không Tìm Thấy Mã Người Dùng: {model.MemberId}."); // Return 404 Not Found 
 
-            var period = _context.BloodDonationPeriods.FirstOrDefault(p => p.PeriodId == existingRequest.PeriodId);
-            if (DateTime.Now < period.PeriodDateFrom || DateTime.Now > period.PeriodDateTo)
-                return BadRequest($"Chưa tới thời gian diễn ra đợt hiến máu");
+            // Kiểm tra xem có phải hiến máu khẩn cấp không
+            if (existingRequest.IsUrgent)
+            {
+                // Hiến máu khẩn cấp không cần kiểm tra thời gian đợt hiến máu
+            }
+            else
+            {
+                // Chỉ kiểm tra thời gian đợt hiến máu cho hiến máu thường
+                var period = _context.BloodDonationPeriods.FirstOrDefault(p => p.PeriodId == existingRequest.PeriodId);
+                if (period == null)
+                    return BadRequest("Không tìm thấy thông tin đợt hiến máu.");
+                
+                if (DateTime.Now < period.PeriodDateFrom || DateTime.Now > period.PeriodDateTo)
+                    return BadRequest($"Chưa tới thời gian diễn ra đợt hiến máu");
+            }
 
             // Update the status Donation request 
             existingRequest.Status = model.Status;
@@ -650,7 +662,74 @@ namespace Blood_Donation_Support.Controllers
 
         //---Quý Coding---
 
-        // Cập nhật donation request (sắp tới) theo role
+        // Kiểm tra trạng thái đăng ký hiến máu của user
+        // GET: api/DonationRequest/registration-status
+        [HttpGet("registration-status")]
+        [Authorize(Roles = "Member,Admin")]
+        public async Task<IActionResult> GetRegistrationStatus()
+        {
+            int currentUserId = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var idVal) ? idVal : 0;
+
+            // Lấy thông tin member
+            var member = await _context.Members.FirstOrDefaultAsync(m => m.UserId == currentUserId);
+            if (member == null)
+                return NotFound("Không tìm thấy thành viên.");
+
+            // Kiểm tra xem user có lịch hiến máu đang chờ hoặc đã duyệt không
+            var hasActiveDonation = await _context.DonationRequests
+                .Where(dr => dr.MemberId == currentUserId && 
+                           (dr.Status == "Pending" || dr.Status == "Approved"))
+                .AnyAsync();
+
+            // Kiểm tra thời gian phục hồi (84 ngày sau lần hiến gần nhất)
+            var canDonateByTime = true;
+            var recoveryMessage = "";
+            if (member.LastDonationDate != null && member.LastDonationDate > DateOnly.FromDateTime(DateTime.Now.AddDays(-84)))
+            {
+                canDonateByTime = false;
+                var daysRemaining = 84 - (DateTime.Now - member.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).Days;
+                recoveryMessage = $"Bạn cần đợi thêm {daysRemaining} ngày để có thể hiến máu lại.";
+            }
+
+            // Kiểm tra member vừa truyền máu xong
+            var canDonateByTransfusion = true;
+            var transfusionMessage = "";
+            var lastTransfusion = await _context.TransfusionRequests
+                .Where(tr => tr.MemberId == member.UserId && tr.Status == "Completed")
+                .OrderByDescending(tr => tr.CompletionDate)
+                .FirstOrDefaultAsync();
+
+            if (lastTransfusion != null && lastTransfusion.CompletionDate.HasValue)
+            {
+                var daysSinceTransfusion = (DateTime.Now - lastTransfusion.CompletionDate.Value).TotalDays;
+                if (daysSinceTransfusion < 365)
+                {
+                    canDonateByTransfusion = false;
+                    var daysRemaining = 365 - (int)daysSinceTransfusion;
+                    transfusionMessage = $"Bạn vừa truyền máu xong, cần đợi thêm {daysRemaining} ngày để có thể hiến máu.";
+                }
+            }
+
+            var canRegister = !hasActiveDonation && canDonateByTime && canDonateByTransfusion;
+
+            return Ok(new
+            {
+                hasActiveDonation = hasActiveDonation,
+                canDonateByTime = canDonateByTime,
+                canDonateByTransfusion = canDonateByTransfusion,
+                canRegister = canRegister,
+                lastDonationDate = member.LastDonationDate,
+                donationCount = member.DonationCount,
+                recoveryDueDate = member.RecoveryDueDate,
+                message = !canRegister ? 
+                    (hasActiveDonation ? "Bạn đã có lịch hiến máu đang chờ xử lý hoặc đã được duyệt. Vui lòng chờ xử lý lịch hoặc hủy trước khi đăng ký mới." :
+                     !canDonateByTime ? recoveryMessage :
+                     !canDonateByTransfusion ? transfusionMessage : "Bạn không thể đăng ký hiến máu lúc này.") : 
+                    "Bạn có thể đăng ký hiến máu."
+            });
+        }
+
+        // Cập nhật donation request (sắp tới) theo role - bao gồm cả hiến máu thường và khẩn cấp
         // GET: api/DonationRequest/upcoming/all-role
         [HttpGet("upcoming/all-role")]
         [Authorize(Roles = "Member,Staff,Admin")]
@@ -666,15 +745,19 @@ namespace Blood_Donation_Support.Controllers
                 memberId = currentUserId;
             }
 
-            // Kiểm tra member có lịch hẹn sắp tới chưa (chỉ hiến máu thường, không bao gồm hiến máu khẩn cấp)
+            // Kiểm tra member có lịch hẹn sắp tới (bao gồm cả hiến máu thường và khẩn cấp)
             var today = DateOnly.FromDateTime(DateTime.Today);
 
             IQueryable<DonationRequest> query = _context.DonationRequests
                 .Include(dr => dr.Period)
-                .Where(dr => dr.IsUrgent == false) // Chỉ lấy hiến máu thường
                 .Where(dr =>
-                    (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
-                    dr.Period.PeriodDateFrom >= DateTime.Today
+                    // Hiến máu thường: có ngày dự kiến hoặc đợt hiến máu trong tương lai
+                    (dr.IsUrgent == false && (
+                        (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= today) ||
+                        (dr.Period != null && dr.Period.PeriodDateFrom >= DateTime.Today)
+                    )) ||
+                    // Hiến máu khẩn cấp: chỉ lấy những đăng ký đang chờ hoặc đã duyệt
+                    (dr.IsUrgent == true && (dr.Status == "Pending" || dr.Status == "Approved"))
                 );
 
             if (memberId.HasValue)
@@ -687,10 +770,13 @@ namespace Blood_Donation_Support.Controllers
                     dr.DonationId,
                     dr.Status,
                     dr.PreferredDonationDate,
-                    dr.Period.PeriodName,
-                    dr.Period.Hospital.Name,
-                    dr.Period.PeriodDateFrom,
-                    dr.Period.PeriodDateTo,
+                    dr.IsUrgent,
+                    dr.UrgentRequestId,
+                    dr.Notes,
+                    PeriodName = dr.IsUrgent ? "Hiến máu khẩn cấp" : (dr.Period != null ? dr.Period.PeriodName : "Không xác định"),
+                    HospitalName = dr.IsUrgent ? "Bệnh viện Truyền máu Huyết học" : (dr.Period != null && dr.Period.Hospital != null ? dr.Period.Hospital.Name : "Không xác định"),
+                    PeriodDateFrom = dr.IsUrgent ? (DateTime?)null : (dr.Period != null ? dr.Period.PeriodDateFrom : (DateTime?)null),
+                    PeriodDateTo = dr.IsUrgent ? (DateTime?)null : (dr.Period != null ? dr.Period.PeriodDateTo : (DateTime?)null),
                     dr.RequestDate,
                     DonationVolume = dr.DonationVolume,
                     MemberBloodType = dr.Member.BloodType.BloodTypeName
@@ -698,8 +784,7 @@ namespace Blood_Donation_Support.Controllers
                 .ToListAsync();
 
             // Sắp xếp sau khi đã lấy dữ liệu để tránh lỗi dịch LINQ
-            result = result.OrderBy(dr => dr.PreferredDonationDate.HasValue ? dr.PreferredDonationDate.Value.ToDateTime(TimeOnly.MinValue) : dr.PeriodDateFrom)
-                       .ToList();
+            result = result.OrderBy(dr => dr.RequestDate).ToList();
 
             return Ok(result);
         }

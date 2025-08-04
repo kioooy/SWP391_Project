@@ -28,13 +28,11 @@ namespace Blood_Donation_Support.DTO
         public int MemberId { get; set; }
         [Required]
         public int ComponentId { get; set; }
+        public int? ResponsibleById { get; set; } // Không bắt buộc cho urgent donation
         [Required]
-        public required int ResponsibleById { get; set; }
-        [Required]
-        public required int DonationVolume { get; set; }
+        public int DonationVolume { get; set; }
         public string? Notes { get; set; }
-        [Required]
-        public required string PatientCondition { get; set; }
+        public string? PatientCondition { get; set; } // Không bắt buộc cho urgent donation
         public int? UrgentRequestId { get; set; } // Liên kết với yêu cầu khẩn cấp (nếu có)
     }
 

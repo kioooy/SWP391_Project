@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, Box, CircularProgress, Chip, Divider, TextField, Grid, Card, CardContent, Tabs, Tab
 } from '@mui/material';
-import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon, Email as EmailIcon } from '@mui/icons-material';
 import axios from 'axios';
 
 
@@ -37,6 +37,9 @@ const UrgentRequestManageV2 = () => {
   const [currentTab, setCurrentTab] = useState(0); // State để quản lý tab hiện tại
   const [cancelConfirmDialog, setCancelConfirmDialog] = useState(false);
   const [requestToCancel, setRequestToCancel] = useState(null);
+
+  // Email states
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Bộ lọc states
   const [filters, setFilters] = useState({
@@ -531,6 +534,10 @@ const UrgentRequestManageV2 = () => {
     setCurrentTab(newValue);
   };
 
+
+
+
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2, color: '#E53935' }}>
@@ -768,6 +775,7 @@ const UrgentRequestManageV2 = () => {
                           Hoàn thành
                         </Button>
                         )}
+
                         <Button 
                           size="small" 
                           color="error" 
@@ -834,6 +842,8 @@ const UrgentRequestManageV2 = () => {
           <Button onClick={() => setDetailDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
+
+
 
       {/* Dialog chọn nhóm máu & thành phần nếu chưa biết */}
       <Dialog open={acceptDialog} onClose={() => setAcceptDialog(false)} maxWidth="xs" fullWidth>
@@ -1564,32 +1574,150 @@ const UrgentRequestManageV2 = () => {
 
                   {currentTab === 3 && (
                     <>
-                      <Typography variant="h6" sx={{ mb: 2, color: '#d32f2f', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        🚨 Người hiến gần đây ({availableBloodUnits.eligibleDonors?.length || 0})
-                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: '#d32f2f', display: 'flex', alignItems: 'center', gap: 1 }}>
+                          🚨 Người hiến gần đây ({availableBloodUnits.eligibleDonors?.length || 0})
+                        </Typography>
+                        {availableBloodUnits.eligibleDonors && availableBloodUnits.eligibleDonors.length > 0 && (
+                          <Button
+                            variant="contained"
+                            color="error"
+                            size="small"
+                            startIcon={<EmailIcon />}
+                            onClick={async () => {
+                              setSendingEmail(true);
+                              try {
+                                const donors = availableBloodUnits.eligibleDonors;
+                                const emails = donors.map(donor => donor.email);
+                                const response = await axios.post(
+                                  `${API_URL}/UrgentBloodRequest/send-email-donor`,
+                                  {
+                                    email: emails,
+                                    urgentRequestId: currentRequest.urgentRequestId
+                                  },
+                                  {
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      Authorization: `Bearer ${token}`
+                                    }
+                                  }
+                                );
+                                setSnackbar({
+                                  open: true,
+                                  message: `Đã gửi email thành công cho ${donors.length} người hiến máu!`,
+                                  severity: 'success'
+                                });
+                              } catch (error) {
+                                console.error('Lỗi khi gửi email:', error);
+                                setSnackbar({
+                                  open: true,
+                                  message: error.response?.data || 'Lỗi khi gửi email.',
+                                  severity: 'error'
+                                });
+                              } finally {
+                                setSendingEmail(false);
+                              }
+                            }}
+                            disabled={sendingEmail}
+                            sx={{ 
+                              minWidth: 120,
+                              height: 36,
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            {sendingEmail ? 'Đang gửi...' : 'Gửi email cho tất cả người hiến'}
+                          </Button>
+                        )}
+                      </Box>
                       {availableBloodUnits.eligibleDonors && availableBloodUnits.eligibleDonors.length > 0 ? (
-                        <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
-                          {availableBloodUnits.eligibleDonors.map((donor, index) => (
-                            <Box key={donor.userId || index} sx={{ 
-                              border: '1px solid #d32f2f', 
-                              borderRadius: 1, 
-                              p: 2, 
-                              mb: 1,
-                              bgcolor: '#ffebee'
-                            }}>
-                              <Grid container spacing={2}>
-                                <Grid item xs={12} sm={6}>
-                                  <Typography><strong>Tên:</strong> {donor.fullName}</Typography>
-                                  <Typography><strong>Nhóm máu:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.bloodTypeName}</span></Typography>
-                                  <Typography><strong>SĐT:</strong> {donor.phone || 'N/A'}</Typography>
-                                </Grid>
-                                <Grid item xs={12} sm={6}>
-                                  <Typography><strong>Email:</strong> {donor.email || 'N/A'}</Typography>
-                                  <Typography><strong>Khoảng cách:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.distanceKm?.toFixed(2)} km</span></Typography>
-                                </Grid>
+                        <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                          <Grid container spacing={1}>
+                            {availableBloodUnits.eligibleDonors.map((donor, index) => (
+                              <Grid item xs={12} sm={6} md={4} key={donor.userId || index}>
+                                <Box sx={{ 
+                                  border: '1px solid #d32f2f', 
+                                  borderRadius: 1.5, 
+                                  p: 1.5, 
+                                  bgcolor: '#ffebee',
+                                  height: '100%',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  justifyContent: 'space-between'
+                                }}>
+                                  {/* Thông tin người hiến */}
+                                  <Box sx={{ mb: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#d32f2f', mb: 0.5 }}>
+                                      {donor.fullName}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                      <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                                        <strong>Nhóm máu:</strong> <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>{donor.bloodTypeName}</span>
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontSize: '0.75rem', color: '#d32f2f', fontWeight: 'bold' }}>
+                                        {donor.distanceKm?.toFixed(1)} km
+                                      </Typography>
+                                    </Box>
+                                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                                      📧 {donor.email || 'N/A'}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                                      📞 {donor.phone || 'N/A'}
+                                    </Typography>
+                                  </Box>
+                                  
+                                  {/* Nút gửi email */}
+                                  <Button
+                                    variant="outlined"
+                                    color="error"
+                                    size="small"
+                                    startIcon={<EmailIcon />}
+                                    onClick={async () => {
+                                      setSendingEmail(true);
+                                      try {
+                                        const response = await axios.post(
+                                          `${API_URL}/UrgentBloodRequest/send-email-donor`,
+                                          {
+                                            email: [donor.email],
+                                            urgentRequestId: currentRequest.urgentRequestId
+                                          },
+                                          {
+                                            headers: {
+                                              'Content-Type': 'application/json',
+                                              Authorization: `Bearer ${token}`
+                                            }
+                                          }
+                                        );
+                                        setSnackbar({
+                                          open: true,
+                                          message: `Đã gửi email thành công cho ${donor.fullName}!`,
+                                          severity: 'success'
+                                        });
+                                      } catch (error) {
+                                        console.error('Lỗi khi gửi email:', error);
+                                        setSnackbar({
+                                          open: true,
+                                          message: error.response?.data || 'Lỗi khi gửi email.',
+                                          severity: 'error'
+                                        });
+                                      } finally {
+                                        setSendingEmail(false);
+                                      }
+                                    }}
+                                    disabled={sendingEmail}
+                                    sx={{ 
+                                      fontSize: '0.7rem',
+                                      py: 0.5,
+                                      px: 1,
+                                      minHeight: 28
+                                    }}
+                                  >
+                                    {sendingEmail ? 'Đang gửi...' : 'Gửi Email'}
+                                  </Button>
+                                </Box>
                               </Grid>
-                            </Box>
-                          ))}
+                            ))}
+                          </Grid>
                         </Box>
                       ) : (
                         <Alert severity="info">Không có người hiến máu nào trong bán kính 20km.</Alert>

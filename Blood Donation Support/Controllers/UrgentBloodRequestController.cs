@@ -576,7 +576,7 @@ namespace Blood_Donation_Support.Controllers
                             </div>
                             
                             <div style='text-align: center; margin: 30px 0;'>
-                                <a href='http://localhost:3000/urgent-donation-registration' 
+                                <a href='http://localhost:3000/login?redirect=/urgent-donation-registration&urgentRequestId={urgentRequest.UrgentRequestId}&bloodType={bloodTypeName}' 
                                    style='background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);'>
                                     TÔI CÓ THỂ HIẾN MÁU NGAY
                                 </a>

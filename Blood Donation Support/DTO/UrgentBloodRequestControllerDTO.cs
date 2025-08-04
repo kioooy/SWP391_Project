@@ -79,5 +79,8 @@ namespace Blood_Donation_Support.DTO
     {
         [Required]
         public required List<string> Email { get; set; }
+        
+        [Required]
+        public int UrgentRequestId { get; set; }
     }
 } 

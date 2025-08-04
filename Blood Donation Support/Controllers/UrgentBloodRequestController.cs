@@ -530,6 +530,18 @@ namespace Blood_Donation_Support.Controllers
             if (model == null)
                 return NotFound("Không Tìm Thấy Email Để Gửi.");
             
+            // ===== NGHIỆP VỤ: LẤY THÔNG TIN YÊU CẦU KHẨN CẤP =====
+            // Lấy thông tin chi tiết của yêu cầu khẩn cấp để hiển thị trong email
+            var urgentRequest = await _context.UrgentBloodRequests
+                .Include(ubr => ubr.BloodType)
+                .FirstOrDefaultAsync(ubr => ubr.UrgentRequestId == model.UrgentRequestId);
+            
+            if (urgentRequest == null)
+                return NotFound("Không tìm thấy yêu cầu máu khẩn cấp.");
+            
+            // Lấy tên nhóm máu cần thiết
+            string bloodTypeName = urgentRequest.BloodType?.BloodTypeName ?? "Không biết";
+            
             // Gửi email đến người hiến máu
             MailAddressCollection mailSent = new MailAddressCollection();
             MailMessage mail = new MailMessage();
@@ -539,19 +551,52 @@ namespace Blood_Donation_Support.Controllers
                 mail.Bcc.Add(new MailAddress(email)); // Add each email address from the model           
             mail.Priority = MailPriority.High; // High Priority ( Important )
             
-            mail.Subject = "Yêu Cầu Máu Khẩn Cấp - Tình Nguyện Viên Cần Giúp Đỡ";
-            mail.Body = @"<div style='color: #000000; font-family: Arial, sans-serif;'>
-                            <h1>Xin chào tình nguyện viên,</h1>
-                            <br>Chúng tôi đã nhận được <strong>yêu cầu máu khẩn cấp</strong> từ một bệnh nhân cần sự giúp đỡ của bạn.</br>
-                            <p><strong>Vui lòng liên hệ</strong> với chúng tôi để biết thêm chi tiết và xác nhận khả năng hiến máu của bạn.</p>
-                            <p>Chúng tôi trân trọng tinh thần thiện nguyện của bạn – sự giúp đỡ kịp thời lúc này có thể cứu sống một mạng người.</p>
-
-                            <br>Cảm ơn bạn đã sẵn sàng giúp đỡ cho bệnh viện!</br>
-                            <p>Trân trọng,</p>
-
-                            <br><strong>Bệnh Viện Truyền Máu Huyết Học</strong></br>
-                            <p>Số Điện Thoại: 02839575334</p>
-                            <p>Email Liên Hệ: tinbusiness.work@gmail.com</p>
+            mail.Subject = "🩸 YÊU CẦU MÁU KHẨN CẤP";
+            mail.Body = $@"<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #fff;'>
+                            <h2 style='color: #dc3545; text-align: center; margin-bottom: 16px;'>🩸 YÊU CẦU MÁU KHẨN CẤP</h2>
+                            <p style='font-size: 18px; color: #dc3545; text-align: center; font-weight: bold; margin-bottom: 24px;'>
+                                Một mạng người đang cần sự giúp đỡ của bạn!
+                            </p>
+                            
+                            <p style='font-size: 16px; line-height: 1.6; margin-bottom: 16px;'>
+                                Xin chào tình nguyện viên thân mến,
+                            </p>
+                            <p style='font-size: 16px; line-height: 1.6; margin-bottom: 16px;'>
+                                Chúng tôi đã nhận được <b>yêu cầu máu khẩn cấp</b> từ một bệnh nhân có nhóm máu phù hợp với bạn.<br>
+                                <b>Thời gian là yếu tố sống còn!</b>
+                            </p>
+                            
+                            <div style='background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 16px; border-radius: 8px; margin: 20px 0;'>
+                                <h3 style='color: #495057; margin-top: 0; margin-bottom: 12px;'>Thông tin yêu cầu:</h3>
+                                <ul style='color: #495057; margin: 8px 0; padding-left: 20px;'>
+                                    <li><strong>Loại máu cần:</strong> {bloodTypeName}</li>
+                                    <li><strong>Thời gian:</strong> Càng sớm càng tốt</li>
+                                    <li><strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học - 118 Đ. Hồng Bàng, Phường 12, Quận 5, Thành phố Hồ Chí Minh</li>
+                                </ul>
+                            </div>
+                            
+                            <div style='text-align: center; margin: 30px 0;'>
+                                <a href='http://localhost:3000/urgent-donation-registration' 
+                                   style='background-color: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);'>
+                                    TÔI CÓ THỂ HIẾN MÁU NGAY
+                                </a>
+                            </div>
+                            
+                            <p style='font-size: 14px; color: #6c757d; margin-top: 20px; line-height: 1.5;'>
+                                <strong>Lưu ý:</strong> Sau khi xác nhận, bạn sẽ được chuyển đến trang đặt lịch hiến máu nhanh chóng. Vui lòng kiểm tra điều kiện sức khỏe trước khi xác nhận.
+                            </p>
+                            
+                            <p style='font-size: 14px; color: #6c757d; margin-top: 16px; line-height: 1.5;'>
+                                Nếu bạn không thể hiến máu lúc này, vui lòng bỏ qua email này.
+                            </p>
+                            
+                            <hr style='border: none; border-top: 1px solid #dee2e6; margin: 30px 0;'>
+                            
+                            <div style='text-align: center; color: #6c757d; font-size: 14px;'>
+                                <p style='margin: 8px 0; font-weight: bold;'>Bệnh Viện Truyền Máu Huyết Học</p>
+                                <p style='margin: 5px 0;'>Mọi thắc mắc xin liên hệ: 02839575334</p>
+                                <p style='margin: 5px 0;'>Email: tinbusiness.work@gmail.com | Hotline: 02839575334</p>
+                            </div>
                           </div>"; 
             mail.IsBodyHtml = true; // Mark Body Is HTML 
 

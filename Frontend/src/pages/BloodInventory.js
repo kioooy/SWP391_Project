@@ -865,7 +865,7 @@ const BloodInventory = () => {
               {bloodHistory.donationHistory.length > 0 && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #1976d2', pb: 1 }}>
-                    📋 Lịch sử hiến máu ({bloodHistory.donationHistory.length} bản ghi)
+                    📋 Lịch sử hiến máu ({bloodHistory.donationHistory.length})
                   </Typography>
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
                     <Table>
@@ -911,7 +911,7 @@ const BloodInventory = () => {
               {bloodHistory.transfusionHistory.length > 0 && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #2e7d32', pb: 1 }}>
-                    🏥 Lịch sử truyền máu ({bloodHistory.transfusionHistory.length} bản ghi)
+                    🏥 Lịch sử truyền máu ({bloodHistory.transfusionHistory.length})
                   </Typography>
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
                     <Table>
@@ -957,7 +957,7 @@ const BloodInventory = () => {
               {bloodHistory.urgentHistory.length > 0 && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #d32f2f', pb: 1 }}>
-                    🚨 Lịch sử yêu cầu khẩn cấp ({bloodHistory.urgentHistory.length} bản ghi)
+                    🚨 Lịch sử yêu cầu khẩn cấp ({bloodHistory.urgentHistory.length})
                   </Typography>
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
                     <Table>

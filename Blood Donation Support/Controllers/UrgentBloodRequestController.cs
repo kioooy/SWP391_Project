@@ -365,12 +365,13 @@ namespace Blood_Donation_Support.Controllers
             
             if ((availableExact.Count + availableCompatible.Count + reserved.Count) == 0)
             {
-                // Chuyển đổi EmergencyLocation của yêu cầu khẩn cấp thành Point
-                var emergencyPoint = ParseLocationToPoint(urgentRequest.EmergencyLocation);
-                const double searchRadiusMeters = 20000.0; // Bán kính tìm kiếm 20km = 20000m
-
-                if (emergencyPoint != null)
+                // Sử dụng logic giống BloodDistanceSearchController - lấy vị trí trung tâm từ bệnh viện
+                var hospital = await _context.Hospitals.FirstOrDefaultAsync();
+                if (hospital?.Location != null)
                 {
+                    var center = hospital.Location;
+                    const double searchRadiusMeters = 20000.0; // Bán kính tìm kiếm 20km = 20000m
+
                     // ===== NGHIỆP VỤ: TIÊU CHÍ CHỌN NGƯỜI HIẾN MÁU (CHUẨN HÓA THEO BloodDistanceSearch) =====
                     // 1. Member phải là donor (IsDonor = true)
                     // 2. Phải có thông tin vị trí (Location)
@@ -383,7 +384,7 @@ namespace Blood_Donation_Support.Controllers
                     var donors = await _context.Members
                         .Where(m => m.IsDonor == true && m.Location != null)
                         .Where(m => compatibleBloodTypeIds.Contains(m.BloodTypeId ?? 0)) // Lọc theo nhóm máu tương thích
-                        .Where(m => m.Location.Distance(emergencyPoint) <= searchRadiusMeters) // Lọc theo khoảng cách (sử dụng NetTopologySuite)
+                        .Where(m => m.Location.Distance(center) <= searchRadiusMeters) // Lọc theo khoảng cách (sử dụng NetTopologySuite)
                         .Select(m => new {
                             m.UserId,
                             m.User.FullName,
@@ -394,21 +395,28 @@ namespace Blood_Donation_Support.Controllers
                             m.User.Address,
                             Latitude = m.Location.Y,
                             Longitude = m.Location.X,
-                            Distance = m.Location.Distance(emergencyPoint), // Khoảng cách theo mét
+                            Distance = m.Location.Distance(center), // Khoảng cách theo mét
                             m.Weight,
                             m.Height,
                             m.LastDonationDate
-                                            })
-                    .ToListAsync();
+                        })
+                        .ToListAsync();
 
                     // Lọc tiếp trên C# với điều kiện ngày phục hồi (giống BloodDistanceSearch)
+                    // Nếu chưa từng hiến máu (LastDonationDate == null) thì ĐỦ điều kiện!
                     var filteredDonors = donors
                         .Where(m => (m.LastDonationDate == null ||
-                                    (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84))
+                                    (DateTime.Now - m.LastDonationDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays >= 84)) // ĐÚNG NGHIỆP VỤ
                         // Loại trừ member vừa truyền máu xong (trong vòng 365 ngày)
                         .Where(m => !_context.TransfusionRequests.Any(tr => tr.MemberId == m.UserId && tr.Status == "Completed" && tr.CompletionDate.HasValue && tr.CompletionDate.Value > DateTime.Now.AddDays(-365)))
-                        // Loại trừ member có lịch hiến sắp tới
-                        .Where(m => !_context.DonationRequests.Any(dr => dr.MemberId == m.UserId && dr.Status == "Scheduled" && dr.PreferredDonationDate >= DateOnly.FromDateTime(DateTime.Today)))
+                        // Loại trừ member có lịch hiến máu sắp tới (Pending hoặc Approved, có PreferredDonationDate hoặc PeriodDateFrom >= hôm nay)
+                        .Where(m => !_context.DonationRequests.Any(dr => dr.MemberId == m.UserId
+                            && (dr.Status == "Pending" || dr.Status == "Approved")
+                            && (
+                                (dr.PreferredDonationDate.HasValue && dr.PreferredDonationDate.Value >= DateOnly.FromDateTime(DateTime.Today))
+                                || (!dr.PreferredDonationDate.HasValue && dr.Period.PeriodDateFrom >= DateTime.Today)
+                            )
+                        )) // ĐÚNG NGHIỆP VỤ: chỉ loại khi member có lịch hiến máu sắp tới thực sự
                         .Select(m => new
                         {
                             m.UserId,

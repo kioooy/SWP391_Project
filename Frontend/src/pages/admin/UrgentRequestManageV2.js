@@ -263,10 +263,12 @@ const UrgentRequestManageV2 = () => {
       await axios.patch(`${API_URL}/UrgentBloodRequest/${requestToCancel.urgentRequestId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSnackbar({ open: true, message: 'Đã hủy yêu cầu!', severity: 'info' });
+      const actionText = requestToCancel.status === 'Pending' ? 'từ chối' : 'hủy';
+      setSnackbar({ open: true, message: `Đã ${actionText} yêu cầu!`, severity: 'info' });
       fetchRequests(); // Re-fetch data
     } catch (err) {
-      setSnackbar({ open: true, message: 'Lỗi khi hủy yêu cầu!', severity: 'error' });
+      const actionText = requestToCancel.status === 'Pending' ? 'từ chối' : 'hủy';
+      setSnackbar({ open: true, message: `Lỗi khi ${actionText} yêu cầu!`, severity: 'error' });
     } finally {
       setSubmitting(false);
       setCancelConfirmDialog(false);
@@ -760,7 +762,7 @@ const UrgentRequestManageV2 = () => {
                             sx={{ minWidth: 100, height: 36 }} 
                             disabled={submitting}
                           >
-                            Tiếp nhận
+                            Tiếp nhận & Gán máu
                           </Button>
                         )}
                         {r.status === 'InProgress' && (
@@ -784,7 +786,7 @@ const UrgentRequestManageV2 = () => {
                           sx={{ minWidth: 100, height: 36 }} 
                           disabled={r.status === 'Fulfilled' || r.status === 'Cancelled' || submitting}
                         >
-                          Hủy
+                          {r.status === 'Pending' ? 'Từ chối' : 'Hủy'}
                         </Button>
                       </Box>
                     </TableCell>
@@ -1766,12 +1768,14 @@ const UrgentRequestManageV2 = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog xác nhận hủy yêu cầu */}
+      {/* Dialog xác nhận hủy/từ chối yêu cầu */}
       <Dialog open={cancelConfirmDialog} onClose={handleCloseCancelDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Xác nhận hủy yêu cầu</DialogTitle>
+        <DialogTitle>
+          {requestToCancel?.status === 'Pending' ? 'Xác nhận từ chối yêu cầu' : 'Xác nhận hủy yêu cầu'}
+        </DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            ⚠️ Bạn có chắc chắn muốn hủy yêu cầu máu khẩn #{requestToCancel?.urgentRequestId} không?
+            ⚠️ Bạn có chắc chắn muốn {requestToCancel?.status === 'Pending' ? 'từ chối' : 'hủy'} yêu cầu máu khẩn #{requestToCancel?.urgentRequestId} không?
           </Alert>
           <Typography variant="body1" sx={{ mb: 1 }}>
             <strong>Thông tin yêu cầu:</strong>
@@ -1785,12 +1789,12 @@ const UrgentRequestManageV2 = () => {
             </Box>
           )}
           <Alert severity="error">
-            ⚠️ Hành động này không thể hoàn tác. Yêu cầu sẽ bị hủy vĩnh viễn.
+            ⚠️ Hành động này không thể hoàn tác. Yêu cầu sẽ bị {requestToCancel?.status === 'Pending' ? 'từ chối' : 'hủy'} vĩnh viễn.
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCancelDialog} disabled={submitting}>
-            Không hủy
+            {requestToCancel?.status === 'Pending' ? 'Không từ chối' : 'Không hủy'}
           </Button>
           <Button 
             onClick={handleConfirmCancel} 
@@ -1798,7 +1802,7 @@ const UrgentRequestManageV2 = () => {
             variant="contained"
             disabled={submitting}
           >
-            {submitting ? 'Đang hủy...' : 'Xác nhận hủy'}
+            {submitting ? 'Đang xử lý...' : (requestToCancel?.status === 'Pending' ? 'Xác nhận từ chối' : 'Xác nhận hủy')}
           </Button>
         </DialogActions>
       </Dialog>

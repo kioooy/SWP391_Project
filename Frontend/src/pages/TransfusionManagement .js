@@ -138,6 +138,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     BloodTypeId: "",
     BloodComponentId: "",
     TransfusionVolume: "",
+    PreferredReceiveDate: "",
     Notes: "",
   });
   const [createFormError, setCreateFormError] = useState("");
@@ -185,7 +186,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   // Đối tượng ánh xạ dịch thuật cho trạng thái truyền máu
   const transfusionStatusTranslations = {
     "Approved": "Đã gán",
-    "Pending": "Đang chờ",
+    "Pending": "Chờ gán",
     "Completed": "Hoàn thành",
     "Cancelled": "Đã hủy",
     "Rejected": "Từ chối",
@@ -864,14 +865,14 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                     {transfusion?.requestDate ? (
                       <>
                         <Typography variant="caption" color="text.secondary" display="block">
-                          Yêu cầu: {new Date(transfusion?.requestDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          Ngày tạo yêu cầu: {new Date(transfusion?.requestDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" display="block">
                           {new Date(transfusion?.requestDate).toLocaleDateString('vi-VN')}
                         </Typography>
                         {transfusion?.preferredReceiveDate && (
                           <Typography component="span" variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                            (Mong muốn: {new Date(transfusion?.preferredReceiveDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} {new Date(transfusion?.preferredReceiveDate).toLocaleDateString('vi-VN')})
+                            (Ngày truyền máu: {new Date(transfusion?.preferredReceiveDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} {new Date(transfusion?.preferredReceiveDate).toLocaleDateString('vi-VN')})
                           </Typography>
                         )}
                       </>
@@ -1214,11 +1215,11 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                   <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.isEmergency ? 'Có' : 'Không'}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">Ngày yêu cầu:</Typography>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày tạo yêu cầu:</Typography>
                   <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.requestDate)}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">Ngày mong muốn nhận:</Typography>
+                  <Typography variant="subtitle2" color="text.secondary">Ngày truyền máu:</Typography>
                   <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.preferredReceiveDate) || 'Chưa có'}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -1401,6 +1402,17 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
               helperText={createFormError}
             />
             <TextField
+              label="Ngày mong muốn nhận máu"
+              type="datetime-local"
+              value={createForm.PreferredReceiveDate}
+              onChange={e => setCreateForm({ ...createForm, PreferredReceiveDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ 
+                min: new Date().toISOString().slice(0, 16) // Không cho chọn ngày trong quá khứ
+              }}
+              helperText="Chọn ngày và giờ mong muốn được truyền máu (tùy chọn)"
+            />
+            <TextField
               label="Ghi chú"
               value={createForm.Notes}
               onChange={e => setCreateForm({ ...createForm, Notes: e.target.value })}
@@ -1438,7 +1450,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                   transfusionVolume: Number(createForm.TransfusionVolume),
                   notes: createForm.Notes || "",
                   isEmergency: false,
-                  preferredReceiveDate: null,
+                  preferredReceiveDate: createForm.PreferredReceiveDate ? new Date(createForm.PreferredReceiveDate).toISOString() : null,
                   patientCondition: ""
                 }, {
                   headers: { Authorization: `Bearer ${token}` },
@@ -1450,7 +1462,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                 
                 setSnackbar({ open: true, message: "Tạo yêu cầu truyền máu thành công!", severity: "success" });
                 setOpenCreateDialog(false);
-                setCreateForm({ MemberId: "", BloodTypeId: "", BloodComponentId: "", TransfusionVolume: "", Notes: "" });
+                setCreateForm({ MemberId: "", BloodTypeId: "", BloodComponentId: "", TransfusionVolume: "", PreferredReceiveDate: "", Notes: "" });
                 await reloadTransfusions();
                 
                 // Clear highlight after 5 seconds

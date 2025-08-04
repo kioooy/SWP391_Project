@@ -43,7 +43,7 @@ const UrgentDonationSuccess = () => {
   };
 
   const handleViewHistory = () => {
-    navigate('/appointment-history');
+    navigate('/history');
   };
 
   return (

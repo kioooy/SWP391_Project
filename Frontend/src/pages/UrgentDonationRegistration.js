@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -37,6 +37,7 @@ const validationSchema = Yup.object({
 
 const UrgentDonationRegistration = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [urgentRequest, setUrgentRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,9 +45,28 @@ const UrgentDonationRegistration = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [registrationStatus, setRegistrationStatus] = useState(null);
 
-  // Lấy thông tin từ localStorage
-  const urgentRequestId = localStorage.getItem('urgentRequestId');
-  const bloodType = localStorage.getItem('bloodType');
+  // Hàm lấy thông tin từ URL parameters
+  const getUrlParams = () => {
+    const urlParams = new URLSearchParams(location.search);
+    return {
+      urgentRequestId: urlParams.get('urgentRequestId'),
+      bloodType: urlParams.get('bloodType')
+    };
+  };
+
+  // Hàm lấy thông tin từ localStorage
+  const getLocalStorageData = () => {
+    return {
+      urgentRequestId: localStorage.getItem('urgentRequestId'),
+      bloodType: localStorage.getItem('bloodType')
+    };
+  };
+
+  // Hàm lưu thông tin vào localStorage
+  const saveToLocalStorage = (urgentRequestId, bloodType) => {
+    if (urgentRequestId) localStorage.setItem('urgentRequestId', urgentRequestId);
+    if (bloodType) localStorage.setItem('bloodType', bloodType);
+  };
 
   useEffect(() => {
     // Kiểm tra đăng nhập
@@ -57,6 +77,18 @@ const UrgentDonationRegistration = () => {
       return;
     }
 
+    // Lấy thông tin từ URL parameters trước, sau đó từ localStorage
+    const urlParams = getUrlParams();
+    const localStorageData = getLocalStorageData();
+    
+    let urgentRequestId = urlParams.urgentRequestId || localStorageData.urgentRequestId;
+    let bloodType = urlParams.bloodType || localStorageData.bloodType;
+
+    // Nếu có thông tin từ URL, lưu vào localStorage
+    if (urlParams.urgentRequestId || urlParams.bloodType) {
+      saveToLocalStorage(urlParams.urgentRequestId, urlParams.bloodType);
+    }
+
     // Kiểm tra thông tin urgent request
     if (!urgentRequestId || !bloodType) {
       setError('Thông tin yêu cầu khẩn cấp không hợp lệ');
@@ -65,10 +97,10 @@ const UrgentDonationRegistration = () => {
     }
 
     // Lấy thông tin chi tiết yêu cầu khẩn cấp
-    fetchUrgentRequestDetails();
-  }, [urgentRequestId]);
+    fetchUrgentRequestDetails(urgentRequestId);
+  }, []);
 
-  const fetchUrgentRequestDetails = async () => {
+  const fetchUrgentRequestDetails = async (urgentRequestId) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/UrgentBloodRequest/${urgentRequestId}`, {
@@ -120,7 +152,9 @@ const UrgentDonationRegistration = () => {
         console.log('🔍 [DEBUG] Form values:', values);
         console.log('🔍 [DEBUG] User from localStorage:', user);
         console.log('🔍 [DEBUG] Token:', token);
-        console.log('🔍 [DEBUG] UrgentRequestId:', urgentRequestId);
+        // Lấy thông tin urgent request từ localStorage
+        const currentUrgentRequestId = localStorage.getItem('urgentRequestId');
+        console.log('🔍 [DEBUG] UrgentRequestId:', currentUrgentRequestId);
 
         const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
         // Xử lý ghi chú dựa trên option được chọn
@@ -137,7 +171,7 @@ const UrgentDonationRegistration = () => {
           donationVolume: parseInt(values.donationVolume),
           notes: finalNotes,
           patientCondition: null, // Không có thông tin bệnh nhân trong form đăng ký khẩn cấp
-          urgentRequestId: urgentRequestId ? parseInt(urgentRequestId) : null, // Liên kết với yêu cầu khẩn cấp
+          urgentRequestId: currentUrgentRequestId ? parseInt(currentUrgentRequestId) : null, // Liên kết với yêu cầu khẩn cấp
         };
 
         console.log('🔍 [DEBUG] Request payload:', donationRequest);
@@ -180,7 +214,7 @@ const UrgentDonationRegistration = () => {
           navigate('/urgent-donation-success', { 
             state: { 
               donationId: result.donationId,
-              urgentRequestId: urgentRequestId 
+              urgentRequestId: currentUrgentRequestId 
             } 
           });
         }, 2000);
@@ -228,6 +262,9 @@ const UrgentDonationRegistration = () => {
         <Button variant="contained" onClick={() => navigate('/')}>
           Về trang chủ
         </Button>
+        <Button variant="outlined" onClick={() => window.location.reload()}>
+          Thử lại
+        </Button>
       </Box>
     );
   }
@@ -269,7 +306,7 @@ const UrgentDonationRegistration = () => {
                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                      <Bloodtype sx={{ mr: 1, color: '#d32f2f' }} />
                      <Typography variant="body1">
-                       <strong>Nhóm máu cần:</strong> {bloodType}
+                       <strong>Nhóm máu cần:</strong> {localStorage.getItem('bloodType') || 'Không xác định'}
                      </Typography>
                    </Box>
                  </Grid>

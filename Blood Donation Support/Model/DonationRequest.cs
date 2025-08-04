@@ -8,7 +8,7 @@ public partial class DonationRequest
 
     public int MemberId { get; set; }
 
-    public int PeriodId { get; set; }
+    public int? PeriodId { get; set; }
 
     public int ComponentId { get; set; }
 
@@ -36,13 +36,17 @@ public partial class DonationRequest
 
     public bool IsActive { get; set; }
 
+    public bool IsUrgent { get; set; } = false;
+
+    public int? UrgentRequestId { get; set; }
+
     public virtual BloodComponent Component { get; set; } = null!;
 
     [ForeignKey("MemberId")]
     public virtual Member Member { get; set; } = null!;
 
-    public virtual BloodDonationPeriod Period { get; set; } = null!;
+    public virtual BloodDonationPeriod? Period { get; set; }
 
-    public virtual User ResponsibleBy { get; set; } = null!;
+    public virtual User? ResponsibleBy { get; set; }
 
 }

@@ -22,16 +22,16 @@ import {
   Alert as MuiAlert,
 } from '@mui/material';
 import { Bloodtype, Warning, Schedule, LocationOn } from '@mui/icons-material';
+import RegistrationStatusCheck from '../components/RegistrationStatusCheck';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5250/api';
 
 const validationSchema = Yup.object({
-  preferredDate: Yup.date()
-    .min(new Date(), 'Ngày hiến máu phải từ hôm nay trở đi')
-    .required('Ngày hiến máu là bắt buộc'),
-  preferredTime: Yup.string()
-    .required('Thời gian hiến máu là bắt buộc'),
-  notes: Yup.string()
+  donationVolume: Yup.number()
+    .min(250, 'Lượng máu tối thiểu là 250ml')
+    .max(500, 'Lượng máu tối đa là 500ml')
+    .required('Lượng máu hiến là bắt buộc'),
+  customNotes: Yup.string()
     .max(500, 'Ghi chú không được quá 500 ký tự'),
 });
 
@@ -42,6 +42,7 @@ const UrgentDonationRegistration = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [registrationStatus, setRegistrationStatus] = useState(null);
 
   // Lấy thông tin từ localStorage
   const urgentRequestId = localStorage.getItem('urgentRequestId');
@@ -90,29 +91,59 @@ const UrgentDonationRegistration = () => {
     }
   };
 
+
+
   const formik = useFormik({
     initialValues: {
-      preferredDate: '',
-      preferredTime: '',
+      donationVolume: 350,
       notes: '',
+      notesOption: '',
+      customNotes: '',
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
+        // Kiểm tra trạng thái đăng ký trước khi submit
+        if (registrationStatus && !registrationStatus.canRegister) {
+          setSnackbar({ 
+            open: true, 
+            message: registrationStatus.message, 
+            severity: 'error' 
+          });
+          return;
+        }
+
         setLoading(true);
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+        console.log('🔍 [DEBUG] Form values:', values);
+        console.log('🔍 [DEBUG] User from localStorage:', user);
+        console.log('🔍 [DEBUG] Token:', token);
+        console.log('🔍 [DEBUG] UrgentRequestId:', urgentRequestId);
+
+        const componentId = 1; // ComponentId, cần lấy từ loại máu thực tế
+        // Xử lý ghi chú dựa trên option được chọn
+        let finalNotes = '';
+        if (values.notesOption === 'custom') {
+          finalNotes = values.customNotes;
+        } else if (values.notesOption) {
+          finalNotes = values.notesOption;
+        }
+
         const donationRequest = {
           memberId: user.UserId,
-          preferredDonationDate: values.preferredDate,
-          preferredTime: values.preferredTime,
-          notes: values.notes,
-          urgentRequestId: parseInt(urgentRequestId), // Liên kết với yêu cầu khẩn cấp
-          isUrgent: true, // Đánh dấu là hiến máu khẩn cấp
+          componentId: Number(componentId),
+          donationVolume: parseInt(values.donationVolume),
+          notes: finalNotes,
+          patientCondition: null, // Không có thông tin bệnh nhân trong form đăng ký khẩn cấp
+          urgentRequestId: urgentRequestId ? parseInt(urgentRequestId) : null, // Liên kết với yêu cầu khẩn cấp
         };
 
-        const response = await fetch(`${API_BASE_URL}/DonationRequest`, {
+        console.log('🔍 [DEBUG] Request payload:', donationRequest);
+        console.log('🔍 [DEBUG] API URL:', `${API_BASE_URL}/DonationRequest/register-urgent`);
+
+        const response = await fetch(`${API_BASE_URL}/DonationRequest/register-urgent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -121,12 +152,18 @@ const UrgentDonationRegistration = () => {
           body: JSON.stringify(donationRequest),
         });
 
+        console.log('🔍 [DEBUG] Response status:', response.status);
+        console.log('🔍 [DEBUG] Response headers:', response.headers);
+
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('❌ [DEBUG] Error response:', errorData);
+          console.error('❌ [DEBUG] Validation errors:', errorData.errors);
           throw new Error(errorData.message || 'Có lỗi xảy ra khi đăng ký');
         }
 
         const result = await response.json();
+        console.log('✅ [DEBUG] Success response:', result);
         setSuccess(true);
         setSnackbar({
           open: true,
@@ -142,14 +179,15 @@ const UrgentDonationRegistration = () => {
         setTimeout(() => {
           navigate('/urgent-donation-success', { 
             state: { 
-              donationId: result.donationRequestId,
+              donationId: result.donationId,
               urgentRequestId: urgentRequestId 
             } 
           });
         }, 2000);
 
       } catch (error) {
-        console.error('Lỗi khi đăng ký hiến máu:', error);
+        console.error('❌ [DEBUG] Lỗi khi đăng ký hiến máu:', error);
+        console.error('❌ [DEBUG] Error stack:', error.stack);
         setSnackbar({
           open: true,
           message: error.message || 'Có lỗi xảy ra khi đăng ký hiến máu',
@@ -212,6 +250,9 @@ const UrgentDonationRegistration = () => {
           </Typography>
         </Box>
 
+        {/* Kiểm tra trạng thái đăng ký */}
+        <RegistrationStatusCheck onStatusChange={setRegistrationStatus} />
+
         {/* Thông tin yêu cầu khẩn cấp */}
         {urgentRequest && (
           <Card sx={{ mb: 4, border: '2px solid #d32f2f' }}>
@@ -223,43 +264,39 @@ const UrgentDonationRegistration = () => {
                 </Typography>
               </Box>
               
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Bloodtype sx={{ mr: 1, color: '#d32f2f' }} />
-                    <Typography variant="body1">
-                      <strong>Nhóm máu cần:</strong> {bloodType}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body1">
-                      <strong>Bệnh nhân:</strong> {urgentRequest.patientName}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <LocationOn sx={{ mr: 1, color: '#d32f2f' }} />
-                    <Typography variant="body1">
-                      <strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body1">
-                      <strong>Lý do:</strong> {urgentRequest.reason || 'Khẩn cấp'}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
+                             <Grid container spacing={2}>
+                 <Grid item xs={12} md={6}>
+                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                     <Bloodtype sx={{ mr: 1, color: '#d32f2f' }} />
+                     <Typography variant="body1">
+                       <strong>Nhóm máu cần:</strong> {bloodType}
+                     </Typography>
+                   </Box>
+                 </Grid>
+                 <Grid item xs={12} md={6}>
+                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                     <LocationOn sx={{ mr: 1, color: '#d32f2f' }} />
+                     <Typography variant="body1">
+                       <strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học (118 Đ. Hồng Bàng, Phường 12, Quận 5, Hồ Chí Minh)
+                     </Typography>
+                   </Box>
+                 </Grid>
+               </Grid>
 
               <Divider sx={{ my: 2 }} />
               
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  <strong>Lưu ý:</strong> Đây là yêu cầu hiến máu khẩn cấp. 
-                  Vui lòng chọn thời gian sớm nhất có thể để cứu sống bệnh nhân.
-                </Typography>
-              </Alert>
+                             <Alert severity="warning" sx={{ mb: 2 }}>
+                 <Typography variant="body2">
+                   <strong>Lưu ý:</strong> Đây là yêu cầu hiến máu khẩn cấp.
+                 </Typography>
+               </Alert>
+               
+               <Alert severity="info" sx={{ mb: 2 }}>
+                 <Typography variant="body2">
+                   <strong>💡 Gợi ý:</strong> Vui lòng chọn khả năng hiến máu phù hợp để staff có thể 
+                   ưu tiên và liên hệ với bạn kịp thời.
+                 </Typography>
+               </Alert>
             </CardContent>
           </Card>
         )}
@@ -268,62 +305,104 @@ const UrgentDonationRegistration = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold' }}>
-              Thông Tin Đăng Ký Hiến Máu
+              Thông Tin Đăng Ký Hiến Máu Khẩn Cấp
             </Typography>
 
             <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 2 }}>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    id="preferredDate"
-                    name="preferredDate"
-                    label="Ngày hiến máu"
-                    type="date"
-                    value={formik.values.preferredDate}
-                    onChange={formik.handleChange}
-                    error={formik.touched.preferredDate && Boolean(formik.errors.preferredDate)}
-                    helperText={formik.touched.preferredDate && formik.errors.preferredDate}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <FormControl fullWidth>
-                    <InputLabel id="preferredTime-label">Thời gian hiến máu</InputLabel>
+                    <InputLabel id="donationVolume-label">Lượng máu hiến</InputLabel>
                     <Select
-                      labelId="preferredTime-label"
-                      id="preferredTime"
-                      name="preferredTime"
-                      value={formik.values.preferredTime}
+                      labelId="donationVolume-label"
+                      id="donationVolume"
+                      name="donationVolume"
+                      value={formik.values.donationVolume}
                       onChange={formik.handleChange}
-                      error={formik.touched.preferredTime && Boolean(formik.errors.preferredTime)}
-                      label="Thời gian hiến máu"
+                      error={formik.touched.donationVolume && Boolean(formik.errors.donationVolume)}
+                      label="Lượng máu hiến"
                     >
-                      <MenuItem value="08:00">08:00 - 10:00</MenuItem>
-                      <MenuItem value="10:00">10:00 - 12:00</MenuItem>
-                      <MenuItem value="14:00">14:00 - 16:00</MenuItem>
-                      <MenuItem value="16:00">16:00 - 18:00</MenuItem>
+                      <MenuItem value={250}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                          <span>250 ml</span>
+                          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                            (Cho người ≤ 50kg)
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value={350}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                          <span>350 ml</span>
+                          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                            (Cho người 51-60kg)
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value={450}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                          <span>450 ml</span>
+                          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                            (Cho người {'>'} 60kg)
+                          </Typography>
+                        </Box>
+                      </MenuItem>
                     </Select>
+                    {formik.touched.donationVolume && formik.errors.donationVolume && (
+                      <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                        {formik.errors.donationVolume}
+                      </Typography>
+                    )}
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    id="notes"
-                    name="notes"
-                    label="Ghi chú (tùy chọn)"
-                    multiline
-                    rows={3}
-                    value={formik.values.notes}
-                    onChange={formik.handleChange}
-                    error={formik.touched.notes && Boolean(formik.errors.notes)}
-                    helperText={formik.touched.notes && formik.errors.notes}
-                    placeholder="Ví dụ: Tôi có thể hiến máu ngay lập tức nếu cần..."
-                  />
-                </Grid>
+                                 <Grid item xs={12}>
+                   <FormControl fullWidth>
+                     <InputLabel id="notesOption-label">Khả năng hiến máu khẩn cấp</InputLabel>
+                     <Select
+                       labelId="notesOption-label"
+                       id="notesOption"
+                       name="notesOption"
+                       value={formik.values.notesOption}
+                       onChange={formik.handleChange}
+                       label="Khả năng hiến máu khẩn cấp"
+                     >
+                       <MenuItem value="">
+                         <em>Chọn khả năng phù hợp</em>
+                       </MenuItem>
+                       <MenuItem value="Có thể hiến máu ngay lập tức">
+                         Có thể hiến máu ngay lập tức
+                       </MenuItem>
+                       <MenuItem value="Có thể hiến trong vòng 30 phút">
+                         Có thể hiến trong vòng 30 phút
+                       </MenuItem>
+                       <MenuItem value="Có thể hiến trong vòng 1 giờ">
+                         Có thể hiến trong vòng 1 giờ
+                       </MenuItem>
+                       <MenuItem value="Cần thời gian sắp xếp trước khi hiến">
+                         Cần thời gian sắp xếp trước khi hiến
+                       </MenuItem>
+                       <MenuItem value="custom">
+                         Khác
+                       </MenuItem>
+                     </Select>
+                   </FormControl>
+                 </Grid>
+
+                {formik.values.notesOption === 'custom' && (
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      id="customNotes"
+                      name="customNotes"
+                      label="Ghi chú tùy chỉnh"
+                      multiline
+                      rows={3}
+                      value={formik.values.customNotes}
+                      onChange={formik.handleChange}
+                      placeholder="Vui lòng ghi thời gian hoặc thông tin khác mà bạn muốn chia sẻ..."
+                    />
+                  </Grid>
+                )}
               </Grid>
 
               <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'center' }}>
@@ -338,7 +417,7 @@ const UrgentDonationRegistration = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={loading}
+                  disabled={loading || (registrationStatus && !registrationStatus.canRegister)}
                   sx={{ 
                     minWidth: 200,
                     bgcolor: '#d32f2f',

@@ -26,7 +26,13 @@ import {
   TextField,
   Snackbar,
   Stack,
+  Card,
+  CardContent,
+  Grid,
+  Container,
 } from '@mui/material';
+import FilterIcon from '@mui/icons-material/FilterList';
+import ClearIcon from '@mui/icons-material/Clear';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import HealthSurveyReview from '../components/HealthSurveyReview';
@@ -48,7 +54,17 @@ const DonationRequestManagement = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+       // Bộ lọc states
+  const [filters, setFilters] = useState({
+    status: '',
+    bloodType: '',
+    patientName: '',
+    dateFrom: '',
+    dateTo: '',
+    type: '' // 'All', 'Urgent', 'Regular'
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [filteredRequests, setFilteredRequests] = useState([]);
 
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
@@ -87,6 +103,7 @@ const DonationRequestManagement = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(response.data);
+      setFilteredRequests(response.data); // Khởi tạo dữ liệu đã lọc
       setError('');
     } catch (err) {
       console.error('Error fetching donation requests:', err);
@@ -364,12 +381,80 @@ const DonationRequestManagement = () => {
     }
   };
 
-  // Sắp xếp các yêu cầu theo ID mới nhất lên đầu
-  const sortedRequests = [...requests].sort((a, b) => (b.donationId || 0) - (a.donationId || 0));
+       // Hàm áp dụng bộ lọc
+  const applyFilters = () => {
+    let filtered = [...requests];
 
-  const filteredRequests = sortedRequests.filter(
-    (req) => statusFilter === 'All' || req.status === statusFilter
-  );
+    // Sắp xếp: ưu tiên khẩn cấp lên đầu, sau đó theo ID mới nhất
+    filtered = filtered.sort((a, b) => {
+      if (a.isUrgent && !b.isUrgent) return -1;
+      if (!a.isUrgent && b.isUrgent) return 1;
+      return (b.donationId || 0) - (a.donationId || 0);
+    });
+
+    // Lọc theo trạng thái
+    if (filters.status) {
+      filtered = filtered.filter(req => req.status === filters.status);
+    }
+
+    // Lọc theo nhóm máu
+    if (filters.bloodType) {
+      filtered = filtered.filter(req => req.bloodTypeName === filters.bloodType);
+    }
+
+    // Lọc theo tên người hiến
+    if (filters.patientName) {
+      filtered = filtered.filter(req => 
+        (req.fullName || req.memberName || '').toLowerCase().includes(filters.patientName.toLowerCase())
+      );
+    }
+
+    // Lọc theo ngày bắt đầu
+    if (filters.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      filtered = filtered.filter(req => new Date(req.preferredDonationDate) >= fromDate);
+    }
+
+    // Lọc theo ngày kết thúc
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999); // Cuối ngày
+      filtered = filtered.filter(req => new Date(req.preferredDonationDate) <= toDate);
+    }
+
+    // Lọc theo loại hiến máu
+    if (filters.type) {
+      if (filters.type === 'Urgent') {
+        filtered = filtered.filter(req => req.isUrgent);
+      } else if (filters.type === 'Regular') {
+        filtered = filtered.filter(req => !req.isUrgent);
+      }
+    }
+
+    setFilteredRequests(filtered);
+  };
+
+  // Hàm xóa bộ lọc
+  const clearFilters = () => {
+    setFilters({
+      status: '',
+      bloodType: '',
+      patientName: '',
+      dateFrom: '',
+      dateTo: '',
+      type: ''
+    });
+  };
+
+  // Hàm cập nhật filter
+  const updateFilter = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Áp dụng bộ lọc khi filters thay đổi
+  useEffect(() => {
+    applyFilters();
+  }, [filters, requests]);
 
   // Tính toán số lượng từng trạng thái
   const pendingCount = requests.filter(r => r.status === 'Pending').length;
@@ -386,10 +471,26 @@ const DonationRequestManagement = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2, color: '#E53935' }}>
         Quản Lý Yêu Cầu Hiến Máu
       </Typography>
+
+       {/* Cảnh báo cho yêu cầu khẩn cấp */}
+       {requests.filter(r => r.isUrgent && (r.status === 'Pending' || r.status === 'Approved')).length > 0 && (
+         <Alert 
+           severity="error" 
+           sx={{ mb: 3, border: '2px solid #d32f2f' }}
+           icon={<span style={{ fontSize: '1.5rem' }}>🚨</span>}
+         >
+           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+             ⚠️ CÓ {requests.filter(r => r.isUrgent && (r.status === 'Pending' || r.status === 'Approved')).length} YÊU CẦU HIẾN MÁU KHẨN CẤP CẦN XỬ LÝ NGAY!
+           </Typography>
+           <Typography variant="body2">
+             Vui lòng ưu tiên xử lý các yêu cầu hiến máu khẩn cấp trước để đảm bảo an toàn cho bệnh nhân.
+           </Typography>
+         </Alert>
+       )}
 
       {/* Hướng dẫn xử lý đơn hiến máu */}
       <Paper sx={{ mb: 3, p: 2, backgroundColor: '#f8f9fa' }}>
@@ -447,56 +548,185 @@ const DonationRequestManagement = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
 
-      {/* Tổng hợp trạng thái căn giữa, bỏ lọc theo trạng thái */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'All' ? '2px solid #9e9e9e' : '1px solid #e0e0e0', boxShadow: statusFilter === 'All' ? 4 : 1 }}
-          onClick={() => setStatusFilter('All')}
-          elevation={statusFilter === 'All' ? 6 : 1}
-        >
-          <Typography variant="subtitle1" color="text.secondary">Tất cả</Typography>
-          <Typography variant="h4" fontWeight="bold">{requests.length}</Typography>
-          <Chip label="Tất cả" sx={{ mt: 1, backgroundColor: '#9e9e9e', color: 'white' }} />
-        </Paper>
-        <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Approved' ? '2px solid #ed6c02' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Approved' ? 4 : 1 }}
-          onClick={() => setStatusFilter('Approved')}
-          elevation={statusFilter === 'Approved' ? 6 : 1}
-        >
-          <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
-          <Typography variant="h4" fontWeight="bold">{approvedCount}</Typography>
-          <Chip label="Đã duyệt" color="warning" sx={{ mt: 1 }} />
-        </Paper>
-        <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
-          onClick={() => setStatusFilter('Completed')}
-          elevation={statusFilter === 'Completed' ? 6 : 1}
-        >
-          <Typography variant="subtitle1" color="text.secondary">Hoàn thành</Typography>
-          <Typography variant="h4" fontWeight="bold">{completedCount}</Typography>
-          <Chip label="Hoàn thành" color="success" sx={{ mt: 1 }} />
-        </Paper>
-        <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Rejected') ? '2px solid #d32f2f' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Rejected') ? 4 : 1 }}
-          onClick={() => setStatusFilter('Rejected')}
-          elevation={statusFilter === 'Rejected' ? 6 : 1}
-        >
-          <Typography variant="subtitle1" color="text.secondary">Đã từ chối</Typography>
-          <Typography variant="h4" fontWeight="bold">{requests.filter(r => r.status === 'Rejected').length}</Typography>
-          <Chip label="Đã từ chối" color="error" sx={{ mt: 1 }} />
-        </Paper>
-        <Paper
-          sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: (statusFilter === 'Cancelled') ? '2px solid #795548' : '1px solid #e0e0e0', boxShadow: (statusFilter === 'Cancelled') ? 4 : 1 }}
-          onClick={() => setStatusFilter('Cancelled')}
-          elevation={statusFilter === 'Cancelled' ? 6 : 1}
-        >
-          <Typography variant="subtitle1" color="text.secondary">Đã hủy</Typography>
-          <Typography variant="h4" fontWeight="bold">{requests.filter(r => r.status === 'Cancelled').length}</Typography>
-          <Chip label="Đã hủy" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
-        </Paper>
+
+
+       {/* Bộ lọc */}
+       <Card sx={{ mb: 3 }}>
+         <CardContent>
+           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+               <FilterIcon /> Bộ lọc
+             </Typography>
+             <Box sx={{ display: 'flex', gap: 1 }}>
+               <Button
+                 variant="outlined"
+                 size="small"
+                 onClick={() => setShowFilters(!showFilters)}
+                 startIcon={<FilterIcon />}
+               >
+                 {showFilters ? 'Ẩn bộ lọc' : 'Hiện bộ lọc'}
+               </Button>
+               <Button
+                 variant="outlined"
+                 size="small"
+                 color="error"
+                 onClick={clearFilters}
+                 startIcon={<ClearIcon />}
+                 disabled={!filters.status && !filters.bloodType && !filters.patientName && !filters.dateFrom && !filters.dateTo && !filters.type}
+               >
+                 Xóa bộ lọc
+               </Button>
+             </Box>
+           </Box>
+
+           {showFilters && (
+             <Grid container spacing={2}>
+               <Grid item xs={12} sm={6} md={2}>
+                 <FormControl fullWidth size="small">
+                   <InputLabel>Trạng thái</InputLabel>
+                   <Select
+                     value={filters.status}
+                     onChange={(e) => updateFilter('status', e.target.value)}
+                     label="Trạng thái"
+                   >
+                     <MenuItem value="">Tất cả</MenuItem>
+                     <MenuItem value="Pending">Chờ duyệt</MenuItem>
+                     <MenuItem value="Approved">Đã duyệt</MenuItem>
+                     <MenuItem value="Completed">Hoàn thành</MenuItem>
+                     <MenuItem value="Rejected">Đã từ chối</MenuItem>
+                     <MenuItem value="Cancelled">Đã hủy</MenuItem>
+                   </Select>
+                 </FormControl>
+               </Grid>
+
+               <Grid item xs={12} sm={6} md={2}>
+                 <FormControl fullWidth size="small">
+                   <InputLabel>Nhóm máu</InputLabel>
+                   <Select
+                     value={filters.bloodType}
+                     onChange={(e) => updateFilter('bloodType', e.target.value)}
+                     label="Nhóm máu"
+                   >
+                     <MenuItem value="">Tất cả</MenuItem>
+                     <MenuItem value="A+">A+</MenuItem>
+                     <MenuItem value="A-">A-</MenuItem>
+                     <MenuItem value="B+">B+</MenuItem>
+                     <MenuItem value="B-">B-</MenuItem>
+                     <MenuItem value="AB+">AB+</MenuItem>
+                     <MenuItem value="AB-">AB-</MenuItem>
+                     <MenuItem value="O+">O+</MenuItem>
+                     <MenuItem value="O-">O-</MenuItem>
+                     <MenuItem value="Không biết">Không biết</MenuItem>
+                   </Select>
+                 </FormControl>
+               </Grid>
+
+               <Grid item xs={12} sm={6} md={2}>
+                 <FormControl fullWidth size="small">
+                   <InputLabel>Loại hiến máu</InputLabel>
+                   <Select
+                     value={filters.type}
+                     onChange={(e) => updateFilter('type', e.target.value)}
+                     label="Loại hiến máu"
+                   >
+                     <MenuItem value="">Tất cả</MenuItem>
+                     <MenuItem value="Urgent">Khẩn cấp</MenuItem>
+                     <MenuItem value="Regular">Thường</MenuItem>
+                   </Select>
+                 </FormControl>
+               </Grid>
+
+               <Grid item xs={12} sm={6} md={3}>
+                 <TextField
+                   fullWidth
+                   size="small"
+                   label="Tên người hiến"
+                   value={filters.patientName}
+                   onChange={(e) => updateFilter('patientName', e.target.value)}
+                   placeholder="Nhập tên để tìm kiếm..."
+                 />
+               </Grid>
+
+               <Grid item xs={12} sm={6} md={1.5}>
+                 <TextField
+                   fullWidth
+                   size="small"
+                   label="Từ ngày"
+                   type="date"
+                   value={filters.dateFrom}
+                   onChange={(e) => updateFilter('dateFrom', e.target.value)}
+                   InputLabelProps={{ shrink: true }}
+                 />
+               </Grid>
+
+               <Grid item xs={12} sm={6} md={1.5}>
+                 <TextField
+                   fullWidth
+                   size="small"
+                   label="Đến ngày"
+                   type="date"
+                   value={filters.dateTo}
+                   onChange={(e) => updateFilter('dateTo', e.target.value)}
+                   InputLabelProps={{ shrink: true }}
+                 />
+               </Grid>
+             </Grid>
+           )}
+
+           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <Typography variant="body2" color="text.secondary">
+               Hiển thị {filteredRequests.length} / {requests.length} yêu cầu
+             </Typography>
+             {(filters.status || filters.bloodType || filters.patientName || filters.dateFrom || filters.dateTo || filters.type) && (
+               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                 {filters.status && (
+                   <Chip 
+                     label={`Trạng thái: ${filters.status}`} 
+                     size="small" 
+                     onDelete={() => updateFilter('status', '')} 
+                   />
+                 )}
+                 {filters.bloodType && (
+                   <Chip 
+                     label={`Nhóm máu: ${filters.bloodType}`} 
+                     size="small" 
+                     onDelete={() => updateFilter('bloodType', '')} 
+                   />
+                 )}
+                 {filters.type && (
+                   <Chip 
+                     label={`Loại: ${filters.type === 'Urgent' ? 'Khẩn cấp' : 'Thường'}`} 
+                     size="small" 
+                     onDelete={() => updateFilter('type', '')} 
+                   />
+                 )}
+                 {filters.patientName && (
+                   <Chip 
+                     label={`Tìm kiếm: ${filters.patientName}`} 
+                     size="small" 
+                     onDelete={() => updateFilter('patientName', '')} 
+                   />
+                 )}
+                 {filters.dateFrom && (
+                   <Chip 
+                     label={`Từ: ${filters.dateFrom}`} 
+                     size="small" 
+                     onDelete={() => updateFilter('dateFrom', '')} 
+                   />
+                 )}
+                 {filters.dateTo && (
+                   <Chip 
+                     label={`Đến: ${filters.dateTo}`} 
+                     size="small" 
+                     onDelete={() => updateFilter('dateTo', '')} 
+                   />
+                 )}
       </Box>
+             )}
+           </Box>
+         </CardContent>
+       </Card>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -504,8 +734,7 @@ const DonationRequestManagement = () => {
         </Alert>
       )}
 
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
+             <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 4, mt: 3 }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
@@ -515,7 +744,8 @@ const DonationRequestManagement = () => {
                 <TableCell sx={{ width: '10%' }}>Nhóm máu</TableCell>
                 <TableCell sx={{ width: '12%' }}>Lượng máu (ml)</TableCell>
                 <TableCell sx={{ width: '10%' }}>Ngày hẹn</TableCell>
-                <TableCell sx={{ width: '15%' }}>Đợt hiến máu</TableCell>
+                 <TableCell sx={{ width: '12%' }}>Loại hiến máu</TableCell>
+                 <TableCell sx={{ width: '13%' }}>Đợt hiến máu</TableCell>
                 <TableCell sx={{ width: '10%' }}>Trạng thái</TableCell>
                 <TableCell sx={{ width: '8%' }}>Ghi chú</TableCell>
                 <TableCell sx={{ width: '10%' }}>Thao tác</TableCell>
@@ -549,18 +779,79 @@ const DonationRequestManagement = () => {
                 <TableCell sx={{ width: '10%' }}>
                   {dayjs(req.preferredDonationDate).format('DD/MM/YYYY')}
                 </TableCell>
-                  <TableCell sx={{ width: '15%' }}>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontSize: '0.8rem', mb: 0.5 }}>{`${req.periodId} - ${req.periodName}`}</Typography>
+                 <TableCell sx={{ width: '12%' }}>
+                   {req.isUrgent ? (
+                     <Chip 
+                       label="🚨 KHẨN CẤP" 
+                       color="error" 
+                       size="small"
+                       sx={{ 
+                         fontSize: '0.7rem', 
+                         height: '20px',
+                         fontWeight: 'bold',
+                         backgroundColor: '#d32f2f',
+                         color: 'white'
+                       }}
+                     />
+                   ) : (
+                     <Chip 
+                       label="THƯỜNG" 
+                       color="primary" 
+                       size="small"
+                       sx={{ 
+                         fontSize: '0.7rem', 
+                         height: '20px',
+                         fontWeight: 'bold'
+                       }}
+                     />
+                   )}
+                 </TableCell>
+                   <TableCell sx={{ width: '13%' }}>
+                    {req.isUrgent ? (
+                      req.periodId && req.periodName ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          <Chip 
+                            label="🚨 KHẨN CẤP" 
+                            color="error" 
+                            size="small"
+                            sx={{ 
+                              fontSize: '0.7rem', 
+                              height: '20px',
+                              fontWeight: 'bold',
+                              backgroundColor: '#d32f2f',
+                              color: 'white'
+                            }}
+                          />
+                          <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#d32f2f', fontWeight: 'bold' }}>
+                            Hiến máu khẩn cấp
+                          </Typography>
                       <Button 
                         variant="outlined" 
                         size="small" 
-                        sx={{ fontSize: '0.7rem', height: '24px' }}
+                            sx={{ fontSize: '0.7rem', height: '24px', borderColor: '#d32f2f', color: '#d32f2f' }}
                         onClick={() => { setSelectedRequest(req); setOpenPatientCondition(true); }}
                       >
                         Chi tiết
                       </Button>
                     </Box>
+                      ) : null
+                    ) : (
+                      req.periodId && req.periodName ? (
+                        <>
+                          <Typography variant="body2" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
+                            {`${req.periodId} - ${req.periodName}`}
+                          </Typography>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            sx={{ fontSize: '0.7rem', height: '24px' }}
+                            onClick={() => { setSelectedRequest(req); setOpenPatientCondition(true); }}
+                          >
+                            Chi tiết
+                          </Button>
+                        </>
+                      ) : null
+                    )}
                   </TableCell>
                   <TableCell sx={{ width: '10%' }}>{getStatusChip(req.status)}</TableCell>
                   <TableCell sx={{ width: '8%', wordWrap: 'break-word', whiteSpace: 'normal', maxWidth: '0' }}>
@@ -799,7 +1090,7 @@ const DonationRequestManagement = () => {
                   '5.11': 'Không',
                 };
                 return (
-                  <Box>
+                  <>
                     {data.split(';').map((item, idx) => {
                       const trimmed = item.trim();
                       return (
@@ -808,7 +1099,7 @@ const DonationRequestManagement = () => {
                         </Typography>
                       );
                     })}
-                  </Box>
+                  </>
                 );
               }
               return <Typography>Không có thông tin</Typography>;
@@ -834,7 +1125,7 @@ const DonationRequestManagement = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+     </Container>
   );
 };
 

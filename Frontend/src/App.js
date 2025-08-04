@@ -79,7 +79,28 @@ const App = () => {
       <Route element={<AuthLayout />}>
         <Route
           path="/login"
-          element={!isAuthenticated ? <Login /> : <Navigate to="/" replace />}
+          element={
+            !isAuthenticated ? (
+              <Login />
+            ) : (
+              // Kiểm tra nếu có thông tin urgent donation thì cho phép vào Login
+              //nếu người hiến bấm vào email thì sẽ chuyển hướng đến trang urgent donation
+              (() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirect = urlParams.get('redirect');
+                const urgentRequestId = urlParams.get('urgentRequestId');
+                const bloodType = urlParams.get('bloodType');
+                
+                if (redirect && urgentRequestId && bloodType) {
+                  console.log('🔍 [DEBUG] User authenticated but has urgent donation params, allowing access to Login');
+                  return <Login />;
+                } else {
+                  console.log('🔍 [DEBUG] User authenticated, redirecting to home');
+                  return <Navigate to="/" replace />;
+                }
+              })()
+            )
+          }
         />
         <Route
           path="/signup"

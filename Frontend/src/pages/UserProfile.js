@@ -541,9 +541,9 @@ const UserProfile = () => {
     );
   }
 
-  // Thêm biến lọc các lịch đã lên lịch
+  // Thêm biến lọc các lịch đã lên lịch (bao gồm cả khẩn cấp)
   const scheduledAppointments = upcomingAppointments.filter(
-    (a) => a.status === 'Approved' || a.status === 'scheduled'
+    (a) => a.status === 'Approved' || a.status === 'scheduled' || a.status === 'Pending'
   );
 
   return (
@@ -719,7 +719,7 @@ const UserProfile = () => {
                     return (
                       <Box key={index} sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
                         <Typography variant="h6" fontWeight="bold" color="primary.main" sx={{ mb: 2 }}>
-                          Thông tin đăng ký hiến máu
+                          {appointment.isUrgent ? 'Thông tin đăng ký hiến máu khẩn cấp' : 'Thông tin đăng ký hiến máu'}
                         </Typography>
                         <Grid container spacing={2}>
                           <Grid item xs={12} sm={6}>
@@ -731,26 +731,44 @@ const UserProfile = () => {
                             {getStatusChip(appointment.status)}
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">Ngày dự kiến hiến</Typography>
-                            <Typography variant="body1" fontWeight="bold">{dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY')}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {appointment.isUrgent ? 'Loại hiến máu' : 'Ngày dự kiến hiến'}
+                            </Typography>
+                            <Typography variant="body1" fontWeight="bold">
+                              {appointment.isUrgent 
+                                ? 'Hiến máu khẩn cấp' 
+                                : (appointment.preferredDonationDate ? dayjs(appointment.preferredDonationDate).format('DD/MM/YYYY') : 'Không xác định')
+                              }
+                            </Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">Đợt hiến máu</Typography>
-                            <Typography variant="body1" fontWeight="bold">{appointment.periodName}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {appointment.isUrgent ? 'Địa điểm' : 'Đợt hiến máu'}
+                            </Typography>
+                            <Typography variant="body1" fontWeight="bold">
+                              {appointment.isUrgent 
+                                ? 'Bệnh viện Truyền máu Huyết học' 
+                                : (appointment.periodName || 'Không xác định')
+                              }
+                            </Typography>
                           </Grid>
                           <Grid item xs={12} sm={6}>
                             <Typography variant="body2" color="text.secondary">Thời gian</Typography>
                             <Typography variant="body1" fontWeight="bold">
-                              {/* Hiển thị thời gian diễn ra của đợt hiến máu */}
-                              {appointment.periodDateFrom && appointment.periodDateTo
-                                ? `${dayjs(appointment.periodDateFrom).format('HH:mm')} - ${dayjs(appointment.periodDateTo).format('HH:mm')}`
-                                : 'Không xác định'}
+                              {appointment.isUrgent 
+                                ? 'Liên hệ ngay lập tức' 
+                                : (appointment.periodDateFrom && appointment.periodDateTo
+                                    ? `${dayjs(appointment.periodDateFrom).format('HH:mm')} - ${dayjs(appointment.periodDateTo).format('HH:mm')}`
+                                    : 'Không xác định')
+                              }
                             </Typography>
                           </Grid>
-                          {/* <Grid item xs={12}>
-                            <Typography variant="body2" color="text.secondary">Địa điểm</Typography>
-                            <Typography variant="body1" fontWeight="bold">{hospitalName || 'Chưa có thông tin bệnh viện'}</Typography>
-                          </Grid> */}
+                          {appointment.isUrgent && appointment.notes && (
+                            <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Ghi chú</Typography>
+                              <Typography variant="body1" fontWeight="bold">{appointment.notes}</Typography>
+                            </Grid>
+                          )}
                         </Grid>
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
                             <Button

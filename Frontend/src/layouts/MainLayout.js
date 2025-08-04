@@ -107,6 +107,8 @@ const MainLayout = () => {
 
   const [openLocationSnackbar, setOpenLocationSnackbar] = useState(false);
   const [locationSnackbarMessage, setLocationSnackbarMessage] = useState('');
+  const [registrationStatus, setRegistrationStatus] = useState(null);
+  const [newsAnchorEl, setNewsAnchorEl] = useState(null);
 
   const { user: currentUser, isAuthenticated, token: authToken } = useSelector((state) => state.auth);
   // currentUser bây giờ sẽ luôn có isDonor, isRecipient nếu đã vào UserProfile
@@ -180,6 +182,22 @@ const MainLayout = () => {
       dispatch(fetchUserProfile());
     }
   }, [authToken, currentUser, dispatch]);
+
+  // Lấy trạng thái đăng ký hiến máu cho Member
+  useEffect(() => {
+    if (authToken && currentUser && currentUser.role === 'Member') {
+      axios.get('/api/DonationRequest/registration-status', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      }).then(res => {
+        setRegistrationStatus(res.data);
+      }).catch(err => {
+        console.error('Lỗi lấy trạng thái đăng ký:', err);
+        setRegistrationStatus(null);
+      });
+    } else {
+      setRegistrationStatus(null);
+    }
+  }, [authToken, currentUser]);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -281,7 +299,6 @@ const MainLayout = () => {
   console.log('DEBUG MainLayout mounted');
 
   // Thêm state cho menu Tin Tức (đặt ngoài mọi if)
-  const [newsAnchorEl, setNewsAnchorEl] = useState(null);
   const openNewsMenu = Boolean(newsAnchorEl);
   const handleNewsMenu = (event) => setNewsAnchorEl(event.currentTarget);
   const handleCloseNewsMenu = () => setNewsAnchorEl(null);
@@ -573,9 +590,23 @@ const MainLayout = () => {
                     gap: 1
                   }}
                   onClick={(e) => {
-                    if (item.path === "/booking" && !isAuthenticated && !isTestUser) {
-                      e.preventDefault();
-                      navigate("/login");
+                    if (item.path === "/booking") {
+                      if (!isAuthenticated && !isTestUser) {
+                        e.preventDefault();
+                        navigate("/login");
+                        return;
+                      }
+                      
+                      // Kiểm tra trạng thái đăng ký hiến máu cho Member
+                      if (currentUser && currentUser.role === 'Member' && registrationStatus) {
+                        if (!registrationStatus.canRegister) {
+                          e.preventDefault();
+                          // Hiển thị thông báo lỗi
+                          setLocationSnackbarMessage(registrationStatus.message);
+                          setOpenLocationSnackbar(true);
+                          return;
+                        }
+                      }
                     }
                   }}
                   startIcon={item.icon}

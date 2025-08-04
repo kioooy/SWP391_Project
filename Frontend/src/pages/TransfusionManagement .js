@@ -184,7 +184,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
 
   // Đối tượng ánh xạ dịch thuật cho trạng thái truyền máu
   const transfusionStatusTranslations = {
-    "Approved": "Đã duyệt",
+    "Approved": "Đã gán",
     "Pending": "Đang chờ",
     "Completed": "Hoàn thành",
     "Cancelled": "Đã hủy",
@@ -196,8 +196,8 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   const getStatusColor = (status) => {
     // Màu giống DonationRequestManagement.js
     const colors = {
-      "Approved": "warning", // Đã duyệt - cam
-      "Pending": "default", // Chờ duyệt - nâu
+      "Approved": "warning", // Đã gán - cam
+      "Pending": "default", // Chờ gán - nâu
       "Completed": "success", // Hoàn thành - xanh lá
       "Cancelled": "error", // Đã hủy - đỏ
       "Rejected": "error", // Đã từ chối - đỏ
@@ -349,7 +349,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
       });
       setSnackbar({
         open: true,
-        message: `Yêu cầu ${transfusionToApprove.transfusionId} đã được duyệt!`,
+        message: `Yêu cầu ${transfusionToApprove.transfusionId} đã được gán!`,
         severity: "success",
       });
       handleCloseApproveDialog();
@@ -359,7 +359,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
       await reloadTransfusions();
     } catch (err) {
       // Đã xóa log kiểm thử chức năng duyệt yêu cầu truyền máu
-      let errorMessage = "Duyệt yêu cầu thất bại.";
+      let errorMessage = "Gán yêu cầu thất bại.";
       if (err.response?.data) {
         if (typeof err.response.data === "string") {
           errorMessage = err.response.data;
@@ -623,9 +623,9 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           onClick={() => setStatusFilter('Approved')}
           elevation={statusFilter === 'Approved' ? 6 : 1}
         >
-          <Typography variant="subtitle1" color="text.secondary">Đã duyệt</Typography>
+          <Typography variant="subtitle1" color="text.secondary">Đã gán</Typography>
           <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Approved').length}</Typography>
-          <Chip label="Đã duyệt" color="warning" sx={{ mt: 1 }} />
+          <Chip label="Đã gán" color="warning" sx={{ mt: 1 }} />
         </Paper>
         <Paper
           sx={{ p: 2, minWidth: 150, textAlign: 'center', cursor: 'pointer', border: statusFilter === 'Completed' ? '2px solid #2e7d32' : '1px solid #e0e0e0', boxShadow: statusFilter === 'Completed' ? 4 : 1 }}
@@ -650,9 +650,9 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
           onClick={() => setStatusFilter('Pending')}
           elevation={statusFilter === 'Pending' ? 6 : 1}
         >
-          <Typography variant="subtitle1" color="text.secondary">Chờ duyệt</Typography>
+          <Typography variant="subtitle1" color="text.secondary">Chờ gán</Typography>
           <Typography variant="h4" fontWeight="bold">{transfusions.filter(r => r.status === 'Pending').length}</Typography>
-          <Chip label="Chờ duyệt" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
+          <Chip label="Chờ gán" sx={{ mt: 1, backgroundColor: '#795548', color: 'white' }} />
         </Paper>
       </Box>
       {/* Bộ lọc ngày và nút tạo mới giữ nguyên */}
@@ -901,7 +901,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                       {user && (user.role === "Staff" || user.role === "Admin") && (
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                           {transfusion.status === "Pending" && (
-                            <Tooltip title="Duyệt yêu cầu">
+                            <Tooltip title="Gán yêu cầu">
                               <Button
                                 variant="contained"
                                 color="success"
@@ -909,7 +909,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                                 onClick={(e) => { e.stopPropagation(); handleOpenApproveDialog(transfusion); }}
                                 disabled={loading}
                               >
-                                Duyệt
+                                Gán
                               </Button>
                             </Tooltip>
                           )}
@@ -1005,9 +1005,9 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
         </form>
       </Dialog>
 
-      {/* Dialog Duyệt yêu cầu truyền máu */}
+      {/* Dialog Gán yêu cầu truyền máu */}
       <Dialog open={openApproveDialog} onClose={handleCloseApproveDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Duyệt yêu cầu truyền máu #{transfusionToApprove?.transfusionId}</DialogTitle>
+                  <DialogTitle>Gán yêu cầu truyền máu #{transfusionToApprove?.transfusionId}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <Typography variant="body1">
@@ -1113,7 +1113,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
               Tổng dung tích đã chọn: <strong>{totalSelectedVolume} ml</strong> / Yêu cầu: <strong>{requiredVolume} ml</strong>
             </Typography>
             <TextField
-              label="Ghi chú duyệt (Tùy chọn)"
+                              label="Ghi chú gán (Tùy chọn)"
               value={approveNotes}
               onChange={(e) => setApproveNotes(e.target.value)}
               multiline
@@ -1131,7 +1131,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
             onClick={handleConfirmApprove}
             disabled={approveSelectedUnits.length === 0 || totalSelectedVolume < requiredVolume || approveLoading}
           >
-            {approveLoading ? "Đang duyệt..." : "Duyệt"}
+                            {approveLoading ? "Đang gán..." : "Gán"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1165,7 +1165,7 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
             <strong>{transfusionToCancel?.fullName}</strong> không?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Nếu yêu cầu đã được duyệt, đơn vị máu đã đặt chỗ sẽ được giải phóng.
+            Nếu yêu cầu đã được gán, đơn vị máu đã đặt chỗ sẽ được giải phóng.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1241,8 +1241,8 @@ const hasAnyUnits = suitableBloodUnits.length > 0 || suitableAlternatives.length
                   <Typography variant="body1" fontWeight="medium">{selectedTransfusionForDetails.notes || 'Không có'}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">Ngày duyệt:</Typography>
-                  <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.approvalDate) || 'Chưa duyệt'}</Typography>
+                                <Typography variant="subtitle2" color="text.secondary">Ngày gán:</Typography>
+              <Typography variant="body1" fontWeight="medium">{formatDateTime(selectedTransfusionForDetails.approvalDate) || 'Chưa gán'}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" color="text.secondary">Ngày hoàn thành:</Typography>

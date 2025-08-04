@@ -35,6 +35,8 @@ const UrgentRequestManageV2 = () => {
   const [assignBloodUnits, setAssignBloodUnits] = useState([]);
   const [assignVolumes, setAssignVolumes] = useState({});
   const [currentTab, setCurrentTab] = useState(0); // State để quản lý tab hiện tại
+  const [cancelConfirmDialog, setCancelConfirmDialog] = useState(false);
+  const [requestToCancel, setRequestToCancel] = useState(null);
 
   // Bộ lọc states
   const [filters, setFilters] = useState({
@@ -248,9 +250,14 @@ const UrgentRequestManageV2 = () => {
 
   // Hủy yêu cầu
   const handleCancel = async (req) => {
+    setRequestToCancel(req);
+    setCancelConfirmDialog(true);
+  };
+
+  const handleConfirmCancel = async () => {
     setSubmitting(true);
     try {
-      await axios.patch(`${API_URL}/UrgentBloodRequest/${req.urgentRequestId}/cancel`, {}, {
+      await axios.patch(`${API_URL}/UrgentBloodRequest/${requestToCancel.urgentRequestId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSnackbar({ open: true, message: 'Đã hủy yêu cầu!', severity: 'info' });
@@ -259,7 +266,14 @@ const UrgentRequestManageV2 = () => {
       setSnackbar({ open: true, message: 'Lỗi khi hủy yêu cầu!', severity: 'error' });
     } finally {
       setSubmitting(false);
+      setCancelConfirmDialog(false);
+      setRequestToCancel(null);
     }
+  };
+
+  const handleCloseCancelDialog = () => {
+    setCancelConfirmDialog(false);
+    setRequestToCancel(null);
   };
 
   // Sau khi staff chọn nhóm máu và thành phần xong (cho trường hợp "Không biết")
@@ -412,7 +426,7 @@ const UrgentRequestManageV2 = () => {
   const getStatusDisplay = (status) => {
     switch (status) {
       case 'Pending':
-        return { text: 'Chờ duyệt', color: '#e6a700' };
+        return { text: 'Chờ xác nhận', color: '#e6a700' };
       case 'InProgress':
         return { text: 'Đang xử lý', color: '#1976d2' };
       case 'Fulfilled':
@@ -743,16 +757,16 @@ const UrgentRequestManageV2 = () => {
                           </Button>
                         )}
                         {r.status === 'InProgress' && (
-                          <Button 
-                            size="small" 
-                            color="primary" 
-                            variant="contained" 
-                            onClick={() => handleOpenFulfill(r)} 
-                            sx={{ minWidth: 100, height: 36 }} 
-                            disabled={submitting}
-                          >
-                            Hoàn thành
-                          </Button>
+                                                  <Button 
+                          size="small" 
+                          color="success"
+                          variant="contained" 
+                          onClick={() => handleOpenFulfill(r)} 
+                          sx={{ minWidth: 100, height: 36 }} 
+                          disabled={submitting}
+                        >
+                          Hoàn thành
+                        </Button>
                         )}
                         <Button 
                           size="small" 
@@ -805,7 +819,6 @@ const UrgentRequestManageV2 = () => {
                       <div><b>Nhóm máu:</b> {unit.bloodTypeName}</div>
                       <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
                       <div><b>Thể tích gán:</b> {unit.assignedVolume}ml</div>
-                      <div><b>Trạng thái túi máu:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
                     </Box>
                   ))}
                 </Box>
@@ -827,7 +840,7 @@ const UrgentRequestManageV2 = () => {
         <DialogTitle>Chọn nhóm máu & thành phần cho bệnh nhân</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Bệnh nhân chưa biết nhóm máu. Vui lòng chọn nhóm máu và thành phần phù hợp.
+            Chưa rõ nhóm máu của bệnh nhân. Vui lòng chọn nhóm máu và thành phần phù hợp theo kết quả xét nghiệm.
           </Alert>
           <Box sx={{ mt: 2 }}>
             <FormControl fullWidth sx={{ mb: 2 }}>
@@ -949,7 +962,7 @@ const UrgentRequestManageV2 = () => {
         <DialogTitle>Hoàn thành yêu cầu truyền máu</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Hệ thống sẽ tự động sử dụng toàn bộ lượng máu đã được gán cho yêu cầu này.
+            Hệ thống sẽ tự động sử dụng lượng máu đã được gán cho yêu cầu này.
           </Alert>
           
           {detailRequest && (
@@ -1621,6 +1634,43 @@ const UrgentRequestManageV2 = () => {
             }}
           >
             Gán máu
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog xác nhận hủy yêu cầu */}
+      <Dialog open={cancelConfirmDialog} onClose={handleCloseCancelDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Xác nhận hủy yêu cầu</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            ⚠️ Bạn có chắc chắn muốn hủy yêu cầu máu khẩn #{requestToCancel?.urgentRequestId} không?
+          </Alert>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            <strong>Thông tin yêu cầu:</strong>
+          </Typography>
+          {requestToCancel && (
+            <Box sx={{ pl: 2, mb: 2 }}>
+              <Typography variant="body2">• <strong>Bệnh nhân:</strong> {requestToCancel.patientName}</Typography>
+              <Typography variant="body2">• <strong>Nhóm máu:</strong> {requestToCancel.bloodType?.bloodTypeName || 'Không biết'}</Typography>
+              <Typography variant="body2">• <strong>Lý do:</strong> {requestToCancel.reason}</Typography>
+              <Typography variant="body2">• <strong>Trạng thái hiện tại:</strong> {getStatusDisplay(requestToCancel.status).text}</Typography>
+            </Box>
+          )}
+          <Alert severity="error">
+            ⚠️ Hành động này không thể hoàn tác. Yêu cầu sẽ bị hủy vĩnh viễn.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancelDialog} disabled={submitting}>
+            Không hủy
+          </Button>
+          <Button 
+            onClick={handleConfirmCancel} 
+            color="error" 
+            variant="contained"
+            disabled={submitting}
+          >
+            {submitting ? 'Đang hủy...' : 'Xác nhận hủy'}
           </Button>
         </DialogActions>
       </Dialog>

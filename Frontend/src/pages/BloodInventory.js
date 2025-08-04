@@ -868,28 +868,28 @@ const BloodInventory = () => {
                     📋 Lịch sử hiến máu ({bloodHistory.donationHistory.length})
                   </Typography>
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
-                    <Table>
+                    <Table sx={{ tableLayout: 'fixed' }}>
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
-                          <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu hiến</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thể tích hiến (ml)</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày hiến</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>ID</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Thể tích (ml)</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Thời gian</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {bloodHistory.donationHistory.map((history, index) => (
                           <TableRow key={`donation-${index}`}>
-                            <TableCell>{history.donationId || 'N/A'}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ width: '15%', wordBreak: 'break-word' }}>{history.donationId || 'N/A'}</TableCell>
+                            <TableCell sx={{ width: '25%', wordBreak: 'break-word' }}>
                               {history.componentName === 'Plasma' ? 'Huyết tương' :
                                history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
                                history.componentName === 'Platelets' ? 'Tiểu cầu' :
                                history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
                                history.componentName || 'N/A'}
                             </TableCell>
-                            <TableCell>{history.donationVolume || 0}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ width: '20%', wordBreak: 'break-word' }}>{history.donationVolume || 0}</TableCell>
+                            <TableCell sx={{ width: '40%', wordBreak: 'break-word' }}>
                               {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
                                 hour: '2-digit',
                                 minute: '2-digit',
@@ -914,28 +914,28 @@ const BloodInventory = () => {
                     🏥 Lịch sử truyền máu ({bloodHistory.transfusionHistory.length})
                   </Typography>
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
-                    <Table>
+                    <Table sx={{ tableLayout: 'fixed' }}>
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#e8f5e8' }}>
-                          <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu truyền</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thể tích sử dụng (ml)</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày sử dụng</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>ID</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Thể tích (ml)</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Thời gian</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {bloodHistory.transfusionHistory.map((history, index) => (
                           <TableRow key={`transfusion-${index}`}>
-                            <TableCell>{history.transfusionId || 'N/A'}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ width: '15%', wordBreak: 'break-word' }}>{history.transfusionId || 'N/A'}</TableCell>
+                            <TableCell sx={{ width: '25%', wordBreak: 'break-word' }}>
                               {history.componentName === 'Plasma' ? 'Huyết tương' :
                                history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
                                history.componentName === 'Platelets' ? 'Tiểu cầu' :
                                history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
                                history.componentName || 'N/A'}
                             </TableCell>
-                            <TableCell>{history.assignedVolume || 0}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ width: '20%', wordBreak: 'break-word' }}>{history.assignedVolume || 0}</TableCell>
+                            <TableCell sx={{ width: '40%', wordBreak: 'break-word' }}>
                               {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
                                 hour: '2-digit',
                                 minute: '2-digit',
@@ -960,28 +960,28 @@ const BloodInventory = () => {
                     🚨 Lịch sử yêu cầu khẩn cấp ({bloodHistory.urgentHistory.length})
                   </Typography>
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
-                    <Table>
+                    <Table sx={{ tableLayout: 'fixed' }}>
                       <TableHead>
                         <TableRow sx={{ backgroundColor: '#ffebee' }}>
-                          <TableCell sx={{ fontWeight: 'bold' }}>ID yêu cầu khẩn</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thành phần</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thể tích sử dụng (ml)</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày sử dụng</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>ID</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Thành phần</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>Thể tích (ml)</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Thời gian</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {bloodHistory.urgentHistory.map((history, index) => (
                           <TableRow key={`urgent-${index}`}>
-                            <TableCell>{history.urgentRequestId || 'N/A'}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ width: '15%', wordBreak: 'break-word' }}>{history.urgentRequestId || 'N/A'}</TableCell>
+                            <TableCell sx={{ width: '25%', wordBreak: 'break-word' }}>
                               {history.componentName === 'Plasma' ? 'Huyết tương' :
                                history.componentName === 'Red Blood Cells' ? 'Hồng cầu' :
                                history.componentName === 'Platelets' ? 'Tiểu cầu' :
                                history.componentName === 'Whole Blood' ? 'Máu toàn phần' :
                                history.componentName || 'N/A'}
                             </TableCell>
-                            <TableCell>{history.assignedVolume || 0}</TableCell>
-                            <TableCell>
+                            <TableCell sx={{ width: '20%', wordBreak: 'break-word' }}>{history.assignedVolume || 0}</TableCell>
+                            <TableCell sx={{ width: '40%', wordBreak: 'break-word' }}>
                               {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
                                 hour: '2-digit',
                                 minute: '2-digit',

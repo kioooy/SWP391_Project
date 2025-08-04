@@ -22,15 +22,29 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
+      console.log('Login thunk bắt đầu với credentials:', credentials);
       const payload = {
         citizenNumber: credentials.citizenId,
         password: credentials.password,
       };
+      console.log('Gửi request đến API với payload:', payload);
+      console.log('API URL:', `${API_URL}/User/login`);
+      
       const response = await axios.post(`${API_URL}/User/login`, payload);
+      console.log('Response từ API:', response.data);
+      
       localStorage.setItem('token', response.data.token);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      console.error('Lỗi trong login thunk:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      console.error('Error message sẽ trả về:', errorMessage);
+      
+      return rejectWithValue(errorMessage);
     }
   }
 );

@@ -51,6 +51,8 @@ import axios from "axios";
 import BloodCompatibilityPage from "./pages/BloodCompatibilityPage";
 import TransfusionAppointmentHistory from "./pages/TransfusionAppointmentHistory"
 import UrgentRequestManageV2 from "./pages/admin/UrgentRequestManageV2";
+import UrgentDonationRegistration from "./pages/UrgentDonationRegistration";
+import UrgentDonationSuccess from "./pages/UrgentDonationSuccess";
 
 
 dayjs.extend(isSameOrAfter);
@@ -116,6 +118,22 @@ const App = () => {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:postId" element={<BlogDetail />} />
         <Route path="/history" element={<AppointmentHistory />} />
+        <Route 
+          path="/urgent-donation-registration" 
+          element={
+            <RequireAuth roles={["Member"]}>
+              <UrgentDonationRegistration />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/urgent-donation-success" 
+          element={
+            <RequireAuth roles={["Member"]}>
+              <UrgentDonationSuccess />
+            </RequireAuth>
+          } 
+        />
         <Route
           path="/blood-compatibility"
           element={

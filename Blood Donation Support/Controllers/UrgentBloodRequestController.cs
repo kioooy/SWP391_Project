@@ -4,7 +4,7 @@ using Blood_Donation_Support.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NetTopologySuite.Geometries; // Thêm namespace cho Point
+using NetTopologySuite.Geometries; // Cần thiết cho Location.Distance()
 using System.Net;
 using System.Net.Mail;
 using System.Security.Claims;
@@ -929,63 +929,6 @@ namespace Blood_Donation_Support.Controllers
         {
             public int? RequestedBloodTypeId { get; set; }
             // Có thể thêm các trường khác nếu muốn cập nhật nhiều thông tin
-        }
-
-        /// <summary>
-        /// Chuyển đổi chuỗi tọa độ "latitude,longitude" thành đối tượng Point của NetTopologySuite.
-        /// </summary>
-        /// <param name="locationString">Chuỗi tọa độ (ví dụ: "10.762622,106.660172")</param>
-        /// <returns>Đối tượng Point hoặc null nếu chuỗi không hợp lệ.</returns>
-        private Point ParseLocationToPoint(string locationString)
-        {
-            if (string.IsNullOrEmpty(locationString))
-            {
-                return null;
-            }
-            var parts = locationString.Split(',');
-            if (parts.Length == 2 && double.TryParse(parts[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat) && double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lon))
-            {
-                // SRID 4326 là WGS84 (hệ tọa độ địa lý)
-                return new Point(lon, lat) { SRID = 4326 };
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Tính khoảng cách giữa hai điểm địa lý (Latitude, Longitude) sử dụng công thức Haversine.
-        /// </summary>
-        /// <param name="point1">Điểm thứ nhất.</param>
-        /// <param name="point2">Điểm thứ hai.</param>
-        /// <returns>Khoảng cách theo km.</returns>
-        private double CalculateDistance(Point point1, Point point2)
-        {
-            if (point1 == null || point2 == null)
-            {
-                return double.MaxValue; // Hoặc một giá trị lớn để biểu thị không thể tính toán
-            }
-
-            const double R = 6371; // Bán kính Trái Đất bằng km
-
-            var dLat = ToRadians(point2.Y - point1.Y);
-            var dLon = ToRadians(point2.X - point1.X);
-
-            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                    Math.Cos(ToRadians(point1.Y)) * Math.Cos(ToRadians(point2.Y)) *
-                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-            return R * c; // Khoảng cách theo km
-        }
-
-        /// <summary>
-        /// Chuyển đổi độ sang radian.
-        /// </summary>
-        /// <param name="angle">Góc theo độ.</param>
-        /// <returns>Góc theo radian.</returns>
-        private double ToRadians(double angle)
-        {
-            return Math.PI * angle / 180.0;
         }
     }
 }

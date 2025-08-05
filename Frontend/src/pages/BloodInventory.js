@@ -10,7 +10,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  
   TableContainer,
   TableHead,
   TableRow,
@@ -48,12 +47,6 @@ import dayjs from 'dayjs';
 import { Visibility as VisibilityIcon } from '@mui/icons-material';
 
 
-
-
-
-
-
-
 const BloodInventory = () => {
   const { user } = useSelector((state) => state.auth);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
@@ -76,6 +69,7 @@ const BloodInventory = () => {
     note: '',
   });
 
+
   // State cho lịch sử đơn vị máu
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedBloodHistory, setSelectedBloodHistory] = useState(null);
@@ -87,14 +81,16 @@ const BloodInventory = () => {
   });
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // State cho tìm kiếm theo ID hoặc nhóm máu
+
+  // State cho tìm kiếm và bộ lọc
   const [searchBloodUnitId, setSearchBloodUnitId] = useState('');
-  const [filteredInventory, setFilteredInventory] = useState([]);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterComponent, setFilterComponent] = useState('');
+  const [filterVolumeMin, setFilterVolumeMin] = useState('');
+  const [filterVolumeMax, setFilterVolumeMax] = useState('');
 
 
-
-
-  // Hardcode tạm danh sách nhóm máu, thành phần máu, member
+  // Hardcode tạm danh sách nhóm máu, thành phần máu, trạng thái
   const bloodTypes = [
     { id: 1, name: 'A+' }, { id: 2, name: 'A-' }, { id: 3, name: 'B+' }, { id: 4, name: 'B-' },
     { id: 5, name: 'AB+' }, { id: 6, name: 'AB-' }, { id: 7, name: 'O+' }, { id: 8, name: 'O-' }
@@ -105,8 +101,14 @@ const BloodInventory = () => {
     { id: 3, name: 'Plasma', description: 'Huyết tương' },
     { id: 4, name: 'Platelets', description: 'Tiểu cầu' }
   ];
-
-
+  const statuses = [
+    { value: '', label: 'Tất cả' },
+    { value: 'available', label: 'Có sẵn' },
+    { value: 'reserved', label: 'Đã đặt' },
+    { value: 'expired', label: 'Hết hạn' },
+    { value: 'used', label: 'Đã sử dụng' },
+    { value: 'discarded', label: 'Đã loại bỏ' },
+  ];
 
 
   const members = [
@@ -114,8 +116,6 @@ const BloodInventory = () => {
     { id: 2, name: 'Le Thi B' },
     { id: 3, name: 'Tran Van C' }
   ];
-
-
 
 
   // Fetch inventory
@@ -136,18 +136,14 @@ const BloodInventory = () => {
   };
 
 
-
-
   useEffect(() => {
     const initializePage = async () => {
       try {
         setLoading(true);
-        // Tự động kiểm tra hết hạn trước
         const token = localStorage.getItem('token');
         await axios.patch('/api/BloodUnit/expire-check', {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Sau đó lấy danh sách kho máu
         await fetchInventory();
       } catch (err) {
         console.error("Lỗi khi khởi tạo trang:", err.response?.data || err.message);
@@ -156,11 +152,8 @@ const BloodInventory = () => {
         setLoading(false);
       }
     };
-
     initializePage();
   }, []);
-
-
 
 
   const handleOpenDialog = (blood = null) => {
@@ -191,17 +184,12 @@ const BloodInventory = () => {
   };
 
 
-
-
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedBlood(null);
   };
 
 
-
-
-  // Thêm hoặc cập nhật đơn vị máu
   const handleSubmit = async () => {
     const token = localStorage.getItem('token');
     const isUpdating = !!selectedBlood;
@@ -220,13 +208,12 @@ const BloodInventory = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        // Thêm mới: luôn là nhập kho, không có memberId, trạng thái luôn là Available
         const payload = {
           bloodTypeId: formData.bloodTypeId,
           componentId: formData.componentId,
           volume: parseInt(formData.volume, 10),
           bloodStatus: 'Available',
-          addDate: dayjs().format('YYYY-MM-DD'), // Tự động sử dụng ngày hiện tại
+          addDate: dayjs().format('YYYY-MM-DD'),
         };
         await axios.post('/api/BloodUnit', payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -240,9 +227,6 @@ const BloodInventory = () => {
   };
 
 
-
-
-  // Kiểm tra và cập nhật trạng thái hết hạn
   const handleExpireCheck = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -250,9 +234,8 @@ const BloodInventory = () => {
       await axios.patch('/api/BloodUnit/expire-check', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Sau khi kiểm tra xong, lấy lại danh sách mới
       await fetchInventory();
-      setError(''); // Xóa lỗi cũ nếu có
+      setError('');
     } catch (err) {
       console.error("Lỗi khi kiểm tra hết hạn:", err.response?.data || err.message);
       setError(`Kiểm tra hết hạn thất bại! Lỗi: ${err.response?.data?.title || err.message}`);
@@ -261,16 +244,15 @@ const BloodInventory = () => {
     }
   };
 
-  // Mở dialog xác nhận xóa
+
   const handleDeleteClick = (blood) => {
     setBloodToDelete(blood);
     setDeleteDialogOpen(true);
   };
 
-  // Xóa (soft delete)
+
   const handleDelete = async () => {
     if (!bloodToDelete) return;
-
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -288,59 +270,20 @@ const BloodInventory = () => {
     }
   };
 
-  // Hàm lấy lịch sử đơn vị máu
+
   const handleViewHistory = async (bloodUnit) => {
     try {
       setLoadingHistory(true);
       setSelectedBloodHistory(bloodUnit);
       setHistoryDialogOpen(true);
-      
-      console.log('Đang lấy lịch sử cho đơn vị máu ID:', bloodUnit.bloodUnitId);
-      console.log('Thông tin đơn vị máu:', bloodUnit);
-      
-      // Lấy token từ localStorage
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
-      console.log('Headers:', headers);
-      
       const response = await axios.get(`/api/BloodUnit/${bloodUnit.bloodUnitId}/history`, { headers });
-      console.log('Response từ API history:', response);
-      console.log('Response.data:', response.data);
-      console.log('Response.data type:', typeof response.data);
-      console.log('Response.data is array:', Array.isArray(response.data));
-      console.log('Response.data length:', response.data?.length);
-      console.log('Response.data keys:', response.data ? Object.keys(response.data) : 'null/undefined');
-      
-      // Lưu response thô để debug
-      
-      // Thử nghiệm: Kiểm tra xem có thể lấy lịch sử từ endpoint khác không
-      try {
-        console.log('Thử nghiệm: Kiểm tra endpoint khác...');
-        const testResponse = await axios.get(`/api/TransfusionRequest`, { headers });
-        console.log('Test response từ TransfusionRequest:', testResponse.data);
-        
-        // Tìm kiếm trong danh sách transfusion request
-        if (testResponse.data && Array.isArray(testResponse.data)) {
-          const relatedRequests = testResponse.data.filter(req => 
-            req.bloodUnitId === bloodUnit.bloodUnitId || 
-            req.assignedBloodUnits?.some(unit => unit.bloodUnitId === bloodUnit.bloodUnitId)
-          );
-          console.log('Tìm thấy related requests:', relatedRequests);
-        }
-      } catch (testError) {
-        console.log('Không thể test endpoint khác:', testError.message);
-      }
-      
-      // Kiểm tra và xử lý dữ liệu response
       let donationHistory = [];
       let transfusionHistory = [];
       let urgentHistory = [];
-      
       if (response.data) {
-        // Nếu response.data là array
         if (Array.isArray(response.data)) {
-          // Nếu là array, phân loại dựa trên các field có sẵn
           response.data.forEach(item => {
             if (item.donationId) {
               donationHistory.push({ ...item, requestType: 'DonationRequest' });
@@ -350,72 +293,28 @@ const BloodInventory = () => {
               urgentHistory.push({ ...item, requestType: 'UrgentBloodRequest' });
             }
           });
-        }
-        // Nếu response.data là object có chứa array
-        else if (typeof response.data === 'object') {
-          console.log('Response.data là object, kiểm tra các key:', Object.keys(response.data));
-          
-          // Lấy lịch sử hiến máu
+        } else if (typeof response.data === 'object') {
           if (response.data.donationRequest && Array.isArray(response.data.donationRequest)) {
             donationHistory = response.data.donationRequest
               .filter(item => item.donationId && item.donationVolume > 0)
-              .map(item => ({
-                ...item,
-                requestType: 'DonationRequest'
-              }));
-            console.log('Tìm thấy lịch sử hiến máu:', donationHistory);
+              .map(item => ({ ...item, requestType: 'DonationRequest' }));
           }
-          
-          // Lấy lịch sử truyền máu
           if (response.data.transfusionRequest && Array.isArray(response.data.transfusionRequest)) {
             transfusionHistory = response.data.transfusionRequest
               .filter(item => item.transfusionId && item.assignedVolume > 0)
-              .map(item => ({
-                ...item,
-                requestType: 'TransfusionRequest'
-              }));
-            console.log('Tìm thấy lịch sử truyền máu:', transfusionHistory);
+              .map(item => ({ ...item, requestType: 'TransfusionRequest' }));
           }
-          
-          // Lấy lịch sử yêu cầu khẩn cấp
           if (response.data.urgentBloodRequest && Array.isArray(response.data.urgentBloodRequest)) {
             urgentHistory = response.data.urgentBloodRequest
               .filter(item => item.urgentRequestId && item.assignedVolume > 0)
-              .map(item => ({
-                ...item,
-                requestType: 'UrgentBloodRequest'
-              }));
-            console.log('Tìm thấy lịch sử yêu cầu khẩn cấp:', urgentHistory);
+              .map(item => ({ ...item, requestType: 'UrgentBloodRequest' }));
           }
         }
       }
-      
-      // Tổng hợp tất cả lịch sử để hiển thị
       const allHistory = [...donationHistory, ...transfusionHistory, ...urgentHistory];
-      console.log('Tổng hợp tất cả lịch sử:', allHistory);
-      
-      // Lưu từng loại lịch sử riêng biệt
-      setBloodHistory({
-        donationHistory,
-        transfusionHistory,
-        urgentHistory,
-        allHistory
-      });
-      
-      console.log('Dữ liệu lịch sử đã xử lý:', {
-        donationHistory: donationHistory.length,
-        transfusionHistory: transfusionHistory.length,
-        urgentHistory: urgentHistory.length,
-        total: allHistory.length
-      });
-      
+      setBloodHistory({ donationHistory, transfusionHistory, urgentHistory, allHistory });
     } catch (error) {
       console.error('Lỗi khi lấy lịch sử đơn vị máu:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Error config:', error.config);
-      
-      // Hiển thị thông báo lỗi cụ thể
       if (error.response?.status === 401) {
         setError('Bạn cần đăng nhập để xem lịch sử đơn vị máu.');
       } else if (error.response?.status === 404) {
@@ -425,42 +324,26 @@ const BloodInventory = () => {
       } else {
         setError(`Không thể kết nối để lấy lịch sử. Lỗi: ${error.message}`);
       }
-      
-      setBloodHistory({
-        donationHistory: [],
-        transfusionHistory: [],
-        urgentHistory: [],
-        allHistory: []
-      });
+      setBloodHistory({ donationHistory: [], transfusionHistory: [], urgentHistory: [], allHistory: [] });
     } finally {
       setLoadingHistory(false);
     }
   };
 
-  // Hàm đóng dialog lịch sử
+
   const handleCloseHistoryDialog = () => {
     setHistoryDialogOpen(false);
     setSelectedBloodHistory(null);
-    setBloodHistory({
-      donationHistory: [],
-      transfusionHistory: [],
-      urgentHistory: [],
-      allHistory: []
-    });
+    setBloodHistory({ donationHistory: [], transfusionHistory: [], urgentHistory: [], allHistory: [] });
   };
 
-  // Hàm cập nhật trạng thái đơn vị máu dựa trên remainingVolume
+
   const getUpdatedStatus = (status, remainingVolume) => {
-    if (remainingVolume === 0) {
-      return 'used'; // Đánh dấu là đã sử dụng
-    }
+    if (remainingVolume === 0) return 'used';
     return status || 'available';
   };
 
 
-
-
-  // Thống kê tổng số lượng máu theo nhóm
   const totalByType = bloodTypes.reduce((acc, type) => {
     const total = inventory.filter((item) => item.bloodTypeName === type.name && item.bloodStatus === 'Available')
       .reduce((sum, item) => sum + (item.remainingVolume || 0), 0);
@@ -469,65 +352,38 @@ const BloodInventory = () => {
   }, {});
 
 
-
-
   const getStatusChip = (status, remainingVolume) => {
-    // Debug: Log thông tin để kiểm tra
-    console.log('getStatusChip - status:', status, 'remainingVolume:', remainingVolume);
-    
-    // Kiểm tra nếu hết máu (remainingVolume = 0) - ưu tiên cao nhất
     if (remainingVolume === 0) {
-      console.log('remainingVolume = 0, hiển thị "Đã sử dụng"');
       return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng" sx={{ backgroundColor: '#9e9e9e', color: 'white' }} size="small" />;
     }
-    
-    // Nếu còn đủ máu, kiểm tra bloodStatus trước
     switch (status?.toLowerCase()) {
       case 'available':
-        // Nếu available nhưng remainingVolume < 100, có thể đã sử dụng một phần
         if (remainingVolume > 0 && remainingVolume < 100) {
-          console.log('status = available nhưng remainingVolume < 100, hiển thị "Đã sử dụng một phần"');
           return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng một phần" color="warning" size="small" />;
         }
-        console.log('status = available, hiển thị "Có sẵn"');
         return <Chip icon={<CheckCircleIcon />} label="Có sẵn" color="success" size="small" />;
       case 'reserved':
-        console.log('status = reserved, hiển thị "Đã đặt"');
         return <Chip icon={<WarningIcon />} label="Đã đặt" color="secondary" size="small" />;
       case 'expired':
-        console.log('status = expired, hiển thị "Hết hạn"');
         return <Chip icon={<WarningIcon />} label="Hết hạn" color="error" size="small" />;
       case 'used':
-        console.log('status = used, hiển thị "Đã sử dụng"');
         return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng" sx={{ backgroundColor: '#9e9e9e', color: 'white' }} size="small" />;
       case 'discarded':
-        console.log('status = discarded, hiển thị "Đã loại bỏ"');
         return <Chip icon={<WarningIcon />} label="Đã loại bỏ" color="error" size="small" />;
       default:
-        // Nếu status không rõ nhưng remainingVolume > 0
         if (remainingVolume > 0 && remainingVolume < 100) {
-          console.log('status không rõ nhưng remainingVolume < 100, hiển thị "Đã sử dụng một phần"');
           return <Chip icon={<LocalHospitalIcon />} label="Đã sử dụng một phần" color="warning" size="small" />;
         }
-        console.log('status không rõ nhưng remainingVolume > 0, hiển thị "Có sẵn"');
         return <Chip icon={<CheckCircleIcon />} label="Có sẵn" color="success" size="small" />;
     }
   };
 
 
   const getStatusText = (status, remainingVolume) => {
-    // Kiểm tra nếu hết máu (remainingVolume = 0) - ưu tiên cao nhất
-    if (remainingVolume === 0) {
-      return 'Đã sử dụng';
-    }
-    
-    // Nếu còn đủ máu, kiểm tra bloodStatus trước
+    if (remainingVolume === 0) return 'Đã sử dụng';
     switch (status?.toLowerCase()) {
       case 'available':
-        // Nếu available nhưng remainingVolume < 100, có thể đã sử dụng một phần
-        if (remainingVolume > 0 && remainingVolume < 100) {
-          return 'Đã sử dụng một phần';
-        }
+        if (remainingVolume > 0 && remainingVolume < 100) return 'Đã sử dụng một phần';
         return 'Có sẵn';
       case 'reserved':
         return 'Đã đặt';
@@ -538,13 +394,12 @@ const BloodInventory = () => {
       case 'discarded':
         return 'Đã loại bỏ';
       default:
-        // Nếu status không rõ nhưng remainingVolume > 0
-        if (remainingVolume > 0 && remainingVolume < 100) {
-          return 'Đã sử dụng một phần';
-        }
+        if (remainingVolume > 0 && remainingVolume < 100) return 'Đã sử dụng một phần';
         return 'Có sẵn';
     }
   };
+
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mb: 4, color: 'primary.main' }}>
@@ -552,7 +407,6 @@ const BloodInventory = () => {
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {loading ? <Box textAlign="center"><LinearProgress /></Box> : <>
-        
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {bloodTypes.map((type) => (
             <Grid item xs={12} sm={6} md={3} key={type.id}>
@@ -577,11 +431,10 @@ const BloodInventory = () => {
             </Grid>
           ))}
         </Grid>
-        {/* Bảng quản lý kho máu */}
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Typography variant="h6">Danh sách đơn vị máu</Typography>
                 <TextField
                   label="Tìm kiếm nhóm máu"
@@ -590,18 +443,60 @@ const BloodInventory = () => {
                   value={searchBloodUnitId}
                   onChange={(e) => setSearchBloodUnitId(e.target.value)}
                   placeholder="Nhập ID hoặc tên nhóm máu"
-                  sx={{ minWidth: 250 }}
+                  sx={{ minWidth: 200 }}
+                />
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Trạng thái</InputLabel>
+                  <Select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    label="Trạng thái"
+                  >
+                    {statuses.map((status) => (
+                      <MenuItem key={status.value} value={status.value}>{status.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Thành phần</InputLabel>
+                  <Select
+                    value={filterComponent}
+                    onChange={(e) => setFilterComponent(e.target.value)}
+                    label="Thành phần"
+                  >
+                    <MenuItem value="">Tất cả</MenuItem>
+                    {components.map((component) => (
+                      <MenuItem key={component.id} value={component.name}>{component.description}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  label="Thể tích min (ml)"
+                  type="number"
+                  variant="outlined"
+                  size="small"
+                  value={filterVolumeMin}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFilterVolumeMin(value ? parseInt(value, 10).toString() : '');
+                  }}
+                  sx={{ width: 150 }}
+                  inputProps={{ min: 0 }}
+                />
+                <TextField
+                  label="Thể tích max (ml)"
+                  type="number"
+                  variant="outlined"
+                  size="small"
+                  value={filterVolumeMax}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFilterVolumeMax(value ? parseInt(value, 10).toString() : '');
+                  }}
+                  sx={{ width: 150 }}
+                  inputProps={{ min: 0 }}
                 />
               </Box>
-              {(isAdmin || isStaff) && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => handleOpenDialog()}
-                >
-                  Thêm đơn vị máu
-                </Button>
-              )}
             </Box>
             <TableContainer component={Paper}>
               <Table>
@@ -619,80 +514,69 @@ const BloodInventory = () => {
                 </TableHead>
                 <TableBody>
                   {inventory
-                    .filter(row => 
-                      !searchBloodUnitId || 
-                      row.bloodUnitId.toString().includes(searchBloodUnitId) ||
-                      row.bloodTypeName.toLowerCase().includes(searchBloodUnitId.toLowerCase())
-                    )
-                    .sort((a, b) => b.bloodUnitId - a.bloodUnitId) // Sắp xếp theo ID giảm dần (lớn đến bé)
+                    .filter(row => {
+                      const matchesSearch = !searchBloodUnitId ||
+                        row.bloodUnitId.toString().includes(searchBloodUnitId) ||
+                        row.bloodTypeName.toLowerCase().includes(searchBloodUnitId.toLowerCase());
+                      const matchesStatus = !filterStatus ||
+                        getUpdatedStatus(row.bloodStatus, row.remainingVolume).toLowerCase() === filterStatus.toLowerCase();
+                      const matchesComponent = !filterComponent ||
+                        row.componentName === filterComponent;
+                      const matchesVolumeMin = !filterVolumeMin ||
+                        row.remainingVolume >= parseInt(filterVolumeMin, 10);
+                      const matchesVolumeMax = !filterVolumeMax ||
+                        row.remainingVolume <= parseInt(filterVolumeMax, 10);
+                      return matchesSearch && matchesStatus && matchesComponent && matchesVolumeMin && matchesVolumeMax;
+                    })
+                    .sort((a, b) => b.bloodUnitId - a.bloodUnitId)
                     .map((row) => (
-
-
-
-
-
-
-                    <TableRow 
-                      key={row.bloodUnitId}
-                      style={
-                        row.remainingVolume === 0
-                          ? { opacity: 0.5, background: '#f5f5f5' }
-                          : {}
-                      }
-                    >
-                      <TableCell>{row.bloodUnitId}</TableCell>
-                      <TableCell>{row.bloodTypeName}</TableCell>
-                      <TableCell>{components.find(c => c.name === row.componentName)?.description}</TableCell>
-                      <TableCell>{row.addDate ? new Date(row.addDate).toLocaleDateString() : ''}</TableCell>
-                      <TableCell>{row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : ''}</TableCell>
-                      <TableCell>{row.remainingVolume}</TableCell>
-                      <TableCell>{getStatusChip(getUpdatedStatus(row.bloodStatus, row.remainingVolume), row.remainingVolume)}</TableCell>
-
-
-                      {isAdmin && (
-                        <TableCell>
-                          <Tooltip title="Xem lịch sử">
-                            <IconButton size="small" color="info" onClick={() => handleViewHistory(row)}>
-                              <HistoryIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Xem chi tiết">
-                            <IconButton size="small" onClick={() => setViewDetail(row)}>
-                              <VisibilityIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Chỉnh sửa đơn vị máu">
-                            <IconButton size="small" color="primary" onClick={() => handleOpenDialog(row)}>
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Xóa đơn vị máu">
-                            <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
+                      <TableRow
+                        key={row.bloodUnitId}
+                        style={row.remainingVolume === 0 ? { opacity: 0.5, background: '#f5f5f5' } : {}}
+                      >
+                        <TableCell>{row.bloodUnitId}</TableCell>
+                        <TableCell>{row.bloodTypeName}</TableCell>
+                        <TableCell>{components.find(c => c.name === row.componentName)?.description}</TableCell>
+                        <TableCell>{row.addDate ? new Date(row.addDate).toLocaleDateString() : ''}</TableCell>
+                        <TableCell>{row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : ''}</TableCell>
+                        <TableCell>{row.remainingVolume}</TableCell>
+                        <TableCell>{getStatusChip(getUpdatedStatus(row.bloodStatus, row.remainingVolume), row.remainingVolume)}</TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <Tooltip title="Xem lịch sử">
+                              <IconButton size="small" color="info" onClick={() => handleViewHistory(row)}>
+                                <HistoryIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Xem chi tiết">
+                              <IconButton size="small" onClick={() => setViewDetail(row)}>
+                                <VisibilityIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Chỉnh sửa đơn vị máu">
+                              <IconButton size="small" color="primary" onClick={() => handleOpenDialog(row)}>
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Xóa đơn vị máu">
+                              <IconButton size="small" color="error" onClick={() => handleDeleteClick(row)}>
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
                 </TableBody>
-
-
-
-
               </Table>
             </TableContainer>
           </CardContent>
         </Card>
       </>}
-      {/* Dialog thêm/sửa đơn vị máu */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedBlood ? 'Cập nhật đơn vị máu' : 'Thêm đơn vị máu mới'}
-        </DialogTitle>
+        <DialogTitle>{selectedBlood ? 'Cập nhật đơn vị máu' : 'Thêm đơn vị máu mới'}</DialogTitle>
         <DialogContent>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            {/* Khi chỉnh sửa chỉ cho phép sửa thể tích còn lại và trạng thái */}
             {!selectedBlood && (
               <>
                 <TextField
@@ -723,7 +607,6 @@ const BloodInventory = () => {
                   value={formData.volume}
                   onChange={(e) => {
                     const value = parseInt(e.target.value, 10);
-                    // Nếu nhập số âm hoặc không phải số, chuyển về 0
                     const validValue = isNaN(value) || value < 0 ? 0 : value;
                     setFormData({ ...formData, volume: validValue.toString() });
                   }}
@@ -741,7 +624,6 @@ const BloodInventory = () => {
                   value={formData.remainingVolume}
                   onChange={(e) => {
                     const value = parseInt(e.target.value, 10);
-                    // Nếu nhập số âm hoặc không phải số, chuyển về 0
                     const validValue = isNaN(value) || value < 0 ? 0 : value;
                     setFormData({ ...formData, remainingVolume: validValue.toString() });
                   }}
@@ -797,7 +679,7 @@ const BloodInventory = () => {
               <Typography><strong>Hạn sử dụng:</strong> {viewDetail?.expiryDate || 'Không có'}</Typography>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <Typography><strong>Trạng thái:</strong>  {getStatusText(getUpdatedStatus(viewDetail?.bloodStatus, viewDetail?.remainingVolume), viewDetail?.remainingVolume)}</Typography>
+              <Typography><strong>Trạng thái:</strong> {getStatusText(getUpdatedStatus(viewDetail?.bloodStatus, viewDetail?.remainingVolume), viewDetail?.remainingVolume)}</Typography>
             </Grid>
             <Grid item xs={12}>
               <Typography><strong>Người hiến:</strong> {viewDetail?.fullName || 'Không có'}</Typography>
@@ -808,12 +690,7 @@ const BloodInventory = () => {
           <Button onClick={() => setViewDetail(null)}>Đóng</Button>
         </DialogActions>
       </Dialog>
-
-      {/* Dialog xác nhận xóa */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Xác nhận xóa đơn vị máu</DialogTitle>
         <DialogContent>
           <Typography>
@@ -832,14 +709,7 @@ const BloodInventory = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Dialog hiển thị lịch sử đơn vị máu */}
-      <Dialog 
-        open={historyDialogOpen} 
-        onClose={handleCloseHistoryDialog} 
-        maxWidth="lg" 
-        fullWidth
-      >
+      <Dialog open={historyDialogOpen} onClose={handleCloseHistoryDialog} maxWidth="lg" fullWidth>
         <DialogTitle sx={{ color: '#e53e3e', fontWeight: 'bold' }}>
           Lịch sử sử dụng đơn vị máu - ID: {selectedBloodHistory?.bloodUnitId}
         </DialogTitle>
@@ -862,7 +732,6 @@ const BloodInventory = () => {
             </Box>
           ) : (
             <>
-              {/* Lịch sử hiến máu */}
               {bloodHistory.donationHistory.length > 0 && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #1976d2', pb: 1 }}>
@@ -892,12 +761,7 @@ const BloodInventory = () => {
                             <TableCell sx={{ width: '20%', wordBreak: 'break-word' }}>{history.donationVolume || 0}</TableCell>
                             <TableCell sx={{ width: '40%', wordBreak: 'break-word' }}>
                               {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
+                                hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
                               }) : 'N/A'}
                             </TableCell>
                           </TableRow>
@@ -907,8 +771,6 @@ const BloodInventory = () => {
                   </TableContainer>
                 </Box>
               )}
-
-              {/* Lịch sử truyền máu */}
               {bloodHistory.transfusionHistory.length > 0 && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #2e7d32', pb: 1 }}>
@@ -938,12 +800,7 @@ const BloodInventory = () => {
                             <TableCell sx={{ width: '20%', wordBreak: 'break-word' }}>{history.assignedVolume || 0}</TableCell>
                             <TableCell sx={{ width: '40%', wordBreak: 'break-word' }}>
                               {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
+                                hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
                               }) : 'N/A'}
                             </TableCell>
                           </TableRow>
@@ -953,8 +810,6 @@ const BloodInventory = () => {
                   </TableContainer>
                 </Box>
               )}
-
-              {/* Lịch sử yêu cầu khẩn cấp */}
               {bloodHistory.urgentHistory.length > 0 && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h6" sx={{ color: '#d32f2f', fontWeight: 'bold', mb: 2, borderBottom: '2px solid #d32f2f', pb: 1 }}>
@@ -984,12 +839,7 @@ const BloodInventory = () => {
                             <TableCell sx={{ width: '20%', wordBreak: 'break-word' }}>{history.assignedVolume || 0}</TableCell>
                             <TableCell sx={{ width: '40%', wordBreak: 'break-word' }}>
                               {history.assignedDate ? new Date(history.assignedDate).toLocaleString('vi-VN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric'
+                                hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric'
                               }) : 'N/A'}
                             </TableCell>
                           </TableRow>
@@ -1010,4 +860,8 @@ const BloodInventory = () => {
   );
 };
 
+
 export default BloodInventory;
+
+
+

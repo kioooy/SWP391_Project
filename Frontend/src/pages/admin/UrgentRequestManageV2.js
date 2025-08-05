@@ -849,10 +849,12 @@ const UrgentRequestManageV2 = () => {
 
       {/* Dialog chọn nhóm máu & thành phần nếu chưa biết */}
       <Dialog open={acceptDialog} onClose={() => setAcceptDialog(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Chọn nhóm máu & thành phần cho bệnh nhân</DialogTitle>
+        <DialogTitle>
+          Xác nhận nhóm máu & thành phần cho bệnh nhân
+        </DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Chưa rõ nhóm máu của bệnh nhân. Vui lòng chọn nhóm máu và thành phần phù hợp theo kết quả xét nghiệm.
+            Chưa rõ nhóm máu của bệnh nhân. Vui lòng xác nhận Nhóm Máu & Thành Phần phù hợp theo kết quả xét nghiệm.
           </Alert>
           <Box sx={{ mt: 2 }}>
             <FormControl fullWidth sx={{ mb: 2 }}>

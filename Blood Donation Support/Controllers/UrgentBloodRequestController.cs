@@ -306,7 +306,7 @@ namespace Blood_Donation_Support.Controllers
             if (!compatibleBloodTypeIds.Contains(requestedBloodTypeId))
                 compatibleBloodTypeIds.Add(requestedBloodTypeId);
 
-            // ===== TIÊU CHÍ 1: MÁU CÙNG NHÓM (ƯU TIÊN CAO NHẤT) =====
+            // ===== TIÊU CHÍ 1: MÁU CHÍNH XÁC (ƯU TIÊN CAO NHẤT) =====
             // Ưu tiên máu cùng nhóm với người nhận (ví dụ: A+ cho A+)
             // Điều kiện: Available, chưa hết hạn, còn thể tích
             var availableExactQuery = _context.BloodUnits
@@ -338,32 +338,12 @@ namespace Blood_Donation_Support.Controllers
             
             var availableCompatible = await availableCompatibleQuery.ToListAsync();
 
-            // ===== TIÊU CHÍ 3: MÁU ĐÃ ĐẶT TRƯỚC (ƯU TIÊN THỨ 3) =====
-            // Chỉ xem xét máu Reserved nếu 2 nhóm trên không đủ
-            // Có thể lấy máu đã đặt cho ca truyền máu thường để ưu tiên cho khẩn cấp
-            List<BloodUnit> reserved = new();
-            if (availableExact.Count + availableCompatible.Count == 0)
-            {
-                var reservedQuery = _context.BloodUnits
-                    .Include(bu => bu.BloodType)
-                    .Include(bu => bu.Component)
-                    .Where(bu => (bu.BloodTypeId == requestedBloodTypeId || compatibleBloodTypeIds.Contains(bu.BloodTypeId)) && bu.BloodStatus == "Reserved" && bu.ExpiryDate >= DateOnly.FromDateTime(DateTime.Today) && bu.RemainingVolume > 0);
-                
-                // Nếu có componentId, thêm điều kiện lọc theo thành phần
-                if (componentId.HasValue)
-                {
-                    reservedQuery = reservedQuery.Where(bu => bu.ComponentId == componentId.Value);
-                }
-                
-                reserved = await reservedQuery.ToListAsync();
-            }
-
-            // ===== TIÊU CHÍ 4: TÌM NGƯỜI HIẾN MÁU (CUỐI CÙNG) =====
+            // ===== TIÊU CHÍ 3: NGƯỜI HIẾN PHÙ HỢP (CUỐI CÙNG) =====
             // Nếu không có máu trong kho, tìm người hiến máu trong bán kính 20km
             // Điều kiện: Đủ điều kiện hiến máu, nhóm máu tương thích, không có lịch hiến sắp tới
             List<object> eligibleDonors = new();
             
-            if ((availableExact.Count + availableCompatible.Count + reserved.Count) == 0)
+            if ((availableExact.Count + availableCompatible.Count) == 0)
             {
                 // Sử dụng logic giống BloodDistanceSearchController - lấy vị trí trung tâm từ bệnh viện
                 var hospital = await _context.Hospitals.FirstOrDefaultAsync();
@@ -439,7 +419,7 @@ namespace Blood_Donation_Support.Controllers
             // Giảng viên có thể xem phần này để hiểu cấu trúc dữ liệu trả về
             return Ok(new
             {
-                // ===== TIÊU CHÍ 1: MÁU CÙNG NHÓM (ƯU TIÊN CAO NHẤT) =====
+                // ===== TIÊU CHÍ 1: MÁU CHÍNH XÁC (ƯU TIÊN CAO NHẤT) =====
                 // Trả về danh sách túi máu cùng nhóm với người nhận (ví dụ: A+ cho A+)
                 // Điều kiện: Available, chưa hết hạn, còn thể tích
                 availableExact = availableExact.Select(bu => new {
@@ -465,20 +445,7 @@ namespace Blood_Donation_Support.Controllers
                     bu.BloodStatus            // Trạng thái máu (Available)
                 }),
                 
-                // ===== TIÊU CHÍ 3: MÁU ĐÃ ĐẶT TRƯỚC (ƯU TIÊN THỨ 3) =====
-                // Trả về danh sách túi máu đã đặt cho ca truyền máu thường
-                // Có thể lấy để ưu tiên cho yêu cầu khẩn cấp
-                reserved = reserved.Select(bu => new {
-                    bu.BloodUnitId,           // ID túi máu
-                    bu.BloodType.BloodTypeName, // Tên nhóm máu
-                    bu.Component.ComponentName, // Tên thành phần máu
-                    bu.Volume,                // Thể tích ban đầu
-                    bu.RemainingVolume,       // Thể tích còn lại
-                    bu.ExpiryDate,            // Ngày hết hạn
-                    bu.BloodStatus            // Trạng thái máu (Reserved)
-                }),
-                
-                // ===== TIÊU CHÍ 4: NGƯỜI HIẾN MÁU (CUỐI CÙNG) =====
+                // ===== TIÊU CHÍ 3: NGƯỜI HIẾN PHÙ HỢP (CUỐI CÙNG) =====
                 // Trả về danh sách người hiến máu trong bán kính 20km
                 // Chỉ hiển thị khi không có máu trong kho
                 // Điều kiện: Đủ điều kiện hiến máu, nhóm máu tương thích, không có lịch hiến sắp tới
@@ -721,6 +688,10 @@ namespace Blood_Donation_Support.Controllers
             return Ok(results);
         }
 
+        /// <summary>
+        /// API gán máu cho yêu cầu khẩn cấp
+        /// NGHIỆP VỤ: Chỉ cho phép gán máu Available, không lấy máu đã đặt chỗ
+        /// </summary>
         [HttpPatch("{id}/assign-blood-units")]
         [Authorize(Roles = "Staff,Admin")]
         public async Task<IActionResult> AssignBloodUnitsToUrgentRequest(int id, [FromBody] AssignUrgentBloodUnitsInputDTO model)
@@ -775,52 +746,18 @@ namespace Blood_Donation_Support.Controllers
                 if (!isCompatible)
                     return BadRequest($"Đơn vị máu {bu.BloodUnitId} không tương thích với người nhận!");
 
-                // Xử lý theo trạng thái máu
+                // ===== NGHIỆP VỤ: CHỈ CHO PHÉP GÁN MÁU AVAILABLE =====
+                // Bỏ logic xử lý máu Reserved để tránh xung đột với yêu cầu thường
                 if (bloodUnit.BloodStatus == "Available")
                 {
-                    // Logic xử lý máu Available (giữ nguyên như cũ)
+                    // Chuyển trạng thái từ Available sang Reserved
                     bloodUnit.BloodStatus = "Reserved";
                     _context.BloodUnits.Update(bloodUnit);
                 }
-                else if (bloodUnit.BloodStatus == "Reserved")
-                {
-                    // ===== NGHIỆP VỤ: XỬ LÝ MÁU ĐÃ ĐẶT TRƯỚC =====
-                    // Khi lấy máu Reserved cho yêu cầu khẩn cấp, cần hủy liên kết với ca truyền máu thường
-                    // Nguyên tắc: Yêu cầu khẩn cấp có ưu tiên cao hơn ca truyền máu thường
-                    var existingReservation = await _context.BloodReservations
-                        .Include(r => r.Transfusion)
-                        .FirstOrDefaultAsync(r => r.BloodUnitId == bu.BloodUnitId && r.Status == "Active");
-                    
-                    if (existingReservation != null)
-                    {
-                        // ===== NGHIỆP VỤ: HỦY LIÊN KẾT VỚI CA TRUYỀN MÁU THƯỜNG =====
-                        // Chuyển trạng thái reservation từ "Active" sang "Cancelled"
-                        // Lý do: Ưu tiên cho yêu cầu khẩn cấp
-                        existingReservation.Status = "Cancelled";
-                        _context.BloodReservations.Update(existingReservation);
-
-                        // ===== NGHIỆP VỤ: LOG LẠI THÔNG TIN HỦY LIÊN KẾT =====
-                        // Ghi lại thông tin để theo dõi và báo cáo
-                        // Có thể lưu vào bảng Logs hoặc ghi file log
-                        var logEntry = new
-                        {
-                            LogType = "BloodReservationCancelled",
-                            BloodUnitId = bu.BloodUnitId,
-                            CancelledTransfusionId = existingReservation.TransfusionId,
-                            UrgentRequestId = id,
-                            CancelledByUserId = currentUserId,
-                            CancelledByUserName = currentUser?.FullName ?? "Unknown",
-                            CancelledDate = DateTime.Now,
-                            Reason = $"Ưu tiên cho yêu cầu máu khẩn cấp ID: {id}, Bệnh nhân: {urgentRequest.PatientName}",
-                            CancelledTransfusionPatient = existingReservation.Transfusion?.PatientCondition ?? "Unknown"
-                        };
-
-                        // TODO: Lưu log vào bảng Logs hoặc ghi file log
-                    }
-                }
                 else
                 {
-                    return BadRequest($"Đơn vị máu {bu.BloodUnitId} không sẵn sàng (trạng thái: {bloodUnit.BloodStatus})!");
+                    // Chỉ cho phép gán máu Available, không lấy máu đã đặt chỗ
+                    return BadRequest($"Đơn vị máu {bu.BloodUnitId} không sẵn sàng (trạng thái: {bloodUnit.BloodStatus})! Chỉ có thể gán máu Available.");
                 }
 
                 // Tạo bản ghi liên kết trong bảng UrgentRequestBloodUnits

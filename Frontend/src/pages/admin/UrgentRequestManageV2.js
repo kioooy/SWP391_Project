@@ -17,7 +17,7 @@ const UrgentRequestManageV2 = () => {
   const [fulfillDialog, setFulfillDialog] = useState(false);
   const [chosenBloodTypeId, setChosenBloodTypeId] = useState('');
   const [chosenComponentId, setChosenComponentId] = useState('');
-  const [availableBloodUnits, setAvailableBloodUnits] = useState({ availableExact: [], availableCompatible: [], reserved: [] });
+  const [availableBloodUnits, setAvailableBloodUnits] = useState({ availableExact: [], availableCompatible: [], eligibleDonors: [] });
   const [selectedBloodUnitIds, setSelectedBloodUnitIds] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [currentRequest, setCurrentRequest] = useState(null);
@@ -147,8 +147,7 @@ const UrgentRequestManageV2 = () => {
       // Cập nhật danh sách máu để gán
       const allBloodUnits = [
         ...res.data.availableExact,
-        ...res.data.availableCompatible,
-        ...res.data.reserved
+        ...res.data.availableCompatible
       ];
       setAssignBloodUnits(allBloodUnits);
       
@@ -301,8 +300,7 @@ const UrgentRequestManageV2 = () => {
     await fetchSuggestedBloodUnits(currentRequest.urgentRequestId, chosenBloodTypeId, chosenComponentId);
     setAssignBloodUnits([
       ...availableBloodUnits.availableExact,
-      ...availableBloodUnits.availableCompatible,
-      ...availableBloodUnits.reserved
+      ...availableBloodUnits.availableCompatible
     ]);
     setAssignVolumes({});
     setAssignDialog(true);
@@ -321,8 +319,7 @@ const UrgentRequestManageV2 = () => {
     // setFulfillDialog(true);
     setAssignBloodUnits([
       ...availableBloodUnits.availableExact,
-      ...availableBloodUnits.availableCompatible,
-      ...availableBloodUnits.reserved
+      ...availableBloodUnits.availableCompatible
     ]);
     setAssignVolumes({});
     setAssignDialog(true);
@@ -331,8 +328,7 @@ const UrgentRequestManageV2 = () => {
   const getUnitById = (id) => {
     const allUnits = [
       ...availableBloodUnits.availableExact,
-      ...availableBloodUnits.availableCompatible,
-      ...availableBloodUnits.reserved
+      ...availableBloodUnits.availableCompatible
     ];
     return allUnits.find(u => u.bloodUnitId === id);
   };
@@ -1123,7 +1119,7 @@ const UrgentRequestManageV2 = () => {
           <Alert severity="info" sx={{ mb: 1.5, py: 0.75 }}>
             <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
               <strong>Hướng dẫn chọn máu:</strong>
-              <br />1️⃣ <strong>Máu cùng nhóm</strong> (tốt nhất) → 2️⃣ <strong>Máu tương thích</strong> → 3️⃣ <strong>Máu đã đặt chỗ</strong> → 4️⃣ <strong>Huy động người hiến</strong>
+              <br />1️⃣ <strong>Máu cùng nhóm</strong> (tốt nhất) → 2️⃣ <strong>Máu tương thích</strong> → 3️⃣ <strong>Huy động người hiến</strong>
             </Typography>
           </Alert>
 
@@ -1133,13 +1129,13 @@ const UrgentRequestManageV2 = () => {
             </Box>
           ) : (
             <>
-              {/* Thông tin tổng quan về tình trạng máu */}
+                            {/* Thông tin tổng quan về tình trạng máu */}
               <Box sx={{ mb: 2.5, p: 1.5, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}>
                 <Typography variant="body1" sx={{ mb: 1.5, color: '#495057', fontWeight: 'bold', fontSize: '0.9rem' }}>
                   📊 Tổng quan tình trạng máu
                 </Typography>
                 <Grid container spacing={1.5}>
-                  <Grid item xs={12} sm={3}>
+                  <Grid item xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#e8f5e8', borderRadius: 1, border: '1px solid #4caf50' }}>
                       <Typography variant="h6" color="#2e7d32" sx={{ fontSize: '1.1rem', mb: 0 }}>
                         {availableBloodUnits.availableExact?.length || 0}
@@ -1149,7 +1145,7 @@ const UrgentRequestManageV2 = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} sm={3}>
+                  <Grid item xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#e3f2fd', borderRadius: 1, border: '1px solid #2196f3' }}>
                       <Typography variant="h6" color="#1976d2" sx={{ fontSize: '1.1rem', mb: 0 }}>
                         {availableBloodUnits.availableCompatible?.length || 0}
@@ -1159,17 +1155,7 @@ const UrgentRequestManageV2 = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#fff3e0', borderRadius: 1, border: '1px solid #ff9800' }}>
-                      <Typography variant="h6" color="#f57c00" sx={{ fontSize: '1.1rem', mb: 0 }}>
-                        {availableBloodUnits.reserved?.length || 0}
-                      </Typography>
-                      <Typography variant="body2" color="#f57c00" sx={{ fontSize: '0.8rem' }}>
-                        Máu đã đặt chỗ
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
+                  <Grid item xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 0.75, bgcolor: '#ffebee', borderRadius: 1, border: '1px solid #f44336' }}>
                       <Typography variant="h6" color="#d32f2f" sx={{ fontSize: '1.1rem', mb: 0 }}>
                         {availableBloodUnits.eligibleDonors?.length || 0}
@@ -1244,27 +1230,7 @@ const UrgentRequestManageV2 = () => {
                         </Box>
                       } 
                     />
-                    <Tab 
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Box sx={{ 
-                            width: 16, 
-                            height: 16, 
-                            borderRadius: '50%', 
-                            bgcolor: '#ff9800',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.875rem',
-                            color: 'white',
-                            fontWeight: 'bold'
-                          }}>
-                            {availableBloodUnits.reserved?.length || 0}
-                          </Box>
-                          Máu đã đặt chỗ
-                        </Box>
-                      } 
-                    />
+
                     <Tab 
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1489,94 +1455,9 @@ const UrgentRequestManageV2 = () => {
                     </>
                   )}
 
-                  {currentTab === 2 && (
-                    <>
-                      {/* Phần chọn máu đã đặt chỗ để gán */}
-                      {availableBloodUnits.reserved && availableBloodUnits.reserved.length > 0 ? (
-                        <>
-                          <Typography variant="h6" sx={{ mb: 2, color: '#ff9800', fontWeight: 'bold' }}>
-                            ✅ Chọn máu đã đặt chỗ để gán
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {availableBloodUnits.reserved.map((unit) => (
-                              <Box key={unit.bloodUnitId} sx={{ 
-                                border: '2px solid #ff9800', 
-                                borderRadius: 2, 
-                                p: 2, 
-                                display: 'flex', 
-                                alignItems: 'flex-start', 
-                                gap: 2, 
-                                background: assignVolumes[unit.bloodUnitId] ? '#fff3e0' : '#f9f9f9',
-                                position: 'relative'
-                              }}>
-                                <Box sx={{ 
-                                  position: 'absolute', 
-                                  top: -10, 
-                                  left: 10, 
-                                  bgcolor: '#ff9800', 
-                                  color: 'white', 
-                                  px: 1, 
-                                  py: 0.5, 
-                                  borderRadius: 1, 
-                                  fontSize: '0.75rem',
-                                  fontWeight: 'bold'
-                                }}>
-                                  ĐÃ ĐẶT CHỖ
-                                </Box>
-                                <Checkbox
-                                  checked={!!assignVolumes[unit.bloodUnitId]}
-                                  onChange={e => {
-                                    if (e.target.checked) {
-                                      const currentTotal = Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0);
-                                      const remainingVolume = Number(totalVolume) - currentTotal;
-                                      if (remainingVolume <= 0) {
-                                        setSnackbar({ open: true, message: 'Đã đạt đủ tổng thể tích cần truyền!', severity: 'warning' });
-                                        return;
-                                      }
-                                      const assignVolume = Math.min(unit.remainingVolume, remainingVolume);
-                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: assignVolume }));
-                                    } else {
-                                      setAssignVolumes(prev => Object.fromEntries(Object.entries(prev).filter(([k]) => Number(k) !== unit.bloodUnitId)));
-                                    }
-                                  }}
-                                  disabled={!assignVolumes[unit.bloodUnitId] && Object.values(assignVolumes).reduce((sum, vol) => sum + vol, 0) >= Number(totalVolume)}
-                                  sx={{ mt: 1 }}
-                                />
-                                <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, rowGap: 0.5, columnGap: 2 }}>
-                                  <div><b>ID:</b> {unit.bloodUnitId}</div>
-                                  <div><b>Nhóm máu:</b> <span style={{ color: '#ff9800', fontWeight: 'bold' }}>{unit.bloodTypeName}</span></div>
-                                  <div><b>Thành phần:</b> {translateComponentName(unit.componentName)}</div>
-                                  <div><b>Thể tích gốc:</b> {unit.volume}ml</div>
-                                  <div><b>Thể tích còn lại:</b> {unit.remainingVolume}ml</div>
-                                  <div><b>Hạn sử dụng:</b> {new Date(unit.expiryDate).toLocaleDateString('vi-VN')}</div>
-                                  <div><b>Trạng thái:</b> {unit.bloodStatus === 'Reserved' ? 'Đã đặt chỗ' : unit.bloodStatus === 'Available' ? 'Có sẵn' : unit.bloodStatus === 'Used' ? 'Đã sử dụng' : unit.bloodStatus}</div>
-                                </Box>
-                                {assignVolumes[unit.bloodUnitId] && (
-                                  <TextField
-                                    label="Thể tích gán (ml)"
-                                    type="number"
-                                    value={assignVolumes[unit.bloodUnitId]}
-                                    onChange={e => {
-                                      const currentTotal = Object.entries(assignVolumes).filter(([id]) => Number(id) !== unit.bloodUnitId).reduce((sum, [_, vol]) => sum + vol, 0);
-                                      const maxAllowed = Number(totalVolume) - currentTotal;
-                                      let value = Math.max(1, Math.min(unit.remainingVolume, Number(e.target.value), maxAllowed));
-                                      setAssignVolumes(prev => ({ ...prev, [unit.bloodUnitId]: value }));
-                                    }}
-                                    inputProps={{ min: 1, max: Math.min(unit.remainingVolume, Number(totalVolume)), step: 1 }}
-                                    sx={{ width: 120, ml: 2, mt: 1 }}
-                                  />
-                                )}
-                              </Box>
-                            ))}
-                          </Box>
-                        </>
-                      ) : (
-                        <Alert severity="info">Không có máu đã đặt chỗ nào.</Alert>
-                      )}
-                    </>
-                  )}
 
-                  {currentTab === 3 && (
+
+                  {currentTab === 2 && (
                     <>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                         <Typography variant="h6" sx={{ color: '#d32f2f', display: 'flex', alignItems: 'center', gap: 1 }}>

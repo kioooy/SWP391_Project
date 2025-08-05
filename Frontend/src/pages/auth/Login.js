@@ -45,45 +45,33 @@ const Login = () => {
   // ===== NGHIỆP VỤ: KIỂM TRA NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP VÀ XỬ LÝ URGENT DONATION =====
   useEffect(() => {
     // ===== BƯỚC 1: KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP =====
-    // Lấy token từ localStorage để kiểm tra user đã đăng nhập chưa
     const token = localStorage.getItem('token');
     const isAuthenticated = token !== null;
-    
-    // ===== BƯỚC 2: PHÂN TÍCH URL PARAMETERS CHO URGENT DONATION =====
-    // Tạo đối tượng URLSearchParams để lấy các tham số từ URL
+
+    // ===== BƯỚC 2: PHÂN TÍCH URL PARAMETERS =====
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // Lấy các tham số quan trọng từ URL:
-    // - redirect: đường dẫn sẽ chuyển đến sau khi đăng nhập (ví dụ: /urgent-donation-registration)
-    // - urgentRequestId: ID của yêu cầu máu khẩn cấp
-    // - bloodType: nhóm máu cần thiết
-    const redirect = urlParams.get('redirect');           // ← THÀNH PHẦN CHÍNH ĐỂ BIẾT ĐÓ LÀ URGENT DONATION
+    const redirect = urlParams.get('redirect');
     const urgentRequestId = urlParams.get('urgentRequestId');
     const bloodType = urlParams.get('bloodType');
 
-    // ===== BƯỚC 3: XỬ LÝ THÔNG TIN URGENT DONATION =====
-    // Kiểm tra xem có đầy đủ thông tin urgent donation không
+    // ===== BƯỚC 3: XỬ LÝ HIẾN KHẨN (giữ nguyên logic cũ) =====
+    // check redirect từ chỗ này nếu ko phải khẩn thì là thường dòng 67
     if (redirect && urgentRequestId && bloodType) {
-      // ===== LƯU THÔNG TIN VÀO LOCALSTORAGE =====
-      // Lưu thông tin urgent donation vào localStorage để sử dụng sau khi đăng nhập
-      localStorage.setItem('redirectAfterLogin', redirect);        // Đường dẫn sẽ chuyển đến
-      localStorage.setItem('urgentRequestId', urgentRequestId);    // ID yêu cầu khẩn cấp
-      localStorage.setItem('bloodType', bloodType);               // Nhóm máu cần thiết
-      
-      // ===== BƯỚC 4: KIỂM TRA VÀ CHUYỂN HƯỚNG NGAY LẬP TỨC =====
-      // Nếu user đã đăng nhập rồi, chuyển hướng ngay lập tức đến trang urgent donation
+      localStorage.setItem('redirectAfterLogin', redirect);
+      localStorage.setItem('urgentRequestId', urgentRequestId);
+      localStorage.setItem('bloodType', bloodType);
       if (isAuthenticated) {
-        try {
-          navigate(redirect);  // Chuyển hướng đến trang urgent donation
-        } catch (error) {
-          console.error('Navigation error:', error);
-        }
-        return;  // Thoát khỏi useEffect
+        navigate(redirect);
+        return;
       }
+      //check nếu là hiến bth từ email
+    } else if (redirect && isAuthenticated) {
+      // ===== BƯỚC 4: XỬ LÝ HIẾN BÌNH THƯỜNG: Nếu đã đăng nhập và có redirect, chuyển hướng luôn =====
+      navigate(redirect);
+      return;
     }
-    
+
     // ===== BƯỚC 5: DỌN DẸP TOKEN CŨ NẾU CHƯA ĐĂNG NHẬP =====
-    // Nếu chưa đăng nhập, xóa token cũ để đảm bảo tính nhất quán
     if (!isAuthenticated) {
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
@@ -138,8 +126,15 @@ const Login = () => {
         // Lưu userId vào localStorage cho các chức năng khác
         localStorage.setItem('user', JSON.stringify({ UserId: userId, ...resultAction }));
 
-        // ===== SAU KHI ĐĂNG NHẬP THÀNH CÔNG - XỬ LÝ URGENT DONATION REDIRECT =====
-        // Sau khi đăng nhập thành công, cố gắng lấy và cập nhật vị trí
+        // ================== PHÂN BIỆT REDIRECT HIẾN KHẨN VÀ HIẾN BÌNH THƯỜNG ==================
+        // Sau khi đăng nhập thành công, hệ thống sẽ kiểm tra:
+        // 1. Nếu có localStorage 'redirectAfterLogin' (được set khi có đủ redirect + urgentRequestId + bloodType trên URL) => ĐÂY LÀ HIẾN KHẨN
+        //    => Ưu tiên chuyển hướng về trang hiến khẩn (và xóa redirectAfterLogin khỏi localStorage)
+        // 2. Nếu KHÔNG có 'redirectAfterLogin', sẽ kiểm tra URL có param 'redirect' không:
+        //    - Nếu có => ĐÂY LÀ HIẾN BÌNH THƯỜNG (ví dụ /booking)
+        //    - Nếu không có => Chuyển về trang chủ
+        //
+        // => Cách này đảm bảo không ảnh hưởng luồng hiến khẩn, và vẫn redirect đúng cho hiến thường.
         if (userId && token) {
           try {
             if (navigator.geolocation) {
@@ -150,13 +145,24 @@ const Login = () => {
                 // Tiếp tục chuyển hướng ngay cả khi geolocation timeout
                 const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
                 
+                // ================== XỬ LÝ REDIRECT SAU KHI LOGIN ==================
+                // Nếu có redirectAfterLogin (được set ở trên) => đây là HIẾN KHẨN, ưu tiên chuyển hướng theo localStorage
                 if (redirectAfterLogin) {
-                  // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
-                  localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
-                  navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                  // ======= HIẾN KHẨN: Ưu tiên chuyển hướng theo localStorage =======
+                  console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN KHẨN, chuyển hướng tới:', redirectAfterLogin);
+                  localStorage.removeItem('redirectAfterLogin');
+                  navigate(redirectAfterLogin);
                 } else {
-                  // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
-                  navigate('/');
+                  // ======= HIẾN BÌNH THƯỜNG: Lấy redirect từ URL nếu có =======
+                  const urlParams = new URLSearchParams(window.location.search); // Lấy các tham số trên URL
+                  const redirect = urlParams.get('redirect'); // Nếu có redirect (ví dụ /booking) thì chuyển về đó
+                  if (redirect) {
+                    console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN BÌNH THƯỜNG, chuyển hướng tới:', redirect);
+                    navigate(redirect); // <--- Đây là luồng HIẾN BÌNH THƯỜNG
+                  } else {
+                    console.debug('[LOGIN REDIRECT] Không có redirect, chuyển về trang chủ');
+                    navigate('/'); // Nếu không có thì về trang chủ
+                  }
                 }
               }, 5000); // 5 giây timeout
 
@@ -185,13 +191,22 @@ const Login = () => {
                    // Chuyển hướng sau khi xử lý vị trí thành công
                    const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
                    
+                   // ================== XỬ LÝ REDIRECT SAU KHI LOGIN ==================
+                   // Nếu có redirectAfterLogin (được set ở trên) => đây là HIẾN KHẨN, ưu tiên chuyển hướng theo localStorage
                    if (redirectAfterLogin) {
-                     // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
-                     localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
-                     navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                     // ======= HIẾN KHẨN: Ưu tiên chuyển hướng theo localStorage =======
+                     console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN KHẨN, chuyển hướng tới:', redirectAfterLogin);
+                     localStorage.removeItem('redirectAfterLogin');
+                     navigate(redirectAfterLogin);
                    } else {
-                     // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
-                     navigate('/');
+                     // ======= HIẾN BÌNH THƯỜNG: Lấy redirect từ URL nếu có =======
+                     const urlParams = new URLSearchParams(window.location.search); // Lấy các tham số trên URL
+                     const redirect = urlParams.get('redirect'); // Nếu có redirect (ví dụ /booking) thì chuyển về đó
+                     if (redirect) {
+                       navigate(redirect);
+                     } else {
+                       navigate('/');
+                     }
                    }
                  },
                                  (error) => {
@@ -206,13 +221,22 @@ const Login = () => {
                    // Chuyển hướng ngay cả khi có lỗi geolocation
                    const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
                    
+                   // ================== XỬ LÝ REDIRECT SAU KHI LOGIN ==================
+                   // Nếu có redirectAfterLogin (được set ở trên) => đây là HIẾN KHẨN, ưu tiên chuyển hướng theo localStorage
                    if (redirectAfterLogin) {
-                     // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
-                     localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
-                     navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                     // ======= HIẾN KHẨN: Ưu tiên chuyển hướng theo localStorage =======
+                     console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN KHẨN, chuyển hướng tới:', redirectAfterLogin);
+                     localStorage.removeItem('redirectAfterLogin');
+                     navigate(redirectAfterLogin);
                    } else {
-                     // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
-                     navigate('/');
+                     // ======= HIẾN BÌNH THƯỜNG: Lấy redirect từ URL nếu có =======
+                     const urlParams = new URLSearchParams(window.location.search); // Lấy các tham số trên URL
+                     const redirect = urlParams.get('redirect'); // Nếu có redirect (ví dụ /booking) thì chuyển về đó
+                     if (redirect) {
+                       navigate(redirect);
+                     } else {
+                       navigate('/');
+                     }
                    }
                  },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -223,34 +247,59 @@ const Login = () => {
                // Chuyển hướng ngay lập tức nếu không hỗ trợ geolocation
                const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
                
+               // ================== XỬ LÝ REDIRECT SAU KHI LOGIN ==================
+               // Nếu có redirectAfterLogin (được set ở trên) => đây là HIẾN KHẨN, ưu tiên chuyển hướng theo localStorage
                if (redirectAfterLogin) {
-                 // ===== CHUYỂN HƯỚNG ĐẾN URGENT DONATION =====
-                 localStorage.removeItem('redirectAfterLogin');  // Xóa thông tin đã sử dụng
-                 navigate(redirectAfterLogin);  // Chuyển đến trang urgent donation
+                 // ======= HIẾN KHẨN: Ưu tiên chuyển hướng theo localStorage =======
+                 console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN KHẨN, chuyển hướng tới:', redirectAfterLogin);
+                 localStorage.removeItem('redirectAfterLogin');
+                 navigate(redirectAfterLogin);
                } else {
-                 // ===== CHUYỂN HƯỚNG VỀ TRANG CHỦ =====
-                 navigate('/');
+                 // ======= HIẾN BÌNH THƯỜNG: Lấy redirect từ URL nếu có =======
+                 const urlParams = new URLSearchParams(window.location.search); // Lấy các tham số trên URL
+                 const redirect = urlParams.get('redirect'); // Nếu có redirect (ví dụ /booking) thì chuyển về đó
+                 if (redirect) {
+                   navigate(redirect);
+                 } else {
+                   navigate('/');
+                 }
                }
              }
                      } catch (geoInitErr) {
              console.error('Lỗi khởi tạo Geolocation:', geoInitErr);
              // Chuyển hướng ngay cả khi có lỗi khởi tạo geolocation
              const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+             // ================== XỬ LÝ REDIRECT SAU KHI LOGIN ==================
              if (redirectAfterLogin) {
+               console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN KHẨN, chuyển hướng tới:', redirectAfterLogin);
                localStorage.removeItem('redirectAfterLogin');
                navigate(redirectAfterLogin);
              } else {
-               navigate('/');
+               const urlParams = new URLSearchParams(window.location.search);
+               const redirect = urlParams.get('redirect');
+               if (redirect) {
+                 navigate(redirect);
+               } else {
+                 navigate('/');
+               }
              }
            }
          } else {
            // Nếu không có userId hoặc token, chuyển hướng ngay
            const redirectAfterLogin = localStorage.getItem('redirectAfterLogin');
+           // ================== XỬ LÝ REDIRECT SAU KHI LOGIN ==================
            if (redirectAfterLogin) {
+             console.debug('[LOGIN REDIRECT] Đây là luồng HIẾN KHẨN, chuyển hướng tới:', redirectAfterLogin);
              localStorage.removeItem('redirectAfterLogin');
              navigate(redirectAfterLogin);
            } else {
-             navigate('/');
+             const urlParams = new URLSearchParams(window.location.search);
+             const redirect = urlParams.get('redirect');
+             if (redirect) {
+               navigate(redirect);
+             } else {
+               navigate('/');
+             }
            }
          }
              } catch (err) {

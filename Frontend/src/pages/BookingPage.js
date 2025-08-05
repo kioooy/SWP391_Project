@@ -683,6 +683,14 @@ const BookingPage = () => {
       }
     }
   }, [lastDonationDate]);
+//check login nếu bấm nút tôi có thể hiến máu ngay từ bên email thì redirect đến trang login
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Chỉ redirect nếu chưa đăng nhập, không ảnh hưởng các luồng khác
+      navigate(`/login?redirect=/booking`);
+    }
+  }, [navigate]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>

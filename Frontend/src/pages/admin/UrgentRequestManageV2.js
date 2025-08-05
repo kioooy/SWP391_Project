@@ -586,7 +586,7 @@ const UrgentRequestManageV2 = () => {
                     label="Trạng thái"
                   >
                     <MenuItem value="">Tất cả</MenuItem>
-                    <MenuItem value="Pending">Chờ duyệt</MenuItem>
+                    <MenuItem value="Pending">Chờ xác nhận</MenuItem>
                     <MenuItem value="InProgress">Đang xử lý</MenuItem>
                     <MenuItem value="Fulfilled">Đã hoàn thành</MenuItem>
                     <MenuItem value="Cancelled">Đã hủy</MenuItem>

@@ -39,7 +39,6 @@ const NotificationItem = styled(MenuItem)(({ theme, unread }) => ({
 }));
 
 const NotificationBell = ({ userId, isDonor, isRecipient, isAdmin, isStaff }) => {
-  console.log('NotificationBell props:', { isDonor, isRecipient, isAdmin, isStaff, userId });
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);

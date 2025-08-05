@@ -861,6 +861,7 @@ const BloodInventory = () => {
               </Typography>
             </Box>
           ) : (
+            
             <>
               {/* Lịch sử hiến máu */}
               {bloodHistory.donationHistory.length > 0 && (

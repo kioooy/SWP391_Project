@@ -31,6 +31,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Checkbox,
 } from "@mui/material";
 
 // Material-UI icons
@@ -57,9 +58,6 @@ import { Autocomplete, createFilterOptions } from "@mui/material";
 
 // React Router cho navigation
 import { useNavigate } from "react-router-dom";
-
-// Component tùy chỉnh cho việc huy động người hiến máu
-import DonorMobilizationComponent from "./DonorMobilizationComponent";
 
 // ===== CUSTOM HOOK: QUẢN LÝ STATE VÀ API CHO TRUYỀN MÁU =====
 // Hook này thay thế useTransfusionStore bằng kết nối API thật và bổ sung các trường mới
@@ -222,6 +220,11 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   const [suitableBloodUnits, setSuitableBloodUnits] = useState([]); // Danh sách máu phù hợp từ API
   // State cho suitable alternatives - máu tương thích thay thế
   const [suitableAlternatives, setSuitableAlternatives] = useState([]);
+  // Thêm state cho danh sách người hiến phù hợp
+  const [eligibleDonors, setEligibleDonors] = useState([]);
+  const [selectedDonors, setSelectedDonors] = useState([]); // Lưu email người được chọn
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailOption, setEmailOption] = useState("all"); // "all" hoặc "selected"
 
   // ===== COMPLETE DIALOG STATES =====
   // Dialog hoàn thành yêu cầu truyền máu
@@ -346,11 +349,11 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
     setOpenApproveDialog(true);
     setApproveSelectedUnits([]);
     setApproveNotes("");
-    
-    // Gọi API tìm máu phù hợp
+    setEligibleDonors([]); // reset trước khi gọi API
+    // Gọi API mới tìm máu phù hợp
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`/api/BloodUnit/suitable`, {
+      const res = await axios.get(`/api/TransfusionRequest/suitable-blood-types`, {
         params: {
           bloodTypeId: transfusion.bloodTypeId,    // Nhóm máu cần truyền
           componentId: transfusion.componentId,    // Chế phẩm máu cần truyền
@@ -358,22 +361,26 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // Xử lý response từ API suitable
-      // Nếu response là object (có .units), set vào state phù hợp
-      if (res.data && res.data.units) {
-        setSuitableBloodUnits(res.data.units);
-        setSuitableAlternatives(res.data.suitableAlternatives || []);
-      } else if (Array.isArray(res.data)) {
-        setSuitableBloodUnits(res.data);
-        setSuitableAlternatives([]);
+      // Xử lý response từ API suitable-blood-types (hỗ trợ cả camelCase và PascalCase)
+      setSuitableBloodUnits(res.data.ExactMatch || res.data.exactMatch || []);
+      const compatible = res.data.CompatibleMatch || res.data.compatibleMatch || [];
+      if (Array.isArray(compatible) && compatible.length > 0) {
+        const grouped = {};
+        compatible.forEach(unit => {
+          const key = unit.BloodTypeName || unit.bloodTypeName;
+          if (!grouped[key]) grouped[key] = { BloodTypeName: key, units: [], totalAvailable: 0 };
+          grouped[key].units.push(unit);
+          grouped[key].totalAvailable += unit.RemainingVolume || unit.remainingVolume || 0;
+        });
+        setSuitableAlternatives(Object.values(grouped));
       } else {
-        setSuitableBloodUnits([]);
         setSuitableAlternatives([]);
       }
+      setEligibleDonors(res.data.EligibleDonors || res.data.eligibleDonors || []);
     } catch (err) {
       setSuitableBloodUnits([]);
       setSuitableAlternatives([]);
+      setEligibleDonors([]);
     }
   };
 
@@ -775,6 +782,33 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   // Thêm hàm chuyển tab sang tìm kiếm máu (nếu có props hoặc context), hoặc mở dialog tạo yêu cầu huy động máu
   const handleConnectDonor = () => {
     navigate("/blood-search");
+  };
+
+  const handleSendEmail = async () => {
+    setEmailSending(true);
+    try {
+      let emails = [];
+      if (emailOption === "all") {
+        emails = eligibleDonors.map(d => d.email).filter(Boolean);
+      } else {
+        emails = selectedDonors;
+      }
+      if (emails.length === 0) {
+        setSnackbar({ open: true, message: "Chưa chọn người nhận email!", severity: "warning" });
+        setEmailSending(false);
+        return;
+      }
+      await axios.post("/api/TransfusionRequest/send-email-donor", {
+        transfusionRequestId: transfusionToApprove?.transfusionId,
+        email: emails
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setSnackbar({ open: true, message: "Đã gửi email thành công!", severity: "success" });
+    } catch (err) {
+      setSnackbar({ open: true, message: "Gửi email thất bại!", severity: "error" });
+    }
+    setEmailSending(false);
   };
 
   // ===== JSX RENDER =====
@@ -1193,7 +1227,7 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
 
       {/* Dialog Gán yêu cầu truyền máu */}
       <Dialog open={openApproveDialog} onClose={handleCloseApproveDialog} maxWidth="md" fullWidth>
-                  <DialogTitle>Gán yêu cầu truyền máu #{transfusionToApprove?.transfusionId}</DialogTitle>
+                  <DialogTitle>Gán máu cho yêu cầu #{transfusionToApprove?.transfusionId}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <Typography variant="body1">
@@ -1207,11 +1241,80 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
   Chọn các túi máu phù hợp (cộng dồn đủ {requiredVolume}ml):
 </Typography>
 {(!hasAnyUnits || totalAvailableVolume < requiredVolume) ? (
-  <> 
+  <>
     <Typography color="error" sx={{ mb: 2 }}>
       Không có túi máu phù hợp trong kho!
     </Typography>
-    <DonorMobilizationComponent embedded bloodType={transfusionToApprove?.bloodTypeName} />
+    {eligibleDonors.length > 0 && (
+      <Box sx={{ mt: 3, border: '1px solid #eee', borderRadius: 1, p: 2 }}>
+        {/* UI chọn chế độ gửi email và nút gửi */}
+        <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+          <FormControl>
+            <Select
+              value={emailOption}
+              onChange={e => setEmailOption(e.target.value)}
+              size="small"
+            >
+              <MenuItem value="all">Gửi cho tất cả người hiến phù hợp</MenuItem>
+              <MenuItem value="selected">Gửi cho từng người được chọn</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={emailSending || (emailOption === "selected" && selectedDonors.length === 0)}
+            onClick={handleSendEmail}
+          >
+            {emailSending ? "Đang gửi..." : "Gửi email"}
+          </Button>
+        </Box>
+        <Typography variant="subtitle2" color="info.main" sx={{ mb: 1 }}>
+          Danh sách người hiến phù hợp:
+        </Typography>
+        <TableContainer component={Paper} variant="outlined">
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                {emailOption === "selected" && <TableCell padding="checkbox"></TableCell>}
+                <TableCell>Họ tên</TableCell>
+                <TableCell>Nhóm máu</TableCell>
+                <TableCell>Số điện thoại</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Lần hiến gần nhất</TableCell>
+                <TableCell>Số lần hiến</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {eligibleDonors.map((donor, idx) => (
+                <TableRow key={donor.userId || idx}>
+                  {emailOption === "selected" && (
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedDonors.includes(donor.email)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedDonors(prev => [...prev, donor.email]);
+                          } else {
+                            setSelectedDonors(prev => prev.filter(email => email !== donor.email));
+                          }
+                        }}
+                        disabled={emailOption !== "selected"}
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell>{donor.donorName}</TableCell>
+                  <TableCell>{donor.bloodTypeName}</TableCell>
+                  <TableCell>{donor.phoneNumber}</TableCell>
+                  <TableCell>{donor.email}</TableCell>
+                  <TableCell>{donor.lastDonationDate ? new Date(donor.lastDonationDate).toLocaleDateString('vi-VN') : 'Chưa hiến'}</TableCell>
+                  <TableCell>{donor.donationCount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    )}
   </>
 ) : (
   <>
@@ -1318,6 +1421,56 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               rows={3}
               fullWidth
             />
+            {/* Danh sách người hiến phù hợp */}
+            {eligibleDonors.length > 0 && (
+              <Box sx={{ mt: 3, border: '1px solid #eee', borderRadius: 1, p: 2 }}>
+                <Typography variant="subtitle2" color="info.main" sx={{ mb: 1 }}>
+                  Danh sách người hiến phù hợp:
+                </Typography>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        {emailOption === "selected" && <TableCell padding="checkbox"></TableCell>}
+                        <TableCell>Họ tên</TableCell>
+                        <TableCell>Nhóm máu</TableCell>
+                        <TableCell>Số điện thoại</TableCell>
+                        <TableCell>Email</TableCell>
+                        <TableCell>Lần hiến gần nhất</TableCell>
+                        <TableCell>Số lần hiến</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {eligibleDonors.map((donor, idx) => (
+                        <TableRow key={donor.userId || idx}>
+                          {emailOption === "selected" && (
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                checked={selectedDonors.includes(donor.email)}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setSelectedDonors(prev => [...prev, donor.email]);
+                                  } else {
+                                    setSelectedDonors(prev => prev.filter(email => email !== donor.email));
+                                  }
+                                }}
+                                disabled={emailOption !== "selected"}
+                              />
+                            </TableCell>
+                          )}
+                          <TableCell>{donor.donorName}</TableCell>
+                          <TableCell>{donor.bloodTypeName}</TableCell>
+                          <TableCell>{donor.phoneNumber}</TableCell>
+                          <TableCell>{donor.email}</TableCell>
+                          <TableCell>{donor.lastDonationDate ? new Date(donor.lastDonationDate).toLocaleDateString('vi-VN') : 'Chưa hiến'}</TableCell>
+                          <TableCell>{donor.donationCount}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
           </>
         )}
           </Box>
@@ -1607,7 +1760,9 @@ const TransfusionManagement = ({ onApprovalComplete, showOnlyPending = false, sh
               inputProps={{ 
                 min: new Date().toISOString().slice(0, 16) // Không cho chọn ngày trong quá khứ
               }}
-              helperText="Chọn ngày và giờ truyền máu"
+              helperText={
+                <>Chọn ngày và giờ truyền máu<br/><span style={{color:'#888'}}>Định dạng: tháng/ngày/năm giờ:phút (AM/PM). Ví dụ: 08/05/2025 08:00 AM</span></>
+              }
             />
             <TextField
               label="Ghi chú"

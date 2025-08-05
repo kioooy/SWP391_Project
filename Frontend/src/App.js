@@ -83,16 +83,14 @@ const App = () => {
             !isAuthenticated ? (
               <Login />
             ) : (
-              // Kiểm tra nếu có thông tin urgent donation thì cho phép vào Login
-              //nếu người hiến bấm vào email thì sẽ chuyển hướng đến trang urgent donation
               (() => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const redirect = urlParams.get('redirect');
                 const urgentRequestId = urlParams.get('urgentRequestId');
                 const bloodType = urlParams.get('bloodType');
-                
-                if (redirect && urgentRequestId && bloodType) {
-                  console.log('🔍 [DEBUG] User authenticated but has urgent donation params, allowing access to Login');
+                // Nếu có redirect (dù là hiến thường hay khẩn), cho phép vào Login để xử lý redirect
+                if ((redirect && urgentRequestId && bloodType) || (redirect && !urgentRequestId && !bloodType)) {
+                  console.log('🔍 [DEBUG] User authenticated, has redirect param, allowing access to Login');
                   return <Login />;
                 } else {
                   console.log('🔍 [DEBUG] User authenticated, redirecting to home');

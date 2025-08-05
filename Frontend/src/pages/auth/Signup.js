@@ -223,7 +223,6 @@ const getValidationSchema = (activeStep) => {
       .matches(/[a-z]/, 'Mật khẩu phải có ít nhất 1 chữ thường')
       .matches(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
       .matches(/[0-9]/, 'Mật khẩu phải có ít nhất 1 số')
-      .matches(/[@$!%*?&]/, 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt (@$!%*?&)')
       .required('Vui lòng nhập mật khẩu');
     baseSchema.confirmPassword = Yup.string()
       .oneOf([Yup.ref('password'), null], 'Xác nhận mật khẩu không khớp')

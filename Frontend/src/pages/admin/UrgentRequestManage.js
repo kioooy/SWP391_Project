@@ -294,7 +294,7 @@ const UrgentRequestManage = () => {
               <div style={{ fontWeight: 600, fontSize: 18, color: '#e53935', margin: '10px 0 6px' }}>Khác</div>
               <div><b>Ghi chú:</b> {selected.notes || '-'}</div>
               <div><b>Ngày yêu cầu:</b> {new Date(selected.requestDate).toLocaleString()}</div>
-              <div><b>Trạng thái:</b> {selected.status === 'Pending' ? 'Chờ duyệt' : selected.status === 'InProgress' ? 'Đang xử lý' : selected.status === 'Fulfilled' ? 'Đã hoàn thành' : selected.status === 'Cancelled' ? 'Đã hủy' : selected.status}</div>
+              <div><b>Trạng thái:</b> {selected.status === 'Pending' ? 'Chờ xác nhận' : selected.status === 'InProgress' ? 'Đang xử lý' : selected.status === 'Fulfilled' ? 'Đã hoàn thành' : selected.status === 'Cancelled' ? 'Đã hủy' : selected.status}</div>
             </div>
           )}
         </DialogContent>

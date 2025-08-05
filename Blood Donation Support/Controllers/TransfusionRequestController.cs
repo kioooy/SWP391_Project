@@ -301,11 +301,13 @@ namespace Blood_Donation_Support.Controllers
                     return BadRequest($"Request {id} is not in 'Pending' state and cannot be approved.");
                 }
                 int totalVolume = model.BloodUnits.Sum(bu => bu.VolumeUsed);
+                // Kiểm tra tổng thể tích các túi máu không đủ nhu cầu thực tế
                 if (totalVolume < transfusionRequest.TransfusionVolume)
                 {
                     await transaction.RollbackAsync();
                     return BadRequest("Tổng thể tích các túi máu không đủ!");
                 }
+                // Kiểm tra tổng thể tích các túi máu vượt quá nhu cầu thực tế
                 if (totalVolume > transfusionRequest.TransfusionVolume)
                 {
                     await transaction.RollbackAsync();
@@ -625,6 +627,275 @@ namespace Blood_Donation_Support.Controllers
         }
 
         // --- Tín Coding: End ---
+
+        // GET: api/TransfusionRequest/suitable-blood-types
+        // API trả về nhóm máu phù hợp thay cho GET /api/BloodUnit/suitable
+        // Tiêu chí: 1. Trả về nhóm máu chính xác, 2. Nếu không có nhóm máu chính xác trả về nhóm máu tương thích, 3. Nếu không có nhóm máu tương thích trả về danh sách người hiến phù hợp
+        [HttpGet("suitable-blood-types")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> GetSuitableBloodTypes([FromQuery] int bloodTypeId, [FromQuery] int componentId, [FromQuery] int requiredVolume = 0)
+        {
+            try
+            {
+                // Kiểm tra tham số đầu vào
+                if (bloodTypeId <= 0 || componentId <= 0)
+                {
+                    return BadRequest("BloodTypeId và ComponentId phải là số nguyên dương.");
+                }
+
+                // Kiểm tra BloodType và Component có tồn tại không
+                var bloodType = await _context.BloodTypes.FindAsync(bloodTypeId);
+                if (bloodType == null)
+                {
+                    return NotFound($"Không tìm thấy nhóm máu với ID {bloodTypeId}.");
+                }
+
+                var component = await _context.BloodComponents.FindAsync(componentId);
+                if (component == null)
+                {
+                    return NotFound($"Không tìm thấy thành phần máu với ID {componentId}.");
+                }
+
+                var currentDate = DateOnly.FromDateTime(DateTime.Now);
+                var result = new
+                {
+                    RequestedBloodType = bloodType.BloodTypeName,
+                    RequestedComponent = component.ComponentName,
+                    RequiredVolume = requiredVolume,
+                    ExactMatch = new List<object>(),
+                    CompatibleMatch = new List<object>(),
+                    EligibleDonors = new List<object>()
+                };
+
+                // 1. Tìm nhóm máu chính xác (Exact Match)
+                var exactMatchUnits = await _context.BloodUnits
+                    .Include(bu => bu.BloodType)
+                    .Include(bu => bu.Component)
+                    .Where(bu => bu.BloodTypeId == bloodTypeId &&
+                                bu.ComponentId == componentId &&
+                                bu.BloodStatus == "Available" &&
+                                bu.RemainingVolume > 0 &&
+                                bu.ExpiryDate >= currentDate)
+                    .OrderBy(bu => bu.ExpiryDate)
+                    .Select(bu => new
+                    {
+                        bu.BloodUnitId,
+                        bu.BloodType.BloodTypeName,
+                        bu.Component.ComponentName,
+                        bu.RemainingVolume,
+                        bu.ExpiryDate,
+                        MatchType = "Exact"
+                    })
+                    .ToListAsync();
+
+                result = new
+                {
+                    RequestedBloodType = bloodType.BloodTypeName,
+                    RequestedComponent = component.ComponentName,
+                    RequiredVolume = requiredVolume,
+                    ExactMatch = exactMatchUnits.Cast<object>().ToList(),
+                    CompatibleMatch = new List<object>(),
+                    EligibleDonors = new List<object>()
+                };
+
+                // 2. Nếu không có nhóm máu chính xác hoặc không đủ thể tích, tìm nhóm máu tương thích (Compatible Match)
+                var totalExactVolume = exactMatchUnits.Sum(bu => bu.RemainingVolume);
+                if (exactMatchUnits.Count == 0 || (requiredVolume > 0 && totalExactVolume < requiredVolume))
+                {
+                    // Tìm các nhóm máu tương thích từ bảng BloodCompatibilityRules
+                    var compatibleBloodTypes = await _context.BloodCompatibilityRules
+                        .Include(rule => rule.BloodGive)
+                        .Include(rule => rule.BloodRecieve)
+                        .Where(rule => rule.BloodRecieveId == bloodTypeId &&
+                                     rule.ComponentId == componentId &&
+                                     rule.IsCompatible == true &&
+                                     rule.BloodGiveId != bloodTypeId) // Loại trừ nhóm máu chính xác
+                        .Select(rule => rule.BloodGiveId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    if (compatibleBloodTypes.Any())
+                    {
+                        var compatibleMatchUnits = await _context.BloodUnits
+                            .Include(bu => bu.BloodType)
+                            .Include(bu => bu.Component)
+                            .Where(bu => compatibleBloodTypes.Contains(bu.BloodTypeId) &&
+                                        bu.ComponentId == componentId &&
+                                        bu.BloodStatus == "Available" &&
+                                        bu.RemainingVolume > 0 &&
+                                        bu.ExpiryDate >= currentDate)
+                            .OrderBy(bu => bu.ExpiryDate)
+                            .Select(bu => new
+                            {
+                                bu.BloodUnitId,
+                                bu.BloodType.BloodTypeName,
+                                bu.Component.ComponentName,
+                                bu.RemainingVolume,
+                                bu.ExpiryDate,
+                                MatchType = "Compatible"
+                            })
+                            .ToListAsync();
+
+                        result = new
+                        {
+                            RequestedBloodType = bloodType.BloodTypeName,
+                            RequestedComponent = component.ComponentName,
+                            RequiredVolume = requiredVolume,
+                            ExactMatch = exactMatchUnits.Cast<object>().ToList(),
+                            CompatibleMatch = compatibleMatchUnits.Cast<object>().ToList(),
+                            EligibleDonors = new List<object>()
+                        };
+                    }
+                }
+
+                // 3. Nếu không có nhóm máu tương thích, tìm danh sách người hiến phù hợp (Eligible Donors)
+                var totalCompatibleVolume = result.CompatibleMatch.Count > 0 ? 
+                    result.CompatibleMatch.Sum(bu => (int)bu.GetType().GetProperty("RemainingVolume").GetValue(bu)) : 0;
+                var totalAvailableVolume = totalExactVolume + totalCompatibleVolume;
+
+                if ((exactMatchUnits.Count == 0 && result.CompatibleMatch.Count == 0) || 
+                    (requiredVolume > 0 && totalAvailableVolume < requiredVolume))
+                {
+                    // Tìm các thành viên có thể hiến máu phù hợp
+                    var eligibleDonors = await _context.Members
+                        .Include(m => m.User)
+                        .Include(m => m.BloodType)
+                        .Where(m =>
+                            m.IsDonor == true && // Chỉ lấy người hiến máu
+                            (m.LastDonationDate == null || m.LastDonationDate <= DateOnly.FromDateTime(DateTime.Now.AddDays(-84))) &&
+                            m.BloodTypeId != null &&
+                            m.BloodTypeId != 99 // Loại trừ nhóm máu chưa xác định
+                        )
+                        .Select(m => new
+                        {
+                            m.UserId,
+                            DonorName = m.User.FullName,
+                            m.BloodType.BloodTypeName,
+                            PhoneNumber = m.User.PhoneNumber,
+                            Email = m.User.Email,
+                            m.LastDonationDate,
+                            m.DonationCount,
+                            IsCompatible = _context.BloodCompatibilityRules.Any(rule =>
+                                rule.BloodGiveId == m.BloodTypeId &&
+                                rule.BloodRecieveId == bloodTypeId &&
+                                rule.ComponentId == componentId &&
+                                rule.IsCompatible == true)
+                        })
+                        .Where(m => m.IsCompatible) // Chỉ lấy những người có nhóm máu tương thích
+                        .OrderBy(m => m.LastDonationDate) // Ưu tiên người chưa hiến hoặc hiến lâu nhất
+                        .Take(10) // Giới hạn 10 người hiến phù hợp
+                        .ToListAsync();
+
+                    result = new
+                    {
+                        RequestedBloodType = bloodType.BloodTypeName,
+                        RequestedComponent = component.ComponentName,
+                        RequiredVolume = requiredVolume,
+                        ExactMatch = exactMatchUnits.Cast<object>().ToList(),
+                        CompatibleMatch = result.CompatibleMatch,
+                        EligibleDonors = eligibleDonors.Cast<object>().ToList()
+                    };
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Đã xảy ra lỗi nội bộ: {ex.Message}");
+            }
+        }
+
+        [HttpPost("send-email-donor")]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> SendEmailToDonor([FromBody] TransfusionEmailToDonor model)
+        {
+            if (model == null)
+                return NotFound("Không Tìm Thấy Email Để Gửi.");
+
+            // ===== NGHIỆP VỤ: LẤY THÔNG TIN YÊU CẦU TRUYỀN MÁU =====
+            // Lấy thông tin chi tiết của yêu cầu truyền máu để hiển thị trong email
+            var transfusionRequest = await _context.TransfusionRequests
+                .Include(tr => tr.BloodType)
+                .FirstOrDefaultAsync(tr => tr.TransfusionId == model.TransfusionRequestId);
+
+            if (transfusionRequest == null)
+                return NotFound("Không tìm thấy yêu cầu truyền máu.");
+
+            // Lấy tên nhóm máu cần thiết
+            string bloodTypeName = transfusionRequest.BloodType?.BloodTypeName ?? "Không biết";
+
+            // Gửi email đến người hiến máu
+            var mail = new System.Net.Mail.MailMessage();
+            mail.From = new System.Net.Mail.MailAddress("tinbusiness.work@gmail.com");
+            foreach (var email in model.Email)
+                mail.Bcc.Add(new System.Net.Mail.MailAddress(email));
+            mail.Priority = System.Net.Mail.MailPriority.High;
+
+            mail.Subject = "🩸 YÊU CẦU HIẾN MÁU TÌNH NGUYỆN";
+            mail.Body = $@"<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #fff;'>
+                        <h2 style='color: #1976d2; text-align: center; margin-bottom: 16px;'>🩸 YÊU CẦU HIẾN MÁU TÌNH NGUYỆN</h2>
+                        <p style='font-size: 18px; color: #1976d2; text-align: center; font-weight: bold; margin-bottom: 24px;'>
+                            Một bệnh nhân đang cần sự giúp đỡ của bạn!
+                        </p>
+                        <p style='font-size: 16px; line-height: 1.6; margin-bottom: 16px;'>
+                            Xin chào tình nguyện viên thân mến,
+                        </p>
+                        <p style='font-size: 16px; line-height: 1.6; margin-bottom: 16px;'>
+                            Chúng tôi đã nhận được <b>yêu cầu hiến máu</b> từ một bệnh nhân có nhóm máu phù hợp với bạn.<br>
+                            <b>Hãy chung tay vì cộng đồng!</b>
+                        </p>
+                        <div style='background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 16px; border-radius: 8px; margin: 20px 0;'>
+                            <h3 style='color: #495057; margin-top: 0; margin-bottom: 12px;'>Thông tin yêu cầu:</h3>
+                            <ul style='color: #495057; margin: 8px 0; padding-left: 20px;'>
+                                <li><strong>Loại máu cần:</strong> {bloodTypeName}</li>
+                                <li><strong>Thời gian:</strong> Linh hoạt theo lịch đăng ký</li>
+                                <li><strong>Địa điểm:</strong> Bệnh viện Truyền máu Huyết học - 118 Đ. Hồng Bàng, Phường 12, Quận 5, Thành phố Hồ Chí Minh</li>
+                            </ul>
+                        </div>
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='http://localhost:3000/login?redirect=/booking' 
+                               style='background-color: #1976d2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);'>
+                                ĐĂNG KÝ HIẾN MÁU
+                            </a>
+                        </div>
+                        <p style='font-size: 14px; color: #6c757d; margin-top: 20px; line-height: 1.5;'>
+                            <strong>Lưu ý:</strong> Sau khi xác nhận, bạn sẽ được chuyển đến trang đặt lịch hiến máu. Vui lòng kiểm tra điều kiện sức khỏe trước khi xác nhận.
+                        </p>
+                        <p style='font-size: 14px; color: #6c757d; margin-top: 16px; line-height: 1.5;'>
+                            Nếu bạn không thể hiến máu lúc này, vui lòng bỏ qua email này.
+                        </p>
+                        <hr style='border: none; border-top: 1px solid #dee2e6; margin: 30px 0;'>
+                        <div style='text-align: center; color: #6c757d; font-size: 14px;'>
+                            <p style='margin: 8px 0; font-weight: bold;'>Bệnh Viện Truyền Máu Huyết Học</p>
+                            <p style='margin: 5px 0;'>Mọi thắc mắc xin liên hệ: 02839575334</p>
+                            <p style='margin: 5px 0;'>Email: tinbusiness.work@gmail.com | Hotline: 02839575334</p>
+                        </div>
+                      </div>";
+            mail.IsBodyHtml = true;
+
+            try
+            {
+                using (var smtp = new System.Net.Mail.SmtpClient("smtp.gmail.com", 587))
+                {
+                    smtp.EnableSsl = true;
+                    smtp.UseDefaultCredentials = false;
+                    smtp.Credentials = new System.Net.NetworkCredential("tinbusiness.work", "hbuv ayid svux duza");
+                    await smtp.SendMailAsync(mail);
+                }
+            }
+            catch (Exception)
+            {
+                return BadRequest("Lỗi khi gửi email");
+            }
+
+            return Ok("Email đã được gửi thành công.");
+        }
+
+        public class TransfusionEmailToDonor
+        {
+            public int TransfusionRequestId { get; set; }
+            public List<string> Email { get; set; } = new List<string>(); // Khởi tạo mặc định để tránh lỗi nullable
+        }
 
     }
 } 

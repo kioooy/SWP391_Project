@@ -113,12 +113,6 @@ const MainLayout = () => {
   const { user: currentUser, isAuthenticated, token: authToken } = useSelector((state) => state.auth);
   // currentUser bây giờ sẽ luôn có isDonor, isRecipient nếu đã vào UserProfile
 
-  // Thêm log để kiểm tra user và role
-  console.log('DEBUG currentUser:', currentUser);
-  if (currentUser) {
-    console.log('DEBUG currentUser.role:', currentUser.role);
-  }
-
   // Lưu userId vào localStorage mỗi khi currentUser thay đổi
   useEffect(() => {
     if (currentUser && currentUser.userId) {
@@ -248,7 +242,6 @@ const MainLayout = () => {
   const isStaff = localStorage.getItem("isStaff") === "true";
 
   let menuItems = [];
-  console.log('DEBUG currentUser at menuItems:', currentUser);
 
   if (currentUser && currentUser.role === 'Staff') {
     menuItems = [
@@ -294,9 +287,6 @@ const MainLayout = () => {
       ];
     }
   }
-  console.log('DEBUG menuItems render:', menuItems);
-
-  console.log('DEBUG MainLayout mounted');
 
   // Thêm state cho menu Tin Tức (đặt ngoài mọi if)
   const openNewsMenu = Boolean(newsAnchorEl);

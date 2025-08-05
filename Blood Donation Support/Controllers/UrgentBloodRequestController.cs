@@ -116,7 +116,7 @@ namespace Blood_Donation_Support.Controllers
 
             // Lấy danh sách máu đã gán cho yêu cầu này
             var assignedBloodUnits = await _context.UrgentRequestBloodUnits
-                .Where(ubu => ubu.UrgentRequestId == id)
+                .Where(ubu => ubu.UrgentRequestId == id && ubu.Status == "Used")
                 .Join(_context.BloodUnits,
                     ubu => ubu.BloodUnitId,
                     bu => bu.BloodUnitId,

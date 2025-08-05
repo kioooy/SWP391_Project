@@ -796,12 +796,12 @@ const DonationRequestManagement = () => {
                    ) : (
                      <Chip 
                        label="THƯỜNG" 
-                       color="primary" 
-                       size="small"
                        sx={{ 
                          fontSize: '0.7rem', 
                          height: '20px',
-                         fontWeight: 'bold'
+                         fontWeight: 'bold',
+                         backgroundColor: '#4caf50',
+                         color: 'white'
                        }}
                      />
                    )}

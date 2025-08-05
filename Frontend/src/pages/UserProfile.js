@@ -353,6 +353,9 @@ const UserProfile = () => {
       // Cập nhật địa chỉ vào formData
       setFormData((prev) => ({ ...prev, address, latitude, longitude }));
 
+      // Cập nhật địa chỉ trong editFormData nếu dialog đang mở
+      setEditFormData((prev) => ({ ...prev, address, latitude, longitude }));
+
       setSnackbar({ 
         open: true, 
         message: 'Cập nhật vị trí thành công!', 
@@ -421,9 +424,9 @@ const UserProfile = () => {
     if (!editFormData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editFormData.email)) {
       errors.email = 'Email không hợp lệ hoặc chứa ký tự đặc biệt.';
     }
-    // Địa chỉ: không ký tự đặc biệt ngoài chữ, số, khoảng trắng, dấu phẩy, chấm, gạch ngang, dấu gạch chéo và cho phép tiếng Việt có dấu
-    if (!editFormData.address || /[^\p{L}0-9\s,./-]/u.test(editFormData.address)) {
-      errors.address = 'Địa chỉ không được chứa ký tự đặc biệt.';
+    // Địa chỉ: không được chứa các ký tự @, #, $, %, ^, !
+    if (!editFormData.address || /[@#$%^!]/.test(editFormData.address)) {
+      errors.address = 'Địa chỉ không được chứa các ký tự @, #, $, %, ^, !';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -625,34 +628,13 @@ const UserProfile = () => {
                   <Email sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
                   {formData.email}
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                  <LocationOn sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} /> {formData.address || 'Chưa có địa chỉ'}
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <LocationOn sx={{ fontSize: 20, verticalAlign: 'middle', mr: 1 }} />
+                  {formData.address || 'Chưa có địa chỉ'}
                 </Typography>
 
 
-                {user?.role && user.role.toString().toLowerCase() === 'member' && (
 
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Cập nhật vị trí của bạn để giúp những người cần máu có thể tìm thấy bạn dễ dàng hơn.
-                    </Typography>
-                    <Button
-                      ref={locationButtonRef}
-                      variant="contained"
-                      color="primary"
-                      onClick={handleUpdateLocation}
-                      disabled={locationLoading}
-                      startIcon={<LocationOn />} 
-                    >
-                      {locationLoading ? 'Đang cập nhật...' : 'Cập nhật vị trí hiện tại'}
-                    </Button>
-                    {locationError && (
-                      <Alert severity="error" sx={{ mt: 1 }}>
-                        {locationError}
-                      </Alert>
-                    )}
-                  </Box>
-                )}
               </Box>
 
               <Box>
@@ -836,19 +818,6 @@ const UserProfile = () => {
           />
           <TextField
             margin="dense"
-            name="address"
-            label="Địa chỉ"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={editFormData.address || ''}
-            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[^\p{L}0-9\s,./-]/gu, '') })}
-            sx={{ mb: 2 }}
-            error={!!formErrors.address}
-            helperText={formErrors.address}
-          />
-          <TextField
-            margin="dense"
             name="weight"
             label="Cân nặng (kg)"
             type="text"
@@ -873,6 +842,44 @@ const UserProfile = () => {
             error={!!formErrors.height}
             helperText={formErrors.height}
           />
+          <TextField
+            margin="dense"
+            name="address"
+            label="Địa chỉ"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={editFormData.address || ''}
+            onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value.replace(/[@#$%^!]/g, '') })}
+            sx={{ mb: 2 }}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
+          />
+          
+          {/* Nút cập nhật vị trí hiện tại */}
+          {user?.role && user.role.toString().toLowerCase() === 'member' && (
+            <Box sx={{ mt: 2, mb: 2 }}>
+              <Button
+                ref={locationButtonRef}
+                variant="contained"
+                sx={{ backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}
+                onClick={handleUpdateLocation}
+                disabled={locationLoading}
+                startIcon={<LocationOn />} 
+                fullWidth
+              >
+                {locationLoading ? 'Đang cập nhật...' : 'Cập nhật vị trí hiện tại'}
+              </Button>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                Cập nhật vị trí của bạn để giúp những người cần máu có thể tìm thấy bạn dễ dàng hơn.
+              </Typography>
+              {locationError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  {locationError}
+                </Alert>
+              )}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Hủy</Button>

@@ -134,24 +134,77 @@ const DonationRequestManagement = () => {
     }
   };
 
+  const handleApproveRequest = async () => {
+    if (!selectedRequest || !user) return;
+    try {
+      const token = localStorage.getItem('token');
+      const noteValue = notes?.trim() || 'Đã duyệt bởi nhân viên';
+      await axios.patch(`/api/DonationRequest/${selectedRequest.donationId}/approved?note=${encodeURIComponent(noteValue)}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRequests(
+        requests.map((req) =>
+          req.donationId === selectedRequest.donationId
+            ? { ...req, status: 'Approved' }
+            : req
+        )
+      );
+      handleCloseDialog();
+      setSnackbar({ open: true, message: 'Yêu cầu đã được duyệt.', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Duyệt yêu cầu thất bại!', severity: 'error' });
+    }
+  };
+
   const handleOpenActionDialog = (request, mode) => {
     // Kiểm tra nếu là hoàn thành và nhóm máu "Không biết"
     if (mode === 'complete') {
+      console.log('Checking blood type for request:', request);
+      console.log('BloodTypeId:', request.bloodTypeId, 'Type:', typeof request.bloodTypeId);
+      console.log('BloodTypeName:', request.bloodTypeName, 'Type:', typeof request.bloodTypeName);
+      
       // Kiểm tra nhiều trường hợp có thể của "Không biết"
+      const bloodTypeId = parseInt(request.bloodTypeId);
+      const isValidBloodTypeId = bloodTypeId >= 1 && bloodTypeId <= 8;
+      
       const isUnknownBloodType = 
         request.bloodTypeId === 99 || 
         request.bloodTypeId === '99' ||
+        request.bloodTypeId === null ||
+        request.bloodTypeId === undefined ||
+        !isValidBloodTypeId ||
         request.bloodTypeName === 'Không biết' ||
         request.bloodTypeName === 'Không Biết' ||
         request.bloodTypeName === 'không biết' ||
+        request.bloodTypeName === null ||
+        request.bloodTypeName === undefined ||
+        request.bloodTypeName === '' ||
         request.bloodTypeName?.toLowerCase().includes('không biết') ||
-        request.bloodTypeName?.toLowerCase().includes('không') ||
-        // Thêm kiểm tra cho trường hợp null/undefined
-        !request.bloodTypeId ||
-        !request.bloodTypeName;
+        request.bloodTypeName?.toLowerCase().includes('không');
+        
+      console.log('Is unknown blood type:', isUnknownBloodType);
         
       if (isUnknownBloodType) {
         setSelectedRequest(request);
+        // Tự động chọn nhóm máu hiện tại nếu có
+        let defaultBloodTypeId = '';
+        
+        // Thử lấy từ bloodTypeId trước
+        const currentBloodTypeId = parseInt(request.bloodTypeId);
+        if (currentBloodTypeId >= 1 && currentBloodTypeId <= 8) {
+          defaultBloodTypeId = currentBloodTypeId.toString();
+        } else {
+          // Nếu bloodTypeId không hợp lệ, thử map từ bloodTypeName
+          const bloodTypeMap = {
+            'A+': '1', 'A-': '2', 'B+': '3', 'B-': '4',
+            'AB+': '5', 'AB-': '6', 'O+': '7', 'O-': '8'
+          };
+          if (request.bloodTypeName && bloodTypeMap[request.bloodTypeName]) {
+            defaultBloodTypeId = bloodTypeMap[request.bloodTypeName];
+          }
+        }
+        
+        setNewBloodTypeId(defaultBloodTypeId);
         setOpenBloodTypeDialog(true);
         return;
       }
@@ -265,18 +318,17 @@ const DonationRequestManagement = () => {
         );
         setSnackbar({ open: true, message: 'Đã hoàn thành yêu cầu!', severity: 'success' });
       } else if (actionMode === 'cancel') {
-        const reason = actionRequest.notes && actionRequest.notes.trim() ? actionRequest.notes : 'Yêu cầu bị từ chối bởi nhân viên';
-        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/reject?note=${encodeURIComponent(reason)}`, {}, {
+        await axios.patch(`/api/DonationRequest/${actionRequest.donationId}/cancel`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setRequests(
           requests.map((req) =>
             req.donationId === actionRequest.donationId
-              ? { ...req, status: 'Rejected', notes: reason }
+              ? { ...req, status: 'Cancelled', notes: actionRequest.notes || 'Đã hủy bởi nhân viên' }
               : req
           )
         );
-        setSnackbar({ open: true, message: 'Yêu cầu đã bị từ chối.', severity: 'success' });
+        setSnackbar({ open: true, message: 'Yêu cầu đã được hủy.', severity: 'success' });
       }
     } catch (err) {
       let message = 'Có lỗi xảy ra!';
@@ -497,9 +549,9 @@ const DonationRequestManagement = () => {
         <DialogContent>
           <DialogContentText>
             Bạn có chắc chắn muốn {actionType === 'Approve' ? 'duyệt' : 'từ chối'} yêu cầu hiến máu
-            này không?{actionType === 'Reject' ? ' Vui lòng thêm ghi chú (nếu cần).' : ''}
+            này không?{(actionType === 'Reject' || actionType === 'Approve') ? ' Vui lòng thêm ghi chú (nếu cần).' : ''}
           </DialogContentText>
-          {actionType === 'Reject' && (
+          {(actionType === 'Reject' || actionType === 'Approve') && (
             <TextField
               autoFocus
               margin="dense"
@@ -509,6 +561,7 @@ const DonationRequestManagement = () => {
               variant="standard"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              placeholder={actionType === 'Approve' ? 'Ghi chú khi duyệt (tùy chọn)' : 'Lý do từ chối (nếu cần)'}
             />
           )}
         </DialogContent>
@@ -517,6 +570,10 @@ const DonationRequestManagement = () => {
           {actionType === 'Reject' ? (
             <Button onClick={handleRejectRequest} variant="contained" color="error">
               Từ chối
+            </Button>
+          ) : actionType === 'Approve' ? (
+            <Button onClick={handleApproveRequest} variant="contained" color="success">
+              Duyệt
             </Button>
           ) : (
             <Button onClick={handleCloseDialog} variant="contained">
@@ -588,7 +645,11 @@ const DonationRequestManagement = () => {
               <Typography variant="body2" color="text.secondary">
                 <strong>Nhóm máu hiện tại:</strong>
             </Typography>
-              <Chip label="Không biết" color="warning" size="small" />
+              <Chip 
+                label={selectedRequest?.bloodTypeName || 'Không biết'} 
+                color={selectedRequest?.bloodTypeName && selectedRequest?.bloodTypeName !== 'Không biết' ? 'primary' : 'warning'} 
+                size="small" 
+              />
             </Box>
           </Box>
           
@@ -605,15 +666,7 @@ const DonationRequestManagement = () => {
             >
               {bloodTypes.map((type) => (
                 <MenuItem key={type.id} value={type.id}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip 
-                      label={type.label} 
-                      color="primary" 
-                      size="small" 
-                      variant="outlined"
-                    />
-                    {type.label}
-                  </Box>
+                  {type.label}
                 </MenuItem>
               ))}
             </Select>
